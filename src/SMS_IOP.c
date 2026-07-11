@@ -201,10 +201,13 @@ int SifExecDecompModuleBuffer(void *ptr, u32 size, u32 arg_len, const char *args
 {
 	unsigned char *irx_data;
 	int irx_size, ret = -1;
-	
+
+	if( mod_res ) *mod_res = -1;   /* so a short-circuited/failed load can't leave a stale positive for a caller that gates on it ( e.g. smbman ) */
+
 	if((irx_size = lzma2_get_uncompressed_size((unsigned char *)ptr, size)) > 0)
 	{
 		irx_data = (unsigned char *)memalign(64, irx_size);
+		if( !irx_data ) return -1;   /* OOM -> don't lzma2_uncompress into NULL */
 		ret = lzma2_uncompress((unsigned char *)ptr, size, irx_data, irx_size);
 		
 		if(ret > 0)
@@ -479,6 +482,9 @@ int SMS_IOPStartMX4SIO ( int afStatus ) {
  static const unsigned int lBit[ 4 ] = { 0x00000002, 0x00000800, 0x00002000, 0x00008000 };
 
  int i, ret, before = 0;
+
+ if ( g_IOPFlags & SMS_IOPF_MMCE   ) return 0;                             /* shares the SIO2 port with MMCE ( reciprocal of the guard in SMS_IOPStartMMCE ) */
+ if ( g_IOPFlags & SMS_IOPF_MX4SIO ) return g_IOPFlags & SMS_IOPF_MX4SIO;  /* idempotent: don't load mx4sio_bd twice on an autostart boot */
 
  for ( i = 0; i < 4; ++i ) if (  checkConnectedMassDev ( i )  ) before |= ( 1 << i );
 

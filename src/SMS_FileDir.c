@@ -306,7 +306,15 @@ void SMS_FileDirInit ( char* apPath ) {
     for ( i = 0; i < lnShares; ++i ) {
 
      char* lpShName = lpShare[ i ].ShareName;
-     int   lShLen   = strlen ( lpShName );
+     int   lShLen;
+
+     /* Force-terminate the fixed 256-byte network-supplied fields: a malicious/
+      * nonconformant SMB server can return an unterminated name, and strlen/strcpy
+      * below would then read off the end of the entry / allocation. */
+     lpShare[ i ].ShareName   [ sizeof ( lpShare[ i ].ShareName    ) - 1 ] = '\x00';
+     lpShare[ i ].ShareComment[ sizeof ( lpShare[ i ].ShareComment ) - 1 ] = '\x00';
+
+     lShLen = strlen ( lpShName );
 
      if (  lShLen && lpShName[ lShLen - 1 ] != '$'  ) {  /* skip admin ( $ ) shares */
 

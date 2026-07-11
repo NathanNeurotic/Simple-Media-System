@@ -200,6 +200,8 @@ static int asf_read_header ( SMS_Container* apCont ) {
    int32_t            pos1, pos2, start_time;
    int                test_for_ext_stream_audio, is_dvr_ms_audio = 0;
 
+   if (  apCont -> m_nStm >= SMS_MAX_STREAMS  ) goto fail;   /* stream table full: cap before calloc, so no leak / no half-added stream */
+
    pos1  = lpFileCtx -> m_CurPos;
    lpStm = ( SMS_Stream* )calloc (  1, sizeof ( SMS_Stream ) + sizeof ( ASFStream )  );
 

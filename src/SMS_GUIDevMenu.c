@@ -504,7 +504,8 @@ SMBLoginInfo* _lookup_login_info ( void ) {
 
  }  /* end while */
 
- if ( !retVal ) retVal = ( SMBLoginInfo* )( unsigned int )lpNode -> m_Param;
+ if ( !retVal )   /* no match ( or m_SMBIP unset ): fall back to the first server, NOT the walked-off ( NULL ) node */
+  retVal = g_Config.m_pSMBList -> m_pHead ? ( SMBLoginInfo* )( unsigned int )g_Config.m_pSMBList -> m_pHead -> m_Param : NULL;
 
  return retVal;
 

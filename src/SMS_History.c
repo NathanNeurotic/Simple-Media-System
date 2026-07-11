@@ -32,33 +32,20 @@ void SMS_HistoryLoad ( void ) {
 
  s_pHst = SMS_ListInit ();
 
- if (  SMS_ConfigAssetPath ( lP, sizeof ( lP ), "SMS.hst" )  ) {   /* CWD copy next to the ELF */
-
-  lFD = fioOpen ( lP, O_RDONLY );
-
-  if ( lFD >= 0 ) {
-
-   while ( 1 ) {
-
-    unsigned short lSize;
-    SMS_ListNode*  lpNode;
-
-    if (  fioRead ( lFD, &lSize, 2 ) != 2  ) break;
-
-    lpNode = SMS_ListPushBackBuf ( s_pHst, lSize + 1 );
-    fioRead ( lFD, _STR( lpNode ),     lSize );
-    fioRead ( lFD, &lpNode -> m_Param, 8     );
-
-   }  /* end while */
-
-   fioClose ( lFD );
-   return;
-
-  }  /* end if */
-
+/* CWD copy next to the ELF if present, else the memory-card copy -- BOTH read via
+ * fio. The mc read MUST be fio ( not libmc ): SMS_HistorySave writes via fio, and on
+ * the iomanX+mcman stack libmc cannot see the fio-written file, so resume history
+ * was saved but never loaded back on an mc boot ( same class as the SMS.cfg fix ). */
+ if (  !SMS_ConfigAssetPath ( lP, sizeof ( lP ), "SMS.hst" )  ) {
+  lP[ 0 ] = 'm';
+  lP[ 1 ] = 'c';
+  lP[ 2 ] = '0' + g_MCSlot;
+  lP[ 3 ] = ':';
+  lP[ 4 ] = '/';
+  strcpy ( &lP[ 5 ], s_pHistory );   /* "mc<slot>:/SMS/SMS.hst" -- same path SMS_HistorySave writes */
  }  /* end if */
 
- lFD = MC_OpenS ( g_MCSlot, 0, s_pHistory, O_RDONLY );   /* memory-card fallback ( unchanged ) */
+ lFD = fioOpen ( lP, O_RDONLY );
 
  if ( lFD < 0 ) return;
 
@@ -67,22 +54,15 @@ void SMS_HistoryLoad ( void ) {
   unsigned short lSize;
   SMS_ListNode*  lpNode;
 
-#ifdef BDM
-  int x;
-  if (  MC_ReadS ( lFD, &lSize, 2 ) == 0  ) {
-   MC_Sync ( &x );
-  if ( x != 2 ) break;
-#else
-  if (  MC_ReadS ( lFD, &lSize, 2 ) == 2  ) {
-#endif
-   lpNode = SMS_ListPushBackBuf ( s_pHst, lSize + 1 );
-   MC_ReadS (  lFD, _STR( lpNode ), lSize  );
-   MC_ReadS (  lFD, &lpNode -> m_Param, 8  );
-  } else break;
+  if (  fioRead ( lFD, &lSize, 2 ) != 2  ) break;
+
+  lpNode = SMS_ListPushBackBuf ( s_pHst, lSize + 1 );
+  fioRead ( lFD, _STR( lpNode ),     lSize );
+  fioRead ( lFD, &lpNode -> m_Param, 8     );
 
  }  /* end while */
 
- MC_CloseS ( lFD );
+ fioClose ( lFD );
 
 }  /* end SMS_HistoryLoad */
 

@@ -152,6 +152,10 @@ static int _mov_read_mvhd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 static int _mov_read_trak ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
  SMS_Stream* lpStm;
  MOVStream*  lpMyStm;
+ if (  apCtx -> m_pBase -> m_nStm >= SMS_MAX_STREAMS  ) {   /* stream table full ( >8 traks ): SKIP the whole over-cap trak. Do NOT recurse into it -- its children ( tkhd/mdhd/stsd/... ) would index m_pStm[ m_nStm - 1 ] = the last valid stream and corrupt / leak / NULL-deref it. Skipping apAtom->m_Size keeps the dispatcher byte-synced ( lLeft == 0 ). */
+  File_Skip ( apFileCtx, ( uint32_t )apAtom -> m_Size );
+  return 0;
+ }  /* end if */
  lpStm             = ( SMS_Stream*       )calloc (  1, sizeof ( SMS_Stream ) + sizeof ( MOVStream )  );
  lpStm -> m_pCodec = ( SMS_CodecContext* )calloc (  1, sizeof ( SMS_CodecContext )  );
  lpMyStm           = ( MOVStream* )(  ( char* )lpStm + sizeof( SMS_Stream )  );
@@ -642,6 +646,17 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   if ( lAtom.m_Size < 0 || lAtom.m_Size > apAtom -> m_Size - lTotalSize ) break;
   for ( lpIt = apCtx -> m_pParseTbl; lpIt -> m_Type && lpIt -> m_Type != lAtom.m_Type; ++lpIt );
   if ( !lpIt -> m_Type )
+   File_Skip (  apFileCtx, ( uint32_t )lAtom.m_Size  );
+/* A stream-child atom ( tkhd/mdhd/hdlr/stsd/... ) dispatched before ANY trak
+ * ( m_nStm == 0 -- only in a crafted/corrupt file ) would index m_pStm[ -1 ] and
+ * deref garbage. Those handlers are valid only inside a trak, so skip them here. */
+  else if (  apCtx -> m_pBase -> m_nStm == 0 && (
+              lpIt -> m_Func == _mov_read_tkhd || lpIt -> m_Func == _mov_read_mdhd     ||
+              lpIt -> m_Func == _mov_read_hdlr || lpIt -> m_Func == _mov_read_hdlr_m4a ||
+              lpIt -> m_Func == _mov_read_stsd || lpIt -> m_Func == _mov_read_esds     ||
+              lpIt -> m_Func == _mov_read_stts || lpIt -> m_Func == _mov_read_stsc     ||
+              lpIt -> m_Func == _mov_read_stsz || lpIt -> m_Func == _mov_read_stco     ||
+              lpIt -> m_Func == _mov_read_ctts )  )
    File_Skip (  apFileCtx, ( uint32_t )lAtom.m_Size  );
   else {
    uint32_t lStartPos = apFileCtx -> m_CurPos;

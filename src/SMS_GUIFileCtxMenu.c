@@ -186,7 +186,7 @@ static int _copy_file_to_mc ( const char* apDst, const char* apSrc ) {
 static int _do_sms_action ( const char* apDst ) {
 
  int  retVal = 0;
- char lBuf[ 32 ];
+ char lBuf[ strlen ( apDst ) + 8 ];   /* "mc?:/" ( 5 ) + apDst + NUL; apDst can be a full "SMS/Skins/<fs name>" path -- the old fixed [32] overflowed */
 
  lBuf[ 0 ] = 'm';
  lBuf[ 1 ] = 'c';

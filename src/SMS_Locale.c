@@ -720,26 +720,35 @@ void SMS_LocaleInit ( void ) {
    lSize = fioLseek ( lF, 0, SEEK_END );
    if ( lSize > 0 ) {
     lpAlloc = ( unsigned char* )malloc ( lSize + 1 );
-    fioLseek ( lF, 0, SEEK_SET );
-    fioRead  ( lF, lpAlloc, lSize );
+    if ( lpAlloc ) { fioLseek ( lF, 0, SEEK_SET ); fioRead ( lF, lpAlloc, lSize ); }
+    else lSize = 0;   /* alloc failed -> fall through to the default string table */
    }  /* end if */
    fioClose ( lF );
   }  /* end if */
 
  }  /* end if */
 
- if ( !lpAlloc ) {   /* memory-card fallback ( unchanged libmc read ) */
+ if ( !lpAlloc ) {   /* memory-card copy -- via fio ( libmc cannot see a fio-written SMS.lng, so an in-app "Update SMS language" never loaded on an mc boot ) */
 
-  int lFD = MC_OpenS ( g_MCSlot, 0, g_SMSLng, O_RDONLY );
+  int lFD;
+
+  lP[ 0 ] = 'm';
+  lP[ 1 ] = 'c';
+  lP[ 2 ] = '0' + g_MCSlot;
+  lP[ 3 ] = ':';
+  lP[ 4 ] = '/';
+  strcpy ( &lP[ 5 ], g_SMSLng );   /* g_SMSLng = "SMS/SMS.lng" -> "mc<slot>:/SMS/SMS.lng" */
+
+  lFD = fioOpen ( lP, O_RDONLY );
 
   if ( lFD >= 0 ) {
-   lSize = MC_SeekS ( lFD, 0, SEEK_END );
+   lSize = fioLseek ( lFD, 0, SEEK_END );
    if ( lSize > 0 ) {
     lpAlloc = ( unsigned char* )malloc ( lSize + 1 );
-    MC_SeekS ( lFD, 0, SEEK_SET   );
-    MC_ReadS ( lFD, lpAlloc, lSize );
+    if ( lpAlloc ) { fioLseek ( lFD, 0, SEEK_SET ); fioRead ( lFD, lpAlloc, lSize ); }
+    else lSize = 0;   /* alloc failed -> fall through to the default string table */
    }  /* end if */
-   MC_CloseS ( lFD );
+   fioClose ( lFD );
   }  /* end if */
 
  }  /* end if */

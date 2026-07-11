@@ -190,7 +190,11 @@ static void _load_font ( unsigned int anIndex ) {
 
   if ( lSize > 0 ) {
 
-   if ( lSize > lFontSize ) lpBuff = malloc ( lSize );
+   if ( lSize > lFontSize ) {
+    void* lpNew = malloc ( lSize );
+    if ( !lpNew ) { fioClose ( lFD ); return; }   /* oversized font + OOM -> keep the built-in, never fioRead into NULL */
+    lpBuff = lpNew;
+   }  /* end if */
 
    fioLseek ( lFD, 0, SEEK_SET );
    fioRead ( lFD, lpBuff, lSize );
@@ -321,7 +325,7 @@ void SMS_SaveSMBInfo ( void ) {
 
 void SMS_LoadPalette ( void ) {
 
- int  i, lFD, lLoaded = 0;
+ int  i, lLoaded = 0;
  char lP[ 128 ];
 
  if (  SMS_ConfigAssetPath ( lP, sizeof ( lP ), "SMS.pal" )  ) {   /* CWD copy next to the ELF */
@@ -329,9 +333,15 @@ void SMS_LoadPalette ( void ) {
   if ( lF >= 0 ) { fioRead ( lF, s_DefPalette, 64 ); fioClose ( lF ); lLoaded = 1; }
  }  /* end if */
 
- if ( !lLoaded ) {   /* memory-card fallback ( unchanged ) */
-  lFD = MC_OpenS ( g_MCSlot, 0, g_SMSPal, O_RDONLY );
-  if ( lFD >= 0 ) { MC_ReadS ( lFD, s_DefPalette, 64 ); MC_CloseS ( lFD ); }
+ if ( !lLoaded ) {   /* memory-card copy -- via fio ( libmc cannot see a fio-written SMS.pal, so an in-app "Update palette file" never applied on an mc boot ) */
+  int lF;
+  lP[ 0 ] = 'm';
+  lP[ 1 ] = 'c';
+  lP[ 2 ] = '0' + g_MCSlot;
+  lP[ 3 ] = ':';
+  strcpy ( &lP[ 4 ], g_SMSPal );   /* g_SMSPal = "/SMS/SMS.pal" -> "mc<slot>:/SMS/SMS.pal" */
+  lF = fioOpen ( lP, O_RDONLY );
+  if ( lF >= 0 ) { fioRead ( lF, s_DefPalette, 64 ); fioClose ( lF ); }
  }  /* end if */
 
  for ( i = 0; i < 16; ++i ) s_DefPalette[ i ] = ( s_DefPalette[ i ] & 0x00FFFFFF ) | 0x60000000;

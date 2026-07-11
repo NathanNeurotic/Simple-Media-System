@@ -186,24 +186,24 @@ static int DrawSkin ( void ) {
 
  }  /* end if */
 
- if ( !lpData ) {   /* memory-card boot, OR the CWD skin is absent -> libmc fallback ( keeps card skins ) */
+ if ( !lpData ) {   /* memory-card boot, OR the CWD skin is absent -> read the mc copy via fio ( libmc cannot see a fio-imported/-scanned skin, so a selectable in-app-added skin never rendered ) */
 
   if (  snprintf ( lPath, sizeof( lPath ), "%s%s%s%s",
-                   g_pSMSSkn + 5, g_SlashStr, g_Config.m_SkinName, g_pSMI ) < ( int )sizeof( lPath )  ) {
+                   g_pSMSSkn, g_SlashStr, g_Config.m_SkinName, g_pSMI ) < ( int )sizeof( lPath )  ) {   /* g_pSMSSkn = slot-patched "mc?:/SMS/Skins" */
 
-   lFD = MC_OpenS ( g_MCSlot, 0, lPath, O_RDONLY );
+   lFD = fioOpen ( lPath, O_RDONLY );
 
    if ( lFD >= 0 ) {
-    lSize = MC_SeekS ( lFD, 0, SEEK_END );
-    MC_SeekS ( lFD, 0, SEEK_SET );
+    lSize = fioLseek ( lFD, 0, SEEK_END );
+    fioLseek ( lFD, 0, SEEK_SET );
     if ( lSize > 0 ) {
      lpData = malloc ( lSize );
-     if (  lpData && MC_ReadS ( lFD, lpData, lSize ) != lSize  ) {
+     if (  lpData && fioRead ( lFD, lpData, lSize ) != lSize  ) {
       free ( lpData );
       lpData = NULL;
      }  /* end if */
     }  /* end if */
-    MC_CloseS ( lFD );
+    fioClose ( lFD );
    }  /* end if */
 
   }  /* end if */
@@ -570,8 +570,9 @@ static void Desktop_Render ( GUIObject* apObj, int aCtx ) {
    _DecodeJellyfish ();
 
 /* Boot splash: fades in, holds ~1s, fades out to black ( all inside
- * _DrawSplash ). */
-   _DrawSplash ();
+ * _DrawSplash ). FIRST desktop paint only -- a later GUI_Initialize(0)
+ * ( display-mode re-init, returning from the player ) must NOT replay it. */
+   if ( !s_Init ) _DrawSplash ();
 
    if (  _bgTexUnsafe ()  ) {
 /* HD DTV (720p/1080i): do NOT upload the full-screen background texture. At
