@@ -14,8 +14,10 @@
 #define SMS_PS2ATAD_SIZE    11821
 #define SMS_PS2HDD_SIZE     24953
 #define SMS_PS2FS_SIZE      50405
+#ifndef BDM   /* USB modules live in g_DataBuffer only for the non-BDM build; BDM loads usbd / usbmass_bd from the compressed irx set, so these ~17.6 KB are dead weight there */
 #define SMS_USB_MASS_SIZE    8504
 #define SMS_USBD_SIZE        9140
+#endif
 #define SMS_PS2IP_SIZE      67061
 #define SMS_PS2SMAP_SIZE     7909
 #define SMS_PS2HOST_SIZE    16349
@@ -31,9 +33,13 @@
 #define SMS_PS2ATAD_OFFSET    0
 #define SMS_PS2HDD_OFFSET     (  ( SMS_PS2ATAD_OFFSET    + SMS_PS2ATAD_SIZE    + 15 ) & 0xFFFFFFF0  )
 #define SMS_PS2FS_OFFSET      (  ( SMS_PS2HDD_OFFSET     + SMS_PS2HDD_SIZE     + 15 ) & 0xFFFFFFF0  )
+#ifndef BDM
 #define SMS_USB_MASS_OFFSET   (  ( SMS_PS2FS_OFFSET      + SMS_PS2FS_SIZE      + 15 ) & 0xFFFFFFF0  )
 #define SMS_USBD_OFFSET       (  ( SMS_USB_MASS_OFFSET   + SMS_USB_MASS_SIZE   + 15 ) & 0xFFFFFFF0  )
 #define SMS_PS2IP_OFFSET      (  ( SMS_USBD_OFFSET       + SMS_USBD_SIZE       + 15 ) & 0xFFFFFFF0  )
+#else   /* BDM: PS2IP follows PS2FS directly ( USB modules excluded ) */
+#define SMS_PS2IP_OFFSET      (  ( SMS_PS2FS_OFFSET      + SMS_PS2FS_SIZE      + 15 ) & 0xFFFFFFF0  )
+#endif
 #define SMS_PS2SMAP_OFFSET    (  ( SMS_PS2IP_OFFSET      + SMS_PS2IP_SIZE      + 15 ) & 0xFFFFFFF0  )
 #define SMS_PS2HOST_OFFSET    (  ( SMS_PS2SMAP_OFFSET    + SMS_PS2SMAP_SIZE    + 15 ) & 0xFFFFFFF0  )
 #define SMS_VU0_MPG_OFFSET    (  ( SMS_PS2HOST_OFFSET    + SMS_PS2HOST_SIZE    + 15 ) & 0xFFFFFFF0  )
