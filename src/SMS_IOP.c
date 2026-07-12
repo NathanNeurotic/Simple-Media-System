@@ -143,14 +143,15 @@ struct {
  int         m_BufSize;
  int         m_nArgs;
  void*       m_pArgs;
+ int         m_fComp;   /* 1 = XZ-compressed ( load via SifExecDecompModuleBuffer ), 0 = raw */
 
 } s_LoadParams[ 6 ] __attribute__(   (  section( ".data" )  )   ) = {
- { s_pAudSrv,  &g_DataBuffer[ SMS_AUDSRV_OFFSET   ], SMS_AUDSRV_SIZE,   0,                    NULL      },
- { s_pPS2Dev9, &g_DataBuffer[ SMS_PS2DEV9_OFFSET  ], SMS_PS2DEV9_SIZE,  0,                    NULL      },
- { s_pPS2POff, &g_DataBuffer[ SMS_POWEROFF_OFFSET ], SMS_POWEROFF_SIZE, 0,                    NULL      },
- { s_pPS2ATAD, &g_DataBuffer[ SMS_PS2ATAD_OFFSET  ], SMS_PS2ATAD_SIZE,  0,                    NULL      },
- { s_pPS2HDD,  &g_DataBuffer[ SMS_PS2HDD_OFFSET   ], SMS_PS2HDD_SIZE,   sizeof ( s_HDDArgs ), s_HDDArgs },
- { s_pPS2FS,   &g_DataBuffer[ SMS_PS2FS_OFFSET    ], SMS_PS2FS_SIZE,    sizeof ( s_PFSArgs ), s_PFSArgs }
+ { s_pAudSrv,  &g_DataBuffer[ SMS_AUDSRV_OFFSET   ], SMS_AUDSRV_SIZE,   0,                    NULL,      0 },
+ { s_pPS2Dev9, &g_DataBuffer[ SMS_PS2DEV9_OFFSET  ], SMS_PS2DEV9_SIZE,  0,                    NULL,      0 },
+ { s_pPS2POff, &g_DataBuffer[ SMS_POWEROFF_OFFSET ], SMS_POWEROFF_SIZE, 0,                    NULL,      0 },
+ { s_pPS2ATAD, &g_DataBuffer[ SMS_PS2ATAD_OFFSET  ], SMS_PS2ATAD_SIZE,  0,                    NULL,      1 },
+ { s_pPS2HDD,  &g_DataBuffer[ SMS_PS2HDD_OFFSET   ], SMS_PS2HDD_SIZE,   sizeof ( s_HDDArgs ), s_HDDArgs, 1 },
+ { s_pPS2FS,   &g_DataBuffer[ SMS_PS2FS_OFFSET    ], SMS_PS2FS_SIZE,    sizeof ( s_PFSArgs ), s_PFSArgs, 1 }
 };
 
 static SifRpcClientData_t s_SMSUClt __attribute__ (   (  aligned( 64 ), section( ".bss" )  )   );
@@ -169,6 +170,8 @@ static void _sif_cmd_handler ( void* apPkt, void* apArg ) {
 
 }  /* end _sif_cmd_handler */
 
+int SifExecDecompModuleBuffer ( void*, u32, u32, const char*, int* );   /* defined below; forward-declared for _load_module's compressed-module dispatch */
+
 static void _load_module ( int anIndex, int afStatus ) {
 
  int lRes, lModRes;
@@ -181,10 +184,15 @@ static void _load_module ( int anIndex, int afStatus ) {
 
  }  /* end if */
 
- lRes = SifExecModuleBuffer (
-  s_LoadParams[ anIndex ].m_pBuffer, s_LoadParams[ anIndex ].m_BufSize,
-  s_LoadParams[ anIndex ].m_nArgs,   s_LoadParams[ anIndex ].m_pArgs, &lModRes
- );
+ lRes = s_LoadParams[ anIndex ].m_fComp
+  ? SifExecDecompModuleBuffer (
+     s_LoadParams[ anIndex ].m_pBuffer, s_LoadParams[ anIndex ].m_BufSize,
+     s_LoadParams[ anIndex ].m_nArgs,   s_LoadParams[ anIndex ].m_pArgs, &lModRes
+    )
+  : SifExecModuleBuffer (
+     s_LoadParams[ anIndex ].m_pBuffer, s_LoadParams[ anIndex ].m_BufSize,
+     s_LoadParams[ anIndex ].m_nArgs,   s_LoadParams[ anIndex ].m_pArgs, &lModRes
+    );
 
  if ( anIndex == 1 && lRes >= 0 ) g_IOPFlags |= SMS_IOPF_DEV9_IS;
 
@@ -356,11 +364,11 @@ int SMS_IOPStartNet ( int afStatus ) {
  sprintf (  &lSMAPArgs[ i ], "%d", j  );
  lSMAPALen += strlen ( &lSMAPArgs[ i ] ) + 1;
 
- SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2IP_OFFSET ], SMS_PS2IP_SIZE, 0, NULL, &i );
+ SifExecDecompModuleBuffer ( &g_DataBuffer[ SMS_PS2IP_OFFSET ], SMS_PS2IP_SIZE, 0, NULL, &i );
 
  if ( i >= 0 ) {
 
-  SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2SMAP_OFFSET ], SMS_PS2SMAP_SIZE, lSMAPALen, &lSMAPArgs[ 0 ], &i );
+  SifExecDecompModuleBuffer ( &g_DataBuffer[ SMS_PS2SMAP_OFFSET ], SMS_PS2SMAP_SIZE, lSMAPALen, &lSMAPArgs[ 0 ], &i );
 
   if ( i >= 0 ) {
 
@@ -381,7 +389,7 @@ int SMS_IOPStartNet ( int afStatus ) {
 
    } else {
 
-    SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2HOST_OFFSET ], SMS_PS2HOST_SIZE, 0, NULL, &i );
+    SifExecDecompModuleBuffer ( &g_DataBuffer[ SMS_PS2HOST_OFFSET ], SMS_PS2HOST_SIZE, 0, NULL, &i );
 
     if ( i >= 0 ) g_IOPFlags |= SMS_IOPF_NET;
 

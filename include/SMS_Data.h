@@ -11,16 +11,16 @@
 #ifndef __SMS_Data_H
 #define __SMS_Data_H
 
-#define SMS_PS2ATAD_SIZE    11821
-#define SMS_PS2HDD_SIZE     24953
-#define SMS_PS2FS_SIZE      50405
+#define SMS_PS2ATAD_SIZE     4628   /* XZ ( was 11821 ) -> SifExecDecompModuleBuffer */
+#define SMS_PS2HDD_SIZE      9120   /* XZ ( was 24953 ) */
+#define SMS_PS2FS_SIZE      18088   /* XZ ( was 50405 ) */
 #ifndef BDM   /* USB modules live in g_DataBuffer only for the non-BDM build; BDM loads usbd / usbmass_bd from the compressed irx set, so these ~17.6 KB are dead weight there */
 #define SMS_USB_MASS_SIZE    8504
 #define SMS_USBD_SIZE        9140
 #endif
-#define SMS_PS2IP_SIZE      67061
-#define SMS_PS2SMAP_SIZE     7909
-#define SMS_PS2HOST_SIZE    16349
+#define SMS_PS2IP_SIZE      23324   /* XZ ( was 67061 ) */
+#define SMS_PS2SMAP_SIZE     3624   /* XZ ( was 7909 ) */
+#define SMS_PS2HOST_SIZE     4848   /* XZ ( was 16349 ) */
 #define SMS_VU0_MPG_SIZE     1376
 #define SMS_VU0_DATA_SIZE     256
 #define SMS_SMSUTILS_SIZE    3733
