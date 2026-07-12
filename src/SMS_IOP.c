@@ -1014,7 +1014,18 @@ void SMS_IOPInit ( void ) {
   SifAddCmdHandler ( 18, _sif_cmd_handler, NULL );
  EI();
 
- SPU_LoadData (  g_SMSounds, sizeof ( g_SMSounds )  );
+/* The SPU sound bank ships XZ-compressed ( g_SMSounds_xz ); g_SMSounds itself is now
+ * .bss scratch. Decompress the bank into a temp buffer for the one-time SPU upload,
+ * then free it -- g_SMSounds never needs the raw bank ( it is reused as scratch ). */
+ {
+  void* lpSnd = malloc (  sizeof ( g_SMSounds )  );
+
+  if ( lpSnd ) {
+   lzma2_uncompress (  ( unsigned char* )g_SMSounds_xz, g_SMSounds_xz_size, ( unsigned char* )lpSnd, sizeof ( g_SMSounds )  );
+   SPU_LoadData ( lpSnd, sizeof ( g_SMSounds )  );
+   free ( lpSnd );
+  }  /* end if */
+ }
 
  if (  RCX_Load () && RCX_Start ()  )
   g_IOPFlags |= SMS_IOPF_RMMAN2;

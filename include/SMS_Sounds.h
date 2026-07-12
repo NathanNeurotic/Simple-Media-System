@@ -39,6 +39,8 @@
 #define g_Sun     (  ( u64*           )&g_SMSounds[ 68384 ]  )
 
 extern SMSound       g_SMSound [     4 ] __attribute__(   (  section( ".data" )  )   );
-extern unsigned char g_SMSounds[ 70816 ] __attribute__(   (  aligned( 64 ), section( ".data" )  )   );
+extern unsigned char g_SMSounds[ 70816 ] __attribute__(   (  aligned( 64 ), section( ".bss" )  )   );
+extern unsigned char g_SMSounds_xz[];            /* XZ sound bank -- decompressed into a temp buffer for the one-time boot SPU upload */
+extern const unsigned int  g_SMSounds_xz_size;
 
 #endif  /* __SMS_Sounds_H */
