@@ -21,6 +21,7 @@ jobs:
 
       - name: Build updated UDPFS SMAP IRX
         run: |
+          set +e
           docker run --rm \
             -v "$PWD/iop/SMSUdpfs":/src \
             -v "$PWD/irx":/out \
@@ -32,7 +33,13 @@ jobs:
               export PATH="/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/ee/bin:$PATH"
               make -C smap clean all
               cp smap/irx/smap.irx /out/udpfs_smap.irx
-            '
+            ' > /tmp/udpfs-smap-build.log 2>&1
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            grep -E -i 'error:|undefined reference|no rule to make|make(\[[0-9]+\])?: \*\*\*' /tmp/udpfs-smap-build.log || tail -n 50 /tmp/udpfs-smap-build.log
+            exit "$status"
+          fi
+          tail -n 10 /tmp/udpfs-smap-build.log
 
       - name: Compress and verify IRX
         run: |
