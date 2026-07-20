@@ -3,8 +3,6 @@
 #ifdef BDM
 #include <fileXio_rpc.h>
 #include <iopcontrol.h>
-#include <kernel.h>
-#include <sbv_patches.h>
 #include <sifrpc.h>
 
 /* Must match SMAPCTL_DEVCTL_STOP in iop/SMSUdpfs/smap/src/smap_ctl.c. */
@@ -24,8 +22,7 @@
 static int s_StopAttempted;
 static int s_UseFullResetOnce;
 static int s_RpcInitCount;
-static int s_DiagPhase;
-static int s_FlushCount;
+static int s_AfterRpc2;
 static int s_Sync2Announced;
 
 static void _stop_udpfs_once(void)
@@ -100,101 +97,18 @@ void __wrap_sceSifInitRpc(int mode)
         SMS_ExitCrumb(30, "RPC2 enter");
         __real_sceSifInitRpc(mode);
         SMS_ExitCrumb(31, "RPC2 done");
-        s_DiagPhase = 1;
+        s_AfterRpc2 = 1;
         return;
     }
 
     if (s_RpcInitCount == 3) {
-        SMS_ExitCrumb(44, "RPC3 enter");
+        SMS_ExitCrumb(34, "RPC3 enter");
         __real_sceSifInitRpc(mode);
-        SMS_ExitCrumb(45, "RPC3 done");
-        s_DiagPhase = 8;
+        SMS_ExitCrumb(35, "RPC3 done");
         return;
     }
 
     __real_sceSifInitRpc(mode);
-}
-
-int __real_sbv_patch_enable_lmb(void);
-int __wrap_sbv_patch_enable_lmb(void)
-{
-    int result;
-
-    if (s_DiagPhase == 1) {
-        SMS_ExitCrumb(32, "LMB1 enter");
-        result = __real_sbv_patch_enable_lmb();
-        SMS_ExitCrumb(33, "LMB1 done");
-        s_DiagPhase = 2;
-        return result;
-    }
-
-    if (s_DiagPhase == 8) {
-        SMS_ExitCrumb(46, "LMB2 enter");
-        result = __real_sbv_patch_enable_lmb();
-        SMS_ExitCrumb(47, "LMB2 done");
-        s_DiagPhase = 9;
-        return result;
-    }
-
-    return __real_sbv_patch_enable_lmb();
-}
-
-int __real_sbv_patch_disable_prefix_check(void);
-int __wrap_sbv_patch_disable_prefix_check(void)
-{
-    int result;
-
-    if (s_DiagPhase == 2) {
-        SMS_ExitCrumb(34, "Prefix1 enter");
-        result = __real_sbv_patch_disable_prefix_check();
-        SMS_ExitCrumb(35, "Prefix1 done");
-        s_DiagPhase = 3;
-        return result;
-    }
-
-    if (s_DiagPhase == 9) {
-        SMS_ExitCrumb(48, "Prefix2 enter");
-        result = __real_sbv_patch_disable_prefix_check();
-        SMS_ExitCrumb(49, "Prefix2 done");
-        s_DiagPhase = 10;
-        return result;
-    }
-
-    return __real_sbv_patch_disable_prefix_check();
-}
-
-int __real_sbv_patch_fileio(void);
-int __wrap_sbv_patch_fileio(void)
-{
-    int result;
-
-    if (s_DiagPhase == 3) {
-        SMS_ExitCrumb(36, "Fileio enter");
-        result = __real_sbv_patch_fileio();
-        SMS_ExitCrumb(37, "Fileio done");
-        s_DiagPhase = 4;
-        return result;
-    }
-
-    return __real_sbv_patch_fileio();
-}
-
-void __real_FlushCache(int operation);
-void __wrap_FlushCache(int operation)
-{
-    if (s_DiagPhase == 4 && s_FlushCount < 2) {
-        SMS_ExitCrumb(s_FlushCount == 0 ? 38 : 40,
-                      s_FlushCount == 0 ? "Flush0 enter" : "Flush2 enter");
-        __real_FlushCache(operation);
-        SMS_ExitCrumb(s_FlushCount == 0 ? 39 : 41,
-                      s_FlushCount == 0 ? "Flush0 done" : "Flush2 done");
-        ++s_FlushCount;
-        if (s_FlushCount == 2)
-            s_DiagPhase = 5;
-        return;
-    }
-
-    __real_FlushCache(operation);
 }
 
 int __real_SifIopSync(void);
@@ -202,18 +116,18 @@ int __wrap_SifIopSync(void)
 {
     int result;
 
-    if (s_DiagPhase != 5)
+    if (!s_AfterRpc2)
         return __real_SifIopSync();
 
     if (!s_Sync2Announced) {
-        SMS_ExitCrumb(42, "Sync2 enter");
+        SMS_ExitCrumb(32, "Sync2 enter");
         s_Sync2Announced = 1;
     }
 
     result = __real_SifIopSync();
     if (result) {
-        SMS_ExitCrumb(43, "Sync2 done");
-        s_DiagPhase = 6;
+        SMS_ExitCrumb(33, "Sync2 done");
+        s_AfterRpc2 = 0;
     }
 
     return result;
