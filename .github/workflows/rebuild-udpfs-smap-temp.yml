@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/udpfs-exit-quiesce
+  pull_request:
+    branches:
+      - mx4sio
 
 permissions:
   contents: write
