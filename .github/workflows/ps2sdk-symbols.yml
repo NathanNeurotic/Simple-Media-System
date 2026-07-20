@@ -1,0 +1,22 @@
+name: ps2sdk-symbols
+
+on:
+  push:
+    branches: ['fix/udpfs-exit-quiesce']
+  workflow_dispatch:
+
+jobs:
+  symbols:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Inspect PS2SDK v1.0 exports
+      run: |
+        docker run --rm ps2dev/ps2dev:v1.0 sh -c '
+          NM=$(find /usr/local/ps2dev -type f -name "*-nm" | head -n 1)
+          echo "NM=$NM"
+          echo "PS2SDK=$PS2SDK"
+          for lib in "$PS2SDK/ee/lib/libkernel.a" "$PS2SDK/sbv/lib/libpatches.a"; do
+            echo "=== $lib ==="
+            "$NM" -g "$lib" | grep -E "SifInitRpc|sceSifInitRpc|SifIopSync|SifIopReset|FlushCache|sbv_patch" || true
+          done
+        '
