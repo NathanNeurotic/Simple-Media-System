@@ -82,11 +82,11 @@ int __wrap_SifIopReset(const char *arg, int mode)
     return __real_SifIopReset(arg, mode);
 }
 
-void __real_sceSifInitRpc(int mode);
-void __wrap_sceSifInitRpc(int mode)
+void __real_SifInitRpc(int mode);
+void __wrap_SifInitRpc(int mode)
 {
     if (!s_StopAttempted) {
-        __real_sceSifInitRpc(mode);
+        __real_SifInitRpc(mode);
         return;
     }
 
@@ -95,7 +95,7 @@ void __wrap_sceSifInitRpc(int mode)
     /* Call 1 is SMS_IOPReset's pre-reset SifInitRpc at E04. */
     if (s_RpcInitCount == 2) {
         SMS_ExitCrumb(30, "RPC2 enter");
-        __real_sceSifInitRpc(mode);
+        __real_SifInitRpc(mode);
         SMS_ExitCrumb(31, "RPC2 done");
         s_AfterRpc2 = 1;
         return;
@@ -103,12 +103,12 @@ void __wrap_sceSifInitRpc(int mode)
 
     if (s_RpcInitCount == 3) {
         SMS_ExitCrumb(34, "RPC3 enter");
-        __real_sceSifInitRpc(mode);
+        __real_SifInitRpc(mode);
         SMS_ExitCrumb(35, "RPC3 done");
         return;
     }
 
-    __real_sceSifInitRpc(mode);
+    __real_SifInitRpc(mode);
 }
 
 int __real_SifIopSync(void);
