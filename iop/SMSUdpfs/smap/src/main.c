@@ -7,6 +7,7 @@
 IRX_ID(MODNAME, 0x2, 0x1A);
 
 extern struct irx_export_table _exp_smap __attribute__((section("data")));
+int smap_ctl_init(void);
 
 int _start(int argc, char *argv[])
 {
@@ -16,6 +17,9 @@ int _start(int argc, char *argv[])
         M_DEBUG("smap: smap_init -> %d\n", result);
         return MODULE_NO_RESIDENT_END;
     }
+
+    if ((result = smap_ctl_init()) < 0)
+        M_DEBUG("smap: smap_ctl_init -> %d\n", result);
 
     if (RegisterLibraryEntries(&_exp_smap) != 0) {
         M_DEBUG("smap: module already loaded\n");
