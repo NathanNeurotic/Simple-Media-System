@@ -7,9 +7,9 @@
 
 /* Must match SMAPCTL_DEVCTL_STOP in iop/SMSUdpfs/smap/src/smap_ctl.c. */
 #define SMS_UDPFS_DEVCTL_STOP 0
-/* SMS normally uses this full IOP reboot configuration.  The older empty-arg
- * UDPFS workaround reaches BOOTEND on hardware but leaves the rebooted IOP
- * without the RPCINIT handshake that SMS immediately requires. */
+/* SMS normally uses this full IOP reboot configuration.  Hardware reached the
+ * broad E10 region with both reset arguments, so the diagnostic wrappers below
+ * now prove which post-reset boundary actually fails. */
 #define SMS_UDPFS_RESET_ARGS "rom0:UDNL rom0:EELOADCNF"
 #endif
 
