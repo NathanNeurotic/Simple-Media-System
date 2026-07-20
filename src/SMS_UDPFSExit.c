@@ -85,11 +85,11 @@ int __wrap_SifIopReset(const char *arg, int mode)
     return __real_SifIopReset(arg, mode);
 }
 
-void __real_SifInitRpc(int mode);
-void __wrap_SifInitRpc(int mode)
+void __real_sceSifInitRpc(int mode);
+void __wrap_sceSifInitRpc(int mode)
 {
     if (!s_StopAttempted) {
-        __real_SifInitRpc(mode);
+        __real_sceSifInitRpc(mode);
         return;
     }
 
@@ -98,7 +98,7 @@ void __wrap_SifInitRpc(int mode)
     /* Call 1 is SMS_IOPReset's pre-reset SifInitRpc at E04. */
     if (s_RpcInitCount == 2) {
         SMS_ExitCrumb(30, "RPC2 enter");
-        __real_SifInitRpc(mode);
+        __real_sceSifInitRpc(mode);
         SMS_ExitCrumb(31, "RPC2 done");
         s_DiagPhase = 1;
         return;
@@ -106,13 +106,13 @@ void __wrap_SifInitRpc(int mode)
 
     if (s_RpcInitCount == 3) {
         SMS_ExitCrumb(44, "RPC3 enter");
-        __real_SifInitRpc(mode);
+        __real_sceSifInitRpc(mode);
         SMS_ExitCrumb(45, "RPC3 done");
         s_DiagPhase = 8;
         return;
     }
 
-    __real_SifInitRpc(mode);
+    __real_sceSifInitRpc(mode);
 }
 
 int __real_sbv_patch_enable_lmb(void);
