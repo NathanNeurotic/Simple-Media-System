@@ -1,0 +1,38 @@
+Unable to find image 'ps2dev/ps2dev:v2.0.0' locally
+v2.0.0: Pulling from ps2dev/ps2dev
+6a0ac1617861: Pulling fs layer
+43565a7c7736: Pulling fs layer
+8ecee3026254: Pulling fs layer
+8ecee3026254: Verifying Checksum
+8ecee3026254: Download complete
+6a0ac1617861: Verifying Checksum
+6a0ac1617861: Download complete
+6a0ac1617861: Pull complete
+43565a7c7736: Verifying Checksum
+43565a7c7736: Download complete
+43565a7c7736: Pull complete
+8ecee3026254: Pull complete
+Digest: sha256:8e6dc4564598ecce94d078d3111b8c4803f88faa94a6f183ac60240a0ae010a1
+Status: Downloaded newer image for ps2dev/ps2dev:v2.0.0
+make: Entering directory '/tmp/udpfs/smap'
+rm -f -r obj/ irx/
+printf '%s\n' "#include \"irx.h\"" > obj/build-exports.c
+cat src/exports.tab >> obj/build-exports.c
+mipsel-none-elf-gcc -Iinclude -I../common -I../common/include -D_IOP -fno-builtin -G0 -Os -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/iop/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc/ -mno-check-zero-division -msoft-float -mno-explicit-relocs -fno-toplevel-reorder -c obj/build-exports.c -o obj/exports.o
+mipsel-none-elf-gcc -Iinclude -I../common -I../common/include -D_IOP -fno-builtin -G0 -Os -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/iop/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc/ -mno-check-zero-division -msoft-float -mno-explicit-relocs -c src/main.c -o obj/main.o
+mipsel-none-elf-gcc -Iinclude -I../common -I../common/include -D_IOP -fno-builtin -G0 -Os -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/iop/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc/ -mno-check-zero-division -msoft-float -mno-explicit-relocs -c src/smap.c -o obj/smap.o
+mipsel-none-elf-gcc -Iinclude -I../common -I../common/include -D_IOP -fno-builtin -G0 -Os -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/iop/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc/ -mno-check-zero-division -msoft-float -mno-explicit-relocs -c src/xfer.c -o obj/xfer.o
+mipsel-none-elf-gcc -Iinclude -I../common -I../common/include -D_IOP -fno-builtin -G0 -Os -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/iop/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc/ -mno-check-zero-division -msoft-float -mno-explicit-relocs -c src/smap_ctl.c -o obj/smap_ctl.o
+printf '%s\n' "#include \"irx_imports.h\"" > obj/build-imports.c
+cat src/imports.lst >> obj/build-imports.c
+mipsel-none-elf-gcc -Iinclude -I../common -I../common/include -D_IOP -fno-builtin -G0 -Os -Wall -gdwarf-2 -gz  -I/usr/local/ps2dev/ps2sdk/iop/include -I/usr/local/ps2dev/ps2sdk/common/include -I. -Isrc/ -mno-check-zero-division -msoft-float -mno-explicit-relocs -fno-toplevel-reorder -c obj/build-imports.c -o obj/imports.o
+obj/build-imports.c:29:1: error: unknown type name 'ioman_IMPORTS_start'; did you mean 'intrman_IMPORTS_start'?
+   29 | ioman_IMPORTS_start
+      | ^~~~~~~~~~~~~~~~~~~
+      | intrman_IMPORTS_start
+obj/build-imports.c:31:1: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'ioman_IMPORTS_end'
+   31 | ioman_IMPORTS_end
+      | ^~~~~~~~~~~~~~~~~
+make: *** [/usr/local/ps2dev/ps2sdk/samples/Makefile.iopglobal:129: obj/imports.o] Error 1
+rm obj/build-exports.c obj/build-imports.c
+make: Leaving directory '/tmp/udpfs/smap'
