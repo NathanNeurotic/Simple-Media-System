@@ -20,6 +20,8 @@ jobs:
           ref: fix/udpfs-exit-quiesce
 
       - name: Build updated UDPFS SMAP IRX
+        id: build
+        continue-on-error: true
         run: |
           set +e
           docker run --rm \
@@ -33,15 +35,25 @@ jobs:
               export PATH="/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/ee/bin:$PATH"
               make -C smap clean all
               cp smap/irx/smap.irx /out/udpfs_smap.irx
-            ' > /tmp/udpfs-smap-build.log 2>&1
+            ' > udpfs-build-error.log 2>&1
           status=$?
           if [ "$status" -ne 0 ]; then
-            grep -E -i 'error:|undefined reference|no rule to make|make(\[[0-9]+\])?: \*\*\*' /tmp/udpfs-smap-build.log || tail -n 50 /tmp/udpfs-smap-build.log
             exit "$status"
           fi
-          tail -n 10 /tmp/udpfs-smap-build.log
+          rm -f udpfs-build-error.log
+
+      - name: Commit compiler diagnostics
+        if: steps.build.outcome == 'failure'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add udpfs-build-error.log
+          git commit -m 'ci: capture UDPFS SMAP build failure'
+          git push origin HEAD:fix/udpfs-exit-quiesce
+          exit 1
 
       - name: Compress and verify IRX
+        if: steps.build.outcome == 'success'
         run: |
           python3 - <<'PY'
           import lzma
@@ -60,6 +72,7 @@ jobs:
           python3 tools/irx_imports.py --assert dev9=1.1 irx/udpfs_smap.irx
 
       - name: Commit generated module
+        if: steps.build.outcome == 'success'
         run: |
           if git diff --quiet -- irx/udpfs_smap.irx irx/udpfs_smap.irx.xz; then
             echo 'Generated IRX is already current.'
