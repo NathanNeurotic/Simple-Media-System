@@ -1,3 +1,5 @@
+#include <iomanX.h>
+
 thbase_IMPORTS_start
 I_CreateThread
 I_StartThread
