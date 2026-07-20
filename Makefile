@@ -52,7 +52,7 @@ ifeq ($(BDM),1)
   EE_OBJS += $(IOP_OBJS)
   EE_OBJS += libds34usb.o libds34bt.o SMS_UDPFSExit.o
   EE_LDFLAGS += -Wl,--wrap=SMS_IOPReset -Wl,--wrap=SMS_EExec -Wl,--wrap=SMS_IOPowerOff \
-                -Wl,--wrap=SifIopReset -Wl,--wrap=SifInitRpc -Wl,--wrap=SifIopSync \
+                -Wl,--wrap=SifIopReset -Wl,--wrap=sceSifInitRpc -Wl,--wrap=SifIopSync \
                 -Wl,--wrap=sbv_patch_enable_lmb -Wl,--wrap=sbv_patch_disable_prefix_check \
                 -Wl,--wrap=sbv_patch_fileio -Wl,--wrap=FlushCache
   EE_CFLAGS += -DBDM
