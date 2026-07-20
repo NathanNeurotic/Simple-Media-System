@@ -26,7 +26,7 @@ I_RegisterLibraryEntries
 loadcore_IMPORTS_end
 
 iomanX_IMPORTS_start
-I_iomanX_AddDrv
+I_AddDrv
 iomanX_IMPORTS_end
 
 thevent_IMPORTS_start
