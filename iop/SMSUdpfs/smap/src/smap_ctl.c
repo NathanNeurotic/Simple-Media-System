@@ -12,6 +12,8 @@
 #define SMAPCTL_STOP_TIMEOUT_MS 2000
 #define SMAPCTL_DEVCTL_STOP     0
 
+extern struct SmapDriverData SmapDriverData;
+
 static int s_Stopped;
 
 /*
