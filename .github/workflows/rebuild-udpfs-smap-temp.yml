@@ -1,0 +1,62 @@
+name: rebuild UDPFS SMAP for exit fix
+
+on:
+  push:
+    branches:
+      - fix/udpfs-exit-quiesce
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/udpfs-exit-quiesce
+
+      - name: Build updated UDPFS SMAP IRX
+        run: |
+          docker run --rm \
+            -v "$PWD/iop/SMSUdpfs":/src \
+            -v "$PWD/irx":/out \
+            ps2dev/ps2dev:v2.0.0 sh -c '
+              set -e
+              apk add --no-cache build-base >/dev/null 2>&1
+              cp -r /src /tmp/udpfs
+              cd /tmp/udpfs
+              export PATH="/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/ee/bin:$PATH"
+              make -C smap clean all
+              cp smap/irx/smap.irx /out/udpfs_smap.irx
+            '
+
+      - name: Compress and verify IRX
+        run: |
+          python3 - <<'PY'
+          import lzma
+          from pathlib import Path
+          p = Path('irx/udpfs_smap.irx')
+          data = p.read_bytes()
+          packed = lzma.compress(
+              data,
+              format=lzma.FORMAT_XZ,
+              check=lzma.CHECK_CRC32,
+              filters=[{'id': lzma.FILTER_LZMA2, 'preset': 9, 'dict_size': 1 << 20}],
+          )
+          Path(str(p) + '.xz').write_bytes(packed)
+          assert lzma.decompress(packed, format=lzma.FORMAT_XZ) == data
+          PY
+          python3 tools/irx_imports.py --assert dev9=1.1 irx/udpfs_smap.irx
+
+      - name: Commit generated module
+        run: |
+          if git diff --quiet -- irx/udpfs_smap.irx irx/udpfs_smap.irx.xz; then
+            echo 'Generated IRX is already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add irx/udpfs_smap.irx irx/udpfs_smap.irx.xz
+          git commit -m 'build: refresh UDPFS SMAP IRX for exit quiesce'
+          git push origin HEAD:fix/udpfs-exit-quiesce
