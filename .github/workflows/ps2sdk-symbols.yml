@@ -3,6 +3,7 @@ name: ps2sdk-symbols
 on:
   push:
     branches: ['fix/udpfs-exit-quiesce']
+  pull_request:
   workflow_dispatch:
 
 jobs:
