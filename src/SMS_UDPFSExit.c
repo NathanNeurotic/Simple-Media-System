@@ -90,7 +90,8 @@ void __wrap_SifInitRpc(int mode)
 
     ++s_RpcInitCount;
 
-    /* Call 1 is SMS_IOPReset's pre-reset SifInitRpc at E04. */
+    /* Call 1 is SMS_IOPReset's pre-reset SifInitRpc at E04.  E10 covered every
+     * operation through E11, so split the two later RPC calls explicitly. */
     if (s_RpcInitCount == 2) {
         SMS_ExitCrumb(30, "RPC2 enter");
         __real_SifInitRpc(mode);
