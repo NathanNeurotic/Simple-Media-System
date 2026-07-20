@@ -51,7 +51,7 @@ ifeq ($(BDM),1)
   EE_LIBS += -lmc -lpadx -lfileXio
   EE_OBJS += $(IOP_OBJS)
   EE_OBJS += libds34usb.o libds34bt.o SMS_UDPFSExit.o
-  EE_LDFLAGS += -Wl,--wrap=SMS_IOPReset -Wl,--wrap=SMS_EExec -Wl,--wrap=SMS_IOPowerOff
+  EE_LDFLAGS += -Wl,--wrap=SMS_IOPReset -Wl,--wrap=SMS_EExec -Wl,--wrap=SMS_IOPowerOff -Wl,--wrap=SifIopReset
   EE_CFLAGS += -DBDM
 endif
 
@@ -73,11 +73,11 @@ vpath %.jpg images/
 # and loaded via SifExecDecompModuleBuffer. bin2c still names the array <name>_irx.
 $(EE_OBJ_DIR)%_irx.c: %.irx.xz
 	bin2c $< $@ $(*F)_irx
-	@sed 's/aligned(16)/aligned(16), section(\"data\")/' -i $@
+	@sed 's/aligned(16)/aligned(16), section("data")/' -i $@
 
 $(EE_OBJ_DIR)%_jpg.c: %.jpg
 	bin2c $< $@ $(*F)_jpg
-	@sed 's/aligned(16)/aligned(16), section(\"data\")/' -i $@
+	@sed 's/aligned(16)/aligned(16), section("data")/' -i $@
 
 $(EE_OBJ_DIR)%.o : $(EE_OBJ_DIR)%.c
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
@@ -119,7 +119,6 @@ rebuild: clean all
 # the release. bin/SMS.elf stays the canonical / fallback download; bin/SMS-packed.elf is
 # the same program compressed ~48% smaller ( 1.77MB -> ~0.9MB ) that decompresses itself
 # into RAM at boot. Depends on `all` so it packs the fully linked + stripped ELF.
-# ps2-packer ships in the ps2dev toolchain image ( /usr/local/ps2dev/bin ).
 pack: all
 	ps2-packer $(EE_BIN) $(EE_BIN_DIR)SMS-packed.elf
 
