@@ -51,7 +51,10 @@ ifeq ($(BDM),1)
   EE_LIBS += -lmc -lpadx -lfileXio
   EE_OBJS += $(IOP_OBJS)
   EE_OBJS += libds34usb.o libds34bt.o SMS_UDPFSExit.o
-  EE_LDFLAGS += -Wl,--wrap=SMS_IOPReset -Wl,--wrap=SMS_EExec -Wl,--wrap=SMS_IOPowerOff -Wl,--wrap=SifIopReset
+  EE_LDFLAGS += -Wl,--wrap=SMS_IOPReset -Wl,--wrap=SMS_EExec -Wl,--wrap=SMS_IOPowerOff \
+                -Wl,--wrap=SifIopReset -Wl,--wrap=SifInitRpc -Wl,--wrap=SifIopSync \
+                -Wl,--wrap=sbv_patch_enable_lmb -Wl,--wrap=sbv_patch_disable_prefix_check \
+                -Wl,--wrap=sbv_patch_fileio -Wl,--wrap=FlushCache
   EE_CFLAGS += -DBDM
 endif
 
@@ -94,7 +97,7 @@ $(EE_OBJ_DIR)SMS_MSMPEG4.o : $(EE_SRC_DIR)SMS_MSMPEG4.c $(EE_INC_DIR)SMS_MPEG.h
 $(EE_OBJ_DIR)SMS_MPEG.o : $(EE_SRC_DIR)SMS_MPEG.c $(EE_INC_DIR)SMS_MPEG.h
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(EE_OBJ_DIR)SMS_H263.o : $(EE_SRC_DIR)SMS_H263.c $(EE_INC_DIR)SMS_MPEG.h
+$(EE_OBJ_DIR)SMS_H263.o : $(EE_SRC_DIR)SMS_H263.c
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(EE_OBJ_DIR)SMS_GS_1.o : $(EE_SRC_DIR)SMS_GS_1.c
@@ -119,6 +122,7 @@ rebuild: clean all
 # the release. bin/SMS.elf stays the canonical / fallback download; bin/SMS-packed.elf is
 # the same program compressed ~48% smaller ( 1.77MB -> ~0.9MB ) that decompresses itself
 # into RAM at boot. Depends on `all` so it packs the fully linked + stripped ELF.
+# ps2-packer ships in the ps2dev toolchain image ( /usr/local/ps2dev/bin ).
 pack: all
 	ps2-packer $(EE_BIN) $(EE_BIN_DIR)SMS-packed.elf
 
