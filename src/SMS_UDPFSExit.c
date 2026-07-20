@@ -2,6 +2,9 @@
 
 #ifdef BDM
 #include <fileXio_rpc.h>
+
+/* Must match SMAPCTL_DEVCTL_STOP in iop/SMSUdpfs/smap/src/smap_ctl.c. */
+#define SMS_UDPFS_DEVCTL_STOP 0
 #endif
 
 /* The legacy exit implementations live in large, unrelated translation units.
@@ -23,7 +26,7 @@ static void _stop_udpfs_once(void)
     s_StopAttempted = 1;
     SMS_ExitCrumb(3, "UDPFS stop");
 
-    result = fileXioDevctl("smapctl:", 0, NULL, 0, NULL, 0);
+    result = fileXioDevctl("smapctl:", SMS_UDPFS_DEVCTL_STOP, NULL, 0, NULL, 0);
     if (result < 0)
         SMS_ExitCrumb(3, "UDPFS stop fail");
 #endif
