@@ -19,8 +19,6 @@
 
 #define HIST_SIZE 32
 
-extern char g_pBootDir[];   /* SMS_Config.c: "<dev>/path/" on a non-mc boot, empty on mc */
-
 static SMS_List* s_pHst;
 
 static char s_pHistory[] __attribute__(   (  aligned( 1 ), section( ".data" )  )   ) = "SMS/SMS.hst";
@@ -60,10 +58,9 @@ void SMS_HistoryLoad ( void ) {
 
  /* memory-card fallback */
 #ifdef BDM
-/* fio, NOT libmc ( same fix as config / palette / locale / skin ): SMS_HistorySave writes
- * "mc?:/SMS/SMS.hst" via fio, but this fallback read it via the raw async libmc, which
- * cannot see the fio-created mc?:/SMS dir -> every resume point was silently lost across
- * an mc boot. Read the SAME path via fio, symmetric with the save. */
+/* fio, NOT libmc ( same fix as config / palette / locale / skin ): historical
+ * SMS.hst files may have been created through fio, so read the same path through
+ * fio for compatibility. History is no longer persisted by this build. */
  {
   char lMC[ 5 + sizeof ( s_pHistory ) ];
 
@@ -144,46 +141,8 @@ void SMS_HistoryAdd ( const char* apPath, s64  aPTS ) {
 }  /* end SMS_HistoryAdd */
 
 void SMS_HistorySave ( void ) {
-
- int  lFD;
- char lPath[ 128 ];
-
- if ( g_pBootDir[ 0 ] ) {   /* CWD boot -> save next to the ELF */
-  strcpy ( lPath, g_pBootDir );
-  strcat ( lPath, "SMS.hst" );
- } else {
-  lPath[ 0 ] = 'm';
-  lPath[ 1 ] = 'c';
-  lPath[ 2 ] = '0' + g_MCSlot;
-  lPath[ 3 ] = ':';
-  lPath[ 4 ] = '/';
-  strcpy ( &lPath[ 5 ], s_pHistory );
- }  /* end else */
-
-/* O_TRUNC: the record stream is VARIABLE length -- entries are removed ( SMS_HistoryRemove
- * -> SMS_ListRemove ) and popped at the HIST_SIZE cap, and each record is a 2-byte length +
- * a path of that length + 8 bytes, so even a constant 32 entries changes byte size as paths
- * differ. Without O_TRUNC a shorter save left the old file's tail in place, and SMS_HistoryLoad
- * reads records until fioRead(&lSize,2) != 2 -- so it parsed that stale tail as a PHANTOM
- * resume entry ( garbage path + garbage PTS ) instead of stopping. ( SMS_ListPushBackBuf
- * callocs, so a short read is at least NUL-terminated and cannot over-read. ) */
- lFD = fioOpen ( lPath, O_CREAT | O_WRONLY | O_TRUNC );
-
- if ( lFD >= 0 ) {
-
-  SMS_ListNode* lpNode = s_pHst -> m_pHead;
-
-  while ( lpNode ) {
-   unsigned short lLen = strlen (  _STR( lpNode )  );
-   fioWrite (  lFD, &lLen,              2 );
-   fioWrite (  lFD, _STR( lpNode ), lLen  );
-   fioWrite (  lFD, &lpNode -> m_Param, 8 );
-   lpNode = lpNode -> m_pNext;
-  }  /* end while */
-
-  fioClose ( lFD );
-
- }  /* end if */
+ /* Do not persist resume history. On filesystem boots this used to create SMS.hst
+  * next to the ELF, including on MMCE devices, where SMS must not write history. */
 
 }  /* end SMS_HistorySave */
 

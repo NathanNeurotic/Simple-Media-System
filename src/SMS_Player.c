@@ -1465,8 +1465,7 @@ static void _Destroy ( void* apPlayer ) {
   if ( s_Player.m_Flags & SMS_FLAGS_USER_STOP ) {
    s64      lVideoTime = SMS_Rescale ( s_Player.m_VideoTime, s_Player.m_PDW22Base, s_Player.m_PDW22Ratio );
    SMS_HistoryAdd ( lPath, lVideoTime );
-   SMS_HistorySave ();
-  } else if (  SMS_HistoryRemove ( lPath )  ) SMS_HistorySave ();
+  } else SMS_HistoryRemove ( lPath );
 
  }  /* end if */
 
