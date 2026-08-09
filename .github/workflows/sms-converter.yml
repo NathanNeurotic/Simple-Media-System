@@ -20,10 +20,10 @@ jobs:
         os: [ubuntu-latest, windows-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Set up Python 3.12
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: "3.12"
 
@@ -73,7 +73,7 @@ jobs:
         cd dist-artifact && zip -r SMS-Media-Converter-Linux.zip SMS-Media-Converter-Linux/
 
     - name: Upload GitHub Actions Single EXE & Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: SMS-Media-Converter-${{ runner.os }}-${{ github.sha }}
         path: |
@@ -163,10 +163,14 @@ jobs:
     name: Build (Windows 7 compatible)
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
+    # setup-python's OWN major version is not one of the pins described above -- it only
+    # selects an interpreter. "3.8" still resolves to 3.8.10 here, which is python.org's last
+    # Windows binary for the 3.8 line, so that ceiling is upstream's and not this action's.
+    # python-version is the line that must not move.
     - name: Set up Python 3.8 (last release supporting Windows 7)
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: "3.8"
 
@@ -205,7 +209,7 @@ jobs:
         copy dist\SMS-Media-Converter-Win7.exe dist-artifact\SMS-Media-Converter-Win7.exe
 
     - name: Upload Windows 7 Executable
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: SMS-Media-Converter-Win7-${{ github.sha }}
         path: dist-artifact/*.exe
