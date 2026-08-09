@@ -83,7 +83,6 @@ static SMString s_StrAddIP  [ 4 ] __attribute__(   (  section( ".data" )  )   ) 
 static SMString s_StrValName   __attribute__(   (  section( ".data" )  )   ) = { 0, s_AddInfo.m_ServerName };
 static SMString s_StrValUser   __attribute__(   (  section( ".data" )  )   ) = { 0, s_AddInfo.m_UserName   };
 static SMString s_StrValPass   __attribute__(   (  section( ".data" )  )   ) = { 0, s_AddInfo.m_Password   };
-static SMString s_StrValClient __attribute__(   (  section( ".data" )  )   ) = { 0, s_AddInfo.m_ClientName };
 static SMString s_StrValPort   __attribute__(   (  section( ".data" )  )   ) = { 0, s_AddPort            };
 static SMString s_StrValShare  __attribute__(   (  section( ".data" )  )   ) = { 0, s_AddInfo.m_Share    };
 
@@ -477,23 +476,13 @@ static void _addpass_handler ( GUIMenu* apMenu, int aDir ) {
 
 }  /* end _addpass_handler */
 
-static void _addclient_handler ( GUIMenu* apMenu, int aDir ) {
-
- GUI_TextInput (  s_AddInfo.m_ClientName, sizeof ( s_AddInfo.m_ClientName ), STR_SMB_CLIENT_NAME.m_pStr  );
- s_StrValClient.m_Len = strlen ( s_AddInfo.m_ClientName );
-
- GUIMenuSMS_UpdateStatus ( apMenu );
- apMenu -> Redraw ( apMenu );
-
-}  /* end _addclient_handler */
-
 static void _addport_handler ( GUIMenu* apMenu, int aDir ) {
 
- /* TCP port for the direct-TCP smbman connection ( default 1445 for the
+ /* TCP port for the direct-TCP smbman connection ( default 445 for the
   * PS2-Servers SMB1 host; 445 for a normal SMB server, 139 for NetBIOS ). */
  GUI_TextInput (  s_AddPort, sizeof ( s_AddPort ), STR_SMB_PORT.m_pStr  );
 
- if ( !s_AddPort[ 0 ] ) strcpy ( s_AddPort, "1445" );
+ if ( !s_AddPort[ 0 ] ) strcpy ( s_AddPort, "445" );
 
  s_StrValPort.m_Len = strlen ( s_AddPort );
 
@@ -549,15 +538,17 @@ static void _addsave_handler ( GUIMenu* apMenu, int aDir ) {
 
  if (  !s_AddInfo.m_ClientName[ 0 ]  ) strcpy ( s_AddInfo.m_ClientName, "PS2" );
 
- /* Persist the typed TCP port ( default 1445 when empty / 0 ). */
+ /* Persist the typed TCP port ( default 445 when empty / 0 ). */
  s_AddInfo.m_Port = atoi ( s_AddPort );
- if ( s_AddInfo.m_Port <= 0 || s_AddInfo.m_Port > 65535 ) s_AddInfo.m_Port = 1445;
+ if ( s_AddInfo.m_Port <= 0 || s_AddInfo.m_Port > 65535 ) s_AddInfo.m_Port = 445;
 
  strupr ( s_AddInfo.m_ServerName );
 
  s_AddInfo.m_fAsync = 1;
 
- if ( s_AddDescr[ 0 ] == '\x00' ) strcpy ( s_AddDescr, s_AddInfo.m_ServerName );
+/* The server list has no separate editable description field, so its label
+* should always follow the current Server Name. */
+strcpy ( s_AddDescr, s_AddInfo.m_ServerName );
 
  if ( !g_Config.m_pSMBList ) g_Config.m_pSMBList = SMS_ListInit ();
 
@@ -591,18 +582,17 @@ static void _addsave_handler ( GUIMenu* apMenu, int aDir ) {
 
 }  /* end _addsave_handler */
 
-static GUIMenuItem s_AddMenu[ 12 ] __attribute__(   (  section( ".data" )  )   ) = {
- { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP1,      0, 0, _addip1_handler,   0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP2,      0, 0, _addip2_handler,   0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP3,      0, 0, _addip3_handler,   0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP4,      0, 0, _addip4_handler,   0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_SMB_SERVER_NAME,  0, 0, _addname_handler,  0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_SMB_USER_NAME,    0, 0, _adduser_handler,  0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_SMB_PASSWORD,    0, 0, _addpass_handler,  0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_SMB_CLIENT_NAME,  0, 0, _addclient_handler,0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_SMB_PORT,        0, 0, _addport_handler,  0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_SMB_SHARE,       0, 0, _addshare_handler, 0, 0 },
- { 0,                   &STR_SAVE_SETTINGS,0, 0, _addsave_handler,  0, 0 }
+static GUIMenuItem s_AddMenu[ 10 ] __attribute__(   (  section( ".data" )  )   ) = {
+ { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP1,          0, 0, _addip1_handler,  0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP2,          0, 0, _addip2_handler,  0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP3,          0, 0, _addip3_handler,  0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_PS2_IP4,          0, 0, _addip4_handler,  0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_SMB_SERVER_NAME,  0, 0, _addname_handler, 0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_SMB_USER_NAME,    0, 0, _adduser_handler, 0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_SMB_PASSWORD,     0, 0, _addpass_handler, 0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_SMB_PORT,         0, 0, _addport_handler, 0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_SMB_SHARE,        0, 0, _addshare_handler,0, 0 },
+ { 0,                   &STR_SAVE_SETTINGS,    0, 0, _addsave_handler, 0, 0 }
 };
 
 static void _smb_addedit_form ( GUIMenu* apMenu, SMS_ListNode* apNode ) {
@@ -646,35 +636,33 @@ static void _smb_addedit_form ( GUIMenu* apMenu, SMS_ListNode* apNode ) {
 
  }  /* end else */
 
- /* Port: default 1445 ( PS2-Servers ) for a new server or an old record whose
+ /* Port: default 445 ( PS2-Servers ) for a new server or an old record whose
   * m_Port is 0 / unset. */
- sprintf (  s_AddPort, "%d", s_AddInfo.m_Port ? s_AddInfo.m_Port : 1445  );
+ sprintf (  s_AddPort, "%d", s_AddInfo.m_Port ? s_AddInfo.m_Port : 445  );
 
  for ( i = 0; i < 4; ++i ) s_StrAddIP[ i ].m_Len = strlen ( s_AddIP[ i ] );
 
  s_StrValName.m_Len   = strlen ( s_AddInfo.m_ServerName );
  s_StrValUser.m_Len   = strlen ( s_AddInfo.m_UserName   );
  s_StrValPass.m_Len   = strlen ( s_AddInfo.m_Password   );
- s_StrValClient.m_Len = strlen ( s_AddInfo.m_ClientName );
  s_StrValPort.m_Len   = strlen ( s_AddPort             );
  s_StrValShare.m_Len  = strlen ( s_AddInfo.m_Share     );
 
  for ( i = 0; i < 4; ++i ) s_AddMenu[ i ].m_IconRight = ( unsigned int )&s_StrAddIP[ i ];
 
- s_AddMenu[ 4  ].m_IconRight = ( unsigned int )&s_StrValName;
- s_AddMenu[ 5  ].m_IconRight = ( unsigned int )&s_StrValUser;
- s_AddMenu[ 6  ].m_IconRight = ( unsigned int )&s_StrValPass;
- s_AddMenu[ 7  ].m_IconRight = ( unsigned int )&s_StrValClient;
- s_AddMenu[ 8  ].m_IconRight = ( unsigned int )&s_StrValPort;
- s_AddMenu[ 9  ].m_IconRight = ( unsigned int )&s_StrValShare;
- s_AddMenu[ 10 ].m_IconRight = GUICON_SAVE;
+s_AddMenu[ 4 ].m_IconRight = ( unsigned int )&s_StrValName;
+s_AddMenu[ 5 ].m_IconRight = ( unsigned int )&s_StrValUser;
+s_AddMenu[ 6 ].m_IconRight = ( unsigned int )&s_StrValPass;
+s_AddMenu[ 7 ].m_IconRight = ( unsigned int )&s_StrValPort;
+s_AddMenu[ 8 ].m_IconRight = ( unsigned int )&s_StrValShare;
+s_AddMenu[ 9 ].m_IconRight = GUICON_SAVE;
 
  lpState = GUI_MenuPushState ( apMenu );
 
  lpState -> m_pItems =
  lpState -> m_pFirst =
  lpState -> m_pCurr  = s_AddMenu;
- lpState -> m_pLast  = &s_AddMenu[ 10 ];
+ lpState -> m_pLast  = &s_AddMenu[ 9 ];
  lpState -> m_pTitle = &STR_SMB_EDIT_TITLE;
 
  GUIMenuSMS_UpdateStatus ( apMenu );
