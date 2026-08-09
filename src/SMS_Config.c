@@ -891,93 +891,123 @@ int SMS_SaveConfig ( void ) {
 
  if ( lRes > -2 ) {
 
-/* libmc's MC_GetDir does NOT see the fio-created mc?:/SMS dir on the modern
- * iomanX + mcman stack, so the old MC_GetDir precheck read "dir absent" on EVERY
- * save after the first, and `!fioMkdir(existing)` == !(-4 EEXIST) == 0 -> the gate
- * went false and the config write was silently skipped ( "saves once, then Error"
- * -- the mc / SMB-with-card save bug ). Mirror SMS_SaveSMBInfo + the IP-config save:
- * create the dir via fio and accept 0 ( created ) or -4 ( already exists ). Coherent
- * with the fio SMS_LoadConfig; the real success test stays the fioWrite below. */
-  lRes = fioMkdir ( g_pMC0SMS );
+/* The directory may already exist. On some real memory-card / mcman+iomanX
+ * combinations fioMkdir() can return an unexpected error even though the
+ * directory is present and writable. Do not use mkdir's return value as the
+ * gate for saving the config. The fioOpen/fioWrite result is authoritative. */
+fioMkdir ( g_pMC0SMS );
 
-  if (  lRes == 0 || lRes == -4  ) {
+{
+ int lFD = fioOpen ( s_pIcoSys, O_RDONLY );
 
-   int lFD = fioOpen ( s_pIcoSys, O_RDONLY );
+ if ( lFD < 0 ) {
 
-   if ( lFD < 0 ) {
+  static int lBgClr[ 4 ][ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
+   {  68,  23, 116,  0 },
+   { 255, 255, 255,  0 },
+   { 255, 255, 255,  0 },
+   {  68,  23, 116,  0 }
+  };
 
-    static int lBgClr[ 4 ][ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
-     {  68,  23, 116,  0 },
-     { 255, 255, 255,  0 },
-     { 255, 255, 255,  0 },
-     {  68,  23, 116,  0 }
-	};
-    static float lLightDir[ 3 ][ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
-     {  0.5F,  0.5F,  0.5F, 0.0F },
-     {  0.0F, -0.4F, -0.1F, 0.0F },
-     { -0.5F, -0.5F,  0.5F, 0.0F }
-	};
-	static float lLightCol[ 3 ][ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
-     { 0.3F, 0.3F, 0.3F, 0.0F },
-     { 0.4F, 0.4F, 0.4F, 0.0F },
-     { 0.5F, 0.5F, 0.5F, 0.0F }
-	};
-	static float lAmb[ 4 ] __attribute__(   (  section( ".data" )  )    ) = { 0.5F, 0.5F, 0.5F, 0.0F };
+  static float lLightDir[ 3 ][ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
+   {  0.5F,  0.5F,  0.5F, 0.0F },
+   {  0.0F, -0.4F, -0.1F, 0.0F },
+   { -0.5F, -0.5F,  0.5F, 0.0F }
+  };
 
-    SMS_MCIcon lIcon; memset ( &lIcon, 0, sizeof ( SMS_MCIcon )  );
+  static float lLightCol[ 3 ][ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
+   { 0.3F, 0.3F, 0.3F, 0.0F },
+   { 0.4F, 0.4F, 0.4F, 0.0F },
+   { 0.5F, 0.5F, 0.5F, 0.0F }
+  };
 
-	strcpy ( lIcon.m_Header, s_pPS2D );
-	strcpy_sjis (  ( short* )&lIcon.m_Title, s_pSMS + 1  );
+  static float lAmb[ 4 ] __attribute__(   (  section( ".data" )  )    ) = {
+   0.5F, 0.5F, 0.5F, 0.0F
+  };
 
-	lIcon.m_Offset =   16;
-	lIcon.m_Trans  = 0x60;
+  SMS_MCIcon lIcon;
 
-    memcpy (  lIcon.m_ClrBg,    lBgClr,    sizeof ( lBgClr    )  );
-    memcpy (  lIcon.m_LightDir, lLightDir, sizeof ( lLightDir )  );
-    memcpy (  lIcon.m_LightCol, lLightCol, sizeof ( lLightCol )  );
-    memcpy (  lIcon.m_LightAmb, lAmb,      sizeof ( lAmb      )  );
+  memset ( &lIcon, 0, sizeof ( SMS_MCIcon ) );
 
-    strcpy ( lIcon.m_View, s_pSMSICN );
-    strcpy ( lIcon.m_Copy, s_pSMSICN );
-    strcpy ( lIcon.m_Del,  s_pSMSICN );
+  strcpy      ( lIcon.m_Header, s_pPS2D );
+  strcpy_sjis ( ( short* )&lIcon.m_Title, s_pSMS + 1 );
 
- 	lFD = fioOpen ( s_pIcoSys, O_WRONLY | O_CREAT );
+  lIcon.m_Offset =   16;
+  lIcon.m_Trans  = 0x60;
 
-	if ( lFD >= 0 ) {
+  memcpy ( lIcon.m_ClrBg,    lBgClr,    sizeof ( lBgClr    ) );
+  memcpy ( lIcon.m_LightDir, lLightDir, sizeof ( lLightDir ) );
+  memcpy ( lIcon.m_LightCol, lLightCol, sizeof ( lLightCol ) );
+  memcpy ( lIcon.m_LightAmb, lAmb,      sizeof ( lAmb      ) );
 
-     fioWrite (  lFD, &lIcon, sizeof ( lIcon )  );
-     fioClose ( lFD );
+  strcpy ( lIcon.m_View, s_pSMSICN );
+  strcpy ( lIcon.m_Copy, s_pSMSICN );
+  strcpy ( lIcon.m_Del,  s_pSMSICN );
 
-     lFD = fioOpen ( s_pSMSIcn, O_WRONLY | O_CREAT );
+  lFD = fioOpen ( s_pIcoSys, O_WRONLY | O_CREAT );
 
-     if ( lFD >= 0 ) {
+  if ( lFD >= 0 ) {
 
-      fioWrite (  lFD, g_IconSMS, sizeof ( g_IconSMS )  );
-      fioClose ( lFD );
+   fioWrite ( lFD, &lIcon, sizeof ( lIcon ) );
+   fioClose ( lFD );
 
-     }  /* end if */
-
-    }  /* end if */
-
-   } else fioClose ( lFD );
-
-   lFD = fioOpen ( s_pMC0SMC, O_WRONLY | O_CREAT );
+   lFD = fioOpen ( s_pSMSIcn, O_WRONLY | O_CREAT );
 
    if ( lFD >= 0 ) {
 
-    int lWr = fioWrite ( lFD, &g_Config, sizeof ( g_Config ) );
-    if ( lWr == ( int )sizeof ( g_Config ) ) retVal = 1;
-    else sprintf ( g_SaveDiag, "Save: mc write %d", lWr );   /* TEMP diag */
-
+    fioWrite ( lFD, g_IconSMS, sizeof ( g_IconSMS ) );
     fioClose ( lFD );
 
-   } else sprintf ( g_SaveDiag, "Save: mc open %d %s", lFD, s_pMC0SMC );   /* TEMP diag: config open */
+   }  /* end if */
 
-  } else sprintf ( g_SaveDiag, "Save: mkdir %d %s", lRes, g_pMC0SMS );   /* TEMP diag: mc?:/SMS mkdir */
+  }  /* end if */
 
- } else sprintf ( g_SaveDiag, "Save: no card (%d)", lRes );   /* TEMP diag: _mc_get_info said absent */
+ } else {
 
- return retVal;
+  fioClose ( lFD );
+
+ }  /* end else */
+
+
+ /* The actual config write is the authoritative save test. */
+ lFD = fioOpen ( s_pMC0SMC, O_WRONLY | O_CREAT );
+
+ if ( lFD >= 0 ) {
+
+  int lWr = fioWrite ( lFD, &g_Config, sizeof ( g_Config ) );
+
+  if ( lWr == ( int )sizeof ( g_Config ) ) {
+
+   retVal = 1;
+
+  } else {
+
+   sprintf ( g_SaveDiag, "Save: mc write %d", lWr );
+
+  }  /* end else */
+
+  fioClose ( lFD );
+
+ } else {
+
+  sprintf (
+   g_SaveDiag,
+   "Save: mc open %d %s",
+   lFD,
+   s_pMC0SMC
+  );
+
+ }  /* end else */
+
+}
+
+} else {
+
+ sprintf ( g_SaveDiag, "Save: no card (%d)", lRes );
+
+}  /* end else */
+
+return retVal;
 
 }  /* end SMS_SaveConfig */
 
