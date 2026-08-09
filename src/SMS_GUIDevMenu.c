@@ -554,6 +554,10 @@ SMBLoginInfo* _lookup_login_info ( void ) {
 int _smb_logon ( void ) {
 
  int           lRes;
+#ifdef BDM
+ int           lTry;
+ int           lWait;
+#endif
  smbLogOn_in_t lLogOn;
  SMBLoginInfo* lpInfo = _lookup_login_info ();
 
@@ -563,17 +567,45 @@ int _smb_logon ( void ) {
   return -1;
  }  /* end if */
 
- memset (  &lLogOn, 0, sizeof ( lLogOn )  );
+ memset ( &lLogOn, 0, sizeof ( lLogOn ) );
+
  strncpy ( lLogOn.serverIP, lpInfo -> m_ServerIP, 15 );
- lLogOn.serverPort = lpInfo -> m_Port ? lpInfo -> m_Port : 1445;
- strncpy ( lLogOn.User,     lpInfo -> m_UserName, 255 );
+ lLogOn.serverPort = lpInfo -> m_Port ? lpInfo -> m_Port : 445;
+
+ strncpy ( lLogOn.User, lpInfo -> m_UserName, 255 );
  strncpy ( lLogOn.Password, lpInfo -> m_Password, 255 );
- lLogOn.PasswordType = lpInfo -> m_Password[ 0 ] ? PLAINTEXT_PASSWORD : NO_PASSWORD;
+
+ lLogOn.PasswordType = lpInfo -> m_Password[ 0 ]
+  ? PLAINTEXT_PASSWORD
+  : NO_PASSWORD;
 
 #ifdef BDM
- lRes = fileXioDevctl (  g_pSMBS, SMB_DEVCTL_LOGON, &lLogOn, sizeof ( lLogOn ), NULL, 0  );
+ lRes = -SMB_DEVCTL_LOGON_ERR_CONN;
+
+ for ( lTry = 0; lTry < 3; ++lTry ) {
+  lRes = fileXioDevctl (
+   g_pSMBS,
+   SMB_DEVCTL_LOGON,
+   &lLogOn,
+   sizeof ( lLogOn ),
+   NULL,
+   0
+  );
+
+  if ( lRes != -SMB_DEVCTL_LOGON_ERR_CONN )
+   break;
+
+  if ( lTry < 2 ) {
+   /*
+    * EE-side delay. The IOP network stack continues running while
+    * the EE waits here. Approximately one second in this build.
+    */
+   for ( lWait = 0; lWait < 40; ++lWait )
+    nopdelay ();
+  }  /* end if */
+ }  /* end for */
 #else
- lRes = -1;   /* smbman SMB is BDM-only -> logon unavailable in the legacy build */
+ lRes = -1;  /* smbman SMB is BDM-only */
 #endif
 
  if ( lRes == 0 ) {
@@ -610,7 +642,7 @@ static int GUIDevMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
     * smbman connects by direct TCP to IP:port, so show the port too. */
    sprintf (
     lBuff, "SMB: connecting %s:%d...", g_Config.m_SMBIP,
-    ( lpInfo && lpInfo -> m_Port ) ? lpInfo -> m_Port : 1445
+    ( lpInfo && lpInfo -> m_Port ) ? lpInfo -> m_Port : 445
    );
    GUI_Status ( lBuff );
 
