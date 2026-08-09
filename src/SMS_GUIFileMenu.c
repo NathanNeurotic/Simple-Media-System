@@ -729,46 +729,136 @@ static void _action_share ( GUIFileMenu* apMenu, int afPopup ) {
 
  smbOpenShare_in_t lOpen;
  char              lPath[ 2 ] __attribute__(   (  aligned( 4 )  )   );
- char*             lpPath = _STR( apMenu -> m_pCurrent );  /* "ShareName: comment" */
+ char*             lpPath = _STR( apMenu -> m_pCurrent );
+ int               lRes;
 
- /* smbman is single-share: drop any share already open before opening a new one. */
  if ( g_SMBU >= 0 ) {
 
 #ifdef BDM
-  fileXioDevctl (  g_pSMBS, SMB_DEVCTL_CLOSESHARE, NULL, 0, NULL, 0  );   /* smbman SMB is BDM-only */
+  fileXioDevctl (
+   g_pSMBS,
+   SMB_DEVCTL_CLOSESHARE,
+   NULL,
+   0,
+   NULL,
+   0
+  );
 #endif
+
   g_SMBU = 0x80000000;
 
  }  /* end if */
 
- memset (  &lOpen, 0, sizeof ( lOpen )  );
- strncpy ( lOpen.ShareName, lpPath, sizeof ( lOpen.ShareName ) - 1 );
+ memset ( &lOpen, 0, sizeof ( lOpen ) );
+
+ strncpy (
+  lOpen.ShareName,
+  lpPath,
+  sizeof ( lOpen.ShareName ) - 1
+ );
 
  {
-  char* lpColon = strchr ( lOpen.ShareName, ':' );  /* trim the ": comment" tail */
+  char* lpColon = strchr ( lOpen.ShareName, ':' );
+
   if ( lpColon ) *lpColon = '\x00';
  }
 
  lOpen.PasswordType = NO_PASSWORD;
 
 #ifdef BDM
- if (  fileXioDevctl ( g_pSMBS, SMB_DEVCTL_OPENSHARE, &lOpen, sizeof ( lOpen ), NULL, 0 ) == 0  ) {
+ lRes = fileXioDevctl (
+  g_pSMBS,
+  SMB_DEVCTL_OPENSHARE,
+  &lOpen,
+  sizeof ( lOpen ),
+  NULL,
+  0
+ );
 #else
- if ( 0 ) {   /* smbman SMB is BDM-only -> share-open unavailable in the legacy build */
+ lRes = -999;
 #endif
 
-  g_SMBU = 0;  /* share open -- single device "smb:", no unit digit */
+ if ( lRes == 0 ) {
 
-  *( unsigned int* )g_CWD   = *( int* )g_pSMBS;  /* "smb:" */
+  g_SMBU = 0;
+
+  *( unsigned int* )g_CWD   = *( int* )g_pSMBS;
   g_CWD[ 4 ]                = '\x00';
-  *( unsigned short* )lPath = 0x002F;            /* "/"    */
+  *( unsigned short* )lPath = 0x002F;
 
   _push_state ( apMenu );
   _fill ( apMenu, lPath, 0 );
   _redraw ( apMenu, 0 );
 
- }  /* end if */
+ } else {
 
+  static char s_ErrShare[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: SHARE NOT FOUND";
+
+  static char s_ErrAccess[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: ACCESS DENIED";
+
+  static char s_ErrLogon[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: LOGON FAILED";
+
+  static char s_ErrPassword[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: WRONG PASSWORD";
+
+  static char s_ErrUser[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: USERNAME NOT FOUND";
+
+  static char s_ErrIO[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: I/O ERROR (-5)";
+
+  static char s_ErrUnknown[] __attribute__(
+   ( section( ".data" ), aligned( 1 ) )
+  ) = "SMB: UNKNOWN ERROR %08X";
+
+  char*        lpError;
+  char         lUnknown[ 40 ];
+  unsigned int lStatus = ( unsigned int )lRes;
+
+  if ( lStatus == 0xC00000CCU ) {
+
+   lpError = s_ErrShare;
+
+  } else if ( lStatus == 0xC0000022U ) {
+
+   lpError = s_ErrAccess;
+
+  } else if ( lStatus == 0xC000006DU ) {
+
+   lpError = s_ErrLogon;
+
+  } else if ( lStatus == 0xC000006AU ) {
+
+   lpError = s_ErrPassword;
+
+  } else if ( lStatus == 0xC0000064U ) {
+
+   lpError = s_ErrUser;
+
+  } else if ( lStatus == 0xFFFFFFFBU ) {
+
+   lpError = s_ErrIO;
+
+  } else {
+
+   sprintf ( lUnknown, s_ErrUnknown, lStatus );
+   lpError = lUnknown;
+
+  }  /* end else */
+
+  GUI_Error ( lpError );
+
+ }  /* end else */
+ 
 }  /* end _action_share */
 
 static void _context_action_share ( GUIFileMenu* apMenu, int afPopup ) {
