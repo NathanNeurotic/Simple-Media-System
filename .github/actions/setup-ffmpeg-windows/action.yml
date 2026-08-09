@@ -1,0 +1,170 @@
+name: Set up FFmpeg (Windows)
+description: >-
+  Puts ffmpeg AND ffprobe on PATH for a Windows runner, surviving a Chocolatey
+  community-feed outage. Shared by both Windows jobs so they cannot drift apart.
+
+runs:
+  using: composite
+  steps:
+    - name: Install ffmpeg and ffprobe
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+
+        # Invoke-WebRequest spends most of its time redrawing the progress bar on a 168 MB
+        # download when this is left on.
+        $ProgressPreference = 'SilentlyContinue'
+
+        # PowerShell 7.4+ turns a non-zero exit from a native command into a TERMINATING error
+        # while $ErrorActionPreference is 'stop' (which the runner sets for us). A failing
+        # `choco` would abort the script mid-loop and the retries below would never happen.
+        # Exit codes are not how success is judged here anyway -- see the loop.
+        $PSNativeCommandUseErrorActionPreference = $false
+
+        # Chocolatey shims land in a directory that is already on PATH, but PowerShell caches
+        # command lookups, so a binary installed seconds ago can still look absent. Assigning
+        # to $env:PATH drops that cache. APPEND, never replace: the process PATH carries
+        # entries the registry does not, setup-python's toolcache directory among them.
+        function Update-PathFromRegistry {
+            $env:PATH = @(
+                $env:PATH,
+                [Environment]::GetEnvironmentVariable('Path', 'Machine'),
+                [Environment]::GetEnvironmentVariable('Path', 'User')
+            ) -join ';'
+        }
+
+        function Get-FfmpegDir {
+            Update-PathFromRegistry
+            $ff = @(Get-Command ffmpeg.exe  -CommandType Application -ErrorAction SilentlyContinue)[0]
+            $fp = @(Get-Command ffprobe.exe -CommandType Application -ErrorAction SilentlyContinue)[0]
+            # BOTH, not just ffmpeg. test_converter.py asserts ffprobe is findable and
+            # test_end_to_end.py validates every converted file with it, so half an install is
+            # a failure -- better caught here than eight steps later.
+            if ($ff -and $fp) { return Split-Path -Parent $ff.Source }
+            return $null
+        }
+
+        function Show-Versions([string] $FfmpegExe, [string] $FfprobeExe) {
+            foreach ($exe in @($FfmpegExe, $FfprobeExe)) {
+                Write-Host "::group::$exe -version"
+                & $exe -version
+                $code = $LASTEXITCODE
+                Write-Host '::endgroup::'
+                # Checked explicitly because native failures do not throw here -- see
+                # $PSNativeCommandUseErrorActionPreference above. This is the last gate before
+                # the suites run, and being on PATH is not the same as being runnable: a
+                # truncated download or a missing runtime DLL gets this far. Fail HERE, where
+                # the message names the cause, rather than several steps later inside a test.
+                if ($code -ne 0) {
+                    throw "$exe -version exited $code -- present on disk but not runnable."
+                }
+            }
+        }
+
+        # -------------------------------------------------------------------------------
+        # Primary: Chocolatey. Unchanged from what has always been installed here -- the
+        # package was never the problem.
+        #
+        # Retried because community.chocolatey.org is a shared free service that answers 503
+        # under load. On 2026-08-09 it took out two master builds a minute apart while the
+        # identical step in the sibling job of the same run sailed through, so the right
+        # response is to wait rather than to install something different.
+        #
+        # Success is "are the binaries actually on PATH", NOT choco's exit code: a failed feed
+        # lookup still prints "Chocolatey installed 0/0 packages" and the old step only fell
+        # over later, on the version check, reporting a missing command instead of an outage.
+        # -------------------------------------------------------------------------------
+        $attempts = 4
+        for ($i = 1; $i -le $attempts; $i++) {
+            Write-Host "::group::choco install ffmpeg (attempt $i of $attempts)"
+            choco install ffmpeg --no-progress --yes
+            Write-Host '::endgroup::'
+
+            $dir = Get-FfmpegDir
+            if ($dir) {
+                Write-Host "ffmpeg and ffprobe installed via Chocolatey ($dir)."
+                # Belt and braces: the shim directory is on the machine PATH already, but a
+                # mid-run registry change is not picked up by later steps. This is.
+                Add-Content -Path $env:GITHUB_PATH -Value $dir
+                Show-Versions (Join-Path $dir 'ffmpeg.exe') (Join-Path $dir 'ffprobe.exe')
+                exit 0
+            }
+
+            if ($i -lt $attempts) {
+                $wait = 20 * $i
+                Write-Host "Chocolatey produced no ffmpeg/ffprobe; retrying in $wait seconds..."
+                Start-Sleep -Seconds $wait
+            }
+        }
+
+        # -------------------------------------------------------------------------------
+        # Fallback: a static build straight from GitHub Releases.
+        #
+        # Deliberately a DIFFERENT HOST rather than more of the same. What fails is the
+        # Chocolatey package feed; release-assets.githubusercontent.com shares its
+        # availability with the runner already executing this, so the two go down
+        # independently. Four more retries against a service that is down buys nothing.
+        #
+        # Version skew is accepted: choco ships 9.x, this pin is n8.1.2. Nothing in the suite
+        # is version-gated. It needs libx264 + aac to synthesise the sample clip, then mpeg4 /
+        # mpeg2video / mpeg1video / libmp3lame / mp2 / aac / flac / libvorbis for the presets.
+        # All are present here, libxvid included -- which matters, because with it the
+        # fallback takes the same encoder branch choco's build does instead of quietly
+        # degrading through resolve_video_encoder()'s mpeg4 path.
+        #
+        # PINNED to an immutable autobuild tag rather than the rolling "latest" release, and
+        # digest-checked before anything is unpacked. These binaries execute on a runner
+        # holding a contents:write token, so "whatever upstream published today" is not a
+        # good enough answer. The digest below is of the exact bytes this was validated
+        # against: 20/20 unit tests and all 9 end-to-end presets.
+        #
+        # To move the pin: pick a newer tag from github.com/BtbN/FFmpeg-Builds/releases,
+        # update the URL AND the digest together, and re-run the suites. A stale pin is
+        # harmless -- it only has to work on the days Chocolatey is down -- so there is no
+        # need to chase upstream.
+        # -------------------------------------------------------------------------------
+        Write-Host 'Chocolatey exhausted. Falling back to a static build from GitHub Releases.'
+
+        $url    = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-08-13-06/ffmpeg-n8.1.2-34-g9b6c8969e0-win64-gpl-8.1.zip'
+        $sha256 = '7819F8F80046BFFBB1241A0A7C2FC113D4332B3167A4DDFF6AD91C6E7E374C4A'
+        $zip    = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback.zip'
+        $dest   = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback'
+
+        for ($i = 1; $i -le 3; $i++) {
+            try {
+                Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+                break
+            }
+            catch {
+                if ($i -eq 3) { throw }
+                Write-Host "Download failed ($($_.Exception.Message)); retrying..."
+                Start-Sleep -Seconds (20 * $i)
+            }
+        }
+
+        $actual = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
+        if ($actual -ne $sha256) {
+            throw "Fallback archive digest mismatch -- refusing to unpack or run it.`n  expected $sha256`n  got      $actual`n  from     $url"
+        }
+        Write-Host "Digest verified ($sha256)."
+
+        Expand-Archive -Path $zip -DestinationPath $dest -Force
+
+        # Found by search, not by a hardcoded "ffmpeg-*/bin". The archive layout belongs to the
+        # upstream project; guessing it wrong would fail with a bare "path not found" long
+        # after the interesting part, instead of the explicit error below.
+        $ff = @(Get-ChildItem -Path $dest -Filter 'ffmpeg.exe'  -Recurse -File)[0]
+        $fp = @(Get-ChildItem -Path $dest -Filter 'ffprobe.exe' -Recurse -File)[0]
+
+        if (-not $ff -or -not $fp) {
+            throw "Fallback archive did not contain both ffmpeg.exe and ffprobe.exe: $url"
+        }
+        if ($ff.DirectoryName -ne $fp.DirectoryName) {
+            throw "ffmpeg.exe ($($ff.DirectoryName)) and ffprobe.exe ($($fp.DirectoryName)) are in different directories; only one can go on PATH."
+        }
+
+        # GITHUB_PATH applies to LATER steps, so this step verifies via absolute paths.
+        Add-Content -Path $env:GITHUB_PATH -Value $ff.DirectoryName
+        Write-Host "ffmpeg and ffprobe installed from the static build ($($ff.DirectoryName))."
+        Show-Versions $ff.FullName $fp.FullName
+        exit 0
