@@ -34,11 +34,9 @@ jobs:
         sudo apt-get install -y ffmpeg libegl1 libgl1 libxkbcommon0 libdbus-1-3
         ffmpeg -version | head -n 1
 
-    - name: Install Windows FFmpeg via Choco
+    - name: Install Windows FFmpeg
       if: runner.os == 'Windows'
-      run: |
-        choco install ffmpeg --no-progress
-        ffmpeg -version
+      uses: ./.github/actions/setup-ffmpeg-windows
 
     - name: Install Python Dependencies & PyInstaller
       run: |
@@ -176,10 +174,8 @@ jobs:
     # the modern job does. Installing it here keeps BOTH jobs running the identical suite --
     # the point of this job is to prove the Qt5 fallback behaves the same, which is only
     # meaningful if it is held to the same tests.
-    - name: Install Windows FFmpeg via Choco
-      run: |
-        choco install ffmpeg --no-progress
-        ffmpeg -version
+    - name: Install Windows FFmpeg
+      uses: ./.github/actions/setup-ffmpeg-windows
 
     - name: Install Windows 7 compatible dependencies
       run: |
