@@ -21,16 +21,32 @@ runs:
         # Exit codes are not how success is judged here anyway -- see the loop.
         $PSNativeCommandUseErrorActionPreference = $false
 
-        # Chocolatey shims land in a directory that is already on PATH, but PowerShell caches
-        # command lookups, so a binary installed seconds ago can still look absent. Assigning
-        # to $env:PATH drops that cache. APPEND, never replace: the process PATH carries
-        # entries the registry does not, setup-python's toolcache directory among them.
+        # Chocolatey's shim directory is normally on PATH already, but a package is free to add
+        # a NEW directory to the machine or user PATH, and this process started before that
+        # happened -- its own copy would never show it. Re-reading the registry closes that gap.
+        #
+        # NOT a command-cache workaround, despite what an earlier version of this comment
+        # claimed. PowerShell 7 re-resolves external commands on every lookup: drop a new .exe
+        # into a directory already on PATH and Get-Command finds it with no reassignment at all.
+        #
+        # APPEND, never replace: the process PATH carries entries the registry does not,
+        # setup-python's toolcache directory among them.
+        #
+        # Deduplicated because this runs once per retry. Appending blindly left the fourth
+        # attempt holding four concatenated copies of the machine PATH -- 13943 characters and
+        # 62 repeated entries, against 3027 clean. Nothing breaks at that size, but PATH is
+        # inherited by every child process this step spawns. First occurrence wins, so lookup
+        # precedence is unchanged.
         function Update-PathFromRegistry {
-            $env:PATH = @(
+            $combined = @(
                 $env:PATH,
                 [Environment]::GetEnvironmentVariable('Path', 'Machine'),
                 [Environment]::GetEnvironmentVariable('Path', 'User')
             ) -join ';'
+
+            $seen = [System.Collections.Generic.HashSet[string]]::new(
+                [System.StringComparer]::OrdinalIgnoreCase)
+            $env:PATH = (($combined -split ';') | Where-Object { $_ -and $seen.Add($_) }) -join ';'
         }
 
         function Get-FfmpegDir {
