@@ -45,12 +45,20 @@ runs:
         }
 
         function Show-Versions([string] $FfmpegExe, [string] $FfprobeExe) {
-            Write-Host '::group::ffmpeg -version'
-            & $FfmpegExe -version
-            Write-Host '::endgroup::'
-            Write-Host '::group::ffprobe -version'
-            & $FfprobeExe -version
-            Write-Host '::endgroup::'
+            foreach ($exe in @($FfmpegExe, $FfprobeExe)) {
+                Write-Host "::group::$exe -version"
+                & $exe -version
+                $code = $LASTEXITCODE
+                Write-Host '::endgroup::'
+                # Checked explicitly because native failures do not throw here -- see
+                # $PSNativeCommandUseErrorActionPreference above. This is the last gate before
+                # the suites run, and being on PATH is not the same as being runnable: a
+                # truncated download or a missing runtime DLL gets this far. Fail HERE, where
+                # the message names the cause, rather than several steps later inside a test.
+                if ($code -ne 0) {
+                    throw "$exe -version exited $code -- present on disk but not runnable."
+                }
+            }
         }
 
         # -------------------------------------------------------------------------------
@@ -97,17 +105,30 @@ runs:
         # availability with the runner already executing this, so the two go down
         # independently. Four more retries against a service that is down buys nothing.
         #
-        # Version skew is accepted: choco ships 9.x, the newest branch built here is n8.1.
-        # Nothing in the suite is version-gated. It needs libx264 + aac to synthesise the
-        # sample clip, then mpeg4 / mpeg2video / mpeg1video / libmp3lame / mp2 / aac / flac /
-        # libvorbis for the presets -- all present in this GPL build. libxvid is the single
-        # optional extra and resolve_video_encoder() already degrades to mpeg4 without it.
+        # Version skew is accepted: choco ships 9.x, this pin is n8.1.2. Nothing in the suite
+        # is version-gated. It needs libx264 + aac to synthesise the sample clip, then mpeg4 /
+        # mpeg2video / mpeg1video / libmp3lame / mp2 / aac / flac / libvorbis for the presets.
+        # All are present here, libxvid included -- which matters, because with it the
+        # fallback takes the same encoder branch choco's build does instead of quietly
+        # degrading through resolve_video_encoder()'s mpeg4 path.
+        #
+        # PINNED to an immutable autobuild tag rather than the rolling "latest" release, and
+        # digest-checked before anything is unpacked. These binaries execute on a runner
+        # holding a contents:write token, so "whatever upstream published today" is not a
+        # good enough answer. The digest below is of the exact bytes this was validated
+        # against: 20/20 unit tests and all 9 end-to-end presets.
+        #
+        # To move the pin: pick a newer tag from github.com/BtbN/FFmpeg-Builds/releases,
+        # update the URL AND the digest together, and re-run the suites. A stale pin is
+        # harmless -- it only has to work on the days Chocolatey is down -- so there is no
+        # need to chase upstream.
         # -------------------------------------------------------------------------------
         Write-Host 'Chocolatey exhausted. Falling back to a static build from GitHub Releases.'
 
-        $url  = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-win64-gpl-8.1.zip'
-        $zip  = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback.zip'
-        $dest = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback'
+        $url    = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-08-13-06/ffmpeg-n8.1.2-34-g9b6c8969e0-win64-gpl-8.1.zip'
+        $sha256 = '7819F8F80046BFFBB1241A0A7C2FC113D4332B3167A4DDFF6AD91C6E7E374C4A'
+        $zip    = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback.zip'
+        $dest   = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback'
 
         for ($i = 1; $i -le 3; $i++) {
             try {
@@ -120,6 +141,12 @@ runs:
                 Start-Sleep -Seconds (20 * $i)
             }
         }
+
+        $actual = (Get-FileHash -Path $zip -Algorithm SHA256).Hash
+        if ($actual -ne $sha256) {
+            throw "Fallback archive digest mismatch -- refusing to unpack or run it.`n  expected $sha256`n  got      $actual`n  from     $url"
+        }
+        Write-Host "Digest verified ($sha256)."
 
         Expand-Archive -Path $zip -DestinationPath $dest -Force
 
