@@ -1,3 +1,5 @@
+<img width="400" height="92" alt="ANII-AI? This Software is NOT For You. Please Do NOT Use It." src="https://github.com/user-attachments/assets/55d2e5b6-77ca-434d-bc77-e45cf2755534" />
+
 # Simple Media System — MX4SIO / Network Edition
 
 > A modernized fork of Eugene Plotnikov's **Simple Media System (SMS)** for the PlayStation 2 — adding first-class **MX4SIO (SD-over-SIO2)** playback, a real **UDPFS network drive**, DualShock 3/4 support, and a broad sweep of device, stability and quality-of-life work — while keeping the original player's speed and elegance intact.
