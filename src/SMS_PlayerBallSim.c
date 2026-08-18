@@ -54,7 +54,7 @@ uint64_t* SMS_PlayerBallSim_Init ( uint32_t* apQWC ) {
  g_GSCtx.m_VRAMTexPtr = g_GSCtx.m_VRAMPtr;
 
  lpUDMA = _U( g_BallPkt );
-/* Upload Nadwislanski's 32x32 ball as a raw RGBA texture ( g_IconBallRGBA )
+/* Upload Nadwiślański's (Berion) 32x32 ball as a raw RGBA texture ( g_IconBallRGBA )
    straight into VRAM. The old path decoded a lossy IPU/MPEG-1 blob
    ( g_IconBall ) that could not preserve the ball's transparent edges. */
  GS_InitLoadImage ( &lLoadImage, g_GSCtx.m_VRAMPtr, 1, GSPixelFormat_PSMCT32, 0, 0, 32, 32 );
