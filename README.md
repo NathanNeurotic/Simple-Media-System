@@ -100,7 +100,7 @@ This edition builds directly on the original **Simple Media System** by **Eugene
 
 Homebrew runs on hardware no single person owns, and a fault nobody can reproduce is a fault nobody can fix. These people supplied the half of the work that isn't code:
 
-- **Nadwaslisnki** — graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
+- **Nadwiślański (Berion)** — graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
 - **GhostTownUS** — systematic hardware testing on PS2 and PSX (DESR), with recorded sessions rather than descriptions. Traced the memory-card-less IP problem, and captured the screen that localised the PSX boot hang to a single step.
 - **israpps** — root-caused the PSX boot failure from a DESR-5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That one observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver.
 - **TnA** — encoder expertise behind the Media Converter: multi-pass encoding, the B-frames / keyframe-interval distinction, and the push that got real Xvid used where the preset claimed it.

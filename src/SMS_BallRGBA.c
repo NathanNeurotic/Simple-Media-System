@@ -1,6 +1,6 @@
 /* AUTO-GENERATED from theme/icons/g_IconBall.png (32x32). RGBA, alpha 0..0x80,
  * transparent RGB-zeroed. The music-visualizer ball uploads this as a GS texture
- * directly (the old IPU/MPEG-1 blob g_IconBall could not preserve Nad's alpha). */
+ * directly (the old IPU/MPEG-1 blob g_IconBall could not preserve Nadwiślański (Berion)'s alpha). */
 
 const unsigned char g_IconBallRGBA[ 4096 ] __attribute__(   (  aligned( 16 ), section( ".data" )  )   ) = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
