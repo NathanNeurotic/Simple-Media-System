@@ -4,7 +4,7 @@
 # UPDATED INFORMATION FOR TOP TIER PERFORMANCE:
 
 > [!IMPORTANT]
-> ## Video Playback Recommendation — MPEG-2 Preset
+> ## Video Playback Recommendation — MPEG-2 Preset by <a href="https://www.psx-place.com/members/tktagmedia.40052/">tktagmedia</a>
 >
 > For the best video compatibility and streaming performance in **Simple Media System**, use **MPEG-2 video with MP2 audio** encoded at **960×544** (mod-16 safe), with a target frame rate of **30 FPS or below**.
 >
