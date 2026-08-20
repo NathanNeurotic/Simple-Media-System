@@ -1,4 +1,6 @@
 <img width="400" height="92" alt="ANII-AI? This Software is NOT For You. Please Do NOT Use It." src="https://github.com/user-attachments/assets/55d2e5b6-77ca-434d-bc77-e45cf2755534" />
+
+
 # UPDATED INFORMATION FOR TOP TIER PERFORMANCE:
 
 > [!IMPORTANT]
