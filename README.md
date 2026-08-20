@@ -1,4 +1,31 @@
 <img width="400" height="92" alt="ANII-AI? This Software is NOT For You. Please Do NOT Use It." src="https://github.com/user-attachments/assets/55d2e5b6-77ca-434d-bc77-e45cf2755534" />
+# UPDATED INFORMATION FOR TOP TIER PERFORMANCE:
+
+> [!IMPORTANT]
+> ## Video Playback Recommendation — MPEG-2 Preset
+>
+> For the best video compatibility and streaming performance in **Simple Media System**, use **MPEG-2 video with MP2 audio** encoded at **960×544** (mod-16 safe), with a target frame rate of **30 FPS or below**.
+>
+> This format takes advantage of the PS2's hardware-assisted DVD/MPEG decoding path, making it substantially more reliable than Xvid or MPEG-4, which rely on CPU-based software decoding and may stutter at higher resolutions or bitrates.
+>
+> The recommended preset has been tested with **MX4SIO streaming**, including a 44-minute video at full speed with no hangs.
+>
+> **Quick conversion:** Download the [recommended FFmpeg drag-and-drop converter](https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat), make sure FFmpeg is available in your system `PATH`, then drag video files onto the `.bat` file to produce PS2-compatible output.
+>
+> <details>
+> <summary><b>Recommended encoding settings</b></summary>
+>
+> | Setting | Recommended value |
+> | --- | --- |
+> | Video codec | MPEG-2 |
+> | Audio codec | MP2 |
+> | Resolution | 960×544 |
+> | Frame rate | Up to 30 FPS |
+> | Encoding mode | Two-pass |
+> | Best for | MX4SIO, USB, SMB, HDD, and other supported sources |
+>
+> </details>
+https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat
 
 # Simple Media System — MX4SIO / Network Edition
 
