@@ -59,6 +59,7 @@ static char s_pWMA [] __attribute__(   (  aligned( 4 ), section( ".data" ), alig
 static char s_pM4A [] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".m4a";
 static char s_pAAC [] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".aac";
 static char s_pMP4 [] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".mp4";
+static char s_pMKV [] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".mkv";
 static char s_pFLAC[] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".flac";
 static char s_pAC3 [] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".ac3";
 static char s_pJPG [] __attribute__(   (  aligned( 4 ), section( ".data" ), aligned( 1 )  )   ) = ".jpg";
@@ -151,6 +152,8 @@ int SMS_ContID ( const char* apName ) {
    retVal = SMS_CONTAINER_M4A;
   else if (  !stricmp ( lpExt, s_pMP4 )  )
    retVal = SMS_CONTAINER_MOV;
+  else if (  !stricmp ( lpExt, s_pMKV )  )
+   retVal = SMS_CONTAINER_MKV;
   else if (  !stricmp ( lpExt, s_pAAC )  )
    retVal = SMS_CONTAINER_AAC;
   else if (  !stricmp ( lpExt, s_pAC3 )  )
@@ -198,7 +201,8 @@ int SMS_FileID ( const char* apName ) {
  * a song queue. .m4a deliberately stays in the audio group; it is the audio-only sibling. */
   if (       !stricmp ( lpExt, s_pAVI  ) ||
              !stricmp ( lpExt, s_pMPG  ) ||
-             !stricmp ( lpExt, s_pMP4  )
+             !stricmp ( lpExt, s_pMP4  ) ||
+             !stricmp ( lpExt, s_pMKV  )
   )
    retVal = GUICON_AVI;
   else if (  !stricmp ( lpExt, s_pMP3 ) ||
