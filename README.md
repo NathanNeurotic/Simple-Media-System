@@ -4,7 +4,7 @@
 # UPDATED INFORMATION FOR TOP TIER PERFORMANCE:
 
 > [!IMPORTANT]
-> ## Video Playback Recommendation — MPEG-2 Preset by <a href="https://www.psx-place.com/members/tktagmedia.40052/">tktagmedia</a>
+> ## Video Playback Recommendation — MPEG-2 Preset by [tktagmedia](https://www.psx-place.com/members/tktagmedia.40052/)
 >
 > For the best video compatibility and streaming performance in **Simple Media System**, use **MPEG-2 video with MP2 audio** encoded at **960×544** (mod-16 safe), with a target frame rate of **30 FPS or below**.
 >
@@ -12,7 +12,16 @@
 >
 > The recommended preset has been tested with **MX4SIO streaming**, including a 44-minute video at full speed with no hangs.
 >
-> **Quick conversion:** Download the [recommended FFmpeg drag-and-drop converter](https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat), make sure FFmpeg is available in your system `PATH`, then drag video files onto the `.bat` file to produce PS2-compatible output.
+> ### NTSC audio/video sync correction
+>
+> Some NTSC playback setups may exhibit an approximately six-frame audio/video sync offset, regardless of the video resolution, container, or supported codec. If audio and video are noticeably out of sync, press `O` during playback and set **V/A** to **`-00:060`**. This correction has been reported to restore NTSC synchronization for MP4, AVI, MPG, and other supported video formats.
+>
+> ### Quick conversion
+>
+> Download the [recommended FFmpeg drag-and-drop converter](https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat), make sure FFmpeg is available in your system `PATH`, then drag video files onto the `.bat` file to produce PS2-compatible output.
+>
+> **Recommended encoding settings:**  
+> <https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat>
 >
 > <details>
 > <summary><b>Recommended encoding settings</b></summary>
@@ -27,7 +36,6 @@
 > | Best for | MX4SIO, USB, SMB, HDD, and other supported sources |
 >
 > </details>
-https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat
 
 # Simple Media System — MX4SIO / Network Edition
 
