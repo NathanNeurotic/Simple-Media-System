@@ -46,6 +46,7 @@ struct SMS_ListNode;
  * serve .m4a audio. Both must stay: .m4a keeps the audio-only reader, .mp4 now uses this one.
  * MUST match the index of SMS_GetContainerMOV in s_CCreator[] ( SMS_Container.c ). */
 #define SMS_CONTAINER_MOV    11
+#define SMS_CONTAINER_MKV    12
 
 #define SMS_CONT_FLAGS_SEEKABLE 0x00000001
 
