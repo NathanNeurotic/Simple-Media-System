@@ -33,6 +33,9 @@
 #include <sys/stat.h>
 #include <malloc.h>
 
+/* Reuse exactly the SMB profile selected by the login path. */
+extern SMBLoginInfo* _lookup_login_info ( void );
+
 char g_pUSB   [] __attribute__(   (  aligned( 4 ), section( ".data" )  )   ) = "mass0";  /* [4]=digit placeholder: keeps the NUL at [5] the array's own, not a neighbour's */
 char g_pCDROM [] __attribute__(   (  aligned( 4 ), section( ".data" )  )   ) = "cdfs";
 char g_pHDD0  [] __attribute__(   (  aligned( 4 ), section( ".data" )  )   ) = "hdd0";
@@ -298,8 +301,26 @@ void SMS_FileDirInit ( char* apPath ) {
 
   } else if ( g_CMedia == 6 ) {
 
+   SMBLoginInfo* lpInfo =
+    g_Config.m_pSMBList ? _lookup_login_info () : NULL;
    int           lMaxEnt = 64;
-   ShareEntry_t* lpShare = ( ShareEntry_t* )memalign (  64, lMaxEnt * sizeof ( ShareEntry_t )  );
+   ShareEntry_t* lpShare;
+
+   /* A configured share can be opened without legacy RAP NetShareEnum.
+    * Windows 11 may allow SMB1 logon/tree-connect but not RAP browsing.
+    * Present the preset share as a normal GUICON_SHARE so the existing
+    * _action_share path performs SMB_DEVCTL_OPENSHARE with error handling. */
+   if ( lpInfo && lpInfo -> m_Share[ 0 ] ) {
+    char lShare[ sizeof ( lpInfo -> m_Share ) ];
+
+    strncpy ( lShare, lpInfo -> m_Share, sizeof ( lShare ) - 1 );
+    lShare[ sizeof ( lShare ) - 1 ] = '\0';
+
+    SMS_ListPushBack ( g_pFileList, lShare ) -> m_Param = GUICON_SHARE;
+    goto end;
+   }  /* end if */
+
+   lpShare = ( ShareEntry_t* )memalign (  64, lMaxEnt * sizeof ( ShareEntry_t )  );
 
    if ( lpShare ) {
 
