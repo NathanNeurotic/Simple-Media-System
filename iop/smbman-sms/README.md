@@ -35,6 +35,17 @@ The release ZIP includes both AFL license texts, this provenance document and
 - Bound SMB string writes and directory-reply filename reads; reject oversized
   complete packets and malformed directory transaction bounds. These checks
   are not a complete security audit of the legacy SMB1 client.
+- Review follow-up: validate READ_ANDX offsets/lengths against the request and
+  NBSS packet before touching the caller's buffer. Drain padding/trailers in
+  128-byte scratch chunks, including rejected/short replies; close the socket
+  if a receive fails partway and its boundary cannot be recovered.
+- Parse RAP's fixed 20-byte share records using bounded little-endian reads,
+  EntriesRead (not TotalAvailable), converter-relative comment offsets, and
+  terminated strings within the transaction data. Fragmented RAP transactions
+  are rejected, not reassembled.
+- Always free local directory slots, even before FIND_FIRST or after a failed
+  listing/disconnection. Close-all clears local ownership and does not send
+  SMB_CLOSE for directory search IDs.
 - Reject overlong joined paths, and reserve room for a directory search mask.
   Existing limits remain: names up to 255 local bytes, joined paths below 1024
   bytes, and directory search paths at most 253 bytes before adding `\\*`.
@@ -64,6 +75,12 @@ rebuild as XZ (LZMA2, 1 MiB dictionary, CRC32). The main SMS build embeds it.
 Use `sh tools/build-smbman.sh --check` instead to assert that a rebuild matches
 the committed compressed binary without writing it. Native tests can also run
 with `python3 iop/smbman-sms/tests/test_cp1251.py` on a host with `cc` and Python.
+`tests/test_smb_regressions.py` compiles exact transport, read, RAP and close
+function bodies from the driver with mocked sockets/IOP calls. It runs with
+both signedness modes; set `SMS_TEST_SANITIZERS=1` for ASan/UBSan. The CI
+workflow runs sanitizer tests on the host and a source/binary check inside
+the pinned image. A manual `rebuild=true` workflow run uploads rebuilt IRX
+and BDM=1 ELF artifacts without committing anything automatically.
 
 The compiler/linker image is digest-pinned. Alpine dependency repositories and
 host Python/liblzma versions are not a complete hermetic environment; use the
@@ -79,6 +96,10 @@ OPL SMB operation. No separate PC server program was required.
 After the PR hardening (bounds, opt-in charset control, strict errors), the
 reporter also tested the final PR ELF and confirmed basic operation on that
 same setup. This is not confirmation of every extended test below.
+
+The subsequent READ_ANDX/RAP/handle-lifetime review fixes change the module
+again. Their rebuilt ELF has automated test/build coverage but still needs
+a fresh PS2 hardware pass; the previous confirmation predates those fixes.
 
 Retest with WinCyrillic and a nonempty Share; navigate ASCII, Cyrillic, Ё/ё,
 mixed and nested names and open a media file. Then test an empty Share on a

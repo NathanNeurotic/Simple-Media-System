@@ -10,6 +10,7 @@ smb = (ROOT / 'src/smb.c').read_text()
 fio = (ROOT / 'src/smb_fio.c').read_text()
 
 def function(source, name):
+    """Extract a complete named C function, preserving its original body."""
     match = re.search(r'^(?:static )?(?:int|void|u8|FHANDLE \*)\s*' + name +
                       r'\([^;]*?\)[^\n]*\n\{.*?^\}', source, re.M | re.S)
     if not match:
@@ -21,6 +22,7 @@ names = ['nb_SetSessionMessage', 'nb_GetSessionMessageLength', 'nb_GetPacketType
          'smb_ReadLE16', 'smb_StringLength', 'smb_NetShareEnum', 'smb_ReadAndX', 'smb_Disconnect']
 # The two small byte/string helpers return unsigned int.
 def extract(name):
+    """Handle the unsigned-returning RAP helpers as well as normal functions."""
     if name in ('smb_ReadLE16', 'smb_StringLength'):
         return re.search(r'^static unsigned int ' + name + r'\([^;]*?\)\s*\n\{.*?^\}',
                          smb, re.M | re.S).group()
