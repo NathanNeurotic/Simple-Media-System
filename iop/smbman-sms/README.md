@@ -76,16 +76,16 @@ Windows 11 SMB1 on TCP 445: preset share access without NetShareEnum, Cyrillic
 directory display/navigation, Cyrillic file listing/opening, and independent
 OPL SMB operation. No separate PC server program was required.
 
-The PR hardening (bounds, opt-in charset control, strict errors) was added after
-that test. It needs a fresh hardware pass; the previous result must not be
-represented as hardware verification of these exact final bytes.
+After the PR hardening (bounds, opt-in charset control, strict errors), the
+reporter also tested the final PR ELF and confirmed basic operation on that
+same setup. This is not confirmation of every extended test below.
 
 Retest with WinCyrillic and a nonempty Share; navigate ASCII, Cyrillic, Ё/ё,
 mixed and nested names and open a media file. Then test an empty Share on a
 server supporting RAP/NetShareEnum, invalid share, denied access, reconnect,
 changing charset, and a name outside CP1251. Check long playback and seeking,
-including an unrepresentable name between two valid directory entries.
-large directories and path boundaries. Other servers, authentication policies,
+an unrepresentable name between two valid directory entries, large directories
+and path boundaries. Other servers, authentication policies,
 SMB dialects and PS2 models are not validated by the reporter's test.
 
 SMB1 remains required; this does not implement SMB2/3 or recommend changing
