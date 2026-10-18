@@ -367,6 +367,10 @@ int smb_close(iop_file_t *f)
 
     /* A directory owns a local slot even before FIND_FIRST returns a SID.
        Release local ownership on every close, including a lost connection. */
+    if (f->privdata != fh || fh->f != f) {
+        smb_io_unlock();
+        return -EBADF;
+    }
     if (fh->mode != O_DIROPEN) {
         if ((UID == -1) || (TID == -1) || (fh->smb_fid == -1))
             r = -EBADF;
@@ -409,22 +413,24 @@ int smb_lseek(iop_file_t *f, int pos, int where)
 //--------------------------------------------------------------
 int smb_read(iop_file_t *f, void *buf, int size)
 {
-    FHANDLE *fh = (FHANDLE *)f->privdata;
+    FHANDLE *fh = f ? (FHANDLE *)f->privdata : NULL;
     int r;
 
-    if ((UID == -1) || (TID == -1) || (fh->smb_fid == -1))
-        return -EBADF;
+    smb_io_lock();
+    if (!fh || f->privdata != fh || fh->f != f || UID == -1 || TID == -1 || fh->smb_fid == -1) {
+        r = -EBADF;
+        goto io_unlock;
+    }
 
     if ((fh->position + size) > fh->filesize)
         size = fh->filesize - fh->position;
-
-    smb_io_lock();
 
     r = smb_ReadFile(UID, TID, fh->smb_fid, fh->position, buf, size);
     if (r > 0) {
         fh->position += r;
     }
 
+io_unlock:
     smb_io_unlock();
 
     return r;
@@ -433,16 +439,19 @@ int smb_read(iop_file_t *f, void *buf, int size)
 //--------------------------------------------------------------
 int smb_write(iop_file_t *f, void *buf, int size)
 {
-    FHANDLE *fh = (FHANDLE *)f->privdata;
+    FHANDLE *fh = f ? (FHANDLE *)f->privdata : NULL;
     int r;
 
-    if ((UID == -1) || (TID == -1) || (fh->smb_fid == -1))
-        return -EBADF;
-
-    if ((!(fh->mode & O_RDWR)) && (!(fh->mode & O_WRONLY)))
-        return -EACCES;
-
     smb_io_lock();
+    if (!fh || f->privdata != fh || fh->f != f || UID == -1 || TID == -1 || fh->smb_fid == -1) {
+        r = -EBADF;
+        goto io_unlock;
+    }
+
+    if ((!(fh->mode & O_RDWR)) && (!(fh->mode & O_WRONLY))) {
+        r = -EACCES;
+        goto io_unlock;
+    }
 
     r = smb_WriteFile(UID, TID, fh->smb_fid, fh->position, buf, size);
     if (r > 0) {
@@ -451,6 +460,7 @@ int smb_write(iop_file_t *f, void *buf, int size)
             fh->filesize += fh->position - fh->filesize;
     }
 
+io_unlock:
     smb_io_unlock();
 
     return r;
@@ -683,13 +693,18 @@ int smb_dclose(iop_file_t *f)
 //--------------------------------------------------------------
 int smb_dread(iop_file_t *f, iox_dirent_t *dirent)
 {
-    FHANDLE *fh = (FHANDLE *)f->privdata;
+    FHANDLE *fh = f ? (FHANDLE *)f->privdata : NULL;
     int r;
 
-    if ((UID == -1) || (TID == -1))
-        return -ENOTCONN;
-
     smb_io_lock();
+    if (!fh || f->privdata != fh || fh->f != f) {
+        r = -EBADF;
+        goto io_unlock;
+    }
+    if ((UID == -1) || (TID == -1)) {
+        r = -ENOTCONN;
+        goto io_unlock;
+    }
 
     memset((void *)dirent, 0, sizeof(iox_dirent_t));
 
@@ -845,9 +860,13 @@ io_unlock:
 s64 smb_lseek64(iop_file_t *f, s64 pos, int where)
 {
     s64 r;
-    FHANDLE *fh = (FHANDLE *)f->privdata;
+    FHANDLE *fh = f ? (FHANDLE *)f->privdata : NULL;
 
     smb_io_lock();
+    if (!fh || f->privdata != fh || fh->f != f) {
+        r = -EBADF;
+        goto io_unlock;
+    }
 
     switch (where) {
         case SEEK_CUR:

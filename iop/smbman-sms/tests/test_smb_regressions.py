@@ -11,7 +11,7 @@ fio = (ROOT / 'src/smb_fio.c').read_text()
 
 def function(source, name):
     """Extract a complete named C function, preserving its original body."""
-    match = re.search(r'^(?:static )?(?:int|void|u8|FHANDLE \*)\s*' + name +
+    match = re.search(r'^(?:static )?(?:int|void|u8|s64|FHANDLE \*)\s*' + name +
                       r'\([^;]*?\)[^\n]*\n\{.*?^\}', source, re.M | re.S)
     if not match:
         raise RuntimeError('Function not found: ' + name)
@@ -30,7 +30,8 @@ def extract(name):
 
 bodies = '\n\n'.join(extract(name) for name in names)
 bodies += '\n\n' + '\n\n'.join(function(fio, name) for name in
-                                  ('smbman_getfilefreeslot', 'smb_close', 'smb_closeAll'))
+                                  ('smbman_getfilefreeslot', 'smb_close', 'smb_closeAll',
+                                   'smb_read', 'smb_write', 'smb_lseek64'))
 handle = re.search(r'typedef struct\s*\{\s*iop_file_t \*f;.*?\} FHANDLE;', fio, re.S).group()
 template = (ROOT / 'tests/smb_regressions.c').read_text()
 with tempfile.TemporaryDirectory() as directory:

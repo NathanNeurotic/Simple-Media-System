@@ -1,6 +1,7 @@
 /* AFL-3.0. Native harness: function bodies are extracted from the actual driver. */
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,10 @@ static void smb_io_lock(void) { ++locks; }
 static void smb_io_unlock(void) { --locks; }
 int smb_Close(int uid, int tid, int fid)
 { (void)uid; (void)tid; (void)fid; ++close_calls; return close_result; }
+int smb_ReadFile(int uid, int tid, int fid, s64 offset, void *buf, int size)
+{ (void)uid; (void)tid; (void)fid; (void)offset; (void)buf; return size; }
+int smb_WriteFile(int uid, int tid, int fid, s64 offset, void *buf, int size)
+{ (void)uid; (void)tid; (void)fid; (void)offset; (void)buf; return size; }
 static int lwip_close(int socket) { (void)socket; ++socket_closes; return 0; }
 static int lwip_send(int socket, const void *p, int n, int flags)
 { (void)socket; (void)p; (void)flags; return n; }
@@ -222,6 +227,14 @@ static void test_handles(void)
     }
     smb_closeAll(); CHECK(close_calls == 16);
     for (i = 0; i < MAX_FDHANDLES; ++i) CHECK(files[i].privdata == NULL);
+    for (i = 0; i < MAX_FDHANDLES; ++i) {
+        CHECK(smb_read(files + i, packet, 1) == -EBADF);
+        CHECK(smb_write(files + i, packet, 1) == -EBADF);
+        CHECK(smb_lseek64(files + i, 0, SEEK_SET) == -EBADF);
+    }
+    CHECK(smb_read(NULL, packet, 1) == -EBADF);
+    CHECK(smb_write(NULL, packet, 1) == -EBADF);
+    CHECK(smb_lseek64(NULL, 0, SEEK_SET) == -EBADF);
     CHECK(smbman_getfilefreeslot() == smbman_fdhandles); guards();
 }
 int main(void)
