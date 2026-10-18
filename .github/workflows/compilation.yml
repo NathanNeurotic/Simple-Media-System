@@ -60,7 +60,9 @@ jobs:
         # rather than deleted and recreated, so a per-commit name would pile up a new zip on
         # the release every single push and never clean any of them off. The commit is
         # recorded in the release notes, which is where it belongs.
-        ( cd dist && zip -9 "Simple-Media-System.zip" Simple-Media-System.elf Simple-Media-System-packed.elf Simple-Media-System-DIAG.elf )
+        mkdir -p dist/smbman-licenses
+        cp iop/smbman-sms/LICENSE-* iop/smbman-sms/NOTICE-DES.txt iop/smbman-sms/README.md dist/smbman-licenses/
+        ( cd dist && zip -9 -r "Simple-Media-System.zip" Simple-Media-System.elf Simple-Media-System-packed.elf Simple-Media-System-DIAG.elf smbman-licenses )
 
         # Language packs, shipped with the build they belong to. The .lng format is
         # EXACT-COUNT: a pack whose line count does not match this build's string table is

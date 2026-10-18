@@ -1,0 +1,4 @@
+/obj/
+/bin/
+/test-build/
+__pycache__/

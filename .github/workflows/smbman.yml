@@ -1,0 +1,47 @@
+name: smbman source consistency
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: Rebuild IRX and BDM=1 ELF and upload artifacts (does not commit)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  test-rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Test exact SMB functions with address and undefined-behavior sanitizers
+        env:
+          SMS_TEST_SANITIZERS: '1'
+        run: python3 iop/smbman-sms/tests/test_smb_regressions.py
+      - name: Test conversion and verify or rebuild embedded smbman
+        shell: bash
+        env:
+          REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild }}
+        run: |
+          docker run --rm -e REBUILD -v "$PWD":/src -w /src \
+            ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
+            sh -c 'apk add --no-cache build-base python3 &&
+              if [ "$REBUILD" = true ]; then
+                sh tools/build-smbman.sh && make BDM=1 all && ee-readelf -h -l bin/SMS.elf
+              else
+                sh tools/build-smbman.sh --check
+              fi' 2>&1 | tee smbman-build.log
+      - name: Upload rebuilt artifacts
+        if: github.event_name == 'workflow_dispatch' && inputs.rebuild
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: SMS-SMB-review-fix
+          path: |
+            bin/SMS.elf
+            irx/smbman.irx.xz
+            iop/smbman-sms/bin/smbman.irx
+            smbman-build.log
+          if-no-files-found: error

@@ -1161,8 +1161,13 @@ int SMS_IOPStartHDD ( int afStatus ) {
 
 void SMS_IOPSetXLT ( void ) {
 
- /* smbman has no codepage ioctl ( the legacy SMSSMB SMB_IOCTL_SETCP is gone ).
-  * Server share/file names come back UTF-8 / OEM as the server sends them. */
+#ifdef BDM
+ if ( g_IOPFlags & SMS_IOPF_SMBLOGIN ) {
+  int lCP1251 = g_Config.m_DisplayCharset == GSCodePage_WinCyrillic;
+  fileXioDevctl ( "smb:", SMB_DEVCTL_SMS_CP1251,
+                  &lCP1251, sizeof ( lCP1251 ), NULL, 0 );
+ }
+#endif
 
 }  /* end SMS_IOPSetXLT */
 

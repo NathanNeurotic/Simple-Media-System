@@ -46,6 +46,8 @@
 #define SMB_DEVCTL_CLOSESHARE        0xC0DE0006
 #define SMB_DEVCTL_ECHO              0xC0DE0007
 #define SMB_DEVCTL_QUERYDISKINFO     0xC0DE0008
+/* SMS-private extension: int 0 = legacy byte mapping, 1 = Windows-1251. */
+#define SMB_DEVCTL_SMS_CP1251        0xC0DE1251
 
 #define SMB_DEVCTL_LOGON_ERR_CONN  0x1001
 #define SMB_DEVCTL_LOGON_ERR_PROT  0x1002
