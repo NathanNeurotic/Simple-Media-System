@@ -20,6 +20,7 @@
 #include "SMS_ContainerFLAC.h"
 #include "SMS_ContainerAC3.h"
 #include "SMS_ContainerJPG.h"
+#include "SMS_ContainerMKV.h"
 #include "SMS_List.h"
 
 #include <malloc.h>
@@ -43,6 +44,7 @@ static const ContainerCreator s_CCreator[] = {
  SMS_GetContainerM3U,
  SMS_GetContainerMOV,   /* index 11 -- MUST equal SMS_CONTAINER_MOV. Was absent entirely, so
                          * the video-preserving ISO-BMFF demuxer was compiled-in dead code. */
+ SMS_GetContainerMKV,
  NULL
 };
 

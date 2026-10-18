@@ -12,7 +12,7 @@ EE_BIN = $(EE_BIN_DIR)SMS.elf
 EE_INCS    = -I$(EE_INC_DIR) -I$(PS2SDK)/ee/include -I$(PS2SDK)/common/include -I$(PS2SDK)/ports/include -I$(PS2SDK)/sbv/include
 EE_LDFLAGS = -L$(PS2SDK)/sbv/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib -L$(EE_SRC_DIR)/lzma2
 EE_LIBS    = -lpatches -lc -lkernel -lmf
-EE_CFLAGS := -Dmemset=mips_memset -Dmemcpy=mips_memcpy -D_EE -O2 -G8192 -mgpopt -Wall -mno-check-zero-division
+EE_CFLAGS := -Dmemset=mips_memset -Dmemcpy=mips_memcpy -D_EE -O2 -G4096 -mgpopt -Wall -mno-check-zero-division
 
 EE_OBJS  = main.o SMS_OS.o SMS_GS_0.o SMS_GS_1.o SMS_GS_2.o SMS_Timer.o           \
            SMS_MP123Core.o SMS_FileContext.o  SMS_H263.o                          \
@@ -34,6 +34,7 @@ EE_OBJS  = main.o SMS_OS.o SMS_GS_0.o SMS_GS_1.o SMS_GS_2.o SMS_Timer.o         
            SMS_GUIMenuSMS.o SMS_GUISMBrowser.o SMS_WMA.o mbstring.o SMS_PCM.o     \
            SMS_ContainerASF.o SMS_GUInfoPanel.o SMS_ContainerMOV.o                \
            SMS_ContainerAAC.o SMS_ContainerFLAC.o SMS_FLAC.o SMS_ContainerAC3.o   \
+           SMS_ContainerMKV.o                                                     \
            SMS_History.o SMS_PgInd.o SMS_VSync.o SMS_GUIClock.o SMS_DateTime.o    \
            SMS_PlayerBallSim.o SMS_SIF.o SMS_ContainerJPG.o SMS_FileMapping.o     \
            SMS_JPEGData.o SMS_JPEG.o SMS_Rescale.o SMS_MPEGInit.o                 \
