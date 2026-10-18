@@ -22,6 +22,7 @@ jobs:
           SMS_TEST_SANITIZERS: '1'
         run: python3 iop/smbman-sms/tests/test_smb_regressions.py
       - name: Test conversion and verify or rebuild embedded smbman
+        shell: bash
         env:
           REBUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild }}
         run: |

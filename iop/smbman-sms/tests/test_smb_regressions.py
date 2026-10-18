@@ -49,6 +49,7 @@ typedef uint64_t u64; typedef int64_t s64;
         command = ['cc', '-std=c99', '-Wall', '-Werror', char, '-g',
                    '-I' + str(build), '-I' + str(ROOT / 'src'), '-I' + str(ROOT / 'include')]
         if os.environ.get('SMS_TEST_SANITIZERS') == '1':
-            command += ['-fsanitize=address,undefined', '-fno-omit-frame-pointer']
+            command += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all',
+                        '-fno-omit-frame-pointer']
         subprocess.run(command + [str(source), '-o', str(binary)], check=True)
         subprocess.run([str(binary)], check=True)
