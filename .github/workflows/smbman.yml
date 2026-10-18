@@ -1,0 +1,17 @@
+name: smbman source consistency
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test conversion and verify embedded smbman against source
+        run: |
+          docker run --rm -v "$PWD":/src -w /src \
+            ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
+            sh -c 'apk add --no-cache build-base python3 && sh tools/build-smbman.sh --check'
