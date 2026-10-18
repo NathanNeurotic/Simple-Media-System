@@ -11,7 +11,7 @@ fio = (ROOT / 'src/smb_fio.c').read_text()
 
 def function(source, name):
     match = re.search(r'^(?:static )?(?:int|void|u8|FHANDLE \*)\s*' + name +
-                      r'\([^;]*?\)\s*\n\{.*?^\}', source, re.M | re.S)
+                      r'\([^;]*?\)[^\n]*\n\{.*?^\}', source, re.M | re.S)
     if not match:
         raise RuntimeError('Function not found: ' + name)
     return match.group()
