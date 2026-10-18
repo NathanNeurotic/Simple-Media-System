@@ -357,27 +357,26 @@ int smb_open(iop_file_t *f, const char *filename, int flags, int mode)
 //--------------------------------------------------------------
 int smb_close(iop_file_t *f)
 {
-    FHANDLE *fh = (FHANDLE *)f->privdata;
+    FHANDLE *fh;
     int r       = 0;
 
-    if ((UID == -1) || (TID == -1) || (fh->smb_fid == -1))
+    if (!f || !(fh = (FHANDLE *)f->privdata))
         return -EBADF;
 
     smb_io_lock();
 
-    if (fh) {
-        if (fh->mode != O_DIROPEN) {
+    /* A directory owns a local slot even before FIND_FIRST returns a SID.
+       Release local ownership on every close, including a lost connection. */
+    if (fh->mode != O_DIROPEN) {
+        if ((UID == -1) || (TID == -1) || (fh->smb_fid == -1))
+            r = -EBADF;
+        else
             r = smb_Close(UID, TID, fh->smb_fid);
-            if (r != 0) {
-                goto io_unlock;
-            }
-        }
-        memset(fh, 0, sizeof(FHANDLE));
-        fh->smb_fid = -1;
-        r           = 0;
     }
+    memset(fh, 0, sizeof(FHANDLE));
+    fh->smb_fid = -1;
+    f->privdata = NULL;
 
-io_unlock:
     smb_io_unlock();
 
     return r;
@@ -392,8 +391,12 @@ void smb_closeAll(void)
         FHANDLE *fh;
 
         fh = (FHANDLE *)&smbman_fdhandles[i];
-        if (fh->smb_fid != -1)
+        if (fh->f && fh->mode != O_DIROPEN && fh->smb_fid != -1 && UID != -1 && TID != -1)
             smb_Close(UID, TID, fh->smb_fid);
+        if (fh->f)
+            fh->f->privdata = NULL;
+        memset(fh, 0, sizeof(*fh));
+        fh->smb_fid = -1;
     }
 }
 

@@ -36,6 +36,7 @@ void smb_SetCP1251(int enabled)
 #define CLIENT_MAX_XFER_SIZE   USHRT_MAX // Allow up to 65535 bytes to be transferred.
 
 static int main_socket = -1;
+static int smb_reply_remaining;
 
 static struct
 {
@@ -225,11 +226,39 @@ static int RecvData(int sock, char *buf, int size, int timeout_ms)
     return size;
 }
 
+/* Discard wire bytes through a small scratch buffer, never into SMB_buf.
+ * A partial receive cannot be resynchronized reliably: close that socket. */
+static int SkipSMBReplyBytes(int size)
+{
+    char scratch[128];
+    if (size < 0 || size > smb_reply_remaining)
+        return -EIO;
+    while (size > 0) {
+        int chunk = size > sizeof(scratch) ? sizeof(scratch) : size;
+        if (RecvData(main_socket, scratch, chunk, 3000) != chunk) {
+            smb_Disconnect();
+            return -EIO;
+        }
+        size -= chunk;
+        smb_reply_remaining -= chunk;
+    }
+    return 0;
+}
+
+/* Finish a rejected response so the next request starts on an NBSS boundary. */
+static int SMBReplyError(int error)
+{
+    SkipSMBReplyBytes(smb_reply_remaining);
+    return error;
+}
+
 //-------------------------------------------------------------------------
 static int GetSMBServerReply(int shdrlen, void *spayload, int rhdrlen)
 {
     int rcv_size, totalpkt_size, size;
 
+    if (SkipSMBReplyBytes(smb_reply_remaining) < 0)
+        return -2;
     totalpkt_size = nb_GetSessionMessageLength() + 4;
 
     if (shdrlen == 0) {
@@ -253,7 +282,12 @@ static int GetSMBServerReply(int shdrlen, void *spayload, int rhdrlen)
     // Read NetBIOS session message header. Drop NBSS Session Keep alive messages (type == 0x85, with no body), but process session messages (type == 0x00).
     do {
         rcv_size = RecvData(main_socket, (char *)&SMB_buf.sessionHeader, sizeof(SMB_buf.sessionHeader), 10000); // 10s before the packet is considered lost
-        if (rcv_size <= 0)
+        if (rcv_size <= 0) {
+            smb_Disconnect();
+            return -2;
+        }
+        smb_reply_remaining = nb_GetSessionMessageLength();
+        if (nb_GetPacketType() != 0 && SkipSMBReplyBytes(smb_reply_remaining) < 0)
             return -2;
     } while (nb_GetPacketType() != 0);
 
@@ -262,11 +296,14 @@ static int GetSMBServerReply(int shdrlen, void *spayload, int rhdrlen)
     // If rhdrlen is not specified, retrieve the whole packet. Otherwise, retrieve only the headers (caller will retrieve the payload separately).
     if ((rhdrlen == 0 && totalpkt_size > sizeof(SMB_buf.smb)) ||
         (rhdrlen != 0 && (rhdrlen > sizeof(SMB_buf.smb) || rhdrlen > totalpkt_size)))
-        return -2;
+        return SMBReplyError(-2);
     size     = (rhdrlen == 0) ? totalpkt_size : rhdrlen;
     rcv_size = RecvData(main_socket, (char *)&SMB_buf.smb, size, 3000); // 3s before the packet is considered lost
-    if (rcv_size <= 0)
+    if (rcv_size != size) {
+        smb_Disconnect();
         return -2;
+    }
+    smb_reply_remaining -= size;
 
     return totalpkt_size;
 }
@@ -629,12 +666,30 @@ lbl_tree_connect:
 }
 
 //-------------------------------------------------------------------------
+/* RAP fields may be unaligned; decode them without casting wire pointers. */
+static unsigned int smb_ReadLE16(const unsigned char *p)
+{
+    return p[0] | ((unsigned int)p[1] << 8);
+}
+
+/* Return the bounded string length, or the limit if no terminator is present. */
+static unsigned int smb_StringLength(const char *p, unsigned int limit)
+{
+    unsigned int n;
+    for (n = 0; n < limit && p[n]; ++n)
+        ;
+    return n;
+}
+
 int smb_NetShareEnum(int UID, int TID, ShareEntry_t *shareEntries, int index, int maxEntries)
 {
     int r, i;
     int count                      = 0;
     NetShareEnumRequest_t *NSER    = &SMB_buf.smb.netShareEnumRequest;
     NetShareEnumResponse_t *NSERsp = &SMB_buf.smb.netShareEnumResponse;
+
+    if (index < 0 || maxEntries < 0 || (maxEntries && !shareEntries))
+        return -EINVAL;
 
     ZERO_PKT_ALIGNED(NSER, sizeof(NetShareEnumRequest_t));
 
@@ -663,7 +718,7 @@ int smb_NetShareEnum(int UID, int TID, ShareEntry_t *shareEntries, int index, in
 
     nb_SetSessionMessage(sizeof(NetShareEnumRequest_t) + NSER->ByteCount);
     r = GetSMBServerReply(0, NULL, 0);
-    if (r <= 0)
+    if (r <= 0 || (unsigned int)r < sizeof(*NSERsp))
         return -EIO;
 
     // check sanity of SMB header
@@ -681,34 +736,60 @@ int smb_NetShareEnum(int UID, int TID, ShareEntry_t *shareEntries, int index, in
             return -EIO;
     }
 
-    // API status must be 0
-    if (SMB_buf.smb.u16buff[NSERsp->smbTrans.ParamOffset / sizeof(u16)] != 0)
+    /* This client does not reassemble fragmented RAP transactions. */
+    unsigned int po = NSERsp->smbTrans.ParamOffset;
+    unsigned int pc = NSERsp->smbTrans.ParamCount;
+    unsigned int offset = NSERsp->smbTrans.DataOffset;
+    unsigned int bytes = NSERsp->smbTrans.DataCount;
+    if (po < sizeof(*NSERsp) || po > (unsigned int)r || pc < 8 || pc > (unsigned int)r - po ||
+        offset > (unsigned int)r || bytes > (unsigned int)r - offset ||
+        (bytes && offset < sizeof(*NSERsp)) ||
+        NSERsp->smbTrans.ParamDisplacement || NSERsp->smbTrans.DataDisplacement ||
+        NSERsp->smbTrans.TotalParamCount != pc || NSERsp->smbTrans.TotalDataCount != bytes)
         return -EIO;
-
-    // available entries
-    int AvailableEntries = SMB_buf.smb.s16buff[(NSERsp->smbTrans.ParamOffset + 6) / sizeof(s16)];
-
-    // data start
-    char *data = (char *)&SMB_buf.smb.u8buff[NSERsp->smbTrans.DataOffset];
-    char *p    = data;
-
-    for (i = 0; i < AvailableEntries; i++) {
-
-        // calculate the padding after the Share name
-        int padding = (strlen(p) + 1 + 2) % 16 ? 16 - ((strlen(p) + 1) % 16) : 0;
-
-        if (*((u16 *)&p[strlen(p) + 1 + padding - 2]) == 0) { // Directory Tree type
-            if (maxEntries > 0) {
-                if ((count < maxEntries) && (i >= index)) {
-                    count++;
-                    strncpy(shareEntries->ShareName, p, 256);
-                    strncpy(shareEntries->ShareComment, &data[*((u16 *)&p[strlen(p) + 1 + padding])], 256);
-                    shareEntries++;
-                }
-            } else // if maxEntries is 0 then we're just counting shares
-                count++;
+    const unsigned char *params = &SMB_buf.smb.u8buff[po];
+    const unsigned char *data = &SMB_buf.smb.u8buff[offset];
+    unsigned int converter = smb_ReadLE16(params + 2);
+    unsigned int entries = smb_ReadLE16(params + 4); /* EntriesRead, not TotalAvailable. */
+    if (smb_ReadLE16(params) != 0 || entries > bytes / 20)
+        return -EIO;
+    for (i = 0; i < entries; ++i) {
+        const unsigned char *record = data + i * 20; /* B13BWz has a fixed 20-byte record. */
+        const char *name = (const char *)record;
+        const char *comment = "";
+        unsigned int name_len = smb_StringLength(name, 13);
+        unsigned int comment_len = 0;
+        unsigned int pointer = smb_ReadLE16(record + 16);
+        if (name_len == 13)
+            return -EIO;
+        if (pointer) {
+            unsigned int comment_offset;
+            if (pointer < converter)
+                return -EIO;
+            comment_offset = pointer - converter;
+            if (comment_offset) {
+                if (comment_offset >= bytes)
+                    return -EIO;
+                comment = (const char *)data + comment_offset;
+                comment_len = smb_StringLength(comment, bytes - comment_offset);
+                if (comment_len == bytes - comment_offset)
+                    return -EIO;
+            }
         }
-        p += strlen(p) + 1 + padding + 4;
+        if (smb_ReadLE16(record + 14) != 0)
+            continue;
+        if (!maxEntries) {
+            ++count;
+        } else if (count < maxEntries && i >= index) {
+            memcpy(shareEntries->ShareName, name, name_len);
+            shareEntries->ShareName[name_len] = 0;
+            if (comment_len >= sizeof(shareEntries->ShareComment))
+                comment_len = sizeof(shareEntries->ShareComment) - 1;
+            memcpy(shareEntries->ShareComment, comment, comment_len);
+            shareEntries->ShareComment[comment_len] = 0;
+            ++shareEntries;
+            ++count;
+        }
     }
 
     return count;
@@ -1010,6 +1091,10 @@ int smb_ReadAndX(int UID, int TID, int FID, s64 fileoffset, void *readbuf, int n
     ReadAndXRequest_t *RR    = &SMB_buf.smb.readAndXRequest;
     ReadAndXResponse_t *RRsp = &SMB_buf.smb.readAndXResponse;
     int r, padding, DataLength;
+    u32 wire_length;
+
+    if (nbytes < 0 || (nbytes && !readbuf))
+        return -EINVAL;
 
     ZERO_PKT_ALIGNED(RR, sizeof(ReadAndXRequest_t));
 
@@ -1033,30 +1118,37 @@ int smb_ReadAndX(int UID, int TID, int FID, s64 fileoffset, void *readbuf, int n
 
     // check sanity of SMB header
     if (RRsp->smbH.Magic != SMB_MAGIC)
-        return -EIO;
+        return SMBReplyError(-EIO);
 
     // check there's no error
     if ((RRsp->smbH.Eclass | (RRsp->smbH.Ecode << 16)) != STATUS_SUCCESS)
+        return SMBReplyError(-EIO);
+
+    /* Validate before consuming anything into the caller's buffer. */
+    if (RRsp->DataLengthHigh > 0xffff)
+        return SMBReplyError(-EIO);
+    wire_length = (RRsp->DataLengthHigh << 16) | RRsp->DataLengthLow;
+    if (RRsp->DataOffset < sizeof(*RRsp) || RRsp->DataOffset > (u32)r ||
+        wire_length > (u32)nbytes || wire_length > (u32)r - RRsp->DataOffset)
+        return SMBReplyError(-EIO);
+    DataLength = (int)wire_length;
+
+    /* Padding is discarded in chunks, not written beyond SMB_buf. */
+    padding = RRsp->DataOffset - sizeof(ReadAndXResponse_t);
+    if (SkipSMBReplyBytes(padding) < 0)
         return -EIO;
 
-    // Skip any padding bytes.
-    padding = RRsp->DataOffset - sizeof(ReadAndXResponse_t);
-    if (padding > 0) {
-        r = RecvData(main_socket, (char *)(RRsp + 1), padding, 3000); // 3s before the packet is considered lost
-        if (r <= 0)
-            return -2;
-    }
-
-    DataLength = (int)(((u32)RRsp->DataLengthHigh << 16) | RRsp->DataLengthLow);
     if (DataLength > 0) {
         r = RecvData(main_socket, readbuf, DataLength, 3000); // 3s before the packet is considered lost
-        if (r <= 0)
+        if (r != DataLength) {
+            smb_Disconnect();
             return -2;
+        }
+        smb_reply_remaining -= DataLength;
     }
-
-    r = DataLength;
-
-    return r;
+    if (SkipSMBReplyBytes(smb_reply_remaining) < 0)
+        return -EIO;
+    return DataLength;
 }
 
 int smb_ReadFile(int UID, int TID, int FID, s64 fileoffset, void *readbuf, int nbytes)
@@ -1614,6 +1706,7 @@ int smb_Connect(char *SMBServerIP, int SMBServerPort)
 //-------------------------------------------------------------------------
 int smb_Disconnect(void)
 {
+    smb_reply_remaining = 0;
     if (main_socket != -1) {
         /* SMS's ps2ip 1.3 exports close, but not the later shutdown ordinal.
          * Match the bundled module's close-only ABI instead of importing 46. */
