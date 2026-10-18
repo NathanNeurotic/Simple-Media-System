@@ -7,6 +7,7 @@
 #include "smb.h"
 #define ZERO_PKT_ALIGNED(p, size) memset((p), 0, ((size) + 3) & ~3)
 #define O_DIROPEN 0x1000
+#define SMB_NAME_MAX 256
 #define MAX_FDHANDLES 32
 typedef struct { void *privdata; } iop_file_t;
 /* HANDLE_TYPE */
