@@ -25,6 +25,19 @@
 #include <malloc.h>
 #include <string.h>
 
+/* DIAGNOSTIC breadcrumbs, one per container probe. SMS_GetContainer is a
+ * black box on hardware: a freeze there latches "E70 getcontainer" (SMS_Player.c)
+ * and nothing says WHICH probe wedged. Numbering each probe in the 40..4B range
+ * turns the next freeze report into the exact probe name. Like SMS_IOP.c's
+ * DIAG_CRUMB: a macro, not a function, so an OFF build pays zero bytes -- the
+ * string literals themselves are data. */
+#ifdef SMS_DIAG
+#  include "SMS_IOP.h"
+#  define PROBE_CRUMB( n, s ) SMS_ExitCrumb ( ( n ), ( s ) )
+#else
+#  define PROBE_CRUMB( n, s ) do { } while ( 0 )
+#endif
+
 #define ID3_HEADER_SIZE   10
 
 typedef int ( *ContainerCreator ) ( SMS_Container* );
@@ -142,6 +155,22 @@ SMS_Container* SMS_GetContainer ( FileContext* apFileCtx, int aPrefCont ) {
   } else memcpy (  lCC, s_CCreator, sizeof ( s_CCreator )  );
 
   while ( lCC[ i ] ) {
+
+/* The table exists only in DIAG builds: a release build must not grow its
+ * small-data section by even 144 bytes -- this tree already links within a
+ * hair of the GP-relative window ( see the SMS_DIAG note in the Makefile ),
+ * and pushing g_SMBServerError past it breaks the release link. The PROBE_CRUMB
+ * macro discards its arguments when SMS_DIAG is off, so the call below needs
+ * no #ifdef of its own. */
+#ifdef SMS_DIAG
+   static const char s_Crumbs[ sizeof ( s_CCreator ) / sizeof ( s_CCreator[ 0 ] ) ][ 12 ] = {
+    "probe avi",  "probe asf",  "probe ogg",  "probe m4a",
+    "probe flac", "probe aac",  "probe mp3",  "probe ac3",
+    "probe mpg",  "probe jpg",  "probe m3u",  "probe mov"
+   };
+#endif
+
+   PROBE_CRUMB ( 40 + i, s_Crumbs[ i ] );
 
    if (   (  lSts = lCC[ i++ ] ( retVal )  )   ) break;
 

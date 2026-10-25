@@ -22,6 +22,16 @@
 #include <malloc.h>
 #include <string.h>
 
+/* DIAGNOSTIC phase crumbs -- see the matching note in SMS_Container.c. These
+ * bracket the two PTS scans that run AFTER the PS probe accepts the file, so a
+ * freeze that latches one of them is the scan, not the probe. */
+#ifdef SMS_DIAG
+#  include "SMS_IOP.h"
+#  define PS_CRUMB( n, s ) SMS_ExitCrumb ( ( n ), ( s ) )
+#else
+#  define PS_CRUMB( n, s ) do { } while ( 0 )
+#endif
+
 #define MAX_SYNC_SIZE   100000
 #define MAX_DETECT_SIZE 1024 * 1024
 
@@ -728,7 +738,7 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
    for ( lIt = lppStm; *lIt; ++lIt ) if (  ( *lIt ) -> m_ID == lID  ) break;
 
-   if (  !*lIt || ( lCodecType = SMS_CodecTypeVideo && !lfVideoParam )  ) {
+   if (  !*lIt || ( lCodecType == SMS_CodecTypeVideo && !lfVideoParam )  ) {
 
     SMS_Stream* lpStm = ( SMS_Stream* )calloc (  1, sizeof ( SMS_Stream )  );
 
@@ -765,11 +775,21 @@ next:
 
  }  /* end while */
 
- if ( !retVal )
+ if ( !retVal ) {
+
+/* The probe FAILED, so whatever probe (or error path) runs next -- and
+ * SMS_DestroyContainer if the container is simply dropped -- must never see
+ * lpMyCont again: the block is freed right here. Without this, a fall-through
+ * probe that succeeds without touching m_pCtx (AC3, JPG, M3U, ...) hands the
+ * caller a container whose Destroy() frees an ALREADY-FREED block, and the
+ * resulting heap corruption can wedge the player at E70 "getcontainer" on a
+ * file the PS probe scanned and rejected. */
 error:
+  apCont -> m_pCtx = NULL;
+
   free ( lpMyCont );
 
- else {
+ } else {
 
   if ( !lfVideoParam || !lfAudio ) {
 
@@ -796,6 +816,8 @@ error:
    uint64_t lSSPTS[ lnStm ];
    uint64_t lSEPTS[ lnStm ];
 
+   PS_CRUMB ( 50, "ps pts head" );
+
    for ( i = 0; i < lnStm; ++i ) lSSPTS[ i ] = lSEPTS[ i ] = SMS_NOPTS_VALUE;
 
    while ( lStmIdx < lnStm ) {
@@ -809,10 +831,14 @@ error:
                lpFileCtx -> m_Size - 0x0001FFFF : 0
    );
 
+   PS_CRUMB ( 51, "ps pts tail" );
+
    while (  !FILE_EOF( lpFileCtx )  ) {
     _get_stm_pts ( apCont, lStmIdx, 1, lSEPTS );
     if ( ++lStmIdx == lnStm ) lStmIdx = 0;
    }  /* end while */
+
+   PS_CRUMB ( 52, "ps pts done" );
 
    lPTS = SMS_INT64( 0x7FFFFFFFFFFFFFFF );
    lDTS = SMS_INT64( 0x8000000000000000 );
