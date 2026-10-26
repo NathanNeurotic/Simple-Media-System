@@ -480,7 +480,8 @@ class TestMultiTrackAudioAndSubtitles(unittest.TestCase):
     def test_audio_track_index_maps(self):
         ff, _ = find_ffmpeg_binaries()
         cmd = build_ffmpeg_cmd(ff, "in.mp4", "out.mpg.partial", self._settings(audio_track=2))
-        self.assertIn("0:a:2?", cmd)
+        self.assertIn("0:a:2", cmd)
+        self.assertNotIn("0:a:2?", cmd)
 
     def test_subtitle_burn_in_and_escaping(self):
         ff, _ = find_ffmpeg_binaries()
@@ -492,6 +493,52 @@ class TestMultiTrackAudioAndSubtitles(unittest.TestCase):
         self.assertIn("charenc=UTF-8", vf)
         self.assertIn("\\\\", vf, "backslashes must be escaped for the filter parser")
         self.assertNotIn(sub, vf, "the raw path must never reach the filtergraph")
+
+    def test_real_ffmpeg_subtitle_paths_and_missing_audio(self):
+        import subprocess
+        import tempfile
+        ff, fp = find_ffmpeg_binaries()
+        if not ff or not fp:
+            self.skipTest("FFmpeg and ffprobe required")
+        with tempfile.TemporaryDirectory(dir=str(Path.cwd())) as tmp:
+            folder = Path(tmp) / "it's here [subs],;"
+            folder.mkdir()
+            sub = folder / "movie.srt"
+            sub.write_text("1\n00:00:00,000 --> 00:00:01,000\nSubtitle test\n", encoding="utf-8")
+            source = str(Path(tmp) / "source.mkv")
+            subprocess.run([ff, "-v", "error", "-f", "lavfi", "-i",
+                            "color=size=160x120:rate=25:duration=1", "-f", "lavfi",
+                            "-i", "sine=duration=1", "-c:v", "mpeg2video",
+                            "-c:a", "mp2", source], check=True, capture_output=True)
+            output = str(Path(tmp) / "output.mpg")
+            settings = self._settings(subtitle_file=str(sub), acodec="mp2", width=160, height=120)
+            result = subprocess.run(build_ffmpeg_cmd(ff, source, output, settings), capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertTrue(any(x["codec_type"] == "audio" for x in get_media_info(fp, output)["streams"]))
+            settings["audio_track"] = 1
+            result = subprocess.run(build_ffmpeg_cmd(ff, source, output, settings), capture_output=True)
+            self.assertNotEqual(result.returncode, 0, "missing explicit audio track must fail")
+            self.assertIn(b"matches no streams", result.stderr)
+
+    def test_subtitle_picker_and_clear(self):
+        from unittest.mock import patch
+        from qt_compat import QApplication
+        from ui.advanced_settings import AdvancedSettingsWidget
+        app = QApplication.instance() or QApplication([])
+        widget = AdvancedSettingsWidget()
+        changes = []
+        widget.settings_changed.connect(changes.append)
+        with patch("ui.advanced_settings.QFileDialog.getOpenFileName", return_value=("C:/subs/movie.srt", "")):
+            widget.btn_subtitle.click()
+        self.assertEqual(widget.subtitle_path, "C:/subs/movie.srt")
+        with patch("ui.advanced_settings.QFileDialog.getOpenFileName", return_value=("", "")):
+            widget.btn_subtitle.click()
+        self.assertEqual(widget.subtitle_path, "C:/subs/movie.srt")
+        widget.btn_clear_subtitle.click()
+        self.assertEqual(widget.subtitle_path, "")
+        self.assertEqual(widget.lbl_subtitle.text(), "none")
+        self.assertTrue(changes)
+        widget.close()
 
     def test_no_subtitle_by_default(self):
         ff, _ = find_ffmpeg_binaries()

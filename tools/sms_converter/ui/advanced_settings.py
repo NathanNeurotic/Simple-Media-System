@@ -6,7 +6,7 @@ from typing import Dict, Any
 from qt_compat import Qt, Signal
 from qt_compat import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QGroupBox, QFormLayout,
-    QComboBox, QSpinBox, QCheckBox, QLabel, QFrame, QScrollArea
+    QComboBox, QSpinBox, QCheckBox, QLabel, QFrame, QScrollArea, QFileDialog
 )
 
 from config import (
@@ -335,7 +335,10 @@ class AdvancedSettingsWidget(QWidget):
         a_layout.addRow("Channels:", self.combo_channels)
         a_layout.addRow("Source audio track:", self.spin_atrack)
         sub_row = QHBoxLayout()
+        self.btn_clear_subtitle = QPushButton("Clear")
+        self.btn_clear_subtitle.clicked.connect(self._clear_subtitle)
         sub_row.addWidget(self.btn_subtitle)
+        sub_row.addWidget(self.btn_clear_subtitle)
         sub_row.addWidget(self.lbl_subtitle, 1)
         a_layout.addRow("Subtitles:", sub_row)
         a_layout.addRow("", self.chk_normalize)
@@ -554,6 +557,11 @@ class AdvancedSettingsWidget(QWidget):
             "subtitle_file": self.subtitle_path,
             "limit_streams": True
         }
+
+    def _clear_subtitle(self):
+        self.subtitle_path = ""
+        self.lbl_subtitle.setText("none")
+        self._on_control_changed()
 
     def _pick_subtitle(self):
         path, _ = QFileDialog.getOpenFileName(

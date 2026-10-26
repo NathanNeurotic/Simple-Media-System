@@ -302,14 +302,14 @@ def build_ffmpeg_cmd(
     vcodec = settings.get("vcodec")
     acodec = settings.get("acodec")
 
-    # Safe Stream Mapping: retain the first video stream and ONE audio stream.
-    # audio_track selects which source audio stream to keep (#22: commentary
-    # tracks, additional dubs); 0 keeps the long-standing default. The "?"
-    # keeps the mapping optional so a file with fewer audio streams still
-    # converts (with the audio that exists, or none) instead of aborting.
+    # Track 0 stays optional for silent video. An explicit alternate track must
+    # exist: FFmpeg reports a missing required map instead of producing mute video.
     if settings.get("limit_streams", True):
         audio_track = int(settings.get("audio_track", 0) or 0)
-        cmd.extend(["-map", "0:v:0?", "-map", f"0:a:{audio_track}?", "-sn", "-dn", "-map_metadata", "-1"])
+        if audio_track < 0:
+            raise ValueError("Audio track index must be nonnegative")
+        audio_map = f"0:a:{audio_track}" + ("?" if audio_track == 0 else "")
+        cmd.extend(["-map", "0:v:0?", "-map", audio_map, "-sn", "-dn", "-map_metadata", "-1"])
 
     # Video Settings
     if vcodec and has_video_stream and vcodec != "none":
@@ -357,8 +357,10 @@ def build_ffmpeg_cmd(
         # the scaled frame. charenc=UTF-8 covers the common non-Latin cases.
         subtitle_file = (settings.get("subtitle_file") or "").strip()
         if subtitle_file:
-            esc = subtitle_file.replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
-            vf_chain.append(f"subtitles='{esc}':charenc=UTF-8")
+            # Two parsers consume escapes: filter options, then filtergraph.
+            esc = "".join("\\" + c if c in "\\':" else c for c in subtitle_file)
+            esc = "".join("\\" + c if c in "\\'[],;" else c for c in esc)
+            vf_chain.append(f"subtitles=filename={esc}:charenc=UTF-8")
 
         # Frame rate
         fps = str(settings.get("fps", ""))

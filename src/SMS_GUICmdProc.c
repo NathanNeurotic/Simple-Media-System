@@ -224,7 +224,11 @@ static void _start_playlist ( SMS_List* apList ) {
 
    g_RandSeed = ( int )g_Timer;
 
-   for ( i = 0; i < lnStm; ++i ) lpNodes[ i ] = SMS_ListAt ( apList, i );
+   SMS_ListNode* lpScan = apList -> m_pHead;
+   for ( i = 0; i < lnStm; ++i ) {
+    lpNodes[ i ] = lpScan;
+    lpScan = lpScan -> m_pNext;
+   }
 
    for ( i = lnStm - 1; i > 0; --i ) {
 

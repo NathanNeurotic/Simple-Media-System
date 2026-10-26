@@ -1430,6 +1430,8 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
  STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
  void*            lpData;
+ void*            lpData1;
+ unsigned int     lBufSize;
  int              retVal = 0;
  int              lnRead = 0;
 
@@ -1458,19 +1460,28 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
   if ( aStartPos >= apCtx -> m_Size ) return 0;
 
-  apCtx -> m_BufSize = anBlocks * 4096;
+  /* Commit both buffers together: a failed resize must preserve the readable
+   * context, including its old size and interior pointers. */
+  if ( anBlocks > 0xFFFFFFFFU / 4096 ) return 0;
+  lBufSize = anBlocks * 4096;
+  lpData  = memalign ( 64, lBufSize );
+  lpData1 = memalign ( 64, lBufSize );
+  if ( !lpData || !lpData1 ) {
+   free ( lpData );
+   free ( lpData1 );
+   return 0;
+  }
+  free ( apCtx -> m_pBuff[ 0 ] );
+  free ( apCtx -> m_pBuff[ 1 ] );
+  apCtx -> m_pBuff[ 0 ] = lpData;
+  apCtx -> m_pBuff[ 1 ] = lpData1;
+  apCtx -> m_BufSize = apCtx -> m_CurBufSize = lBufSize;
 
 #ifdef BDM
   if ( lpPriv -> m_fXio ) {
    /* fileXio is the native BDM/IOMANX API and has no large-read limit, so stream
     * the mass: device synchronously and single-buffered at full buffer size
     * (no cap, no async double-buffer needed). */
-   lpData                = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 0 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-   apCtx -> m_pBuff[ 1 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 1 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-
-   if ( lpData == NULL || apCtx -> m_pBuff[ 1 ] == NULL ) return 0;
-
-   apCtx -> m_pBuff[ 0 ] = lpData;
    apCtx -> m_CurBuf     = 0;
    apCtx -> m_CurPos     = aStartPos;
    apCtx -> Seek         = STIO_Seek;
@@ -1496,12 +1507,6 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
   }  /* end if m_fXio */
 #endif
 
-  lpData                = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 0 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-  apCtx -> m_pBuff[ 1 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 1 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-
-  if ( lpData == NULL || apCtx -> m_pBuff[ 1 ] == NULL ) return 0;
-
-  apCtx -> m_pBuff[ 0 ] = lpData;
   apCtx -> m_CurPos     = aStartPos;
 
   apCtx -> Seek = STIO_SeekStm;
@@ -1735,7 +1740,7 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
 
   unsigned int lPos = apFileCtx -> m_CurPos + aCount;
 
-  if ( lPos < apFileCtx -> m_CurPos ) lPos = 0xFFFFFFFF;   /* wrapped past 4 GB -> clamp to EOF */
+  if ( lPos < apFileCtx -> m_CurPos || lPos > apFileCtx -> m_Size ) lPos = apFileCtx -> m_Size;   /* wrapped or past EOF */
 
   apFileCtx -> Seek ( apFileCtx, lPos );
 

@@ -170,7 +170,14 @@ SMS_Container* SMS_GetContainer ( FileContext* apFileCtx, int aPrefCont ) {
    };
 #endif
 
-   PROBE_CRUMB ( 40 + i, s_Crumbs[ i ] );
+#ifdef SMS_DIAG
+   /* Identify the creator itself: extension hints change its probe position. */
+   {
+    int j;
+    for ( j = 0; s_CCreator[ j ] != lCC[ i ]; ++j );
+    PROBE_CRUMB ( 40 + j, s_Crumbs[ j ] );
+   }
+#endif
 
    if (   (  lSts = lCC[ i++ ] ( retVal )  )   ) break;
 
