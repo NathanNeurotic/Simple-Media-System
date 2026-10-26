@@ -241,16 +241,24 @@ def build_scale_filter(
         if target_h > src_h:
             target_h = make_even(src_h)
 
+    # The PS2 player converts YUV to RGB with fixed BT.601 studio-range
+    # coefficients, but a scale that only resizes carries the SOURCE's color
+    # matrix through untouched -- and modern sources (YouTube rips, phone
+    # clips, anything HD) are BT.709. Encoded BT.709 planes displayed as
+    # BT.601 shift every hue (green/purple casts, reds that pump scene to
+    # scene -- issues #20/#23). Convert explicitly to what the player assumes.
+    CSC = ":out_color_matrix=bt601:out_range=tv"
+
     if scaling_mode == "Stretch":
-        filters.append(f"scale={target_w}:{target_h}")
+        filters.append(f"scale={target_w}:{target_h}{CSC}")
     elif scaling_mode == "Fit inside dimensions":
-        filters.append(f"scale='min({target_w},iw)':'min({target_h},ih)':force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
+        filters.append(f"scale='min({target_w},iw)':'min({target_h},ih)':force_original_aspect_ratio=decrease{CSC},pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
         # Ensure dimensions in scale output are even
         filters.append("scale=trunc(iw/2)*2:trunc(ih/2)*2")
     elif scaling_mode == "Letterbox to exact dimensions":
-        filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
+        filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease{CSC},pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
     elif scaling_mode == "Crop to fill":
-        filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase,crop={target_w}:{target_h}")
+        filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase{CSC},crop={target_w}:{target_h}")
 
     return filters
 
