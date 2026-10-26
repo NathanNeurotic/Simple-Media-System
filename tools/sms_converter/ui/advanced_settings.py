@@ -1,6 +1,7 @@
 """
 Collapsible advanced video and audio settings panel with hints and tooltips.
 """
+from pathlib import Path
 from typing import Dict, Any
 from qt_compat import Qt, Signal
 from qt_compat import (
@@ -304,10 +305,39 @@ class AdvancedSettingsWidget(QWidget):
         self.chk_normalize.setToolTip("Applies EBU R128 audio normalization filter to equalize volume levels between quiet and loud scenes.")
         self.chk_normalize.stateChanged.connect(self._on_control_changed)
 
+        # Source audio track (#22): a file can carry several audio streams
+        # (commentary, additional dubs). 0 is the first -- the long-standing
+        # default -- so existing presets and queue items behave identically.
+        self.spin_atrack = QSpinBox()
+        self.spin_atrack.setRange(0, 7)
+        self.spin_atrack.setValue(0)
+        self.spin_atrack.setToolTip(
+            "Which source audio track to keep: 0 = first (default), 1 = second, ...\n"
+            "Use it for commentary tracks and additional dubs."
+        )
+        self.spin_atrack.valueChanged.connect(self._on_control_changed)
+
+        # Subtitle burn-in (#22): the player has no soft-subtitle support, so
+        # subtitles only exist as burned-in pixels. Optional; empty = none.
+        self.subtitle_path = ""
+        self.btn_subtitle = QPushButton("Subtitle file…")
+        self.btn_subtitle.setToolTip(
+            "Optional: burn a subtitle file into the video.\n"
+            "The PS2 player cannot read soft subtitles, so this draws them over the frame."
+        )
+        self.btn_subtitle.clicked.connect(self._pick_subtitle)
+        self.lbl_subtitle = QLabel("none")
+        self.lbl_subtitle.setStyleSheet("color: #A0AEC0;")
+
         a_layout.addRow("Codec:", self.combo_acodec)
         a_layout.addRow("Bitrate:", self.combo_abitrate)
         a_layout.addRow("Sample Rate:", self.combo_sample)
         a_layout.addRow("Channels:", self.combo_channels)
+        a_layout.addRow("Source audio track:", self.spin_atrack)
+        sub_row = QHBoxLayout()
+        sub_row.addWidget(self.btn_subtitle)
+        sub_row.addWidget(self.lbl_subtitle, 1)
+        a_layout.addRow("Subtitles:", sub_row)
         a_layout.addRow("", self.chk_normalize)
 
         container_layout.addWidget(grp_video)
@@ -520,8 +550,20 @@ class AdvancedSettingsWidget(QWidget):
             "sample_rate": self.combo_sample.currentData(),
             "channels": self.combo_channels.currentData(),
             "normalize_audio": self.chk_normalize.isChecked(),
+            "audio_track": self.spin_atrack.value(),
+            "subtitle_file": self.subtitle_path,
             "limit_streams": True
         }
+
+    def _pick_subtitle(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Choose subtitle file", "",
+            "Subtitle files (*.srt *.ass *.ssa *.vtt *.sub);;All files (*)"
+        )
+        if path:
+            self.subtitle_path = path
+            self.lbl_subtitle.setText(Path(path).name)
+            self._on_control_changed()
 
     def _on_two_pass_toggled(self):
         """The pass count is only meaningful when multi-pass is on."""

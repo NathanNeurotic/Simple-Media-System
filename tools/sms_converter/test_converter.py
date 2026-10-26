@@ -458,5 +458,47 @@ class TestQtCompatShim(unittest.TestCase):
                 importlib.import_module(mod)
 
 
+class TestMultiTrackAudioAndSubtitles(unittest.TestCase):
+    """#22: the stream map honors audio_track, and a subtitle file is burned in."""
+
+    def _settings(self, **over):
+        s = {
+            "vcodec": "mpeg2video",
+            "width": 640,
+            "height": 480,
+            "scaling_mode": "Letterbox to exact dimensions",
+            "limit_streams": True,
+        }
+        s.update(over)
+        return s
+
+    def test_default_is_first_audio_track(self):
+        ff, _ = find_ffmpeg_binaries()
+        cmd = build_ffmpeg_cmd(ff, "in.mp4", "out.mpg.partial", self._settings())
+        self.assertIn("0:a:0?", cmd)
+
+    def test_audio_track_index_maps(self):
+        ff, _ = find_ffmpeg_binaries()
+        cmd = build_ffmpeg_cmd(ff, "in.mp4", "out.mpg.partial", self._settings(audio_track=2))
+        self.assertIn("0:a:2?", cmd)
+
+    def test_subtitle_burn_in_and_escaping(self):
+        ff, _ = find_ffmpeg_binaries()
+        # Windows path + a quote in the folder name: the filtergraph must not break.
+        sub = "C:\\subs\\it's here\\movie.srt"
+        cmd = build_ffmpeg_cmd(ff, "in.mp4", "out.mpg.partial", self._settings(subtitle_file=sub))
+        vf = cmd[cmd.index("-vf") + 1]
+        self.assertIn("subtitles=", vf)
+        self.assertIn("charenc=UTF-8", vf)
+        self.assertIn("\\\\", vf, "backslashes must be escaped for the filter parser")
+        self.assertNotIn(sub, vf, "the raw path must never reach the filtergraph")
+
+    def test_no_subtitle_by_default(self):
+        ff, _ = find_ffmpeg_binaries()
+        cmd = build_ffmpeg_cmd(ff, "in.mp4", "out.mpg.partial", self._settings())
+        vf = cmd[cmd.index("-vf") + 1]
+        self.assertNotIn("subtitles=", vf)
+
+
 if __name__ == "__main__":
     unittest.main()
