@@ -1061,15 +1061,13 @@ static int _sms_play ( void* apPlayer ) {
 
   PLAY_CRUMB ( 75, "file stream" );
 
-/* >> 2 (96 blocks / 384 KB), not >> 3 (48 / 192 KB): on BDM the stream buffer
- * refills SYNCHRONOUSLY in MX4SIO_RD_CHUNK-sized RPCs (SMS_FileContext.c), so a
- * refill blocks the reader for the whole chain. High-bitrate video drains the
- * small buffer faster than the RPC chain refills it -> periodic stutter on USB
- * and MX4SIO alike (#24). Doubling the depth halves the stall frequency; the
- * extra memory is 384 KB across the two buffers, against the 2 MB video ring. */
+/* Keep the original 48-block allocation. BDM uses bounded synchronous
+ * refill batches in STIO_Stream/STIO_Fill so packets reach the decoder
+ * without waiting for an entire 192/384 KiB RPC chain (#24).
+ * This reduces the maximum refill batch; hardware throughput is unverified. */
   if ( s_Player.m_pFileCtx -> Stream (
         s_Player.m_pFileCtx, s_Player.m_StartPos = s_Player.m_pFileCtx -> m_CurPos,
-        s_Player.m_pFileCtx -> m_StreamSize >> 2
+        s_Player.m_pFileCtx -> m_StreamSize >> 3
        ) <= 0 ) {
    /* Allocation or initial read failed: restore ordinary buffered reads. */
    s_Player.m_pFileCtx -> Stream ( s_Player.m_pFileCtx, s_Player.m_StartPos, 0 );

@@ -1351,6 +1351,11 @@ static int STIO_Fill ( FileContext* apCtx ) {
   /* mass: large reads stall in the bdmfs/fileXio transfer path; issue them to the
    * device in driver-safe MX4SIO_RD_CHUNK pieces (see note at top of file). */
   int _tot = 0, _want = apCtx -> m_BufSize, _n;
+  /* Bound one synchronous refill to eight driver-safe RPCs. A deeper
+   * buffer only makes each blocking fill longer; yield packets to the
+   * decoder sooner instead. UDPFS retains its independent read sizing. */
+  if ( lpPriv -> m_RdChunk == MX4SIO_RD_CHUNK && _want > 8 * MX4SIO_RD_CHUNK )
+   _want = 8 * MX4SIO_RD_CHUNK;
   while ( _tot < _want ) {
    int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
    _n = fileXioRead ( lpPriv -> m_FD, ( char* )apCtx -> m_pBuff[ apCtx -> m_CurBuf ] + _tot, _chunk );
@@ -1490,6 +1495,8 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
    fileXioLseek ( lpPriv -> m_FD, apCtx -> m_CurPos, SEEK_SET );
    {
     int _tot = 0, _want = apCtx -> m_BufSize, _n;
+    if ( lpPriv -> m_RdChunk == MX4SIO_RD_CHUNK && _want > 8 * MX4SIO_RD_CHUNK )
+     _want = 8 * MX4SIO_RD_CHUNK;
     while ( _tot < _want ) {
      int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
      _n = fileXioRead ( lpPriv -> m_FD, ( char* )apCtx -> m_pBuff[ 0 ] + _tot, _chunk );
