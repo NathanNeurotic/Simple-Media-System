@@ -1721,6 +1721,28 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
  unsigned int lnRem    = aCount % 512;
  unsigned int i;
 
+/* Large skips seek, not read. The loop below advances 512 bytes per pass, which is
+ * fine for a container header but catastrophic for a multi-GIGABYTE skip: the MOV
+ * probe does File_Skip ( ctx, mdatSize ) to step over the media data on its way to
+ * a moov at the END of the file ( Handbrake's default layout ), and at 512 bytes a
+ * pass that is millions of device reads over USB -- the multi-minute MP4 load of
+ * issue #10. A Seek repositions in O(1) on every FileContext ( STIO lseek / CDDA
+ * sector re-align ), and reading at the new position behaves exactly like the
+ * read-loop's natural EOF stop, so callers see no difference. Small skips keep the
+ * read loop: byte-for-byte identical to the long-standing behavior, and safe on
+ * contexts where a seek is undesirable. */
+ if ( aCount >= 65536 && ( int )apFileCtx > 0 ) {
+
+  unsigned int lPos = apFileCtx -> m_CurPos + aCount;
+
+  if ( lPos < apFileCtx -> m_CurPos ) lPos = 0xFFFFFFFF;   /* wrapped past 4 GB -> clamp to EOF */
+
+  apFileCtx -> Seek ( apFileCtx, lPos );
+
+  return;
+
+ }  /* end if */
+
 /* STOP AT EOF. This is a read LOOP, not a seek, and it used to run the loop to completion no
  * matter what Read returned -- so a caller that computed a bogus count made SMS grind through
  * millions of device reads with no way out and no error. That is a hang, not a slow load: at

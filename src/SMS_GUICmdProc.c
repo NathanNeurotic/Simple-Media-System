@@ -135,11 +135,45 @@ void _start_player ( FileContext* apFileCtx, FileContext* apSubCtx, SubtitleForm
 
    if (  !lpNode || ( int )lpNode -> m_Param != GUICON_MP3  ) break;   /* audio only */
 
-   do {
-    lpNode = lpNode -> m_pNext;
-   } while (  lpNode && ( int )lpNode -> m_Param != GUICON_MP3  );
+/* SHUFFLE (#25): the "Randomize playlist" toggle ( SMS_PF_RAND, the MP3
+ * settings page ) already shuffles M3U playlists; extend it to continuous
+ * folder playback so the next track is a random audio entry other than the
+ * one that just played. Pure random per pick -- an immediate repeat becomes
+ * possible late in a folder, the same tradeoff the M3U shuffle makes. */
+   if ( g_Config.m_PlayerFlags & SMS_PF_RAND ) {
 
-   if ( !lpNode ) break;   /* last track in the folder */
+    unsigned int  lnCandidates = 0, lPick, lIdx = 0;
+    SMS_ListNode* lpCurrent = lpNode;
+    SMS_ListNode* lpScan;
+
+    g_RandSeed = ( int )g_Timer;
+
+    for ( lpScan = g_pFileList -> m_pHead; lpScan; lpScan = lpScan -> m_pNext )
+     if (  ( int )lpScan -> m_Param == GUICON_MP3 && lpScan != lpCurrent  ) ++lnCandidates;
+
+    if ( !lnCandidates ) break;
+
+    lPick = ( unsigned int )SMS_rand () % lnCandidates;
+    lpNode = NULL;
+
+    for ( lpScan = g_pFileList -> m_pHead; lpScan; lpScan = lpScan -> m_pNext )
+     if (   ( int )lpScan -> m_Param == GUICON_MP3 && lpScan != lpCurrent &&
+            lIdx++ == lPick   ) {
+      lpNode = lpScan;
+      break;
+     }  /* end if */
+
+    if ( !lpNode ) break;   /* defensive; lPick < lnCandidates guarantees a hit */
+
+   } else {
+
+    do {
+     lpNode = lpNode -> m_pNext;
+    } while (  lpNode && ( int )lpNode -> m_Param != GUICON_MP3  );
+
+    if ( !lpNode ) break;   /* last track in the folder */
+
+   }  /* end else */
 
    GUI_Initialize ( -1 );
 
