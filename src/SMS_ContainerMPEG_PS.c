@@ -87,7 +87,13 @@ static int _next_start_code ( FileContext* apFileCtx ) {
 
   if (  FILE_EOF( apFileCtx )  ) break;
 
-  lByte = File_GetByte ( apFileCtx );
+  /* A short/error read can stop before m_Size. Do not rescan the same byte
+   * position forever while probing a truncated file or a failing device. */
+  {
+   unsigned int lPos = apFileCtx -> m_CurPos;
+   lByte = File_GetByte ( apFileCtx );
+   if ( apFileCtx -> m_CurPos == lPos ) break;
+  }
   --lN;
 
   if ( lState == 1 ) {
@@ -834,7 +840,9 @@ error:
    PS_CRUMB ( 51, "ps pts tail" );
 
    while (  !FILE_EOF( lpFileCtx )  ) {
+    unsigned int lPos = lpFileCtx -> m_CurPos;
     _get_stm_pts ( apCont, lStmIdx, 1, lSEPTS );
+    if ( lpFileCtx -> m_CurPos <= lPos ) break;
     if ( ++lStmIdx == lnStm ) lStmIdx = 0;
    }  /* end while */
 
