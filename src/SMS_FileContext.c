@@ -588,6 +588,30 @@ static int CDDA_SeekStm ( FileContext* apCtx, unsigned int aPos ) {
 
 }  /* end CDDA_SeekStm */
 
+/* Preserve the old readable context until every required allocation succeeds. */
+static int File_AllocStreamBuffers ( FileContext* apCtx, unsigned int aSize, int anBuffers ) {
+ void* lpData;
+ void* lpData1 = NULL;
+ unsigned int lAllocSize;
+
+ if ( !aSize || aSize > 0xFFFFFFFFU - 63 ) return 0;
+ lAllocSize = ( aSize + 63 ) & ~63;
+ lpData = memalign ( 64, lAllocSize );
+ if ( anBuffers == 2 ) lpData1 = memalign ( 64, lAllocSize );
+ if ( !lpData || ( anBuffers == 2 && !lpData1 ) ) {
+  free ( lpData );
+  free ( lpData1 );
+  return 0;
+ }
+ free ( apCtx -> m_pBuff[ 0 ] );
+ free ( apCtx -> m_pBuff[ 1 ] );
+ apCtx -> m_pBuff[ 0 ] = lpData;
+ apCtx -> m_pBuff[ 1 ] = lpData1;
+ apCtx -> m_BufSize = aSize;
+ apCtx -> m_CurBufSize = lAllocSize;
+ return 1;
+}
+
 static int CDDA_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned int anSectors ) {
 
  CDDAFilePrivate* lpPriv = ( CDDAFilePrivate* )apCtx -> m_pData;
@@ -609,12 +633,8 @@ static int CDDA_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
   if ( aStartPos >= apCtx -> m_Size ) return 0;
 
-  apCtx -> m_BufSize = anSectors * 2352;
-
-  apCtx -> m_pBuff[ 0 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 0 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-  apCtx -> m_pBuff[ 1 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 1 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-
-  if ( apCtx -> m_pBuff[ 0 ] == NULL || apCtx -> m_pBuff[ 1 ] == NULL ) return 0;
+  if ( anSectors > 0xFFFFFFFFU / 2352 ||
+       !File_AllocStreamBuffers ( apCtx, anSectors * 2352, 2 ) ) return 0;
 
   lOffset                   = aStartPos + lpPriv -> m_pCtx -> m_Offset;
   apCtx -> m_CurBuf         = 0;
@@ -1434,9 +1454,7 @@ static int STIO_SeekStm ( FileContext* apCtx, unsigned int aPos ) {
 static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned int anBlocks ) {
 
  STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
- void*            lpData;
- void*            lpData1;
- unsigned int     lBufSize;
+ int              lnBuffers = 2;
  int              retVal = 0;
  int              lnRead = 0;
 
@@ -1465,22 +1483,11 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
   if ( aStartPos >= apCtx -> m_Size ) return 0;
 
-  /* Commit both buffers together: a failed resize must preserve the readable
-   * context, including its old size and interior pointers. */
-  if ( anBlocks > 0xFFFFFFFFU / 4096 ) return 0;
-  lBufSize = anBlocks * 4096;
-  lpData  = memalign ( 64, lBufSize );
-  lpData1 = memalign ( 64, lBufSize );
-  if ( !lpData || !lpData1 ) {
-   free ( lpData );
-   free ( lpData1 );
-   return 0;
-  }
-  free ( apCtx -> m_pBuff[ 0 ] );
-  free ( apCtx -> m_pBuff[ 1 ] );
-  apCtx -> m_pBuff[ 0 ] = lpData;
-  apCtx -> m_pBuff[ 1 ] = lpData1;
-  apCtx -> m_BufSize = apCtx -> m_CurBufSize = lBufSize;
+#ifdef BDM
+  if ( lpPriv -> m_fXio ) lnBuffers = 1;
+#endif
+  if ( anBlocks > 0xFFFFFFFFU / 4096 ||
+       !File_AllocStreamBuffers ( apCtx, anBlocks * 4096, lnBuffers ) ) return 0;
 
 #ifdef BDM
   if ( lpPriv -> m_fXio ) {

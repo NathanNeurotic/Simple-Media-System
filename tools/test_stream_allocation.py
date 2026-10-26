@@ -1,4 +1,4 @@
-"""Host fault injection for the actual STIO_Stream allocation block.
+"""Host fault injection for the actual shared STIO/CDDA stream allocator.
 Run with Python 3 and a host C compiler (CC defaults to cc).
 """
 import os
@@ -7,8 +7,8 @@ import subprocess
 import tempfile
 
 source = (Path(__file__).resolve().parents[1] / "src/SMS_FileContext.c").read_text()
-start = source.index("  /* Commit both buffers together:")
-end = source.index("\n#ifdef BDM", start)
+start = source.index("static int File_AllocStreamBuffers (")
+end = source.index("\nstatic int CDDA_Stream", start)
 block = source[start:end]
 harness = r"""
 #include <assert.h>
@@ -24,15 +24,10 @@ static void *test_alloc(unsigned align, unsigned size) {
  return ++allocation == fail_at ? NULL : malloc(size);
 }
 #define memalign test_alloc
-static int resize(FileContext *apCtx, unsigned anBlocks) {
- void *lpData, *lpData1;
- unsigned lBufSize;
 """ + block + r"""
- return 1;
-}
 int main(void) {
- int fail;
- for (fail = 0; fail <= 2; ++fail) {
+ int fail, count;
+ for (count = 1; count <= 2; ++count) for (fail = 0; fail <= count; ++fail) {
   FileContext ctx, before;
   memset(&ctx, 0, sizeof(ctx));
   ctx.m_pBuff[0] = malloc(4096);
@@ -43,15 +38,16 @@ int main(void) {
   before = ctx;
   allocation = 0; fail_at = fail;
   if (fail) {
-   assert(resize(&ctx, 96) == 0);
+   assert(File_AllocStreamBuffers(&ctx, 393216, count) == 0);
    assert(memcmp(&ctx, &before, sizeof(ctx)) == 0);
    memset(ctx.m_pBuff[0], 0x55, 4096);
    memset(ctx.m_pBuff[1], 0xAA, 4096);
   } else {
-   assert(resize(&ctx, 96) == 1);
+   assert(File_AllocStreamBuffers(&ctx, 393216, count) == 1);
    assert(ctx.m_BufSize == 393216 && ctx.m_CurBufSize == 393216);
    memset(ctx.m_pBuff[0], 0x55, ctx.m_BufSize);
-   memset(ctx.m_pBuff[1], 0xAA, ctx.m_BufSize);
+   if (count == 2) memset(ctx.m_pBuff[1], 0xAA, ctx.m_BufSize);
+   else assert(ctx.m_pBuff[1] == NULL);
   }
   free(ctx.m_pBuff[0]); free(ctx.m_pBuff[1]);
  }
@@ -64,4 +60,4 @@ with tempfile.TemporaryDirectory() as tmp:
     src.write_text(harness)
     subprocess.run([os.environ.get("CC", "cc"), "-Wall", "-Wextra", "-Werror", str(src), "-o", str(exe)], check=True)
     subprocess.run([str(exe)], check=True)
-print("STIO stream allocation: success and both allocation failures passed")
+print("STIO/CDDA allocation: one/two-buffer success and each allocation failure passed")

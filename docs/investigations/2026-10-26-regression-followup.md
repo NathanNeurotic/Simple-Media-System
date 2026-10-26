@@ -66,6 +66,10 @@ retry path; it has not been identified as the reporter's precise freeze.
 fc2a02d addressed all eight CodeRabbit inline findings, with an individual reply
 per finding. Allocation is atomic across both STIO buffers; failed allocation
 preserves the context, and playback restores ordinary reads on stream failure.
+The follow-up review found the same unsafe resize pattern in CDDA_Stream; a
+shared transactional allocator now covers both paths. Synchronous fileXio
+allocates only the single buffer it uses, while CDDA and asynchronous fio keep
+two. Fault injection covers both buffer counts and every allocation failure.
 
 The old workflow zipped files before DIAG existed, then uploaded only the
 standard ELF. Packaging now happens after both builds and uploads the complete
