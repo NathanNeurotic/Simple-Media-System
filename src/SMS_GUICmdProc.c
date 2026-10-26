@@ -21,6 +21,8 @@
 #include "SMS_GS.h"
 #include "SMS_RC.h"
 #include "SMS_PAD.h"
+#include "SMS_Config.h"
+#include "SMS_Timer.h"
 
 #include <malloc.h>
 #include <string.h>
@@ -206,6 +208,49 @@ static int _playlist_menu ( SMS_List*, SMS_ListNode** );
 static void _start_playlist ( SMS_List* apList ) {
 
  SMS_ListNode* lpNode = apList -> m_pHead;
+
+/* SHUFFLE (#25): "Randomize playlist" ( SMS_PF_RAND, the MP3 settings page )
+ * already shuffles M3U playlists and the continuous-audio path; extend it to
+ * Play-all folders -- VIDEO included, which is what ambient playback wants.
+ * Fisher-Yates over the node pointers, then relink in place: node storage ( and
+ * so each item's inline string, _STR ) moves with the pointer, nothing is freed
+ * or reallocated. */
+ if (  ( g_Config.m_PlayerFlags & SMS_PF_RAND ) && apList -> m_Size > 1  ) {
+
+  unsigned int   lnStm = apList -> m_Size, i;
+  SMS_ListNode** lpNodes = ( SMS_ListNode** )malloc ( lnStm * sizeof ( SMS_ListNode* ) );
+
+  if ( lpNodes ) {
+
+   g_RandSeed = ( int )g_Timer;
+
+   for ( i = 0; i < lnStm; ++i ) lpNodes[ i ] = SMS_ListAt ( apList, i );
+
+   for ( i = lnStm - 1; i > 0; --i ) {
+
+    unsigned int  j   = ( unsigned int )SMS_rand () % ( i + 1 );
+    SMS_ListNode* lpT = lpNodes[ i ];
+
+    lpNodes[ i ] = lpNodes[ j ];
+    lpNodes[ j ] = lpT;
+
+   }  /* end for */
+
+   apList -> m_pHead = lpNodes[ 0         ];
+   apList -> m_pTail = lpNodes[ lnStm - 1 ];
+
+   for ( i = 0; i < lnStm; ++i ) {
+
+    lpNodes[ i ] -> m_pPrev = i          ? lpNodes[ i - 1 ] : NULL;
+    lpNodes[ i ] -> m_pNext = i + 1 < lnStm ? lpNodes[ i + 1 ] : NULL;
+
+   }  /* end for */
+
+   free ( lpNodes );
+
+  }  /* end if */
+
+ }  /* end if */
 
  if (  !_playlist_menu ( apList, &lpNode )  ) {
 
