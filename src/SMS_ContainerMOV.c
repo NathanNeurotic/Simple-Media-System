@@ -734,6 +734,7 @@ static MOVParseEntry s_MOVParseTbl[] = {
  { SMS_MKTAG( 'c', 't', 't', 's' ), _mov_read_ctts },
  { SMS_MKTAG( 's', 't', 's', 'z' ), _mov_read_stsz },
  { SMS_MKTAG( 's', 't', 'c', 'o' ), _mov_read_stco },
+ { SMS_MKTAG( 'c', 'o', '6', '4' ), _mov_read_stco },
  { SMS_MKTAG( 'm', 'd', 'a', 't' ), _mov_read_mdat },
  {                               0,           NULL }
 };
@@ -754,7 +755,7 @@ static MOVParseEntry s_M4AProbeTbl[] = {
 static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
 
  int64_t              lTotalSize = 0;
- MOVAtom              lAtom;
+ MOVAtom              lAtom = { 0, 0, 0 };
  int                  retVal = 0;
  const MOVParseEntry* lpIt;
 
@@ -762,7 +763,8 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 
  if ( apAtom -> m_Size < 0 ) apAtom -> m_Size = SMS_MAXINT64;
 
- while (   (  ( lTotalSize + 8 ) < apAtom -> m_Size ) && !FILE_EOF( apFileCtx ) && !retVal   ) {
+ while (   (  ( lTotalSize + 8 ) <= apAtom -> m_Size ) && !FILE_EOF( apFileCtx ) && !retVal   ) {
+  int lHeaderSize = 8;
   lAtom.m_Size = apAtom -> m_Size;
   lAtom.m_Type = 0;
   if ( apAtom -> m_Size >= 8 ) {
@@ -773,14 +775,15 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   lAtom.m_Offset += 8;
   if ( lAtom.m_Size == 1 ) {
    lAtom.m_Size    = _read_long_be ( apFileCtx );
+   lHeaderSize     = 16;
    lAtom.m_Offset += 8;
    lTotalSize     += 8;
   }  /* end if */
   if ( lAtom.m_Size == 0 ) {
+/* Size zero extends to the parent end; extended sizes include their full
+ * 16-byte header. Both must leave the exact payload length for child parsing. */
    lAtom.m_Size = apAtom -> m_Size - lTotalSize;
-   if ( lAtom.m_Size <= 8 ) break;
-  }  /* end if */
-  lAtom.m_Size -= 8;
+  } else lAtom.m_Size -= lHeaderSize;
   if ( lAtom.m_Size < 0 || lAtom.m_Size > apAtom -> m_Size - lTotalSize ) break;
   for ( lpIt = apCtx -> m_pParseTbl; lpIt -> m_Type && lpIt -> m_Type != lAtom.m_Type; ++lpIt );
   if ( !lpIt -> m_Type )
@@ -958,7 +961,7 @@ static int _mov_read_header ( SMS_Container* apCont ) {
 
  retVal = _mov_read_dflt ( lpMOV, lpFileCtx, &lAtom );
 
- if (  retVal < 0 || ( !lpMOV -> m_fMOOV && !lpMOV -> m_fMDAT )  ) return 0;
+ if (  retVal < 0 || !lpMOV -> m_fMOOV || !lpMOV -> m_fMDAT  ) return 0;
 
  if ( lpFileCtx -> m_CurPos != lpMOV -> m_MDATOffset ) lpFileCtx -> Seek (  lpFileCtx, ( uint32_t )( lpMOV -> m_MDATOffset )  );
 
@@ -1112,7 +1115,10 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
  }  /* end if */
 
  if ( lpFileCtx -> m_CurPos != lpSample -> m_Pos ||
-      lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lpPkt -> m_Size ) != lpPkt -> m_Size ) return -1;
+      lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lpPkt -> m_Size ) != lpPkt -> m_Size ) {
+  SMS_RingBufferUnalloc ( lpStm -> m_pPktBuf, lpSample -> m_Size + 64 );
+  return -1;
+ }  /* end if */
 
  lpPkt -> m_StmIdx = lIdx;
  lpPkt -> m_DTS    = lpSample -> m_DTS;

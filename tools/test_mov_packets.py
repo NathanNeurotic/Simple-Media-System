@@ -44,7 +44,7 @@ typedef struct {
 } SMS_Container;
 static int64_t SMS_Rescale(int64_t a,int64_t b,int64_t c) { assert(c>0);return a*b/c; }
 static void SMSContainer_CalcPktFields(SMS_Stream *s,SMS_AVPacket *p) {(void)s;(void)p;}
-static int short_read,seek_fail,allocations;
+static int short_read,seek_fail,allocations,reserved;
 static SMS_AVPacket packet;
 static unsigned char payload[64];
 static int read_file(FileContext *c,void *p,unsigned n) {
@@ -55,7 +55,11 @@ static int seek_file(FileContext *c,unsigned p) { if(seek_fail) return -1;c->m_C
 static void File_Skip(FileContext *c,unsigned n) { seek_file(c,c->m_CurPos+n); }
 static SMS_AVPacket *allocate(void *buffer,int n) {
  (void)buffer;assert(n>=0 && n<=64);++allocations;
+ reserved+=n+64;
  memset(&packet,0,sizeof(packet));packet.m_Size=n;packet.m_pData=payload;return &packet;
+}
+static void SMS_RingBufferUnalloc(void *buffer,int n) {
+ (void)buffer;assert(n>0 && n<=reserved);reserved-=n;
 }
 """ + types + extract("_mov_next_ctime") + extract("_ReadPacket") + extract("_mov_sync_ctime") + r"""
 static FileContext file;
@@ -68,7 +72,7 @@ static void reset(void) {
  memset(index_data,0,sizeof(index_data));
  file=(FileContext){1000,0,read_file,seek_file};
  container.m_pFileCtx=&file;container.m_nStm=2;container.AllocPacket=allocate;
- short_read=seek_fail=allocations=0;
+ short_read=seek_fail=allocations=reserved=0;
  for(int i=0;i<2;++i) {
   streams[i].m_TimeRate=streams[i].m_TimeScale=1;
   streams[i].m_pIdx=index_data[i];streams[i].m_nSamples=streams[i].m_nIdx=1;
@@ -113,9 +117,9 @@ static void failures(void) {
  reset();container.m_nStm=1;index_data[0][0].m_Pos=999;
  assert(_ReadPacket(&container,&selected)==-1 && allocations==0);
  reset();container.m_nStm=1;short_read=1;
- assert(_ReadPacket(&container,&selected)==-1);
+ assert(_ReadPacket(&container,&selected)==-1 && !reserved);
  reset();container.m_nStm=1;index_data[0][0].m_Pos=20;seek_fail=1;
- assert(_ReadPacket(&container,&selected)==-1);
+ assert(_ReadPacket(&container,&selected)==-1 && !reserved);
  reset();container.m_nStm=1;streams[0].m_TimeScale=0;
  assert(_ReadPacket(&container,&selected)==-1);
  reset();container.m_nStm=1;index_data[0][0].m_Size=0;
