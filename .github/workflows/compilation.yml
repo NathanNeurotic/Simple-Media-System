@@ -37,10 +37,13 @@ jobs:
     # committed dev9-importing blobs must stay bound to SMS's embedded dev9 v1.1.
     # Assert on the .xz blobs -- the exact bytes the build embeds -- so a re-bound
     # module committed only as .xz cannot slip a v1.9 binding past the gate.
-    - name: Host stream allocation and refill regression checks
+    - name: Host playback and file I/O regression checks
       run: |
         python3 tools/test_stream_allocation.py
         python3 tools/test_stio_refill.py
+        python3 tools/test_mpeg_ps_probe.py
+        python3 tools/test_playlist_playback.py
+        python3 tools/test_file_skip.py
 
     - name: IRX ABI gate (dev9 v1.1 bindings)
       run: |

@@ -1327,20 +1327,24 @@ static int STIO_Read ( FileContext* apCtx, void* apBuf, unsigned int aSize ) {
 static int STIO_Seek ( FileContext* apCtx, unsigned int aPos ) {
 
  STIOFilePrivate* lpPriv  = ( STIOFilePrivate* )apCtx -> m_pData;
+ unsigned int lPos;
 
+#ifdef _WIN32
+ lPos = SetFilePointer ( lpPriv -> m_hFile, aPos, NULL, FILE_BEGIN );
+#else  /* PS2 */
+#ifdef BDM
+ if ( lpPriv -> m_fXio ) lPos = fileXioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
+ else
+#endif
+ lPos = fioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
+#endif  /* _WIN32 */
+ /* A failed seek must leave the buffered cursor readable at its old position.
+  * Otherwise a large File_Skip claims success while the device never moved. */
+ if ( lPos == 0xFFFFFFFFU || lPos != aPos ) return -1;
  apCtx -> m_pPos   =
  apCtx -> m_pEnd   = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
  apCtx -> m_CurPos = apCtx -> m_Pos = aPos;
-#ifdef _WIN32
- aPos = SetFilePointer ( lpPriv -> m_hFile, aPos, NULL, FILE_BEGIN );
-#else  /* PS2 */
-#ifdef BDM
- if ( lpPriv -> m_fXio ) aPos = fileXioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
- else
-#endif
- aPos = fioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
-#endif  /* _WIN32 */
- return aPos;
+ return lPos;
 
 }  /* end STIO_Seek */
 
@@ -1745,11 +1749,9 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
  * probe does File_Skip ( ctx, mdatSize ) to step over the media data on its way to
  * a moov at the END of the file ( Handbrake's default layout ), and at 512 bytes a
  * pass that is millions of device reads over USB -- the multi-minute MP4 load of
- * issue #10. A Seek repositions in O(1) on every FileContext ( STIO lseek / CDDA
- * sector re-align ), and reading at the new position behaves exactly like the
- * read-loop's natural EOF stop, so callers see no difference. Small skips keep the
- * read loop: byte-for-byte identical to the long-standing behavior, and safe on
- * contexts where a seek is undesirable. */
+ * issue #10. Seek avoids that read loop when the device supports the requested
+ * offset. Check the resulting cursor: on failure retain the read-based fallback.
+ * Small skips keep the long-standing read loop. */
  if ( aCount >= 65536 && ( int )apFileCtx > 0 ) {
 
   unsigned int lPos = apFileCtx -> m_CurPos + aCount;
@@ -1758,7 +1760,7 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
 
   apFileCtx -> Seek ( apFileCtx, lPos );
 
-  return;
+  if ( apFileCtx -> m_CurPos == lPos ) return;
 
  }  /* end if */
 

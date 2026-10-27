@@ -265,9 +265,19 @@ static void _start_playlist ( SMS_List* apList ) {
    if ( !lpNode -> m_Param ) {
 
     void**      lpParam  = SMS_OpenMediaFile (  _STR( lpNode ), SMS_FA_FLAGS_AVI  );
-    SMS_Player* lpPlayer = SMS_InitPlayer (
+    SMS_Player* lpPlayer;
+
+    /* A removed/unreadable playlist item must not crash Play all. The file
+     * and subtitle contexts pass to the player; the wrapper remains ours. */
+    if ( !lpParam ) {
+     lpNode = lpNode -> m_pNext;
+     continue;
+    }
+
+    lpPlayer = SMS_InitPlayer (
      ( FileContext* )lpParam[ 0 ], ( FileContext* )lpParam[ 1 ], ( SubtitleFormat )lpParam[ 2 ]
     );
+    free ( lpParam );
 
     if ( lpPlayer ) {
 

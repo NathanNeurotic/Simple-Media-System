@@ -317,13 +317,13 @@ class AdvancedSettingsWidget(QWidget):
         )
         self.spin_atrack.valueChanged.connect(self._on_control_changed)
 
-        # Subtitle burn-in (#22): the player has no soft-subtitle support, so
-        # subtitles only exist as burned-in pixels. Optional; empty = none.
+        # Optional burn-in (#22). SMS also supports external SRT/SUB files;
+        # burn-in permanently includes this subtitle track in the picture.
         self.subtitle_path = ""
         self.btn_subtitle = QPushButton("Subtitle file…")
         self.btn_subtitle.setToolTip(
             "Optional: burn a subtitle file into the video.\n"
-            "The PS2 player cannot read soft subtitles, so this draws them over the frame."
+            "Burned-in subtitles cannot be switched off. SMS also supports separate SRT/SUB files."
         )
         self.btn_subtitle.clicked.connect(self._pick_subtitle)
         self.lbl_subtitle = QLabel("none")

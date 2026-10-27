@@ -308,20 +308,17 @@ static int _fill_video_parameters ( SMS_Container* apCont, SMS_Stream* apStm, in
 
   if (  _next_start_code ( lpFileCtx ) == 0x000001B3  ) {
 
-   char*          lpBuffer = ( char* )malloc ( aLen );
-   SMS_BitContext lBitCtx;
+   unsigned char lHeader[ 4 ];
 
-   lpFileCtx -> Read ( lpFileCtx, lpBuffer, aLen );
-   SMS_InitGetBits ( &lBitCtx, ( unsigned char* )lpBuffer, aLen );
+   /* Only the first 28 sequence-header bits are needed. Do not allocate/read
+    * an entire PES payload or parse bytes that a short read did not supply. */
+   if ( lpFileCtx -> Read ( lpFileCtx, lHeader, sizeof ( lHeader ) ) != sizeof ( lHeader ) ) goto end;
 
-   apStm -> m_pCodec -> m_Width  = SMS_GetBits ( &lBitCtx, 12 );
-   apStm -> m_pCodec -> m_Height = SMS_GetBits ( &lBitCtx, 12 );
+   apStm -> m_pCodec -> m_Width  = ( lHeader[ 0 ] << 4 ) | ( lHeader[ 1 ] >> 4 );
+   apStm -> m_pCodec -> m_Height = ( ( lHeader[ 1 ] & 15 ) << 8 ) | lHeader[ 2 ];
+   apStm -> m_pCodec -> m_fWS    = ( lHeader[ 3 ] >> 4 ) == 3;
 
-   if (  SMS_GetBits ( &lBitCtx, 4 ) == 3  ) apStm -> m_pCodec -> m_fWS = 1;
-
-   free ( lpBuffer );
-
-   retVal = 1;
+   retVal = apStm -> m_pCodec -> m_Width && apStm -> m_pCodec -> m_Height;
    break;
 
   }  /* end if */
@@ -352,18 +349,33 @@ end:
 static int _fill_audio_parameters ( FileContext* apFileCtx, SMS_Stream* apStm, int aLen ) {
 
  int         retVal = 0;
- int         lPos   = apFileCtx -> m_Pos;
- char        lBuf[ aLen ];
- char*       lpPtr  = lBuf;
+ unsigned int lPos  = apFileCtx -> m_CurPos;
+ int         lMinLen;
+ char*       lpBuffer;
+ char*       lpPtr;
  SMS_MPAInfo lInfo;
+
+ switch ( apStm -> m_pCodec -> m_ID ) {
+  case SMS_CodecID_MP2:
+  case SMS_CodecID_MP3:     lMinLen =  4; break;
+  case SMS_CodecID_AC3:     lMinLen =  7; break;
+  case SMS_CodecID_DTS:     lMinLen = 16; break;
+  case SMS_CodecID_PCM16BE: lMinLen =  3; break;
+  default: return 0;
+ }
+
+ /* PES lengths are 16-bit. A packet-sized VLA can exhaust the EE stack;
+  * keep it on the heap and check each parser's complete header length. */
+ if ( aLen < lMinLen || aLen > 65535 ) return 0;
+ lpBuffer = ( char* )malloc ( aLen );
+ if ( !lpBuffer ) return 0;
+ lpPtr = lpBuffer;
 
  lInfo.m_FreeFmtFrameSize = 0;
 
- apFileCtx -> Read ( apFileCtx, lBuf, aLen );
+ aLen = apFileCtx -> Read ( apFileCtx, lpBuffer, aLen );
 
- aLen -= 4;
-
- while ( aLen && !retVal ) {
+ while ( aLen >= lMinLen && !retVal ) {
 
   switch ( apStm -> m_pCodec -> m_ID ) {
 
@@ -430,7 +442,7 @@ static int _fill_audio_parameters ( FileContext* apFileCtx, SMS_Stream* apStm, i
 
     int lVal, lFreq;
 
-    if ( aLen > 2 ) {
+    {
 
      lVal  = lpPtr[ 1 ];
      lFreq = ( lVal >> 4 ) & 3;
@@ -456,6 +468,7 @@ static int _fill_audio_parameters ( FileContext* apFileCtx, SMS_Stream* apStm, i
 
  }  /* end while */
 end:
+ free ( lpBuffer );
  apFileCtx -> Seek ( apFileCtx, lPos );
 
  if ( retVal ) apStm -> m_Flags |= SMS_STRM_FLAGS_AUDIO;
@@ -476,9 +489,10 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  while ( 1 ) {
 
+  lPTS = lDTS = SMS_NOPTS_VALUE;
   lLen = _read_header ( apCont, &lStartCode, &lPTS, &lDTS );
 
-  if (  FILE_EOF( lpFileCtx )  ) {
+  if ( lLen <= 0 || FILE_EOF( lpFileCtx ) ) {
 
    if ( lpMyCont -> m_BufLen ) {
 
@@ -622,6 +636,8 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
     int lCode = _next_start_code ( lpFileCtx );
 
+    if ( lCode < 0 ) break;
+
     if ( lCode == 0x000001B8 || lCode == 0x000001B3 || (
           lCode == 0x00000100 && (
            (  File_GetUInt ( lpFileCtx ) >> 19  ) & 3
@@ -661,6 +677,7 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
  lpFileCtx    = apCont -> m_pFileCtx;
  lpMyCont     = ( _MPEGPSContainer* )calloc (  1, sizeof ( _MPEGPSContainer )  );
 
+ if ( !lpMyCont ) return 0;
  apCont -> m_pCtx = lpMyCont;
 
  while (  i++ < 1024 && !FILE_EOF( lpFileCtx )  ) {
@@ -746,11 +763,18 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
    if (  !*lIt || ( lCodecType == SMS_CodecTypeVideo && !lfVideoParam )  ) {
 
+    /* The stream walkers use a NULL sentinel, so reserve the last slot. */
+    if ( apCont -> m_nStm >= SMS_MAX_STREAMS - 1 ) break;
+
     SMS_Stream* lpStm = ( SMS_Stream* )calloc (  1, sizeof ( SMS_Stream )  );
 
     if ( lpStm ) {
 
      lpStm -> m_pCodec = ( SMS_CodecContext* )calloc (  1, sizeof ( SMS_CodecContext )  );
+     if ( !lpStm -> m_pCodec ) {
+      free ( lpStm );
+      break;
+     }
      lpStm -> m_pCodec -> m_Type = lCodecType;
      lpStm -> m_pCodec -> m_ID   = lID;
      lpStm -> m_pCodec -> m_Tag  = lTag;
@@ -802,6 +826,7 @@ error:
    apCont -> m_pCtx = NULL;
 
    SMS_DestroyContainer ( apCont, 0 );
+   apCont -> m_nStm = 0;
 
    retVal = 0;
    goto error;
