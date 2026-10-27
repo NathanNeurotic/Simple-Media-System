@@ -76,6 +76,26 @@ class TestTrackConversion(unittest.TestCase):
         self.assertEqual(self.info["streams"][2]["tags"]["title"], "Commentary 日本語")
         self.assertEqual(audio[1]["tags"]["handler_name"], "Commentary 日本語")
 
+    def test_worker_preserves_output_when_packet_validation_is_incomplete(self):
+        from validator import PacketScanError
+        from worker import ConversionWorker
+        final, partial = self.folder / "packet-warning.mp4", self.folder / "packet-warning.mp4.partial"
+        job = ConversionWorker("packet-warning", self.ff, self.fp, str(self.source), str(partial),
+                               str(final), self.settings(), .6)
+        failures, results = [], []
+        job.failed_signal.connect(lambda item, reason: failures.append(reason))
+        job.validation_signal.connect(lambda item, result, path: results.append((result, path)))
+        with patch("validator.scan_packet_sizes", side_effect=PacketScanError("ffprobe packet read failed")):
+            job.run()
+        self.assertFalse(failures, failures)
+        self.assertTrue(final.exists())
+        self.assertFalse(partial.exists())
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0][0].status, "WARN")
+        self.assertIn("packet read failed", results[0][0].generate_report())
+        self.assertEqual(results[0][1], str(final))
+        self.assertEqual(sum(s["codec_type"] == "audio" for s in get_media_info(self.fp, str(final))["streams"]), 2)
+
     def test_embedded_subtitle_selection_changes_the_picture(self):
         hashes = []
         for track in (0, 1):

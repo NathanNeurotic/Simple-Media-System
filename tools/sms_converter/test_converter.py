@@ -576,5 +576,139 @@ class TestMultiTrackAudioAndSubtitles(unittest.TestCase):
         self.assertNotIn("subtitles=", vf)
 
 
+class TestPacketValidation(unittest.TestCase):
+    """Incomplete ffprobe scans must not certify a conversion or discard its output."""
+
+    class Reader:
+        def __init__(self, records):
+            self.records = iter(records)
+            self.closed = False
+
+        def readline(self, limit):
+            # The scanner must consume bounded records, never the complete packet list.
+            assert 0 < limit <= 8192
+            return next(self.records, "")
+
+        def close(self):
+            self.closed = True
+
+    class Process:
+        def __init__(self, records, exit_code=0):
+            self.stdout = TestPacketValidation.Reader(records)
+            self.exit_code = exit_code
+            self.returncode = None
+            self.killed = False
+
+        def wait(self):
+            if self.returncode is None:
+                self.returncode = self.exit_code
+            return self.returncode
+
+        def poll(self):
+            return self.returncode
+
+        def kill(self):
+            self.killed = True
+            self.returncode = -9
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.media = Path(self.tmp.name) / "output.avi.partial"
+        self.media.write_bytes(b"encoded output")
+        self.metadata = {"format": {"duration": "1"}, "streams": [
+            {"codec_type": "video", "codec_name": "mpeg4", "width": 160,
+             "height": 128, "avg_frame_rate": "25/1", "bit_rate": "600000"},
+            {"codec_type": "audio", "codec_name": "mp3", "sample_rate": "48000",
+             "channels": 2, "bit_rate": "128000"},
+        ]}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def validate_probe(self, records=(), exit_code=0, diagnostics=b""):
+        from unittest.mock import patch
+        proc = self.Process(records, exit_code)
+        self.last_process = proc
+
+        def launch(cmd, **kwargs):
+            self.assertIn("packet=codec_type,size", cmd)
+            kwargs["stderr"].write(diagnostics)
+            return proc
+
+        with patch("validator.get_media_info", return_value=self.metadata), \
+             patch("validator.subprocess.Popen", side_effect=launch):
+            result = validate_converted_file("ffprobe", str(self.media))
+        self.assertTrue(proc.stdout.closed)
+        self.assertIsNotNone(proc.returncode)
+        return result
+
+    def test_failed_packet_probe_warns_instead_of_passing(self):
+        result = self.validate_probe(exit_code=17, diagnostics=b"packet scan failed")
+        self.assertEqual(result.status, "WARN")
+        self.assertIn("Packet-size validation incomplete", result.warnings[0])
+        self.assertIn("code 17", result.warnings[0])
+        self.assertIn("packet scan failed", result.generate_report())
+
+    def test_missing_ffprobe_and_empty_scan_warn(self):
+        from unittest.mock import patch
+        with patch("validator.get_media_info", return_value=self.metadata), \
+             patch("validator.subprocess.Popen", side_effect=FileNotFoundError("ffprobe missing")):
+            result = validate_converted_file("ffprobe", str(self.media))
+        self.assertEqual(result.status, "WARN")
+        self.assertIn("ffprobe missing", result.warnings[0])
+        self.assertEqual(self.validate_probe().status, "WARN")
+
+    def test_malformed_packet_records_warn_and_stop_the_process(self):
+        for record in ("not a packet\n", "codec_type=video\n", "codec_type=video|size=-1\n",
+                       "codec_type=audio|size=N/A\n", "x" * 4097):
+            with self.subTest(record=record[:40]):
+                self.assertEqual(self.validate_probe([record]).status, "WARN")
+                self.assertTrue(self.last_process.killed)
+
+    def test_diagnostics_or_a_missing_stream_type_cannot_pass(self):
+        records = ["codec_type=video|size=100\n", "codec_type=audio|size=20\n"]
+        self.assertEqual(self.validate_probe(records, diagnostics=b"damaged packet").status, "WARN")
+        self.assertEqual(self.validate_probe(records[:1]).status, "WARN")
+
+    def test_observed_oversize_packet_still_fails_an_incomplete_scan(self):
+        result = self.validate_probe([
+            f"codec_type=video|size={MAX_VIDEO_PACKET_SIZE + 1}\n", "bad record\n"])
+        self.assertEqual(result.status, "FAIL")
+        self.assertEqual(result.max_video_packet, MAX_VIDEO_PACKET_SIZE + 1)
+        self.assertTrue(result.reasons and result.warnings)
+        self.metadata["streams"][0]["codec_name"] = "h264"
+        self.assertEqual(self.validate_probe(exit_code=17).status, "FAIL")
+
+    def test_packet_scan_streams_records_and_tracks_every_packet(self):
+        def records():
+            for i in range(20000):
+                yield f"codec_type=video|size={i + 1}\n"
+            yield "codec_type=audio|size=321\n"
+        result = self.validate_probe(records())
+        self.assertEqual(result.status, "PASS")
+        self.assertEqual((result.max_video_packet, result.max_audio_packet), (20000, 321))
+
+    def test_real_ffmpeg_packet_maxima_match_the_reference(self):
+        import json
+        import subprocess
+        from validator import scan_packet_sizes
+        ff, fp = find_ffmpeg_binaries()
+        if not ff or not fp:
+            self.skipTest("FFmpeg and ffprobe are required")
+        media = Path(self.tmp.name) / "real.mpg"
+        subprocess.run([ff, "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=160x128:rate=25",
+                        "-f", "lavfi", "-i", "sine=sample_rate=48000", "-t", "0.2",
+                        "-c:v", "mpeg2video", "-c:a", "mp2", "-f", "mpeg", str(media)],
+                       check=True, capture_output=True)
+        ref = subprocess.run([fp, "-v", "error", "-show_packets", "-of", "json", str(media)],
+                             check=True, capture_output=True, text=True, encoding="utf-8")
+        packets = json.loads(ref.stdout)["packets"]
+        expected = tuple(max(int(p["size"]) for p in packets if p["codec_type"] == kind)
+                         for kind in ("video", "audio"))
+        self.assertEqual(scan_packet_sizes(fp, str(media)), expected)
+        self.assertEqual(validate_converted_file(fp, str(media)).status, "PASS")
+
+
 if __name__ == "__main__":
     unittest.main()
