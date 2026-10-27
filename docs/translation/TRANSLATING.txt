@@ -16,26 +16,27 @@ HOW SMS USES IT
 
 THE FIVE RULES (break any one and SMS silently ignores the WHOLE file and
 falls back to English -- there is no error message):
-  1. EXACTLY 308 lines. Do not add or remove a line. One English line in ->
+  1. EXACTLY 311 lines. Do not add or remove a line. One English line in ->
      one translated line out, same position.
   2. NEVER leave a line blank. An empty line makes the parser stop early, the
-     line count no longer equals 308, and the entire file is rejected. If a
+     line count no longer equals 311, and the entire file is rejected. If a
      string should stay untranslated, copy the English text verbatim -- do not
      blank it.
   3. Keep every  %s  %d  %.1f  %02d  etc. EXACTLY as-is (same specifiers, same
      order). They are replaced at runtime with filenames, numbers, sizes.
      Lines flagged HAS-FORMAT below have these.
-  4. Do NOT translate the two path lines (166, 167) -- flagged LOCKED-PATH.
+  4. Do NOT translate path entries 166, 167 in the zero-based reference below
+     -- flagged LOCKED-PATH.
      They are boot-file paths, not text. Copy them verbatim.
   5. Save as plain text. ASCII or the code page that matches SMS's Character
      Set (Browser settings -> Character set: WinLatin1 / WinLatin2 / Cyrillic /
      Greek). CRLF or LF line endings are both fine; UTF-8 is NOT -- SMS renders
      single-byte encodings.
 
-NEW IN THIS BUILD: lines 269..307 were added for UI that used to be English-only
+NEW IN THIS BUILD: entries 269..310 (zero-based below) extend UI that used to be English-only
 (device menu: MX4SIO / HDD BDM / i.LINK / MMCE / UDPFS start+autostart; the UDPFS
 and ATA start/error messages; the on-screen keyboard; the SMB server editor). In
-the shipped community packs these 39 tail lines are still ENGLISH placeholders --
+most shipped community packs these tail entries are still ENGLISH placeholders --
 that is where translation is now needed. Keep device/protocol proper-nouns
 (MX4SIO, UDPFS, i.LINK, MMCE, HDD BDM) verbatim; translate the words around them.
 
@@ -48,7 +49,7 @@ INSTALLING A FINISHED TRANSLATION (from the legacy pack's own readme)
   3. Select / enable it in the SMS menu
 
 The 19 community translations in docs/translation/ (BG CA CZ DE EN ES FR HU ID IT
-NL PL PT PT-BR RU SE SK TR UA) were extended to 308 lines to match THIS build, so
+NL PL PT PT-BR RU SE SK TR UA) were extended to 311 lines to match THIS build, so
 they load as-is (new-feature lines show English until translated). They are the
 best reference for tone/length. (TR had a pre-existing duplicate line that was
 removed to realign it.)
@@ -365,3 +366,6 @@ removed to realign it.)
 305 | STR_SMB_EDI | SMB server
 306 | STR_START_S | Start SMB server support
 307 | STR_START_H | Start HOST ( ps2dev ) support
+308 | STR_AUTOSTA | Autostart HOST ( ps2dev )
+309 | STR_AUTOSTA | Autostart SMB
+310 | STR_NET_SWI | Network is already running. Restart it now to apply?

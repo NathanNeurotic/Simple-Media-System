@@ -2,6 +2,9 @@
 
 ## Build identity and reporter evidence
 
+Further source fixes, issue acceptance criteria and next-agent instructions:
+[open-issues handoff](2026-10-26-open-issues-handoff.md).
+
 PR #30 remains unmerged. The rolling release is master
 `7b172d0c339f96b80c4eb22249c7f67c99180389`.
 However, the reporters explicitly tested artifact commit
