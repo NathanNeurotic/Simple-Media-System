@@ -40,6 +40,8 @@ jobs:
     - name: Host playback and file I/O regression checks
       run: |
         python3 tools/test_stream_allocation.py
+        python3 tools/test_cdda_stream_failure.py
+        python3 tools/test_stream_rebuffer.py
         python3 tools/test_stio_refill.py
         python3 tools/test_mpeg_ps_probe.py
         python3 tools/test_playlist_playback.py

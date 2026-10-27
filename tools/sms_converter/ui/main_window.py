@@ -342,7 +342,7 @@ class MainWindow(QMainWindow):
     def _on_preset_changed(self, name: str, preset: Optional[Preset]):
         if preset:
             self.advanced_settings.load_preset(preset)
-        self._recalculate_estimates()
+        self._on_settings_changed(self.advanced_settings.get_settings_dict())
 
     def _on_destination_changed(self, mode: str, path: str):
         pass
@@ -401,6 +401,8 @@ class MainWindow(QMainWindow):
             and not settings.get("normalize_audio")
             and not settings.get("two_pass")
             and not settings.get("allow_upscale")
+            and not settings.get("audio_track", 0)
+            and (preset.vcodec is None or not settings.get("subtitle_file"))
         )
 
     def _estimate_bytes(self, duration_sec, settings):

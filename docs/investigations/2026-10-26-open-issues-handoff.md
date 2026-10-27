@@ -28,6 +28,35 @@ Audit date: 2026-10-26 (America/Los_Angeles). Repository:
 
 ## Fixes implemented in this follow-up
 
+### Completed review of 266851d: additional fixes
+
+The review that was pending at the first handoff found more implementation
+defects. These were verified against the callers and addressed:
+
+- Folder shuffle now starts the initial menu selection at the **new** list
+  head. The prior local variable retained the original head, so accepting the
+  menu could skip the earlier part of the shuffled list. The test menu stub
+  incorrectly reset that selection and masked the defect; it now preserves
+  the incoming selection like the real menu, with a deterministic permutation
+  that moves the original head.
+- Both PlayerControl resume paths now request the same block/sector count as
+  playback startup (`m_StreamSize >> 3`): 48 STIO blocks or 54 CDDA sectors.
+  They previously requested eight times that amount after a seek.
+- Matching stream-buffer size/count now reuses existing buffers without
+  allocating replacements. Genuine replacements reset the cursors to their
+  new buffer. CDDA also resets its active buffer/cursors before its first read,
+  including reuse, so a failed read/sync cannot leave a cursor into a freed or
+  different buffer. Actual CDDA read/sync-failure tests exercise ordinary
+  seek/read recovery after both replacement and reuse.
+- Converter source-track selection no longer confuses an eight-output-stream
+  limit with the source-track index; later source tracks can be selected.
+  Changing tracks/subtitles marks settings custom, and loading another preset
+  recomputes the badge while preserving those source selections.
+
+The corrected allocation, CDDA, rebuffer and playlist regressions fail against
+266851d and pass with these changes. These findings were work remaining on our
+side; reporter confirmation alone would not have completed that earlier head.
+
 ### MPEG-PS probing, allocation and progress (#29)
 
 `src/SMS_ContainerMPEG_PS.c`:
@@ -118,11 +147,12 @@ multi-track output as if the entire runtime selection feature were absent.
   header restores the wrong cursor, and a zero-length payload triggers the
   sanitizer's non-positive VLA-bound error. Both fail before these fixes.
 - Existing `test_stream_allocation.py`, `test_stio_refill.py`, dev9 v1.1 IRX ABI
-  gate, all 26 converter tests and all nine converter preset conversions passed.
+  gate, all 27 converter tests and all nine converter preset conversions passed.
 - Standard, packed, `BDM=0` and `SMS_DIAG=1` builds passed using the repository's
   existing `ps2dev/ps2dev:v1.0` GCC image. Builds ran in an isolated container
   copy, preserving the existing checkout's `obj/` and `bin/` recovery artifacts.
-- The three new regressions are included in the compilation workflow.
+- All new regressions, including CDDA failure recovery and start/resume stream
+  sizing, are included in the compilation workflow.
 - No new physical-console run or emulator acceptance test was performed.
   Codec/DMA stubs cannot establish color correctness, real decoding, device
   timing, audio/video synchronization or the reporters' reproduction results.

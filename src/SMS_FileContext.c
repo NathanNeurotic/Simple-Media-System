@@ -595,6 +595,8 @@ static int File_AllocStreamBuffers ( FileContext* apCtx, unsigned int aSize, int
  unsigned int lAllocSize;
 
  if ( !aSize || aSize > 0xFFFFFFFFU - 63 ) return 0;
+ if ( apCtx -> m_pBuff[ 0 ] && apCtx -> m_BufSize == aSize &&
+      ( anBuffers == 2 ) == ( apCtx -> m_pBuff[ 1 ] != NULL ) ) return 1;
  lAllocSize = ( aSize + 63 ) & ~63;
  lpData = memalign ( 64, lAllocSize );
  if ( anBuffers == 2 ) lpData1 = memalign ( 64, lAllocSize );
@@ -607,6 +609,7 @@ static int File_AllocStreamBuffers ( FileContext* apCtx, unsigned int aSize, int
  free ( apCtx -> m_pBuff[ 1 ] );
  apCtx -> m_pBuff[ 0 ] = lpData;
  apCtx -> m_pBuff[ 1 ] = lpData1;
+ apCtx -> m_pPos = apCtx -> m_pEnd = ( unsigned char* )lpData;
  apCtx -> m_BufSize = aSize;
  apCtx -> m_CurBufSize = lAllocSize;
  return 1;
@@ -638,6 +641,7 @@ static int CDDA_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
   lOffset                   = aStartPos + lpPriv -> m_pCtx -> m_Offset;
   apCtx -> m_CurBuf         = 0;
+  apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
   lpPriv -> m_nSectors      = anSectors;
   lpPriv -> m_CurrentSector = lpPriv -> m_StartSector + lOffset / 2352;
   lnSectors                 = lpPriv -> m_EndSector - lpPriv -> m_CurrentSector;

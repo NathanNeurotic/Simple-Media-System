@@ -540,6 +540,35 @@ class TestMultiTrackAudioAndSubtitles(unittest.TestCase):
         self.assertTrue(changes)
         widget.close()
 
+    def test_later_source_tracks_and_preset_changes_preserve_custom_state(self):
+        from qt_compat import QApplication
+        from ui.main_window import MainWindow
+        from ui.preset_selector import LABEL_CUSTOM_SETTINGS
+        app = QApplication.instance() or QApplication([])
+        ff, fp = find_ffmpeg_binaries()
+        window = MainWindow(ff, fp)
+        widget = window.advanced_settings
+        video_names = [name for name, preset in PRESETS.items() if preset.vcodec]
+        first, second = video_names[:2]
+        window.preset_selector.combo_preset.setCurrentText(first)
+        widget.spin_atrack.setValue(12)
+        self.assertEqual(widget.get_settings_dict()["audio_track"], 12)
+        settings = widget.get_settings_dict()
+        cmd = build_ffmpeg_cmd(ff, "source.mkv", "output.mpg", settings)
+        self.assertIn("0:a:12", cmd)
+        self.assertEqual(window.preset_selector.label_badge.text(), LABEL_CUSTOM_SETTINGS)
+        window.preset_selector.combo_preset.setCurrentText(second)
+        self.assertEqual(widget.get_settings_dict()["audio_track"], 12)
+        self.assertEqual(window.preset_selector.label_badge.text(), LABEL_CUSTOM_SETTINGS)
+        widget.spin_atrack.setValue(0)
+        widget.subtitle_path = "movie.srt"
+        widget._on_control_changed()
+        self.assertEqual(window.preset_selector.label_badge.text(), LABEL_CUSTOM_SETTINGS)
+        window.preset_selector.combo_preset.setCurrentText(first)
+        self.assertEqual(widget.subtitle_path, "movie.srt")
+        self.assertEqual(window.preset_selector.label_badge.text(), LABEL_CUSTOM_SETTINGS)
+        window.close()
+
     def test_no_subtitle_by_default(self):
         ff, _ = find_ffmpeg_binaries()
         cmd = build_ffmpeg_cmd(ff, "in.mp4", "out.mpg.partial", self._settings())

@@ -30,7 +30,8 @@ static unsigned SMS_rand(void) { return g_RandSeed=(g_RandSeed*17+3)&32767; }
 static void GUI_Initialize(int n) { (void)n; }
 static void GUI_Redraw(int n) { (void)n; }
 static int _playlist_menu(SMS_List *list,SMS_ListNode **item) {
- *item=list->m_pHead;return menu_cancel;
+ /* Opening the real menu preselects *item; confirming keeps that selection. */
+ (void)list;return menu_cancel;
 }
 static void **SMS_OpenMediaFile(const char *name,int flags) {
  void **p;(void)flags;++opens;
@@ -69,6 +70,7 @@ int main(void) {
   }
   opens=plays=destroys=wrappers=0;g_Config.m_PlayerFlags=random;
   _start_playlist(&list);
+  if (random) assert(list.m_pHead != nodes);
   assert(opens==4 && plays==2 && destroys==2 && wrappers==0);
   for(p=list.m_pHead;p;p=p->m_pNext) {
    assert(++count<=4);seen|=1U<<(p-nodes);

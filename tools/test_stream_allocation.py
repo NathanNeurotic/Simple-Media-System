@@ -45,9 +45,24 @@ int main(void) {
   } else {
    assert(File_AllocStreamBuffers(&ctx, 393216, count) == 1);
    assert(ctx.m_BufSize == 393216 && ctx.m_CurBufSize == 393216);
+   assert(ctx.m_pPos == ctx.m_pBuff[0] && ctx.m_pEnd == ctx.m_pBuff[0]);
    memset(ctx.m_pBuff[0], 0x55, ctx.m_BufSize);
    if (count == 2) memset(ctx.m_pBuff[1], 0xAA, ctx.m_BufSize);
    else assert(ctx.m_pBuff[1] == NULL);
+  }
+  if (!fail) {
+   /* Re-seeking with the same shape must not allocate or lose the cursor. */
+   ctx.m_pPos = (char *)ctx.m_pBuff[0] + 16;
+   ctx.m_pEnd = (char *)ctx.m_pBuff[0] + 32;
+   before = ctx; allocation = 0; fail_at = 1;
+   assert(File_AllocStreamBuffers(&ctx, 393216, count) == 1);
+   assert(allocation == 0 && memcmp(&ctx, &before, sizeof(ctx)) == 0);
+   /* The same size with a different buffer count still needs a replacement. */
+   allocation = 0; fail_at = 0;
+   assert(File_AllocStreamBuffers(&ctx, 393216, 3-count) == 1);
+   assert(allocation == 3-count);
+   assert(ctx.m_pPos == ctx.m_pBuff[0] && ctx.m_pEnd == ctx.m_pBuff[0]);
+   assert((ctx.m_pBuff[1] != NULL) == (count == 1));
   }
   free(ctx.m_pBuff[0]); free(ctx.m_pBuff[1]);
  }
@@ -58,6 +73,7 @@ with tempfile.TemporaryDirectory() as tmp:
     src = Path(tmp) / "test.c"
     exe = Path(tmp) / "test"
     src.write_text(harness)
-    subprocess.run([os.environ.get("CC", "cc"), "-Wall", "-Wextra", "-Werror", str(src), "-o", str(exe)], check=True)
+    subprocess.run([os.environ.get("CC", "cc"), "-Wall", "-Wextra", "-Werror", "-no-pie",
+                    "-fsanitize=address,undefined", "-fno-sanitize-recover=all", str(src), "-o", str(exe)], check=True)
     subprocess.run([str(exe)], check=True)
 print("STIO/CDDA allocation: one/two-buffer success and each allocation failure passed")

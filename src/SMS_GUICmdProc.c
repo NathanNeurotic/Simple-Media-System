@@ -256,6 +256,8 @@ static void _start_playlist ( SMS_List* apList ) {
 
  }  /* end if */
 
+ lpNode = apList -> m_pHead;
+
  if (  !_playlist_menu ( apList, &lpNode )  ) {
 
   while ( lpNode ) {

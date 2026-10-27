@@ -309,7 +309,9 @@ class AdvancedSettingsWidget(QWidget):
         # (commentary, additional dubs). 0 is the first -- the long-standing
         # default -- so existing presets and queue items behave identically.
         self.spin_atrack = QSpinBox()
-        self.spin_atrack.setRange(0, 7)
+        # A source can have more tracks than SMS can retain in one output.
+        # Only the selected track is mapped, so the output limit does not apply.
+        self.spin_atrack.setRange(0, 2147483647)
         self.spin_atrack.setValue(0)
         self.spin_atrack.setToolTip(
             "Which source audio track to keep: 0 = first (default), 1 = second, ...\n"

@@ -805,7 +805,7 @@ end:
  if ( retVal ) {
 
   lpFileCtx -> Stream ( lpFileCtx, lFilePos, 0                         );
-  lpFileCtx -> Stream ( lpFileCtx, lFilePos, lpFileCtx -> m_StreamSize );
+  lpFileCtx -> Stream ( lpFileCtx, lFilePos, lpFileCtx -> m_StreamSize >> 3 );
 
  }  /* end if */
 
@@ -1347,7 +1347,7 @@ redo:
  
    if (  lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos )  ) {
 
-    lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, lpFileCtx -> m_StreamSize );
+    lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, lpFileCtx -> m_StreamSize >> 3 );
 
     s_Player.m_VideoTime = 0;
     s_Player.m_AudioTime = 0;
