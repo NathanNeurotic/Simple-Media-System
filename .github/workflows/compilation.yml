@@ -51,6 +51,7 @@ jobs:
         python3 tools/test_stream_rebuffer.py
         python3 tools/test_stio_refill.py
         python3 tools/test_mpeg_ps_probe.py
+        python3 tools/test_mpeg12_frame_lifetime.py
         python3 tools/test_container_probe.py
         python3 tools/test_m3u_probe.py
         python3 tools/test_playlist_playback.py

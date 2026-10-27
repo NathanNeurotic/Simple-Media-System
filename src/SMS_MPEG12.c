@@ -47,6 +47,15 @@ static int   _set_dma ( void*                    );
 
 static MPEGState s_MPEGState;
 
+static void _wait_frame ( SMS_FrameBuffer* apFrame ) {
+
+/* The GIF completion handler releases displayed RGB frames with -1. The
+ * pointer queue can have space while a previous upload still owns a frame. */
+ while ( apFrame -> m_pBase && apFrame -> m_FrameType >= 0 )
+  RotateThreadReadyQueue ( SMS_THREAD_PRIORITY );
+
+}  /* end _wait_frame */
+
 static void _hwctl ( SMS_CodecContext* apCtx, SMS_CodecHWCtl aCtl ) {
 
  switch ( aCtl ) {
@@ -139,6 +148,10 @@ static void* _init_cb ( void* apParam, MPEGSequenceInfo* apSeqInfo ) {
 
  if ( lpState -> m_Width != lWidth || lpState -> m_Height != lHeight ) {
 
+  int i;
+  for ( i = 0; i < sizeof ( lpState -> m_Pics ) / sizeof ( lpState -> m_Pics[ 0 ] ); ++i )
+   _wait_frame ( &lpState -> m_Pics[ i ] );
+
   lpState -> m_pInfo  = apSeqInfo;
   lpState -> m_Width  = lWidth;
   lpState -> m_Height = lHeight;
@@ -195,6 +208,8 @@ static int32_t MPEG12_Decode ( SMS_CodecContext* apCtx, SMS_RingBuffer* apOutput
 
  lPicIdx = s_MPEGState.m_PicIdx;
  lpFrame = &s_MPEGState.m_Pics[ lPicIdx ];
+
+ _wait_frame ( lpFrame );
 
  retVal = MPEG_Picture ( lpFrame -> m_pBase, &lPTS );
 
