@@ -28,6 +28,16 @@ Audit date: 2026-10-26 (America/Los_Angeles). Repository:
 
 ## Fixes implemented in this follow-up
 
+### Continuation: MOV packet handling and converter #22
+
+The continuation after `a99a1a2` found additional work on our side. It adds the
+MOV fixes below, multi-audio conversion, embedded text-subtitle burn-in,
+source-SD sizing and a high-quality Xvid/PCM preset. It also repairs an actual
+Windows CI download failure. The separate
+[color investigation](2026-10-26-mpeg-color-control.md) records fresh decoder-only
+emulator controls, with their limitations. None of these results closes a
+reporter-owned playback issue.
+
 ### Completed review of 266851d: additional fixes
 
 The review that was pending at the first handoff found more implementation
@@ -98,6 +108,33 @@ The existing 64 KiB seek optimization and EOF/overflow clamp remain. Driver
 large-offset support and seek latency are not proven by the host stubs; do not
 claim all devices seek in constant time or that all files above 2 GiB work.
 
+### MOV packet selection and composition timing (#10)
+
+`src/SMS_ContainerMOV.c` had more defects beyond large atom skipping:
+
+- When skipping disabled streams, `_ReadPacket` retained the preceding sample
+  pointer between iterations. Once all streams were exhausted, the stale
+  pointer could keep the loop running indefinitely. Each selection now starts
+  empty and is bounded by both the sample count and the built index.
+- The composition-time (`ctts`) entry was dereferenced before its bound was
+  checked. A truncated table produced a heap-buffer-overflow. Offsets now walk
+  with every consumed sample, including skipped streams, skip empty entries,
+  and fall back to DTS after the table ends. Seeking synchronizes to the same
+  exhausted state, rather than reusing the last offset indefinitely.
+- DTS ordering and cross-stream seeking multiplied two 32-bit values before
+  widening them. The multiplication now takes place in 64 bits.
+- Sample offset/size bounds are checked before allocation. Failed positioning
+  and short payload reads terminate instead of returning incomplete packets.
+  Zero-byte samples are skipped with a finite sample cursor. Stream/codec
+  allocations in the track parser are checked.
+
+`tools/test_mov_packets.py` compiles the actual packet/timing functions under
+ASan/UBSan. The `a99a1a2` baseline independently fails its disabled-stream test
+by timeout, composition test with a heap-buffer-overflow, timestamp-ordering
+assertion and short-read assertion. The current source passes all cases. This
+is not an end-to-end MOV parser/decoder or real-device test, and the exact
+0:28/0:35 reporter file remains unavailable.
+
 ### Folder-playlist failure handling (#25)
 
 `src/SMS_GUICmdProc.c`: Play-all now skips a failed file open before dereferencing
@@ -131,6 +168,45 @@ player subtitle menu. Existing audio-language selection also exists in
 `SMS_PlayerControl.c` / `SMS_PlayerMenu.c`; do not scope the converter's missing
 multi-track output as if the entire runtime selection feature were absent.
 
+### Converter track output, SD sizing and high-quality preset (#22)
+
+- Optional **Keep all source audio tracks** encodes all dubs/commentary with
+  the chosen settings in AVI, MPEG-PS or MP4. It validates the source metadata
+  before encoding and rejects more than six audio tracks plus video, reserving
+  the player's trailing NULL stream slot. Manual single-track selection remains
+  the default. Language/title metadata is mapped where the muxer supports it.
+- Optional embedded **text** subtitle selection burns that track permanently
+  into the picture. It rejects absent/bitmap tracks and simultaneous external
+  and embedded choices. This does not add switchable embedded subtitles,
+  sidecar export, bitmap conversion or a new player subtitle decoder.
+- **Keep source SD resolution** retains even source dimensions up to 720x576;
+  larger sources use the preset target. It remains opt-in for existing presets.
+- The new **High Quality - Fast Storage** Xvid AVI preset targets 10 Mbps,
+  keyframe interval 6, 48 kHz stereo PCM16 audio and source SD resolution. PCM
+  is uncompressed after conversion; resampling/channel conversion means it is
+  not a promise of a bit-identical source audio copy. It makes no universal
+  transport/real-console throughput guarantee.
+- Validation checks every output audio/video stream, not only the first.
+  Estimates include every mapped audio track and PCM's fixed data rate. Source
+  probing is cached across both encoding passes. FFprobe JSON is explicitly
+  read as UTF-8, preserving non-Latin track tags on Windows.
+
+### Windows FFmpeg fallback build blocker
+
+The push workflow for `a99a1a2` had a genuine Win7-job setup failure: Chocolatey
+returned 503/504, then the pinned August 8 FFmpeg fallback returned 404. The
+equivalent pull-request job passed; that did not repair the fallback.
+
+BtbN's [retention policy](https://github.com/BtbN/FFmpeg-Builds#release-retention-policy)
+keeps daily builds for 14 days and month-end builds for two years. The action
+now pins the retained September 30 build, still checks its SHA-256 before
+unpacking, and runs that path directly in the Win7 job so it is exercised
+regularly. Refresh the pin before September 2028. The runner's FFmpeg validation
+does not prove that this FFmpeg binary runs on Windows 7 itself.
+
+Verified fallback archive SHA-256:
+`7b801cdd3a1a0bb54ae6f572187e68b4ed54f52086cfee133fab2180bfb429fa`.
+
 ## Validation performed
 
 - New `tools/test_mpeg_ps_probe.py` compiles the actual entire MPEG-PS source
@@ -147,15 +223,24 @@ multi-track output as if the entire runtime selection feature were absent.
   header restores the wrong cursor, and a zero-length payload triggers the
   sanitizer's non-positive VLA-bound error. Both fail before these fixes.
 - Existing `test_stream_allocation.py`, `test_stio_refill.py`, dev9 v1.1 IRX ABI
-  gate, all 27 converter tests and all nine converter preset conversions passed.
+  gate, all 27 existing converter tests, eight new track/worker/UI tests and all
+  ten converter preset conversions passed. New real FFmpeg cases cover both
+  dubs in MP4, AVI and MPEG-PS, language tags, two-pass encoding with one source
+  probe, distinct burned subtitle pictures, SD sizing, invalid track selections,
+  excess streams and secondary unsupported codecs. They also passed using the
+  exact replacement fallback archive.
 - Standard, packed, `BDM=0` and `SMS_DIAG=1` builds passed using the repository's
   existing `ps2dev/ps2dev:v1.0` GCC image. Builds ran in an isolated container
   copy, preserving the existing checkout's `obj/` and `bin/` recovery artifacts.
 - All new regressions, including CDDA failure recovery and start/resume stream
-  sizing, are included in the compilation workflow.
-- No new physical-console run or emulator acceptance test was performed.
-  Codec/DMA stubs cannot establish color correctness, real decoding, device
-  timing, audio/video synchronization or the reporters' reproduction results.
+  sizing and MOV packet handling, are included in the compilation workflow.
+  Modern Windows/Linux and the PySide2 Win7 job run the new converter tests.
+- Fresh isolated PCSX2 2.9.52 controls decoded five synthetic MPEG-2 frames in
+  both 16-bit and 32-bit modes using SMS's actual libmpeg/IPU source. See the
+  separate color investigation for hashes, errors and excluded player paths.
+- No physical-console run or reporter acceptance test was performed. Host
+  stubs and decoder-only emulation do not establish device timing, complete
+  player output, audio/video synchronization or the reporters' reproductions.
 
 Local audit artifacts are under ignored `build/issue-audit/`: target build logs,
 four ELFs in `dist/`, the original translation ZIP, import validation script,
@@ -168,10 +253,10 @@ baseline failure logs and a backup of the pre-existing unfinished audio test.
 | [#29 MPEG-2/AC3 freeze](https://github.com/NathanNeurotic/Simple-Media-System/issues/29) | Highest regression priority. Test the unchanged reporter MPG with the new standard and DIAG builds and the same USB/boot setup, against 2.9rev4. Obtain a short failing sample if it still fails. Diagnostic numbers are decimal: MPEG-PS is **E48 probe mpg**, PTS phases are **E50/E51/E52**. Save the last code and exact artifact identity. Existing comment text saying E40-E4B uses the wrong notation. |
 | [#24 high-bitrate stutter](https://github.com/NathanNeurotic/Simple-Media-System/issues/24) | The reporter rejected the larger-buffer candidate in `aa801fec`; the current 32 KiB synchronous refill batch remains unconfirmed. Compare one unchanged MPG on USB and MX4SIO with 2.9rev4 and the new build. Measure bytes/call, elapsed read time, queue starvation and decode time before selecting a throughput change. A smaller batch does not add read-ahead or reduce the total RPC count. If starvation is proven, design an owned reader queue/cancellation path; do not switch shared fileXio global async mode casually. Preserve existing 4 KiB MX4SIO/MMCE calls and UDPFS sizing. |
 | [#20 green color](https://github.com/NathanNeurotic/Simple-Media-System/issues/20), [#23 red fluctuation](https://github.com/NathanNeurotic/Simple-Media-System/issues/23) | Unresolved. The forced BT.601/range converter change was tested and failed/worsened the result, then reverted. No decoder/color coefficient fix is supplied by this audit. Obtain the exact converted failing MPG and source/FFmpeg log. Host-decode that MPG, then compare the identical bytes in 2.9rev4/current SMS with fixed PS2 video mode, RGB/component output, cable/display and 16/32-bit color settings. Compare converter outputs using one fixed player separately. An ignored matrix tag alone does not explain or prove the cause of abrupt saturated color patches. |
-| [#10 MP4 stall](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) | Large skips and failed-seek bookkeeping are addressed in code. The 0:28 start and 0:35 video/audio-loop stall are still unproven. Get the exact original and converter-produced files; record atom layout, codecs, timestamps, sample tables, file size and device offsets. Test moov-at-end and fast-start controls, including a device large-offset case. A fast open is not decode-stall acceptance. |
+| [#10 MP4 stall](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) | Large skips, failed-seek bookkeeping, disabled-stream EOF loops, truncated composition tables, 32-bit DTS multiplication and incomplete sample reads are addressed in code. The 0:28 start and 0:35 video/audio-loop stall are still unproven. Get the exact original and converter-produced files; record atom layout, codecs, timestamps, sample tables, file size and device offsets. Test moov-at-end and fast-start controls, including a device large-offset case. A fast open is not decode-stall acceptance. |
 | [#27 skin restart](https://github.com/NathanNeurotic/Simple-Media-System/issues/27) | Existing PR repaint candidate needs a USB boot with default PAL/NTSC mode: import/select skin, save configuration, restart, confirm the background. Also retain MC boot and non-default display-mode controls. Spanish submission is now integrated; validate glyphs, clipping and the installed language pack on console. Translation acceptance does not close the skin defect. |
 | [#25 shuffle](https://github.com/NathanNeurotic/Simple-Media-System/issues/25) | Folder shuffle implementation exists and failed-open/lifetime defects are now fixed. Test Randomize-playlist on/off with Play all -> Video, every eligible file appearing once, Stop/next behavior, a missing/unreadable item and a large folder. The toggle remains on the MP3 settings page, so document its effect on video folders. Console behavior is not yet accepted. |
-| [#22 converter tracks/subtitles](https://github.com/NathanNeurotic/Simple-Media-System/issues/22) | Partial implementation only: select **one** source audio track and optionally burn an **external** subtitle file. Still missing: retaining multiple output audio tracks/dubs, embedded subtitle selection/export, the requested preserve-source SD resolution option and max-quality convenience preset. Existing manual controls are not that preset. Build on the player's existing audio switching and external subtitle support. Extend validation beyond the first audio/video stream before allowing multiple mapped streams; retain container/codec limits and the actual demuxer's stream capacity. Do not offer generic lossless audio in a container whose reader cannot decode it. Treat 10 Mbps playback as transport/content-specific evidence, not a universal throughput guarantee. |
+| [#22 converter tracks/subtitles](https://github.com/NathanNeurotic/Simple-Media-System/issues/22) | Multi-audio output, external/embedded text-subtitle burn-in, keep-source-SD sizing and the requested 10 Mbps/GOP 6 convenience preset are implemented and host-tested. Validate actual audio switching, SD aspect/display and high-quality Xvid/PCM on SMS with suitable storage. Switchable embedded subtitles, sidecar export and bitmap subtitles remain outside the implemented burn-in path; decide whether any is needed after testing the requested workflow. Uncompressed 48 kHz stereo PCM is not a bit-identical source-preservation promise. |
 | [#26 poster grid](https://github.com/NathanNeurotic/Simple-Media-System/issues/26) | No implementation in either open PR. A separate UI feature remains. Define artwork naming (e.g. same-basename JPEG), fallback behavior, dimensions, navigation and memory/VRAM budget. Reuse existing JPEG decode/rescale/upload for an initial bounded visible-page cache; release resources when changing folder or starting playback. Account for missing/corrupt/oversized art and slow/disconnected storage. PNG support must be established separately. Keep the normal list usable without artwork. |
 
 ## Next-agent execution order
@@ -184,8 +269,9 @@ baseline failure logs and a backup of the pre-existing unfinished audio test.
    issue symptoms; a successful host test or an unrelated fixed defect is not
    grounds for closing a reporter-owned issue.
 3. Complete the #27 restart/language and #25 folder-playlist console checks.
-4. Implement #22's remaining converter output/options against existing player
-   capabilities. Develop #26 independently from playback regression work.
+4. Verify #22's new outputs with the player's audio switching and external
+   subtitle support; distinguish optional further subtitle work from implemented
+   burn-in. Develop #26 independently from playback regression work.
 5. Reconcile merge-policy requirements and publish only after the intended
    review/acceptance decision. Leave reporter-owned issues open for confirmation.
 
@@ -193,4 +279,6 @@ The checkout initially contained untracked `tools/mpeg_decoder_probe/` and
 `tools/test_mpeg_ps_audio.py`. They were preserved and excluded from the
 follow-up commit. Their decoder output files and a pre-existing emulator log
 are unfinished investigation artifacts, not new acceptance evidence. Do not
-remove them or mistake them for a completed console test.
+remove them or mistake them for a completed console test. The new, tracked
+`tools/mpeg_color_probe/` and its explicitly recorded isolated emulator runs
+are separate from those pre-existing artifacts.
