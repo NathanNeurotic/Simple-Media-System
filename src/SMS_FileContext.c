@@ -1305,7 +1305,6 @@ static int STIO_Read ( FileContext* apCtx, void* apBuf, unsigned int aSize ) {
    if ( lLen == 0 ) {
     if ( apCtx -> m_CurPos < apCtx -> m_Size ) {
      apCtx -> m_CurPos = apCtx -> m_Size;
-     lSize = aSize;
     }  /* end if */
     break;
    }  /* end if */
@@ -1410,7 +1409,7 @@ static int STIO_FillStm ( FileContext* apCtx ) {
  int              lnRead = 0;
  STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
 
- if (  apCtx -> m_Pos < apCtx -> m_Size ) {
+ if (  apCtx -> m_CurPos < apCtx -> m_Size ) {
 
    int lOldBuf;
 #ifdef _WIN32
@@ -1419,8 +1418,14 @@ static int STIO_FillStm ( FileContext* apCtx ) {
         )
   ) {
 #else  /* PS2 */
-  if (  fioSync ( FIO_WAIT, &lnRead )  ) {
+  if (  fioSync ( FIO_WAIT, &lnRead ) == FIO_COMPLETE  ) {
 #endif  /* _WIN32 */
+   /* A completed RPC can still contain a failed read. Never publish a
+    * negative span, or replay a cached completion after logical EOF. */
+   if ( lnRead <= 0 || ( unsigned int )lnRead > apCtx -> m_BufSize ) {
+    apCtx -> m_pPos = apCtx -> m_pEnd;
+    return 0;
+   }
    lOldBuf            = apCtx -> m_CurBuf;
    apCtx -> m_CurBuf  = !apCtx -> m_CurBuf;
    apCtx -> m_pPos    = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
@@ -1431,12 +1436,21 @@ static int STIO_FillStm ( FileContext* apCtx ) {
     lpPriv -> m_Ovlp.Offset     = apCtx -> m_CurPos + lnRead;
     lpPriv -> m_Ovlp.OffsetHigh = 0;
 
-    ReadFile (
+    if ( !ReadFile (
      lpPriv -> m_hFile, apCtx -> m_pBuff[ lOldBuf ], apCtx -> m_BufSize,
      &lnRead, &lpPriv -> m_Ovlp
-    );
+    ) && GetLastError () != ERROR_IO_PENDING ) {
+     apCtx -> Seek = STIO_Seek;
+     apCtx -> Fill = STIO_Fill;
+    }
 #else
-    fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ lOldBuf ], apCtx -> m_BufSize );
+    if (  fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ lOldBuf ], apCtx -> m_BufSize ) < 0  ) {
+     /* No prefetch was queued. Continue with ordinary synchronous reads at
+      * the descriptor's known position after the buffer just completed. */
+     fioSetBlockMode ( FIO_WAIT );
+     apCtx -> Seek = STIO_Seek;
+     apCtx -> Fill = STIO_Fill;
+    }
 #endif  /* _WIN32 */
    }  /* end if */
 
@@ -1446,16 +1460,19 @@ static int STIO_FillStm ( FileContext* apCtx ) {
 
  }  /* end if */
 
+ if ( !retVal ) apCtx -> m_pPos = apCtx -> m_pEnd;
+
  return retVal;
 
 }  /* end STIO_FillStm */
 
 static int STIO_SeekStm ( FileContext* apCtx, unsigned int aPos ) {
 
- apCtx -> Stream ( apCtx, aPos, 0                         );
- apCtx -> Stream ( apCtx, aPos, apCtx -> m_BufSize / 4096 );
+ if ( !apCtx -> Stream ( apCtx, aPos, 0 ) ) return -1;
+ if ( aPos < apCtx -> m_Size &&
+      !apCtx -> Stream ( apCtx, aPos, apCtx -> m_BufSize / 4096 ) ) return -1;
 
- return 1;
+ return aPos;
 
 }  /* end CDDA_SeekStm */
 
@@ -1483,9 +1500,10 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
   apCtx -> Seek     = STIO_Seek;
   apCtx -> Fill     = STIO_Fill;
 
-  if ( aStartPos >= apCtx -> m_Size ) return 0;
+  apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
+  if ( aStartPos > apCtx -> m_Size ) return 0;
 
-  apCtx -> Seek ( apCtx, aStartPos );
+  return apCtx -> Seek ( apCtx, aStartPos ) != -1;
 
  } else {
 
@@ -1497,42 +1515,22 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
   if ( anBlocks > 0xFFFFFFFFU / 4096 ||
        !File_AllocStreamBuffers ( apCtx, anBlocks * 4096, lnBuffers ) ) return 0;
 
+  /* Reused and replaced buffers both start empty. Keep ordinary callbacks
+   * until a real second-buffer read has successfully been queued. */
+  apCtx -> m_CurBuf = 0;
+  apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
+  apCtx -> Seek = STIO_Seek;
+  apCtx -> Fill = STIO_Fill;
+  if ( STIO_Seek ( apCtx, aStartPos ) == -1 ) return 0;
+
 #ifdef BDM
   if ( lpPriv -> m_fXio ) {
-   /* fileXio is the native BDM/IOMANX API and has no large-read limit, so stream
-    * the mass: device synchronously and single-buffered at full buffer size
-    * (no cap, no async double-buffer needed). */
-   apCtx -> m_CurBuf     = 0;
-   apCtx -> m_CurPos     = aStartPos;
-   apCtx -> Seek         = STIO_Seek;
-   apCtx -> Fill         = STIO_Fill;
-
-   fileXioLseek ( lpPriv -> m_FD, apCtx -> m_CurPos, SEEK_SET );
-   {
-    int _tot = 0, _want = apCtx -> m_BufSize, _n;
-    if ( lpPriv -> m_RdChunk == MX4SIO_RD_CHUNK && _want > 8 * MX4SIO_RD_CHUNK )
-     _want = 8 * MX4SIO_RD_CHUNK;
-    while ( _tot < _want ) {
-     int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
-     _n = fileXioRead ( lpPriv -> m_FD, ( char* )apCtx -> m_pBuff[ 0 ] + _tot, _chunk );
-     if ( _n <= 0 ) break;
-     _tot += _n;
-    }
-    retVal = _tot;
-   }
-
-   apCtx -> m_pPos = apCtx -> m_pBuff[ 0 ];
-   apCtx -> m_pEnd = apCtx -> m_pPos + retVal;
-
-   return retVal;
+   /* Use the same bounded, device-specific synchronous refill as playback. */
+   return STIO_Fill ( apCtx );
 
   }  /* end if m_fXio */
 #endif
 
-  apCtx -> m_CurPos     = aStartPos;
-
-  apCtx -> Seek = STIO_SeekStm;
-  apCtx -> Fill = STIO_FillStm;
 #ifdef _WIN32
   lpPriv -> m_Ovlp.Offset     = apCtx -> m_CurPos;
   lpPriv -> m_Ovlp.OffsetHigh = 0;
@@ -1547,24 +1545,30 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
              )
   ) retVal = lnRead;
 #else  /* PS2 */
-  fioLseek ( lpPriv -> m_FD, apCtx -> m_CurPos, SEEK_SET );
   retVal = lnRead = fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ 0 ], apCtx -> m_BufSize );
 #endif  /* _WIN32 */
+  if ( retVal < 0 || ( unsigned int )retVal > apCtx -> m_BufSize ) retVal = 0;
   apCtx -> m_pPos = apCtx -> m_pBuff[ 0 ];
   apCtx -> m_pEnd = apCtx -> m_pPos + retVal;
 
-  if ( lnRead == apCtx -> m_BufSize ) {
+  if ( retVal == apCtx -> m_BufSize && apCtx -> m_CurPos + retVal < apCtx -> m_Size ) {
 #ifdef _WIN32
    lpPriv -> m_Ovlp.Offset     = apCtx -> m_CurPos + lnRead;
    lpPriv -> m_Ovlp.OffsetHigh = 0;
 
-   ReadFile (
+   if ( ReadFile (
     lpPriv -> m_hFile, apCtx -> m_pBuff[ 1 ],
     apCtx -> m_BufSize, &lnRead, &lpPriv -> m_Ovlp
-   );
+   ) || GetLastError () == ERROR_IO_PENDING ) {
+    apCtx -> Seek = STIO_SeekStm;
+    apCtx -> Fill = STIO_FillStm;
+   }
 #else  /* PS2 */
    fioSetBlockMode ( FIO_NOWAIT );
-   fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ 1 ], apCtx -> m_BufSize );
+   if (  fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ 1 ], apCtx -> m_BufSize ) >= 0  ) {
+    apCtx -> Seek = STIO_SeekStm;
+    apCtx -> Fill = STIO_FillStm;
+   } else fioSetBlockMode ( FIO_WAIT );
 #endif  /* _WIN32 */
   }  /* end if */
 
