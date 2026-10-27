@@ -184,7 +184,9 @@ static int _mov_read_trak ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   return 0;
  }  /* end if */
  lpStm             = ( SMS_Stream*       )calloc (  1, sizeof ( SMS_Stream ) + sizeof ( MOVStream )  );
+ if ( !lpStm ) return -1;
  lpStm -> m_pCodec = ( SMS_CodecContext* )calloc (  1, sizeof ( SMS_CodecContext )  );
+ if ( !lpStm -> m_pCodec ) { free ( lpStm ); return -1; }
  lpMyStm           = ( MOVStream* )(  ( char* )lpStm + sizeof( SMS_Stream )  );
  lpStm -> m_pCtx             = lpMyStm;
  lpStm -> m_pCodec -> m_Type = SMS_CodecTypeUnknown;
@@ -1026,6 +1028,23 @@ static uint32_t _mov_probe ( FileContext* apFileCtx ) {
 
 }  /* end _mov_probe */
 
+static int _mov_next_ctime ( MOVStream* apStm ) {
+ int lOffset = 0;
+ if ( !apStm -> m_pCtts ) return 0;
+ while ( apStm -> m_Sample2CTimeIdx < apStm -> m_nCtts &&
+         apStm -> m_pCtts[ apStm -> m_Sample2CTimeIdx ].m_Count <= 0 )
+  ++apStm -> m_Sample2CTimeIdx;
+ if ( apStm -> m_Sample2CTimeIdx < apStm -> m_nCtts ) {
+  MOVStts* lpTime = &apStm -> m_pCtts[ apStm -> m_Sample2CTimeIdx ];
+  lOffset = lpTime -> m_Duration;
+  if ( ++apStm -> m_Sample2CTimeSample >= lpTime -> m_Count ) {
+   ++apStm -> m_Sample2CTimeIdx;
+   apStm -> m_Sample2CTimeSample = 0;
+  }
+ }
+ return lOffset;
+}  /* end _mov_next_ctime */
+
 static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  FileContext*  lpFileCtx = apCont -> m_pFileCtx;
@@ -1034,17 +1053,21 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
  MOVStream*    lpMyStm   = NULL;
  unsigned int  i, lIdx   = 0;
  SMS_AVPacket* lpPkt;
+ int           lCTime;
 
  do {
 
   int64_t lBestDTS = SMS_MAXINT64;
+  lpSample = NULL;
 
   for ( i = 0; i < apCont -> m_nStm; ++i ) {
    SMS_Stream* lpCurStm   = apCont -> m_pStm[ i ];
    MOVStream*  lpMyCurStm = ( MOVStream* )lpCurStm -> m_pCtx;
-   if ( lpMyCurStm -> m_CurSample < lpMyCurStm -> m_nSamples ) {
+   if ( lpMyCurStm -> m_pIdx && lpMyCurStm -> m_TimeScale > 0 && lpMyCurStm -> m_TimeRate > 0 &&
+        lpMyCurStm -> m_CurSample < lpMyCurStm -> m_nSamples &&
+        lpMyCurStm -> m_CurSample < ( unsigned int )lpMyCurStm -> m_nIdx ) {
     MOVIndex* lpCurSample = &lpMyCurStm -> m_pIdx[ lpMyCurStm -> m_CurSample ];
-    int64_t   lDTS = SMS_Rescale ( lpCurSample -> m_DTS * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
+    int64_t   lDTS = SMS_Rescale ( ( int64_t )lpCurSample -> m_DTS * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
     if ( lDTS < lBestDTS ) {
      lpSample = lpCurSample;
      lBestDTS = lDTS;
@@ -1058,10 +1081,12 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
   if ( !lpSample ) return -1;
 
   ++lpMyStm -> m_CurSample;
+  lCTime = _mov_next_ctime ( lpMyStm );
 
-  if ( lpSample -> m_Pos > lpFileCtx -> m_Size ) return -1;
+  if ( lpSample -> m_Pos > lpFileCtx -> m_Size ||
+       lpSample -> m_Size > lpFileCtx -> m_Size - lpSample -> m_Pos ) return -1;
 
- } while ( !lpStm -> m_pPktBuf );
+ } while ( !lpStm -> m_pPktBuf || !lpSample -> m_Size );
 
  lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lpSample -> m_Size );
 
@@ -1073,21 +1098,13 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
   else lpFileCtx -> Seek ( lpFileCtx, lpSample -> m_Pos );
  }  /* end if */
 
- lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lpPkt -> m_Size );
+ if ( lpFileCtx -> m_CurPos != lpSample -> m_Pos ||
+      lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lpPkt -> m_Size ) != lpPkt -> m_Size ) return -1;
 
  lpPkt -> m_StmIdx = lIdx;
  lpPkt -> m_DTS    = lpSample -> m_DTS;
 
- if ( lpMyStm -> m_pCtts ) {
-  lpPkt -> m_PTS = lpPkt ->m_DTS + lpMyStm -> m_pCtts[ lpMyStm -> m_Sample2CTimeIdx ].m_Duration / lpMyStm -> m_TimeRate;
-  ++lpMyStm -> m_Sample2CTimeSample;
-  if ( lpMyStm -> m_Sample2CTimeIdx < lpMyStm -> m_nCtts &&
-       lpMyStm -> m_pCtts[ lpMyStm -> m_Sample2CTimeIdx ].m_Count == lpMyStm -> m_Sample2CTimeSample
-  ) {
-   ++lpMyStm -> m_Sample2CTimeIdx;
-     lpMyStm -> m_Sample2CTimeSample = 0;
-  }  /* end if */
- } else lpPkt -> m_PTS = lpPkt -> m_DTS;
+ lpPkt -> m_PTS = lpPkt -> m_DTS + lCTime / lpMyStm -> m_TimeRate;
 
  lpPkt -> m_Flags |= lpSample -> m_Flags ? SMS_PKT_FLAG_KEY : 0;
 
@@ -1134,7 +1151,8 @@ found:
 
 static void _mov_sync_ctime ( MOVStream* apMyStm ) {
 
- unsigned int i, lCovered;
+ unsigned int i;
+ uint64_t lCovered;
 
 /* _ReadPacket walks the ctts table linearly alongside the sample cursor, so a seek that
  * moves m_CurSample must replay this walk up to the same sample or every PTS from here on
@@ -1146,6 +1164,8 @@ static void _mov_sync_ctime ( MOVStream* apMyStm ) {
  lCovered = 0;
 
  for ( i = 0; i < apMyStm -> m_nCtts; ++i ) {
+
+  if ( apMyStm -> m_pCtts[ i ].m_Count <= 0 ) continue;
 
   if (  lCovered + ( unsigned int )apMyStm -> m_pCtts[ i ].m_Count > apMyStm -> m_CurSample  ) {
 
@@ -1159,9 +1179,8 @@ static void _mov_sync_ctime ( MOVStream* apMyStm ) {
 
  }  /* end for */
 
-/* The cursor sits past every ctts entry ( truncated table ): pin to the last one rather
- * than letting _ReadPacket index off the end. */
- apMyStm -> m_Sample2CTimeIdx    = apMyStm -> m_nCtts - 1;
+/* Past a truncated table, no offset is known. The packet reader uses DTS. */
+ apMyStm -> m_Sample2CTimeIdx    = apMyStm -> m_nCtts;
  apMyStm -> m_Sample2CTimeSample = 0;
 
 }  /* end _mov_sync_ctime */
@@ -1208,7 +1227,7 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
  * interleave resumes consistently -- audio typically lands a few frames BEFORE the video
  * keyframe, which is exactly what the decoders expect after a seek. */
  lTime = SMS_Rescale (
-  lpMyStm -> m_pIdx[ lSample ].m_DTS * lpMyStm -> m_TimeRate,
+  ( int64_t )lpMyStm -> m_pIdx[ lSample ].m_DTS * lpMyStm -> m_TimeRate,
   SMS_TIME_BASE, lpMyStm -> m_TimeScale
  );
 

@@ -46,6 +46,7 @@ jobs:
         python3 tools/test_mpeg_ps_probe.py
         python3 tools/test_playlist_playback.py
         python3 tools/test_file_skip.py
+        python3 tools/test_mov_packets.py
 
     - name: IRX ABI gate (dev9 v1.1 bindings)
       run: |
