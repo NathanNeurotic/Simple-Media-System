@@ -2,7 +2,7 @@
 
 ## Maintained manual and wiki
 
-From the repository root:
+Use Python 3.9 or newer. From the repository root:
 
 ```sh
 python docs-site/build.py

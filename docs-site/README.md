@@ -1,7 +1,8 @@
 # SMS documentation sources
 
 Edit the article bodies in `content/`, page metadata/navigation in `manifest.json`,
-and shared files in `static/`. The generator uses Python's standard library;
+and shared files in `static/`. Documentation tooling requires **Python 3.9 or
+newer** and uses only the standard library;
 there is no hosted search, CDN, package install or paid service.
 
 ```sh
