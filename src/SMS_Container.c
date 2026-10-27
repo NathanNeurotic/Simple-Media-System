@@ -104,6 +104,9 @@ void SMS_DestroyContainer ( SMS_Container* apCont, int afAll ) {
 
  }  /* end for */
 
+ /* A rejected probe can reuse this container for the next format. */
+ apCont -> m_nStm = 0;
+
  if ( apCont -> m_pCtx ) {
   free ( apCont -> m_pCtx );
   apCont -> m_pCtx = NULL;
@@ -129,6 +132,13 @@ SMS_Container* SMS_GetContainer ( FileContext* apFileCtx, int aPrefCont ) {
  int            i      = 0;
  int            lSts   = 0;
  SMS_Container* retVal = ( SMS_Container* )calloc (  1, sizeof ( SMS_Container )  );
+
+ if ( !retVal ) {
+  /* Automatic probing consumes a real file even on failure. Explicit probes
+   * leave it with the caller for retries; negative pointers encode playlists. */
+  if ( ( int )apFileCtx > 0 && aPrefCont < 0 ) apFileCtx -> Destroy ( apFileCtx );
+  return NULL;
+ }  /* end if */
 
  retVal -> m_pFileCtx  = apFileCtx;
  retVal -> AllocPacket = _AllocPacket;
