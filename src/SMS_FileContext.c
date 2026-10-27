@@ -1796,46 +1796,34 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
 
 void File_GetString ( FileContext* apFileCtx, char* apStr, unsigned int aMaxLen ) {
 
- unsigned int i     = 0;
- unsigned int lfEOL = 0;
+ unsigned int i           = 0;
+ unsigned int lfTruncated = 0;
 
+ if ( !aMaxLen ) return;
  --aMaxLen;
 
- while ( i < aMaxLen ) {
+ while ( !FILE_EOF( apFileCtx ) ) {
 
-  if (  FILE_EOF( apFileCtx )  ) {
+  unsigned int lPos = apFileCtx -> m_CurPos;
+  int          lChar = File_GetByte ( apFileCtx );
 
-   apStr[ i ] = '\x00';
-   lfEOL      = 1;
-
+  /* File_GetByte returns zero on a failed refill without advancing. Treat
+   * that failure as EOF, like STIO_Read, including while draining a long line. */
+  if ( apFileCtx -> m_CurPos == lPos ) {
+   apFileCtx -> m_CurPos = apFileCtx -> m_Size;
    break;
-
   }  /* end if */
 
-  apStr[ i ] = File_GetByte ( apFileCtx );
-
-  if ( apStr[ i ] == '\n' ) {
-
-   apStr[ i ] = '\x00';
-
-   if ( i-- && apStr[ i ] == '\r' ) apStr[ i ] = '\x00';
-
-   lfEOL = 1;
-
+  if ( lChar == '\n' ) {
+   if ( !lfTruncated && i && apStr[ i - 1 ] == '\r' ) --i;
    break;
-
   }  /* end if */
 
-  ++i;
+  if ( i < aMaxLen ) apStr[ i++ ] = lChar;
+  else lfTruncated = 1;
 
  }  /* end while */
 
- if ( !lfEOL ) {
-
-  while (  !FILE_EOF( apFileCtx ) && File_GetByte( apFileCtx ) != '\n' );
-
-  apStr[ aMaxLen ] = '\x00';
-
- }  /* end if */
+ apStr[ i ] = '\x00';
 
 }  /* end File_GetString */
