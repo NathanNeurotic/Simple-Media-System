@@ -501,6 +501,7 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
      if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) {
 
       lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lpMyCont -> m_BufLen );
+      if ( !lpPkt ) goto error;
       memcpy ( lpPkt -> m_pData, lpMyCont -> m_Buff, lLen = lpMyCont -> m_BufLen );
       *apIdx = lIt - lppStm;
       break;
@@ -532,13 +533,15 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
     if ( lPackLen ) {
 
      lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lPackLen );
+     if ( !lpPkt ) goto error;
      memcpy (  lpPkt -> m_pData, lpMyCont -> m_Buff, lpMyCont -> m_BufLen );
-     lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData + lpMyCont -> m_BufLen, lnRead );
-     lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff, lpMyCont -> m_BufLen = lnRem );
+     if ( lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData + lpMyCont -> m_BufLen, lnRead ) != lnRead ) goto error;
+     if ( lnRem && lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff, lnRem ) != lnRem ) goto error;
+     lpMyCont -> m_BufLen = lnRem;
 
     } else {
 
-     lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff + lpMyCont -> m_BufLen, lLen );
+     if ( lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff + lpMyCont -> m_BufLen, lLen ) != lLen ) goto error;
      lpMyCont -> m_BufLen += lLen;
      continue;
 
@@ -547,12 +550,18 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
    } else {
 
     if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_PCM16BE ) {
-     File_Skip ( lpFileCtx, 3 );
+     unsigned char lPCMHeader[ 3 ];
+     if ( lLen <= 3 ) {
+      File_Skip ( lpFileCtx, lLen );
+      continue;
+     }
+     if ( lpFileCtx -> Read ( lpFileCtx, lPCMHeader, sizeof ( lPCMHeader ) ) != sizeof ( lPCMHeader ) ) goto error;
      lLen -= 3;
     }  /* end if */
 
     lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lLen );
-    lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lLen );
+    if ( !lpPkt ) goto error;
+    if ( lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lLen ) != lLen ) goto error;
 
    }  /* end else */
 end:
@@ -569,6 +578,13 @@ end:
  }  /* end while */
 
  return lLen;
+
+error:
+ /* The packet has not been posted to a decoder. Release its reservation and
+  * discard a partial alignment tail rather than exposing unread bytes. */
+ if ( lpPkt ) SMS_RingBufferUnalloc ( lpStm -> m_pPktBuf, lpPkt -> m_Size + 64 );
+ lpMyCont -> m_BufLen = 0;
+ return -1;
 
 }  /* end _ReadPacket */
 
@@ -767,6 +783,7 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
     if ( apCont -> m_nStm >= SMS_MAX_STREAMS - 1 ) break;
 
     SMS_Stream* lpStm = ( SMS_Stream* )calloc (  1, sizeof ( SMS_Stream )  );
+    int lfParams;
 
     if ( lpStm ) {
 
@@ -787,9 +804,22 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
      if ( lCodecType == SMS_CodecTypeVideo ) {
 
-      if ( !lfVideoParam ) lfVideoParam = _fill_video_parameters ( apCont, lpStm, lLen, lStartCode );
+      lfParams = lfVideo = lfVideoParam = _fill_video_parameters ( apCont, lpStm, lLen, lStartCode );
 
-     } else lfAudio = _fill_audio_parameters ( lpFileCtx, lpStm, lLen );
+     } else {
+      lfParams = _fill_audio_parameters ( lpFileCtx, lpStm, lLen );
+      if ( lfParams ) lfAudio = 1;
+     }
+
+     /* The first PES may contain only a continuation of a codec frame. Keep
+      * probing that stream ID until a complete header can be read. A failed
+      * secondary track must not clear a previously validated audio track. */
+     if ( !lfParams ) {
+      apCont -> m_pStm[ --apCont -> m_nStm ] = NULL;
+      free ( lpStm -> m_pCodec );
+      free ( lpStm );
+      retVal = apCont -> m_nStm != 0;
+     }
 
     }  /* end if */
 

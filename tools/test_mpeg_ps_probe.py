@@ -3,14 +3,19 @@
 Codec/DMA decoding is stubbed. This checks probing, packet boundaries and
 failure handling, not PS2 decoding, device throughput or reporter acceptance.
 """
+import argparse
 import os
 from pathlib import Path
 import re
 import subprocess
 import tempfile
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--source", type=Path)
+parser.add_argument("--case", default="all")
+args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
-source = (root / "src/SMS_ContainerMPEG_PS.c").read_text()
+source = (args.source or root / "src/SMS_ContainerMPEG_PS.c").read_text()
 source = re.sub(r'^#include "[^"]+"\s*$', '', source, flags=re.M)
 
 prefix = r"""
@@ -37,7 +42,7 @@ typedef struct { int m_Type, m_ID, m_Tag, m_Width, m_Height, m_fWS;
                  int m_SampleRate, m_BitRate, m_Channels; } SMS_CodecContext;
 typedef struct { SMS_CodecContext *m_pCodec; int m_SampleRate; unsigned m_ID, m_Flags;
                  void *m_pPktBuf; } SMS_Stream;
-typedef struct { unsigned char *m_pData; int64_t m_PTS, m_DTS; int m_StmIdx; } SMS_AVPacket;
+typedef struct { unsigned char *m_pData; int64_t m_PTS, m_DTS; int m_StmIdx,m_Size; } SMS_AVPacket;
 typedef struct FileContext FileContext;
 struct FileContext {
  unsigned m_Pos, m_CurPos, m_Size;
@@ -65,6 +70,13 @@ static unsigned input_size, read_limit = ~0U, read_calls;
 static int read_error, fail_alloc, fail_malloc, calloc_calls, fail_calloc_at;
 static unsigned char *read_buffer;
 static unsigned read_size;
+static int fail_packet_alloc, packet_reserved, packet_unallocations;
+static SMS_AVPacket packet;
+static unsigned char packet_data[65536];
+static void SMS_RingBufferUnalloc(void *buffer, int n) {
+ (void)buffer;assert(packet_reserved && n==packet.m_Size+64);
+ packet_reserved=0;++packet_unallocations;
+}
 static void *test_malloc(size_t n) { return fail_alloc || fail_malloc ? NULL : malloc(n); }
 static void *test_calloc(size_t n, size_t s) {
  return ++calloc_calls == fail_calloc_at || fail_alloc ? NULL : calloc(n,s);
@@ -130,6 +142,7 @@ static void reset(unsigned n) {
  memset(input,0,sizeof(input)); input_size=n;
  file=(FileContext){4096,0,n,read_file,seek_file};
  read_limit=~0U; read_calls=0; read_error=fail_alloc=fail_malloc=calloc_calls=fail_calloc_at=0;
+ fail_packet_alloc=packet_reserved=packet_unallocations=0;
 }
 static void test_audio(void) {
  SMS_CodecContext codec={0}; SMS_Stream stream={0};
@@ -176,8 +189,10 @@ static void test_video(void) {
  assert(codec.m_Width==640 && codec.m_Height==480 && codec.m_fWS==1);
 }
 static SMS_AVPacket *packet_alloc(void *unused,int n) {
- static unsigned char data[16];static SMS_AVPacket packet;
- (void)unused;assert(n<=16);packet.m_pData=data;return &packet;
+ (void)unused;assert(n>0 && n<=sizeof(packet_data));
+ if(fail_packet_alloc) return NULL;
+ assert(!packet_reserved);packet_reserved=1;
+ packet.m_pData=packet_data;packet.m_Size=n;return &packet;
 }
 static void pes(unsigned sid, const unsigned char *p, unsigned n) {
  unsigned at=input_size;
@@ -234,9 +249,92 @@ static void test_probe_and_packets(void) {
  memset(&c,0,sizeof(c));c.m_pFileCtx=&file;fail_alloc=1;
  assert(SMS_GetContainerMPEG_PS(&c)==0 && c.m_pCtx==NULL);
 }
-int main(void) {
- test_audio();test_video();test_probe_and_packets();
- puts("MPEG-PS: cursor restoration, bounded headers, short/error reads, stream limits and stalled packets passed");
+static void test_packet_failure(const char *name) {
+ SMS_Container c={0};_MPEGPSContainer private={0};SMS_Stream stream={0};
+ SMS_CodecContext codec={0};unsigned char data[32];int idx=-1;
+ memset(data,0x5a,sizeof(data));reset(0);
+ c.m_pFileCtx=&file;c.m_pCtx=&private;c.m_nStm=1;c.m_pStm[0]=&stream;c.AllocPacket=packet_alloc;
+ stream.m_pCodec=&codec;stream.m_pPktBuf=&codec;stream.m_ID=0x1e0;
+ codec.m_Type=SMS_CodecTypeVideo;
+ if(!strcmp(name,"packet-allocation")) {
+  pes(0xe0,data,32);file.m_Size=input_size;fail_packet_alloc=1;
+ } else if(!strcmp(name,"tail-allocation")) {
+  private.m_BufLen=3;memcpy(private.m_Buff,"abc",3);file.m_Size=10;fail_packet_alloc=1;
+ } else if(!strcmp(name,"short-video")) {
+  pes(0xe0,data,32);file.m_Size=input_size;--input_size;
+ } else if(!strcmp(name,"short-video-with-tail")) {
+  private.m_BufLen=3;memcpy(private.m_Buff,"abc",3);
+  pes(0xe0,data,32);file.m_Size=input_size;input_size-=4;
+ } else if(!strcmp(name,"short-video-tail")) {
+  pes(0xe0,data,19);file.m_Size=input_size;--input_size;
+ } else if(!strcmp(name,"short-video-buffer")) {
+  pes(0xe0,data,3);file.m_Size=input_size;--input_size;
+ } else if(!strcmp(name,"short-audio")) {
+  codec.m_Type=SMS_CodecTypeAudio;codec.m_ID=SMS_CodecID_MP3;stream.m_ID=0x1c0;
+  pes(0xc0,data,8);file.m_Size=input_size;--input_size;
+ } else if(!strcmp(name,"short-pcm")) {
+  codec.m_Type=SMS_CodecTypeAudio;codec.m_ID=SMS_CodecID_PCM16BE;stream.m_ID=0xa0;
+  pes(0xbd,(unsigned char[]){0xa0,0,0,0,0,0},6);file.m_Size=input_size;
+ } else assert(!"unknown test case");
+ assert(_ReadPacket(&c,&idx)<0);
+ assert(packet_reserved==0 && private.m_BufLen==0);
+ if(!strcmp(name,"short-video") || !strcmp(name,"short-video-with-tail") ||
+    !strcmp(name,"short-video-tail") || !strcmp(name,"short-audio"))
+  assert(packet_unallocations==1);
+}
+static void test_packet_alignment(void) {
+ SMS_Container c={0};_MPEGPSContainer private={0};SMS_Stream stream={0};
+ SMS_CodecContext codec={0};unsigned char data[32];int idx=-1;
+ for(unsigned i=0;i<sizeof(data);++i) data[i]=i;
+ reset(0);pes(0xe0,data,3);pes(0xe0,data+3,19);file.m_Size=input_size;
+ c.m_pFileCtx=&file;c.m_pCtx=&private;c.m_nStm=1;c.m_pStm[0]=&stream;c.AllocPacket=packet_alloc;
+ stream.m_pCodec=&codec;stream.m_pPktBuf=&codec;stream.m_ID=0x1e0;
+ codec.m_Type=SMS_CodecTypeVideo;
+ assert(_ReadPacket(&c,&idx)>0 && idx==0 && packet.m_Size==16);
+ assert(!memcmp(packet.m_pData,data,16) && private.m_BufLen==6);
+ packet_reserved=0; /* Model the caller consuming the successfully published packet. */
+ assert(_ReadPacket(&c,&idx)==6 && packet.m_Size==6);
+ assert(!memcmp(packet.m_pData,data+16,6) && private.m_BufLen==0);
+ packet_reserved=0;
+ assert(_ReadPacket(&c,&idx)<0 && packet_unallocations==0);
+ /* Header-only LPCM packets are skipped without losing the next PES boundary. */
+ memset(&private,0,sizeof(private));reset(0);
+ codec.m_Type=SMS_CodecTypeAudio;codec.m_ID=SMS_CodecID_PCM16BE;stream.m_ID=0xa0;
+ pes(0xbd,(unsigned char[]){0xa0,0,0,0,0,0,0},7);
+ pes(0xbd,(unsigned char[]){0xa0,0,0,0,0,0,0,0x11,0x22,0x33,0x44},11);
+ file.m_Size=input_size;
+ assert(_ReadPacket(&c,&idx)==4 && idx==0 && packet.m_Size==4);
+ assert(!memcmp(packet.m_pData,"\x11\x22\x33\x44",4));
+ packet_reserved=0;assert(_ReadPacket(&c,&idx)<0 && !packet_unallocations);
+}
+static void test_probe_retry(int secondary) {
+ const unsigned char video[]={0,0,1,0xb3,0x28,0x01,0xe0,0x34};
+ const unsigned char ac3[]={0x80,1,0,0,0x0b,0x77,0,0,0,0x40,0x40};
+ const unsigned char continuation[]={0x80,1,0,0,1,2,3,4,5,6,7};
+ SMS_Container c={0};
+ reset(0);pes(0xe0,video,sizeof(video));
+ if(!secondary) pes(0xbd,continuation,sizeof(continuation));
+ pes(0xbd,ac3,sizeof(ac3));
+ /* An unusable secondary track must not erase a valid audio probe result. */
+ if(secondary) pes(0xbd,(unsigned char[]){0x81,1,0,0,1,2,3,4,5,6,7},11);
+ file.m_Size=input_size;c.m_pFileCtx=&file;
+ assert(SMS_GetContainerMPEG_PS(&c)==1 && c.m_nStm==2 && c.m_pStm[2]==NULL);
+ assert(c.m_pStm[1]->m_Flags & SMS_STRM_FLAGS_AUDIO);
+ SMS_DestroyContainer(&c,0);
+}
+int main(int argc,char **argv) {
+ const char *cases[]={"packet-allocation","tail-allocation","short-video","short-video-with-tail","short-video-tail",
+                      "short-video-buffer","short-audio","short-pcm"};
+ const char *which=argc>1?argv[1]:"all";
+ if(!strcmp(which,"all") || !strcmp(which,"probe")) {
+  test_audio();test_video();test_probe_and_packets();
+ }
+ if(!strcmp(which,"all") || !strcmp(which,"alignment")) test_packet_alignment();
+ if(!strcmp(which,"all") || !strcmp(which,"probe-retry")) test_probe_retry(0);
+ if(!strcmp(which,"all") || !strcmp(which,"probe-secondary")) test_probe_retry(1);
+ for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);++i)
+  if(!strcmp(which,"all") || !strcmp(which,cases[i])) test_packet_failure(cases[i]);
+ puts("MPEG-PS: bounded probes, packet alignment, allocation and read failures passed");
  return 0;
 }
 """
@@ -247,4 +345,4 @@ with tempfile.TemporaryDirectory() as tmp:
     subprocess.run([os.environ.get("CC", "cc"), "-std=gnu99", "-g", "-no-pie",
                     "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
                     str(cfile), "-o", str(exe)], check=True)
-    subprocess.run([str(exe)], check=True, timeout=20)
+    subprocess.run([str(exe), args.case], check=True, timeout=20)
