@@ -30,7 +30,8 @@ Audit date: 2026-10-26 (America/Los_Angeles). Repository:
 
 ### Continuation from e38020e: parser, stream and skin regressions
 
-The next source audit reproduced additional defects against `e38020e`; these
+The next source audit reproduced additional defects against `e38020e` and
+`65ee6f2`; these
 are implementation fixes, not reporter or physical-console acceptance.
 
 - MPEG-PS rejects an otherwise usable video when the first AC3 PES contains no
@@ -47,6 +48,12 @@ are implementation fixes, not reporter or physical-console acceptance.
   `mdat`. The parser fixes pass ordinary and fast-start controls as well as the
   new layouts. Every indexed packet offset and length is checked against
   FFprobe. Failed sample positioning/reads now return unpublished packet space.
+  The subsequent review also reproduced exhausted `stts` timing in both index
+  paths: fixed-size chunks could finish without timing for all their samples,
+  and per-sample indexing reused its final duration after exhaustion. Both now
+  reject incomplete coverage and clean the failed probe; empty entries with
+  sufficient later timing remain accepted. A malformed real MP4 is included
+  alongside the actual-source timing and cleanup regressions.
 - STIO startup and async completion could publish a negative read length. An
   actual-source ASan baseline reproduces an 8192-byte read from a 4096-byte
   allocation. Streaming now checks positioning, read lengths, dispatch and sync
@@ -59,6 +66,27 @@ are implementation fixes, not reporter or physical-console acceptance.
   and flushes its byte range rather than eight times that range. Invalid skin
   dimensions are rejected before texture arithmetic or GS state changes.
   Valid 800x600 dimensions remain accepted by the host harness.
+- Generic container allocation failure now respects the automatic/explicit
+  FileContext ownership contract instead of dereferencing NULL. Partial
+  container destruction resets the freed stream count before the next probe.
+- Text reads used by fallback playlist probing could loop indefinitely when
+  refills stalled before advertised EOF, including the long-line drain.
+  `File_GetString` now terminates on missing cursor progress, bounds output
+  writes even at zero capacity, and handles CRLF at the storage boundary.
+- M3U initialization previously freed its original playlist FileContext before
+  the first media entry had opened and probed successfully. Missing or
+  unsupported first entries returned to the generic probe chain with a freed
+  source and dangling wrapper state. Initialization now retains the source and
+  publishes wrapper ownership only on success. A failed replacement-file open
+  also retains the previous valid context. The baseline use-after-free cases
+  are reproduced with the actual M3U creator, generic probing and list helpers.
+- Converter packet-size inspection previously swallowed FFprobe failures and
+  could report PASS without inspecting packets. Incomplete scans now report
+  WARN and preserve the output; any observed oversized packet still makes the
+  result FAIL. Packet type/size records stream incrementally, with bounded
+  records and diagnostic excerpts, rather than materializing the full packet
+  JSON for long media. Real FFmpeg and worker tests cover packet maxima and
+  preservation of a converted two-audio-track output after inspection failure.
 
 Focused validation commands (ASan, UBSan and LeakSanitizer enabled):
 
@@ -69,11 +97,16 @@ python3 tools/test_mov_index.py
 python3 tools/test_mov_parser.py
 python3 tools/test_stio_stream_failure.py
 python3 tools/test_skin_loading.py
+python3 tools/test_container_probe.py
+python3 tools/test_m3u_probe.py
+python3 tools/test_file_string.py
 ```
 
 The prior playlist, skip, allocation, refill, rebuffer and CDDA failure suites
-also pass. The new MOV, STIO and skin scripts are included in the build job's
-host regression step. Reproduction controls use the source at `e38020e`, not an
+also pass. The new host scripts are included in the build job's regression
+step. Converter validation adds seven unit tests and one real worker test;
+all 34 unit tests, ten multitrack/worker tests and ten preset conversions pass.
+Reproduction controls use the prior source revisions, not an
 independent reimplementation of the affected functions. MOV parser cases use
 real MP4 files but stub codec/packet/device APIs; STIO and skin cases stub
 platform I/O and IPU/GS output. They do not measure device throughput, exercise
