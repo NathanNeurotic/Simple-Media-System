@@ -327,6 +327,8 @@ def build_ffmpeg_cmd(
                     value = stream.get("tags", {}).get(key)
                     if value:
                         cmd.extend([f"-metadata:s:a:{i}", f"{key}={value}"])
+                        if key == "title" and out_ext == ".mp4":
+                            cmd.extend([f"-metadata:s:a:{i}", f"handler_name={value}"])
 
     # Video Settings
     if vcodec and has_video_stream and vcodec != "none":

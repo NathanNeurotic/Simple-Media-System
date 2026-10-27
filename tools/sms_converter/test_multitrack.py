@@ -74,6 +74,7 @@ class TestTrackConversion(unittest.TestCase):
         audio = [s for s in streams if s["codec_type"] == "audio"]
         self.assertEqual([s["tags"]["language"] for s in audio], ["eng", "jpn"])
         self.assertEqual(self.info["streams"][2]["tags"]["title"], "Commentary 日本語")
+        self.assertEqual(audio[1]["tags"]["handler_name"], "Commentary 日本語")
 
     def test_embedded_subtitle_selection_changes_the_picture(self):
         hashes = []
@@ -103,6 +104,9 @@ class TestTrackConversion(unittest.TestCase):
                 out = self.convert("multi." + ext, self.settings(vcodec=video, acodec=audio))
                 streams = get_media_info(self.fp, str(out))["streams"]
                 self.assertEqual(sum(s["codec_type"] == "audio" for s in streams), 2)
+                if ext == "avi":
+                    audio_streams = [s for s in streams if s["codec_type"] == "audio"]
+                    self.assertEqual(audio_streams[1]["tags"]["title"], "Commentary 日本語")
                 self.assertIn(validate_converted_file(self.fp, str(out)).status, ("PASS", "WARN"))
                 decoded = subprocess.run([self.ff, "-v", "error", "-i", str(out), "-map", "0:a", "-f", "null", "-"], capture_output=True)
                 self.assertEqual(decoded.returncode, 0, decoded.stderr.decode(errors="replace"))
@@ -113,6 +117,23 @@ class TestTrackConversion(unittest.TestCase):
         self.assertEqual((video["width"], video["height"]), (720, 480))
         cmd = build_ffmpeg_cmd(self.ff, "in.mkv", "out.mp4", self.settings(src_width=1920, src_height=1080), source_info=self.info)
         self.assertIn("scale=640:480", cmd[cmd.index("-vf") + 1])
+
+    def test_worker_reports_bad_track_selection_without_encoding_or_crash(self):
+        from worker import ConversionWorker
+        final, partial = self.folder / "invalid.mp4", self.folder / "invalid.mp4.partial"
+        job = ConversionWorker("invalid", self.ff, self.fp, str(self.source), str(partial), str(final),
+                               self.settings(embedded_subtitle_track=9), .6)
+        job._source_info_cached, job._has_video_cached = self.info, True
+        failures = []
+        job.failed_signal.connect(lambda item, reason: failures.append(reason))
+        with patch("worker.subprocess.Popen") as launch, patch("worker.crash_log.write_report") as report:
+            job.run()
+            launch.assert_not_called()
+            report.assert_not_called()
+        self.assertEqual(len(failures), 1)
+        self.assertIn("Settings cannot be applied", failures[0])
+        self.assertIn("absent", failures[0])
+        self.assertFalse(final.exists() or partial.exists())
 
     def test_all_tracks_rejects_uninspectable_excess_and_incompatible_outputs(self):
         cases = [(".mp4", None), (".mp4", {"streams": [{"codec_type": "audio"}] * 7}), (".mp3", self.info)]

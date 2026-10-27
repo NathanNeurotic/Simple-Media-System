@@ -264,16 +264,21 @@ class ConversionWorker(QThread):
         moves 0->50% then 50->100% instead of filling the bar twice, which would read as the
         work having restarted.
         """
-        cmd = build_ffmpeg_cmd(
-            self.ffmpeg_path,
-            self.input_file,
-            self.partial_file,
-            self.settings,
-            has_video_stream=self._has_video(),
-            pass_num=pass_num,
-            passlog=passlog,
-            source_info=self._source_info()
-        )
+        try:
+            cmd = build_ffmpeg_cmd(
+                self.ffmpeg_path,
+                self.input_file,
+                self.partial_file,
+                self.settings,
+                has_video_stream=self._has_video(),
+                pass_num=pass_num,
+                passlog=passlog,
+                source_info=self._source_info()
+            )
+        except ValueError as error:
+            self._cleanup_partial(passlog)
+            self.failed_signal.emit(self.item_id, f"Settings cannot be applied to this file: {error}")
+            return "failed"
         self.cmd_str = " ".join(f'"{arg}"' if " " in arg else arg for arg in cmd)
         label = f"pass {pass_num} of {total_passes}" if pass_num else "encode"
         crash_log.breadcrumb(f"ffmpeg cmd ({label}): {self.cmd_str}")

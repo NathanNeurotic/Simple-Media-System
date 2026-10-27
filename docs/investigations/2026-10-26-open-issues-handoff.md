@@ -127,6 +127,22 @@ claim all devices seek in constant time or that all files above 2 GiB work.
   and short payload reads terminate instead of returning incomplete packets.
   Zero-byte samples are skipped with a finite sample cursor. Stream/codec
   allocations in the track parser are checked.
+- Index construction keeps cross-stream chunk offsets alive until every stream
+  has been indexed. The previous loop freed a video stream's offsets before
+  later per-chunk audio sizing inspected them: an actual heap-use-after-free.
+  Other sample tables are still released after their own index is built to
+  limit peak memory. Destruction also releases partially built tables.
+- Index growth and `mdat` growth now preserve their old pointers/counts on
+  allocation failure. A failed index build rejects and cleans the probe rather
+  than dereferencing NULL or publishing a partial index. The container-context
+  allocation is checked, and the track limit reserves the stream sentinel.
+- Audio chunk durations consume only the samples covered by each timing entry
+  and accumulate in 64 bits. The prior calculation overcounted a chunk crossing
+  timing entries (a 2x10 + 3x20 control produced 110 instead of 80).
+- The M4A metadata probe now initializes its temporary container and sets the
+  parser's base-container pointer before dispatching child atoms. Packet bounds
+  are checked only for enabled tracks with nonempty samples, preserving valid
+  playback when an ignored track has unusable offsets.
 
 `tools/test_mov_packets.py` compiles the actual packet/timing functions under
 ASan/UBSan. The `a99a1a2` baseline independently fails its disabled-stream test
@@ -134,6 +150,14 @@ by timeout, composition test with a heap-buffer-overflow, timestamp-ordering
 assertion and short-read assertion. The current source passes all cases. This
 is not an end-to-end MOV parser/decoder or real-device test, and the exact
 0:28/0:35 reporter file remains unavailable.
+
+`tools/test_mov_index.py` additionally compiles the actual index/header,
+allocation, track-limit and cleanup functions. Its parser/codec stubs do not
+establish full atom-parser acceptance. Against `049f571`, separate cases
+reproduce the cross-stream heap-use-after-free, incorrect chunk timestamp,
+NULL index-allocation write, missing stream sentinel and missing M4A base
+relationship. Current cases pass ASan/UBSan, including index failure after an
+earlier stream has already been built and partly cleaned.
 
 ### Folder-playlist failure handling (#25)
 
@@ -190,6 +214,9 @@ multi-track output as if the entire runtime selection feature were absent.
   Estimates include every mapped audio track and PCM's fixed data rate. Source
   probing is cached across both encoding passes. FFprobe JSON is explicitly
   read as UTF-8, preserving non-Latin track tags on Windows.
+- Track-title tests verify the converted output: AVI uses its stream title,
+  and MP4 stores the name as `handler_name`. Invalid track selections are
+  reported as settings errors before encoding, without a crash report.
 
 ### Windows FFmpeg fallback build blocker
 
@@ -223,7 +250,7 @@ Verified fallback archive SHA-256:
   header restores the wrong cursor, and a zero-length payload triggers the
   sanitizer's non-positive VLA-bound error. Both fail before these fixes.
 - Existing `test_stream_allocation.py`, `test_stio_refill.py`, dev9 v1.1 IRX ABI
-  gate, all 27 existing converter tests, eight new track/worker/UI tests and all
+  gate, all 27 existing converter tests, nine new track/worker/UI tests and all
   ten converter preset conversions passed. New real FFmpeg cases cover both
   dubs in MP4, AVI and MPEG-PS, language tags, two-pass encoding with one source
   probe, distinct burned subtitle pictures, SD sizing, invalid track selections,
@@ -233,7 +260,8 @@ Verified fallback archive SHA-256:
   existing `ps2dev/ps2dev:v1.0` GCC image. Builds ran in an isolated container
   copy, preserving the existing checkout's `obj/` and `bin/` recovery artifacts.
 - All new regressions, including CDDA failure recovery and start/resume stream
-  sizing and MOV packet handling, are included in the compilation workflow.
+  sizing, MOV packet handling and MOV index lifetime/failure handling, are
+  included in the compilation workflow.
   Modern Windows/Linux and the PySide2 Win7 job run the new converter tests.
 - Fresh isolated PCSX2 2.9.52 controls decoded five synthetic MPEG-2 frames in
   both 16-bit and 32-bit modes using SMS's actual libmpeg/IPU source. See the

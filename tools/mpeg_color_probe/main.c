@@ -42,8 +42,8 @@ int main ( void ) {
  int count = 0;
  unsigned input_size = ( size_probe_m2v + 15 ) & ~15;
  FILE* out;
- if ( !size_probe_m2v || size_probe_m2v > 2 * 1024 * 1024 ) {
-  printf ( "[sms-color] use a nonempty stream of at most 2 MiB\n[sms-color] exit=2 frames=0\n" );
+ if ( !size_probe_m2v || size_probe_m2v > 65535 * 16 ) {
+  printf ( "[sms-color] use a nonempty stream of at most 1048560 bytes (one DMA transfer)\n[sms-color] exit=2 frames=0\n" );
   fflush ( stdout );
   SleepThread ();
  }

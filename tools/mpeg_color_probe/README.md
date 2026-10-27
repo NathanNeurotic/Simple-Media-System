@@ -3,7 +3,9 @@
 This small ELF exercises SMS's actual libmpeg/IPU path without the demuxer,
 player queues, GS texture upload or display output. It writes five frames to
 `host:`. A successful emulator run is not physical-console or reporter acceptance.
-Use an elementary stream of at most 2 MiB; the compressed input is held in RAM.
+Use an elementary stream of at most 1,048,560 bytes (65,535 quadwords); the
+compressed input is held in RAM and fed with one DMA transfer. Larger inputs
+are rejected before starting the decoder, respecting the 16-bit DMA QWC limit.
 
 Generate a reproducible progressive control in this directory:
 
