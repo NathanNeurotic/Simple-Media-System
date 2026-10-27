@@ -588,6 +588,33 @@ static int CDDA_SeekStm ( FileContext* apCtx, unsigned int aPos ) {
 
 }  /* end CDDA_SeekStm */
 
+/* Preserve the old readable context until every required allocation succeeds. */
+static int File_AllocStreamBuffers ( FileContext* apCtx, unsigned int aSize, int anBuffers ) {
+ void* lpData;
+ void* lpData1 = NULL;
+ unsigned int lAllocSize;
+
+ if ( !aSize || aSize > 0xFFFFFFFFU - 63 ) return 0;
+ if ( apCtx -> m_pBuff[ 0 ] && apCtx -> m_BufSize == aSize &&
+      ( anBuffers == 2 ) == ( apCtx -> m_pBuff[ 1 ] != NULL ) ) return 1;
+ lAllocSize = ( aSize + 63 ) & ~63;
+ lpData = memalign ( 64, lAllocSize );
+ if ( anBuffers == 2 ) lpData1 = memalign ( 64, lAllocSize );
+ if ( !lpData || ( anBuffers == 2 && !lpData1 ) ) {
+  free ( lpData );
+  free ( lpData1 );
+  return 0;
+ }
+ free ( apCtx -> m_pBuff[ 0 ] );
+ free ( apCtx -> m_pBuff[ 1 ] );
+ apCtx -> m_pBuff[ 0 ] = lpData;
+ apCtx -> m_pBuff[ 1 ] = lpData1;
+ apCtx -> m_pPos = apCtx -> m_pEnd = ( unsigned char* )lpData;
+ apCtx -> m_BufSize = aSize;
+ apCtx -> m_CurBufSize = lAllocSize;
+ return 1;
+}
+
 static int CDDA_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned int anSectors ) {
 
  CDDAFilePrivate* lpPriv = ( CDDAFilePrivate* )apCtx -> m_pData;
@@ -609,15 +636,12 @@ static int CDDA_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
   if ( aStartPos >= apCtx -> m_Size ) return 0;
 
-  apCtx -> m_BufSize = anSectors * 2352;
-
-  apCtx -> m_pBuff[ 0 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 0 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-  apCtx -> m_pBuff[ 1 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 1 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-
-  if ( apCtx -> m_pBuff[ 0 ] == NULL || apCtx -> m_pBuff[ 1 ] == NULL ) return 0;
+  if ( anSectors > 0xFFFFFFFFU / 2352 ||
+       !File_AllocStreamBuffers ( apCtx, anSectors * 2352, 2 ) ) return 0;
 
   lOffset                   = aStartPos + lpPriv -> m_pCtx -> m_Offset;
   apCtx -> m_CurBuf         = 0;
+  apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
   lpPriv -> m_nSectors      = anSectors;
   lpPriv -> m_CurrentSector = lpPriv -> m_StartSector + lOffset / 2352;
   lnSectors                 = lpPriv -> m_EndSector - lpPriv -> m_CurrentSector;
@@ -1281,7 +1305,6 @@ static int STIO_Read ( FileContext* apCtx, void* apBuf, unsigned int aSize ) {
    if ( lLen == 0 ) {
     if ( apCtx -> m_CurPos < apCtx -> m_Size ) {
      apCtx -> m_CurPos = apCtx -> m_Size;
-     lSize = aSize;
     }  /* end if */
     break;
    }  /* end if */
@@ -1307,20 +1330,24 @@ static int STIO_Read ( FileContext* apCtx, void* apBuf, unsigned int aSize ) {
 static int STIO_Seek ( FileContext* apCtx, unsigned int aPos ) {
 
  STIOFilePrivate* lpPriv  = ( STIOFilePrivate* )apCtx -> m_pData;
+ unsigned int lPos;
 
+#ifdef _WIN32
+ lPos = SetFilePointer ( lpPriv -> m_hFile, aPos, NULL, FILE_BEGIN );
+#else  /* PS2 */
+#ifdef BDM
+ if ( lpPriv -> m_fXio ) lPos = fileXioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
+ else
+#endif
+ lPos = fioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
+#endif  /* _WIN32 */
+ /* A failed seek must leave the buffered cursor readable at its old position.
+  * Otherwise a large File_Skip claims success while the device never moved. */
+ if ( lPos == 0xFFFFFFFFU || lPos != aPos ) return -1;
  apCtx -> m_pPos   =
  apCtx -> m_pEnd   = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
  apCtx -> m_CurPos = apCtx -> m_Pos = aPos;
-#ifdef _WIN32
- aPos = SetFilePointer ( lpPriv -> m_hFile, aPos, NULL, FILE_BEGIN );
-#else  /* PS2 */
-#ifdef BDM
- if ( lpPriv -> m_fXio ) aPos = fileXioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
- else
-#endif
- aPos = fioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
-#endif  /* _WIN32 */
- return aPos;
+ return lPos;
 
 }  /* end STIO_Seek */
 
@@ -1351,6 +1378,11 @@ static int STIO_Fill ( FileContext* apCtx ) {
   /* mass: large reads stall in the bdmfs/fileXio transfer path; issue them to the
    * device in driver-safe MX4SIO_RD_CHUNK pieces (see note at top of file). */
   int _tot = 0, _want = apCtx -> m_BufSize, _n;
+  /* Bound one synchronous refill to eight driver-safe RPCs. A deeper
+   * buffer only makes each blocking fill longer; yield packets to the
+   * decoder sooner instead. UDPFS retains its independent read sizing. */
+  if ( lpPriv -> m_RdChunk == MX4SIO_RD_CHUNK && _want > 8 * MX4SIO_RD_CHUNK )
+   _want = 8 * MX4SIO_RD_CHUNK;
   while ( _tot < _want ) {
    int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
    _n = fileXioRead ( lpPriv -> m_FD, ( char* )apCtx -> m_pBuff[ apCtx -> m_CurBuf ] + _tot, _chunk );
@@ -1377,7 +1409,7 @@ static int STIO_FillStm ( FileContext* apCtx ) {
  int              lnRead = 0;
  STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
 
- if (  apCtx -> m_Pos < apCtx -> m_Size ) {
+ if (  apCtx -> m_CurPos < apCtx -> m_Size ) {
 
    int lOldBuf;
 #ifdef _WIN32
@@ -1386,8 +1418,14 @@ static int STIO_FillStm ( FileContext* apCtx ) {
         )
   ) {
 #else  /* PS2 */
-  if (  fioSync ( FIO_WAIT, &lnRead )  ) {
+  if (  fioSync ( FIO_WAIT, &lnRead ) == FIO_COMPLETE  ) {
 #endif  /* _WIN32 */
+   /* A completed RPC can still contain a failed read. Never publish a
+    * negative span, or replay a cached completion after logical EOF. */
+   if ( lnRead <= 0 || ( unsigned int )lnRead > apCtx -> m_BufSize ) {
+    apCtx -> m_pPos = apCtx -> m_pEnd;
+    return 0;
+   }
    lOldBuf            = apCtx -> m_CurBuf;
    apCtx -> m_CurBuf  = !apCtx -> m_CurBuf;
    apCtx -> m_pPos    = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
@@ -1398,12 +1436,21 @@ static int STIO_FillStm ( FileContext* apCtx ) {
     lpPriv -> m_Ovlp.Offset     = apCtx -> m_CurPos + lnRead;
     lpPriv -> m_Ovlp.OffsetHigh = 0;
 
-    ReadFile (
+    if ( !ReadFile (
      lpPriv -> m_hFile, apCtx -> m_pBuff[ lOldBuf ], apCtx -> m_BufSize,
      &lnRead, &lpPriv -> m_Ovlp
-    );
+    ) && GetLastError () != ERROR_IO_PENDING ) {
+     apCtx -> Seek = STIO_Seek;
+     apCtx -> Fill = STIO_Fill;
+    }
 #else
-    fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ lOldBuf ], apCtx -> m_BufSize );
+    if (  fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ lOldBuf ], apCtx -> m_BufSize ) < 0  ) {
+     /* No prefetch was queued. Continue with ordinary synchronous reads at
+      * the descriptor's known position after the buffer just completed. */
+     fioSetBlockMode ( FIO_WAIT );
+     apCtx -> Seek = STIO_Seek;
+     apCtx -> Fill = STIO_Fill;
+    }
 #endif  /* _WIN32 */
    }  /* end if */
 
@@ -1413,23 +1460,26 @@ static int STIO_FillStm ( FileContext* apCtx ) {
 
  }  /* end if */
 
+ if ( !retVal ) apCtx -> m_pPos = apCtx -> m_pEnd;
+
  return retVal;
 
 }  /* end STIO_FillStm */
 
 static int STIO_SeekStm ( FileContext* apCtx, unsigned int aPos ) {
 
- apCtx -> Stream ( apCtx, aPos, 0                         );
- apCtx -> Stream ( apCtx, aPos, apCtx -> m_BufSize / 4096 );
+ if ( !apCtx -> Stream ( apCtx, aPos, 0 ) ) return -1;
+ if ( aPos < apCtx -> m_Size &&
+      !apCtx -> Stream ( apCtx, aPos, apCtx -> m_BufSize / 4096 ) ) return -1;
 
- return 1;
+ return aPos;
 
 }  /* end CDDA_SeekStm */
 
 static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned int anBlocks ) {
 
  STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
- void*            lpData;
+ int              lnBuffers = 2;
  int              retVal = 0;
  int              lnRead = 0;
 
@@ -1450,62 +1500,37 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
   apCtx -> Seek     = STIO_Seek;
   apCtx -> Fill     = STIO_Fill;
 
-  if ( aStartPos >= apCtx -> m_Size ) return 0;
+  apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
+  if ( aStartPos > apCtx -> m_Size ) return 0;
 
-  apCtx -> Seek ( apCtx, aStartPos );
+  return apCtx -> Seek ( apCtx, aStartPos ) != -1;
 
  } else {
 
   if ( aStartPos >= apCtx -> m_Size ) return 0;
 
-  apCtx -> m_BufSize = anBlocks * 4096;
+#ifdef BDM
+  if ( lpPriv -> m_fXio ) lnBuffers = 1;
+#endif
+  if ( anBlocks > 0xFFFFFFFFU / 4096 ||
+       !File_AllocStreamBuffers ( apCtx, anBlocks * 4096, lnBuffers ) ) return 0;
+
+  /* Reused and replaced buffers both start empty. Keep ordinary callbacks
+   * until a real second-buffer read has successfully been queued. */
+  apCtx -> m_CurBuf = 0;
+  apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
+  apCtx -> Seek = STIO_Seek;
+  apCtx -> Fill = STIO_Fill;
+  if ( STIO_Seek ( apCtx, aStartPos ) == -1 ) return 0;
 
 #ifdef BDM
   if ( lpPriv -> m_fXio ) {
-   /* fileXio is the native BDM/IOMANX API and has no large-read limit, so stream
-    * the mass: device synchronously and single-buffered at full buffer size
-    * (no cap, no async double-buffer needed). */
-   lpData                = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 0 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-   apCtx -> m_pBuff[ 1 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 1 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-
-   if ( lpData == NULL || apCtx -> m_pBuff[ 1 ] == NULL ) return 0;
-
-   apCtx -> m_pBuff[ 0 ] = lpData;
-   apCtx -> m_CurBuf     = 0;
-   apCtx -> m_CurPos     = aStartPos;
-   apCtx -> Seek         = STIO_Seek;
-   apCtx -> Fill         = STIO_Fill;
-
-   fileXioLseek ( lpPriv -> m_FD, apCtx -> m_CurPos, SEEK_SET );
-   {
-    int _tot = 0, _want = apCtx -> m_BufSize, _n;
-    while ( _tot < _want ) {
-     int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
-     _n = fileXioRead ( lpPriv -> m_FD, ( char* )apCtx -> m_pBuff[ 0 ] + _tot, _chunk );
-     if ( _n <= 0 ) break;
-     _tot += _n;
-    }
-    retVal = _tot;
-   }
-
-   apCtx -> m_pPos = apCtx -> m_pBuff[ 0 ];
-   apCtx -> m_pEnd = apCtx -> m_pPos + retVal;
-
-   return retVal;
+   /* Use the same bounded, device-specific synchronous refill as playback. */
+   return STIO_Fill ( apCtx );
 
   }  /* end if m_fXio */
 #endif
 
-  lpData                = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 0 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-  apCtx -> m_pBuff[ 1 ] = SMS_ReallocWithAlign(  apCtx -> m_pBuff[ 1 ], &( apCtx -> m_CurBufSize ), ( apCtx -> m_BufSize + 63 ) & ~63  );
-
-  if ( lpData == NULL || apCtx -> m_pBuff[ 1 ] == NULL ) return 0;
-
-  apCtx -> m_pBuff[ 0 ] = lpData;
-  apCtx -> m_CurPos     = aStartPos;
-
-  apCtx -> Seek = STIO_SeekStm;
-  apCtx -> Fill = STIO_FillStm;
 #ifdef _WIN32
   lpPriv -> m_Ovlp.Offset     = apCtx -> m_CurPos;
   lpPriv -> m_Ovlp.OffsetHigh = 0;
@@ -1520,24 +1545,30 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
              )
   ) retVal = lnRead;
 #else  /* PS2 */
-  fioLseek ( lpPriv -> m_FD, apCtx -> m_CurPos, SEEK_SET );
   retVal = lnRead = fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ 0 ], apCtx -> m_BufSize );
 #endif  /* _WIN32 */
+  if ( retVal < 0 || ( unsigned int )retVal > apCtx -> m_BufSize ) retVal = 0;
   apCtx -> m_pPos = apCtx -> m_pBuff[ 0 ];
   apCtx -> m_pEnd = apCtx -> m_pPos + retVal;
 
-  if ( lnRead == apCtx -> m_BufSize ) {
+  if ( retVal == apCtx -> m_BufSize && apCtx -> m_CurPos + retVal < apCtx -> m_Size ) {
 #ifdef _WIN32
    lpPriv -> m_Ovlp.Offset     = apCtx -> m_CurPos + lnRead;
    lpPriv -> m_Ovlp.OffsetHigh = 0;
 
-   ReadFile (
+   if ( ReadFile (
     lpPriv -> m_hFile, apCtx -> m_pBuff[ 1 ],
     apCtx -> m_BufSize, &lnRead, &lpPriv -> m_Ovlp
-   );
+   ) || GetLastError () == ERROR_IO_PENDING ) {
+    apCtx -> Seek = STIO_SeekStm;
+    apCtx -> Fill = STIO_FillStm;
+   }
 #else  /* PS2 */
    fioSetBlockMode ( FIO_NOWAIT );
-   fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ 1 ], apCtx -> m_BufSize );
+   if (  fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ 1 ], apCtx -> m_BufSize ) >= 0  ) {
+    apCtx -> Seek = STIO_SeekStm;
+    apCtx -> Fill = STIO_FillStm;
+   } else fioSetBlockMode ( FIO_WAIT );
 #endif  /* _WIN32 */
   }  /* end if */
 
@@ -1721,6 +1752,26 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
  unsigned int lnRem    = aCount % 512;
  unsigned int i;
 
+/* Large skips seek, not read. The loop below advances 512 bytes per pass, which is
+ * fine for a container header but catastrophic for a multi-GIGABYTE skip: the MOV
+ * probe does File_Skip ( ctx, mdatSize ) to step over the media data on its way to
+ * a moov at the END of the file ( Handbrake's default layout ), and at 512 bytes a
+ * pass that is millions of device reads over USB -- the multi-minute MP4 load of
+ * issue #10. Seek avoids that read loop when the device supports the requested
+ * offset. Check the resulting cursor: on failure retain the read-based fallback.
+ * Small skips keep the long-standing read loop. */
+ if ( aCount >= 65536 && ( int )apFileCtx > 0 ) {
+
+  unsigned int lPos = apFileCtx -> m_CurPos + aCount;
+
+  if ( lPos < apFileCtx -> m_CurPos || lPos > apFileCtx -> m_Size ) lPos = apFileCtx -> m_Size;   /* wrapped or past EOF */
+
+  apFileCtx -> Seek ( apFileCtx, lPos );
+
+  if ( apFileCtx -> m_CurPos == lPos ) return;
+
+ }  /* end if */
+
 /* STOP AT EOF. This is a read LOOP, not a seek, and it used to run the loop to completion no
  * matter what Read returned -- so a caller that computed a bogus count made SMS grind through
  * millions of device reads with no way out and no error. That is a hang, not a slow load: at
@@ -1745,46 +1796,34 @@ void File_Skip ( FileContext* apFileCtx, unsigned int aCount ) {
 
 void File_GetString ( FileContext* apFileCtx, char* apStr, unsigned int aMaxLen ) {
 
- unsigned int i     = 0;
- unsigned int lfEOL = 0;
+ unsigned int i           = 0;
+ unsigned int lfTruncated = 0;
 
+ if ( !aMaxLen ) return;
  --aMaxLen;
 
- while ( i < aMaxLen ) {
+ while ( !FILE_EOF( apFileCtx ) ) {
 
-  if (  FILE_EOF( apFileCtx )  ) {
+  unsigned int lPos = apFileCtx -> m_CurPos;
+  int          lChar = File_GetByte ( apFileCtx );
 
-   apStr[ i ] = '\x00';
-   lfEOL      = 1;
-
+  /* File_GetByte returns zero on a failed refill without advancing. Treat
+   * that failure as EOF, like STIO_Read, including while draining a long line. */
+  if ( apFileCtx -> m_CurPos == lPos ) {
+   apFileCtx -> m_CurPos = apFileCtx -> m_Size;
    break;
-
   }  /* end if */
 
-  apStr[ i ] = File_GetByte ( apFileCtx );
-
-  if ( apStr[ i ] == '\n' ) {
-
-   apStr[ i ] = '\x00';
-
-   if ( i-- && apStr[ i ] == '\r' ) apStr[ i ] = '\x00';
-
-   lfEOL = 1;
-
+  if ( lChar == '\n' ) {
+   if ( !lfTruncated && i && apStr[ i - 1 ] == '\r' ) --i;
    break;
-
   }  /* end if */
 
-  ++i;
+  if ( i < aMaxLen ) apStr[ i++ ] = lChar;
+  else lfTruncated = 1;
 
  }  /* end while */
 
- if ( !lfEOL ) {
-
-  while (  !FILE_EOF( apFileCtx ) && File_GetByte( apFileCtx ) != '\n' );
-
-  apStr[ aMaxLen ] = '\x00';
-
- }  /* end if */
+ apStr[ i ] = '\x00';
 
 }  /* end File_GetString */

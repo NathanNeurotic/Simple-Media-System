@@ -2,9 +2,9 @@
 Post-conversion inspection and packet scanning validator for SMS compliance.
 """
 import os
-import json
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Tuple, Optional
 from config import (
@@ -66,51 +66,77 @@ class ValidationResult:
 
         return "\n".join(lines)
 
+class PacketScanError(RuntimeError):
+    """Packet inspection was incomplete; retain any packet limits already seen."""
+    def __init__(self, message: str, max_video_packet: int = 0, max_audio_packet: int = 0):
+        super().__init__(message)
+        self.max_video_packet = max_video_packet
+        self.max_audio_packet = max_audio_packet
+
+
 def scan_packet_sizes(ffprobe_path: str, file_path: str) -> Tuple[int, int]:
-    """Scans encoded media packets to find max video and max audio packet sizes."""
+    """Read only packet type/size records, keeping memory bounded for long media."""
     cmd = [
         ffprobe_path,
-        "-v", "quiet",
-        "-print_format", "json",
+        "-v", "error",
         "-show_packets",
+        "-show_entries", "packet=codec_type,size",
+        "-of", "compact=p=0:nk=0",
         file_path
     ]
     max_video_packet = 0
     max_audio_packet = 0
 
+    def incomplete(message):
+        return PacketScanError(message, max_video_packet, max_audio_packet)
+
     try:
-        res = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            check=True,
-            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-        )
-        data = json.loads(res.stdout)
-        packets = data.get("packets", [])
+        # A pipe for stderr can deadlock if malformed media emits many errors.
+        # Keep diagnostics on disk, then include only a bounded excerpt.
+        with tempfile.TemporaryFile() as diagnostics:
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=diagnostics, text=True,
+                encoding="utf-8", errors="replace",
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+            )
+            try:
+                while True:
+                    line = proc.stdout.readline(4097)
+                    if not line:
+                        break
+                    if len(line) > 4096:
+                        raise incomplete("ffprobe returned an oversized packet record.")
+                    if not line.strip():
+                        continue
+                    try:
+                        packet = dict(part.split("=", 1) for part in line.strip().split("|") if part)
+                        packet_type = packet["codec_type"]
+                        size = int(packet["size"])
+                        if size < 0:
+                            raise ValueError("negative packet size")
+                    except (KeyError, ValueError):
+                        raise incomplete("ffprobe returned an invalid packet record.")
+                    if packet_type == "video":
+                        max_video_packet = max(max_video_packet, size)
+                    elif packet_type == "audio":
+                        max_audio_packet = max(max_audio_packet, size)
 
-        # Build stream index to codec type map
-        # We also need stream info to know stream_index -> codec_type
-        probe_meta = get_media_info(ffprobe_path, file_path)
-        stream_types = {}
-        for idx, s in enumerate(probe_meta.get("streams", [])):
-            s_idx = s.get("index", idx)
-            stream_types[s_idx] = s.get("codec_type")
-
-        for pkt in packets:
-            st_idx = pkt.get("stream_index")
-            st_type = stream_types.get(st_idx)
-            size = int(pkt.get("size", 0))
-
-            if st_type == "video":
-                if size > max_video_packet:
-                    max_video_packet = size
-            elif st_type == "audio":
-                if size > max_audio_packet:
-                    max_audio_packet = size
-
-    except Exception:
-        pass
+                return_code = proc.wait()
+                diagnostics.seek(0)
+                detail = diagnostics.read(2048).decode("utf-8", errors="replace").strip()
+                if return_code:
+                    raise incomplete(f"ffprobe exited with code {return_code}: {detail or 'no diagnostics'}")
+                if detail:
+                    raise incomplete(f"ffprobe reported errors: {detail}")
+                if not (max_video_packet or max_audio_packet):
+                    raise incomplete("ffprobe returned no audio/video packet payloads.")
+            finally:
+                proc.stdout.close()
+                if proc.poll() is None:
+                    proc.kill()
+                proc.wait()
+    except OSError as exc:
+        raise incomplete(f"Could not complete ffprobe packet scan: {exc}") from exc
 
     return max_video_packet, max_audio_packet
 
@@ -157,11 +183,12 @@ def validate_converted_file(
         result.status = "FAIL"
         result.reasons.append(f"Stream count ({len(streams)}) exceeds the maximum SMS limit of {MAX_SMS_STREAMS}.")
 
-    video_stream = next((s for s in streams if s.get("codec_type") == "video"), None)
-    audio_stream = next((s for s in streams if s.get("codec_type") == "audio"), None)
+    video_streams = [s for s in streams if s.get("codec_type") == "video"]
+    audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
 
     # Validate Video
-    if video_stream:
+    first_video_details = None
+    for video_stream in video_streams:
         v_name = video_stream.get("codec_name", "unknown")
         result.vcodec = video_stream.get("codec_long_name", v_name)
         result.vtag = video_stream.get("codec_tag_string", "N/A")
@@ -239,19 +266,27 @@ def validate_converted_file(
         if v_bitrate > 3000 and result.status != "FAIL":
             result.status = "WARN"
             result.warnings.append(f"High video bitrate ({v_bitrate} kbps) may strain PS2 USB/SMB read bandwidth.")
+        if first_video_details is None:
+            first_video_details = {key: getattr(result, key) for key in
+                                   ("vcodec", "vtag", "resolution", "fps", "vbitrate_kbps")}
+
+    if first_video_details:
+        for key, value in first_video_details.items():
+            setattr(result, key, value)
 
     # Validate Audio
-    if audio_stream:
+    for audio_index, audio_stream in enumerate(audio_streams):
         a_name = audio_stream.get("codec_name", "unknown")
-        result.acodec = audio_stream.get("codec_long_name", a_name)
-        result.sample_rate = int(audio_stream.get("sample_rate", 0))
-        result.channels = int(audio_stream.get("channels", 0))
-        result.abitrate_kbps = int(audio_stream.get("bit_rate", 0)) // 1000
+        if audio_index == 0:
+            result.acodec = audio_stream.get("codec_long_name", a_name)
+            result.sample_rate = int(audio_stream.get("sample_rate", 0))
+            result.channels = int(audio_stream.get("channels", 0))
+            result.abitrate_kbps = int(audio_stream.get("bit_rate", 0)) // 1000
 
-        valid_audio = ("mp3", "libmp3lame", "mp2", "aac", "ac3", "vorbis", "flac", "wmav1", "wmav2")
-        if not any(k in a_name.lower() for k in valid_audio):
+        valid_audio = ("mp3", "mp2", "aac", "ac3", "vorbis", "flac", "wmav1", "wmav2", "pcm_s16le", "pcm_s16be")
+        if a_name not in valid_audio:
             result.status = "FAIL"
-            result.reasons.append(f"Unsupported audio codec: {a_name.upper()}.")
+            result.reasons.append(f"Unsupported audio codec: {a_name.upper()} (audio track {audio_index}).")
         elif not sms_supports(container_ext, "audio", a_name):
             # Same container-aware backstop, same WARN-not-FAIL reasoning. AAC in an AVI is
             # the common case: SMS's AVI wFormatTag table has no AAC entry.
@@ -263,7 +298,20 @@ def validate_converted_file(
             )
 
     # Packet Scan
-    max_v_pkt, max_a_pkt = scan_packet_sizes(ffprobe_path, file_path)
+    try:
+        max_v_pkt, max_a_pkt = scan_packet_sizes(ffprobe_path, file_path)
+    except PacketScanError as exc:
+        max_v_pkt, max_a_pkt = exc.max_video_packet, exc.max_audio_packet
+        if result.status != "FAIL":
+            result.status = "WARN"
+        # An inspection failure does not prove the encoded file is unusable.
+        # WARN preserves it in the worker; observed oversize packets still FAIL below.
+        result.warnings.append(f"Packet-size validation incomplete: {exc}")
+    else:
+        if (video_streams and not max_v_pkt) or (audio_streams and not max_a_pkt):
+            if result.status != "FAIL":
+                result.status = "WARN"
+            result.warnings.append("Packet-size validation incomplete: no payloads were found for an audio/video stream type.")
     result.max_video_packet = max_v_pkt
     result.max_audio_packet = max_a_pkt
 

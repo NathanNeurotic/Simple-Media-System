@@ -140,8 +140,17 @@ static int _tbl_fits ( const MOVAtom* apAtom, unsigned int anEntries, unsigned i
 
 static int _mov_read_dflt ( MOVContext*, FileContext*, MOVAtom* );
 
+static void _mov_free_tables ( MOVStream* apStm, int afChunks ) {
+ if ( afChunks ) { free ( apStm -> m_pChunkOffsets ); apStm -> m_pChunkOffsets = NULL; }
+ free ( apStm -> m_pSample2Chunk ); apStm -> m_pSample2Chunk = NULL;
+ free ( apStm -> m_pSampleSize   ); apStm -> m_pSampleSize   = NULL;
+ free ( apStm -> m_pKeyFrames    ); apStm -> m_pKeyFrames    = NULL;
+ free ( apStm -> m_pStts         ); apStm -> m_pStts         = NULL;
+}  /* end _mov_free_tables */
+
 static void _DestroyStream ( SMS_Stream* apStm ) {
  MOVStream* lpStm = ( MOVStream* )apStm -> m_pCtx;
+ _mov_free_tables ( lpStm, 1 );
  if ( lpStm -> m_pIdx  ) free ( lpStm -> m_pIdx  );
  if ( lpStm -> m_pCtts ) free ( lpStm -> m_pCtts );
 }  /* end _DestroyStream */
@@ -179,12 +188,14 @@ static int _mov_read_mvhd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 static int _mov_read_trak ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
  SMS_Stream* lpStm;
  MOVStream*  lpMyStm;
- if (  apCtx -> m_pBase -> m_nStm >= SMS_MAX_STREAMS  ) {   /* stream table full ( >8 traks ): SKIP the whole over-cap trak. Do NOT recurse into it -- its children ( tkhd/mdhd/stsd/... ) would index m_pStm[ m_nStm - 1 ] = the last valid stream and corrupt / leak / NULL-deref it. Skipping apAtom->m_Size keeps the dispatcher byte-synced ( lLeft == 0 ). */
+ if (  apCtx -> m_pBase -> m_nStm >= SMS_MAX_STREAMS - 1  ) {   /* Reserve the trailing NULL used by stream walkers. Skip the whole excess trak so its children cannot modify the last retained stream. */
   File_Skip ( apFileCtx, ( uint32_t )apAtom -> m_Size );
   return 0;
  }  /* end if */
  lpStm             = ( SMS_Stream*       )calloc (  1, sizeof ( SMS_Stream ) + sizeof ( MOVStream )  );
+ if ( !lpStm ) return -1;
  lpStm -> m_pCodec = ( SMS_CodecContext* )calloc (  1, sizeof ( SMS_CodecContext )  );
+ if ( !lpStm -> m_pCodec ) { free ( lpStm ); return -1; }
  lpMyStm           = ( MOVStream* )(  ( char* )lpStm + sizeof( SMS_Stream )  );
  lpStm -> m_pCtx             = lpMyStm;
  lpStm -> m_pCodec -> m_Type = SMS_CodecTypeUnknown;
@@ -606,8 +617,12 @@ static int _mov_read_stss ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 }  /* end _mov_read_stss */
 
 static int _mov_read_mdat ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
+ MOVMDat* lpMDAT;
  if ( apAtom -> m_Size == 0 ) return 0;
- apCtx -> m_pMDAT = ( MOVMDat* )realloc ( apCtx -> m_pMDAT, ( apCtx -> m_nMDAT + 1 ) * sizeof ( *apCtx -> m_pMDAT )  );
+ if ( apCtx -> m_nMDAT < 0 || ( unsigned int )apCtx -> m_nMDAT >= UINT_MAX / sizeof ( MOVMDat ) - 1 ) return -1;
+ lpMDAT = ( MOVMDat* )realloc ( apCtx -> m_pMDAT, ( apCtx -> m_nMDAT + 1 ) * sizeof ( MOVMDat ) );
+ if ( !lpMDAT ) return -1;
+ apCtx -> m_pMDAT = lpMDAT;
  apCtx -> m_pMDAT[ apCtx ->m_nMDAT ].m_Offset = apAtom -> m_Offset;
  apCtx -> m_pMDAT[ apCtx ->m_nMDAT ].m_Size   = apAtom -> m_Size;
  ++apCtx -> m_nMDAT;
@@ -719,6 +734,7 @@ static MOVParseEntry s_MOVParseTbl[] = {
  { SMS_MKTAG( 'c', 't', 't', 's' ), _mov_read_ctts },
  { SMS_MKTAG( 's', 't', 's', 'z' ), _mov_read_stsz },
  { SMS_MKTAG( 's', 't', 'c', 'o' ), _mov_read_stco },
+ { SMS_MKTAG( 'c', 'o', '6', '4' ), _mov_read_stco },
  { SMS_MKTAG( 'm', 'd', 'a', 't' ), _mov_read_mdat },
  {                               0,           NULL }
 };
@@ -739,7 +755,7 @@ static MOVParseEntry s_M4AProbeTbl[] = {
 static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
 
  int64_t              lTotalSize = 0;
- MOVAtom              lAtom;
+ MOVAtom              lAtom = { 0, 0, 0 };
  int                  retVal = 0;
  const MOVParseEntry* lpIt;
 
@@ -747,7 +763,8 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 
  if ( apAtom -> m_Size < 0 ) apAtom -> m_Size = SMS_MAXINT64;
 
- while (   (  ( lTotalSize + 8 ) < apAtom -> m_Size ) && !FILE_EOF( apFileCtx ) && !retVal   ) {
+ while (   (  ( lTotalSize + 8 ) <= apAtom -> m_Size ) && !FILE_EOF( apFileCtx ) && !retVal   ) {
+  int lHeaderSize = 8;
   lAtom.m_Size = apAtom -> m_Size;
   lAtom.m_Type = 0;
   if ( apAtom -> m_Size >= 8 ) {
@@ -758,14 +775,15 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   lAtom.m_Offset += 8;
   if ( lAtom.m_Size == 1 ) {
    lAtom.m_Size    = _read_long_be ( apFileCtx );
+   lHeaderSize     = 16;
    lAtom.m_Offset += 8;
    lTotalSize     += 8;
   }  /* end if */
   if ( lAtom.m_Size == 0 ) {
+/* Size zero extends to the parent end; extended sizes include their full
+ * 16-byte header. Both must leave the exact payload length for child parsing. */
    lAtom.m_Size = apAtom -> m_Size - lTotalSize;
-   if ( lAtom.m_Size <= 8 ) break;
-  }  /* end if */
-  lAtom.m_Size -= 8;
+  } else lAtom.m_Size -= lHeaderSize;
   if ( lAtom.m_Size < 0 || lAtom.m_Size > apAtom -> m_Size - lTotalSize ) break;
   for ( lpIt = apCtx -> m_pParseTbl; lpIt -> m_Type && lpIt -> m_Type != lAtom.m_Type; ++lpIt );
   if ( !lpIt -> m_Type )
@@ -798,21 +816,27 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 
 }  /* end _mov_read_dflt */
 
-static void _add_idx_entry ( MOVStream* apMyStm, int afKF, uint32_t aDTS, uint32_t anOffset, uint32_t aSize ) {
+static int _add_idx_entry ( MOVStream* apMyStm, int afKF, uint32_t aDTS, uint32_t anOffset, uint32_t aSize ) {
  MOVIndex* lpIdx, *lpIndices;
+ unsigned int lAllocSize = apMyStm -> m_IdxAllocSize;
+/* SMS_Realloc grows by 17/16 and publishes its size even if realloc fails. */
+ if ( apMyStm -> m_nIdx < 0 || ( unsigned int )apMyStm -> m_nIdx >= UINT_MAX / 17 / sizeof ( MOVIndex ) - 1 ) return 0;
  lpIndices = ( MOVIndex* )SMS_Realloc (
-  apMyStm -> m_pIdx, ( unsigned int * )( &apMyStm -> m_IdxAllocSize ),
+  apMyStm -> m_pIdx, &lAllocSize,
   ( apMyStm -> m_nIdx + 1 ) * sizeof ( MOVIndex )
  );
+ if ( !lpIndices ) return 0;
+ apMyStm -> m_IdxAllocSize = lAllocSize;
  apMyStm -> m_pIdx = lpIndices;
  lpIdx = &lpIndices[ apMyStm -> m_nIdx++ ];
  lpIdx -> m_Flags  = afKF;
  lpIdx -> m_DTS    = aDTS;
  lpIdx -> m_Pos    = anOffset;
  lpIdx -> m_Size   = aSize;
+ return 1;
 }  /* end _add_idx_entry */
 
-static void _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Stream* apStm ) {
+static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Stream* apStm ) {
 
  int64_t      lCurOffset;
  int64_t      lCurDTS  = 0;
@@ -822,15 +846,14 @@ static void _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_St
  MOVContext*  lpCtx    = ( MOVContext* )apCont -> m_pCtx;
  unsigned int i, j, k;
 
-/* Both walks below index m_pSample2Chunk and m_pStts with cursors that are NOT bounded by their
- * table sizes -- lSTSCIdx only advances when the NEXT entry matches, lSTTSIdx only when the
- * current entry is used up -- so entry 0 of each is read unconditionally. What keeps that safe
- * is the gate in _mov_read_header, which refuses to call this at all unless m_nStts, m_nChunks
+/* Both walks below need entry 0 of m_pSample2Chunk and m_pStts. The gate in
+ * _mov_read_header refuses to call this at all unless m_nStts, m_nChunks
  * and m_nSample2Chunk are non-zero ( and repairs a zero m_TimeRate, the divisor here, to 1 ).
  * That gate tests COUNTS while this code derefs POINTERS, so it is only sound as long as the
  * two move together -- which is exactly the invariant the readers above now maintain: a count is
  * published only once its table has been allocated and filled. Do not set a count before its
- * malloc is checked, or this walks a NULL table. */
+ * malloc is checked, or this walks a NULL table. The timing walks must also
+ * account for every indexed sample, rather than reusing an exhausted entry. */
  if ( apMyStm -> m_pSampleSize || apStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) {
   unsigned int lCurSample = 0;
   unsigned int lSTTSample = 0;
@@ -841,7 +864,14 @@ static void _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_St
         i        + 1 == ( unsigned int )apMyStm -> m_pSample2Chunk[ lSTSCIdx + 1 ].m_First
    ) ++lSTSCIdx;
    for (  j = 0; j < ( unsigned int )apMyStm -> m_pSample2Chunk[ lSTSCIdx ].m_Count; ++j ) {
-    if ( lCurSample >= apMyStm -> m_nSamples ) return;
+    if ( lCurSample >= apMyStm -> m_nSamples ) return 1;
+    while ( lSTTSIdx < apMyStm -> m_nStts &&
+            ( apMyStm -> m_pStts[ lSTTSIdx ].m_Count <= 0 ||
+              lSTTSample >= ( unsigned int )apMyStm -> m_pStts[ lSTTSIdx ].m_Count ) ) {
+     ++lSTTSIdx;
+     lSTTSample = 0;
+    }  /* end while */
+    if ( lSTTSIdx == apMyStm -> m_nStts ) return 0;
 /* A stss entry the cursor has already passed can never match again ( entry beyond the
  * indexed samples in a truncated file, or non-monotonic garbage in a crafted one ) and
  * would pin lSTSSIdx, mis-flagging every later sample as non-key. Well-formed tables are
@@ -854,7 +884,7 @@ static void _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_St
      if ( lSTSSIdx + 1 < apMyStm -> m_nKeyFrames ) ++lSTSSIdx;
     }  /* end if */
     lSampleSize = apMyStm -> m_SampleSize > 0 ? apMyStm -> m_SampleSize : apMyStm -> m_pSampleSize[ lCurSample ];
-    _add_idx_entry (  apMyStm, lKeyFrame, ( uint32_t )lCurDTS, ( uint32_t )lCurOffset, lSampleSize  );
+    if ( !_add_idx_entry ( apMyStm, lKeyFrame, ( uint32_t )lCurDTS, ( uint32_t )lCurOffset, lSampleSize ) ) return 0;
     lCurOffset += lSampleSize;
     lCurDTS    += apMyStm -> m_pStts[ lSTTSIdx ].m_Duration / apMyStm -> m_TimeRate;
     lSTTSample += 1;
@@ -872,7 +902,8 @@ static void _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_St
    }  /* end for */
   }  /* end for */
  } else {
-  unsigned int lnChunkSamples, lChunkSize, lChunkDuration;
+  unsigned int lnChunkSamples, lChunkSize;
+  int64_t lChunkDuration;
   for ( i = 0; i < apMyStm -> m_nChunks; ++i ) {
    lCurOffset = apMyStm -> m_pChunkOffsets[ i ];
    if ( lSTSCIdx + 1  < apMyStm -> m_nSample2Chunk &&
@@ -908,30 +939,24 @@ static void _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_St
      lpMyStm -> m_NextChunk = 0;
     }  /* end for */
    }  /* end else */
-   _add_idx_entry (  apMyStm, 1, ( uint32_t )lCurDTS, ( uint32_t )lCurOffset, lChunkSize  );
+   if ( !_add_idx_entry ( apMyStm, 1, ( uint32_t )lCurDTS, ( uint32_t )lCurOffset, lChunkSize ) ) return 0;
    lChunkDuration = 0;
-   while ( lnChunkSamples > 0 ) {
-    if (  lnChunkSamples < ( unsigned int )apMyStm -> m_pStts[ lSTTSIdx ].m_Count ) {
-     lChunkDuration += apMyStm -> m_pStts[ lSTTSIdx ].m_Duration * lnChunkSamples;
-     apMyStm -> m_pStts[ lSTTSIdx ].m_Count -= lnChunkSamples;
-     break;
-    } else {
-     lChunkDuration += apMyStm -> m_pStts[ lSTTSIdx ].m_Duration * lnChunkSamples;
-     lnChunkSamples -= apMyStm -> m_pStts[ lSTTSIdx ].m_Count;
-/* Bail once the stts table is exhausted. Neither term is guaranteed to advance: a malformed
- * entry with m_Count == 0 subtracts nothing, and on the LAST entry the index is pinned too --
- * so the loop condition could never change and this span hung forever with no I/O at all
- * ( a dead freeze, not a slow load, and nothing on screen to explain it ). A well-formed file
- * consumes lnChunkSamples exactly, so this only fires on a broken table, where stopping is the
- * only correct move. */
-     if ( lSTTSIdx + 1 < apMyStm -> m_nStts ) ++lSTTSIdx;
-     else break;
-    }  /* end else */
+   while ( lnChunkSamples > 0 && lSTTSIdx < apMyStm -> m_nStts ) {
+    MOVStts* lpTime = &apMyStm -> m_pStts[ lSTTSIdx ];
+    unsigned int lTake;
+    if ( lpTime -> m_Count <= 0 ) { ++lSTTSIdx; continue; }
+    lTake = lnChunkSamples < ( unsigned int )lpTime -> m_Count ? lnChunkSamples : ( unsigned int )lpTime -> m_Count;
+    lChunkDuration += ( int64_t )lpTime -> m_Duration * lTake;
+    lnChunkSamples -= lTake;
+    lpTime -> m_Count -= lTake;
+    if ( !lpTime -> m_Count ) ++lSTTSIdx;
    }  /* end while */
+   if ( lnChunkSamples ) return 0;
    lCurDTS += lChunkDuration / apMyStm -> m_TimeRate;
   }  /* end for */
  }  /* end else */
 
+ return 1;
 }  /* end _mov_build_index */
 
 static int _mov_read_header ( SMS_Container* apCont ) {
@@ -943,7 +968,7 @@ static int _mov_read_header ( SMS_Container* apCont ) {
 
  retVal = _mov_read_dflt ( lpMOV, lpFileCtx, &lAtom );
 
- if (  retVal < 0 || ( !lpMOV -> m_fMOOV && !lpMOV -> m_fMDAT )  ) return 0;
+ if (  retVal < 0 || !lpMOV -> m_fMOOV || !lpMOV -> m_fMDAT  ) return 0;
 
  if ( lpFileCtx -> m_CurPos != lpMOV -> m_MDATOffset ) lpFileCtx -> Seek (  lpFileCtx, ( uint32_t )( lpMOV -> m_MDATOffset )  );
 
@@ -984,7 +1009,7 @@ static int _mov_read_header ( SMS_Container* apCont ) {
 
   if ( lpStm -> m_Duration != SMS_NOPTS_VALUE ) lpStm -> m_Duration /= lpMyStm -> m_TimeRate;
 
-  _mov_build_index ( apCont, lpMyStm, lpStm );
+  if ( !_mov_build_index ( apCont, lpMyStm, lpStm ) ) return 0;
 
 /* _ReadPacket bounds the sample cursor with m_nSamples but indexes m_pIdx with it, and the
  * seek repositions that same cursor -- so a file whose tables declare more samples than the
@@ -994,15 +1019,15 @@ static int _mov_read_header ( SMS_Container* apCont ) {
   if (  lpMyStm -> m_nSamples > ( unsigned int )lpMyStm -> m_nIdx  )
    lpMyStm -> m_nSamples = lpMyStm -> m_nIdx;
 
-  _free ( lpMyStm -> m_pChunkOffsets );
-  _free ( lpMyStm -> m_pSample2Chunk );
-  _free ( lpMyStm -> m_pSampleSize   );
-  _free ( lpMyStm -> m_pKeyFrames    );
-  _free ( lpMyStm -> m_pStts         );
-
+  _mov_free_tables ( lpMyStm, 0 );
  }  /* end for */
 
+/* Per-chunk audio sizing can inspect another stream's chunk offsets. Retain
+ * those offsets until all indices are built; release the other tables early. */
+ for ( i = 0; i < ( int )apCont -> m_nStm; ++i )
+  _mov_free_tables ( ( MOVStream* )apCont -> m_pStm[ i ] -> m_pCtx, 1 );
  _free ( lpMOV -> m_pMDAT );
+ lpMOV -> m_pMDAT = NULL;
 
  return 1;
 
@@ -1026,6 +1051,23 @@ static uint32_t _mov_probe ( FileContext* apFileCtx ) {
 
 }  /* end _mov_probe */
 
+static int _mov_next_ctime ( MOVStream* apStm ) {
+ int lOffset = 0;
+ if ( !apStm -> m_pCtts ) return 0;
+ while ( apStm -> m_Sample2CTimeIdx < apStm -> m_nCtts &&
+         apStm -> m_pCtts[ apStm -> m_Sample2CTimeIdx ].m_Count <= 0 )
+  ++apStm -> m_Sample2CTimeIdx;
+ if ( apStm -> m_Sample2CTimeIdx < apStm -> m_nCtts ) {
+  MOVStts* lpTime = &apStm -> m_pCtts[ apStm -> m_Sample2CTimeIdx ];
+  lOffset = lpTime -> m_Duration;
+  if ( ++apStm -> m_Sample2CTimeSample >= lpTime -> m_Count ) {
+   ++apStm -> m_Sample2CTimeIdx;
+   apStm -> m_Sample2CTimeSample = 0;
+  }
+ }
+ return lOffset;
+}  /* end _mov_next_ctime */
+
 static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  FileContext*  lpFileCtx = apCont -> m_pFileCtx;
@@ -1034,17 +1076,21 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
  MOVStream*    lpMyStm   = NULL;
  unsigned int  i, lIdx   = 0;
  SMS_AVPacket* lpPkt;
+ int           lCTime;
 
  do {
 
   int64_t lBestDTS = SMS_MAXINT64;
+  lpSample = NULL;
 
   for ( i = 0; i < apCont -> m_nStm; ++i ) {
    SMS_Stream* lpCurStm   = apCont -> m_pStm[ i ];
    MOVStream*  lpMyCurStm = ( MOVStream* )lpCurStm -> m_pCtx;
-   if ( lpMyCurStm -> m_CurSample < lpMyCurStm -> m_nSamples ) {
+   if ( lpMyCurStm -> m_pIdx && lpMyCurStm -> m_TimeScale > 0 && lpMyCurStm -> m_TimeRate > 0 &&
+        lpMyCurStm -> m_CurSample < lpMyCurStm -> m_nSamples &&
+        lpMyCurStm -> m_CurSample < ( unsigned int )lpMyCurStm -> m_nIdx ) {
     MOVIndex* lpCurSample = &lpMyCurStm -> m_pIdx[ lpMyCurStm -> m_CurSample ];
-    int64_t   lDTS = SMS_Rescale ( lpCurSample -> m_DTS * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
+    int64_t   lDTS = SMS_Rescale ( ( int64_t )lpCurSample -> m_DTS * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
     if ( lDTS < lBestDTS ) {
      lpSample = lpCurSample;
      lBestDTS = lDTS;
@@ -1058,10 +1104,12 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
   if ( !lpSample ) return -1;
 
   ++lpMyStm -> m_CurSample;
+  lCTime = _mov_next_ctime ( lpMyStm );
 
-  if ( lpSample -> m_Pos > lpFileCtx -> m_Size ) return -1;
+ } while ( !lpStm -> m_pPktBuf || !lpSample -> m_Size );
 
- } while ( !lpStm -> m_pPktBuf );
+ if ( lpSample -> m_Pos > lpFileCtx -> m_Size ||
+      lpSample -> m_Size > lpFileCtx -> m_Size - lpSample -> m_Pos ) return -1;
 
  lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lpSample -> m_Size );
 
@@ -1073,21 +1121,16 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
   else lpFileCtx -> Seek ( lpFileCtx, lpSample -> m_Pos );
  }  /* end if */
 
- lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lpPkt -> m_Size );
+ if ( lpFileCtx -> m_CurPos != lpSample -> m_Pos ||
+      lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lpPkt -> m_Size ) != lpPkt -> m_Size ) {
+  SMS_RingBufferUnalloc ( lpStm -> m_pPktBuf, lpSample -> m_Size + 64 );
+  return -1;
+ }  /* end if */
 
  lpPkt -> m_StmIdx = lIdx;
  lpPkt -> m_DTS    = lpSample -> m_DTS;
 
- if ( lpMyStm -> m_pCtts ) {
-  lpPkt -> m_PTS = lpPkt ->m_DTS + lpMyStm -> m_pCtts[ lpMyStm -> m_Sample2CTimeIdx ].m_Duration / lpMyStm -> m_TimeRate;
-  ++lpMyStm -> m_Sample2CTimeSample;
-  if ( lpMyStm -> m_Sample2CTimeIdx < lpMyStm -> m_nCtts &&
-       lpMyStm -> m_pCtts[ lpMyStm -> m_Sample2CTimeIdx ].m_Count == lpMyStm -> m_Sample2CTimeSample
-  ) {
-   ++lpMyStm -> m_Sample2CTimeIdx;
-     lpMyStm -> m_Sample2CTimeSample = 0;
-  }  /* end if */
- } else lpPkt -> m_PTS = lpPkt -> m_DTS;
+ lpPkt -> m_PTS = lpPkt -> m_DTS + lCTime / lpMyStm -> m_TimeRate;
 
  lpPkt -> m_Flags |= lpSample -> m_Flags ? SMS_PKT_FLAG_KEY : 0;
 
@@ -1134,7 +1177,8 @@ found:
 
 static void _mov_sync_ctime ( MOVStream* apMyStm ) {
 
- unsigned int i, lCovered;
+ unsigned int i;
+ uint64_t lCovered;
 
 /* _ReadPacket walks the ctts table linearly alongside the sample cursor, so a seek that
  * moves m_CurSample must replay this walk up to the same sample or every PTS from here on
@@ -1146,6 +1190,8 @@ static void _mov_sync_ctime ( MOVStream* apMyStm ) {
  lCovered = 0;
 
  for ( i = 0; i < apMyStm -> m_nCtts; ++i ) {
+
+  if ( apMyStm -> m_pCtts[ i ].m_Count <= 0 ) continue;
 
   if (  lCovered + ( unsigned int )apMyStm -> m_pCtts[ i ].m_Count > apMyStm -> m_CurSample  ) {
 
@@ -1159,9 +1205,8 @@ static void _mov_sync_ctime ( MOVStream* apMyStm ) {
 
  }  /* end for */
 
-/* The cursor sits past every ctts entry ( truncated table ): pin to the last one rather
- * than letting _ReadPacket index off the end. */
- apMyStm -> m_Sample2CTimeIdx    = apMyStm -> m_nCtts - 1;
+/* Past a truncated table, no offset is known. The packet reader uses DTS. */
+ apMyStm -> m_Sample2CTimeIdx    = apMyStm -> m_nCtts;
  apMyStm -> m_Sample2CTimeSample = 0;
 
 }  /* end _mov_sync_ctime */
@@ -1208,7 +1253,7 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
  * interleave resumes consistently -- audio typically lands a few frames BEFORE the video
  * keyframe, which is exactly what the decoders expect after a seek. */
  lTime = SMS_Rescale (
-  lpMyStm -> m_pIdx[ lSample ].m_DTS * lpMyStm -> m_TimeRate,
+  ( int64_t )lpMyStm -> m_pIdx[ lSample ].m_DTS * lpMyStm -> m_TimeRate,
   SMS_TIME_BASE, lpMyStm -> m_TimeScale
  );
 
@@ -1262,6 +1307,7 @@ static int _GetContainerMOV ( SMS_Container* apCont, const MOVParseEntry* apPars
 
   MOVContext* lpMyCtx = ( MOVContext* )calloc (  1, sizeof ( MOVContext )  );
 
+  if ( !lpMyCtx ) return 0;
   apCont  -> m_pCtx      = lpMyCtx;
   lpMyCtx -> m_pBase     = apCont;
   lpMyCtx -> m_pParseTbl = apParseTbl;
@@ -1296,7 +1342,11 @@ static int _GetContainerMOV ( SMS_Container* apCont, const MOVParseEntry* apPars
 
    retVal = 1;
 
-  }  /* end if */
+  } else {
+   _free ( lpMyCtx -> m_pMDAT );
+   SMS_DestroyContainer ( apCont, 0 );
+   apCont -> m_nStm = 0;
+  }  /* end else */
 
  }  /* end if */
 
@@ -1311,11 +1361,12 @@ uint64_t SMS_M4AProbe ( FileContext* apFileCtx, SMS_AudioInfo* apInfo ) {
 
  if ( lType ) {
 
-  SMS_Container lCont;
+  SMS_Container lCont; memset ( &lCont, 0, sizeof ( lCont ) );
   MOVContext    lMyCont; memset (  &lMyCont, 0, sizeof ( lMyCont )  );
 
   lCont.m_pCtx        = &lMyCont;
   lCont.m_pFileCtx    = apFileCtx;
+  lMyCont.m_pBase     = &lCont;
   lMyCont.m_pMDAT     = ( MOVMDat* )apInfo;
   lMyCont.m_pParseTbl = s_M4AProbeTbl;
 

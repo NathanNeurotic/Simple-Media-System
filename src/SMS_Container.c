@@ -25,6 +25,19 @@
 #include <malloc.h>
 #include <string.h>
 
+/* DIAGNOSTIC breadcrumbs, one per container probe. SMS_GetContainer is a
+ * black box on hardware: a freeze there latches "E70 getcontainer" (SMS_Player.c)
+ * and nothing says WHICH probe wedged. Numbering each probe in the 40..4B range
+ * turns the next freeze report into the exact probe name. Like SMS_IOP.c's
+ * DIAG_CRUMB: a macro, not a function, so an OFF build pays zero bytes -- the
+ * string literals themselves are data. */
+#ifdef SMS_DIAG
+#  include "SMS_IOP.h"
+#  define PROBE_CRUMB( n, s ) SMS_ExitCrumb ( ( n ), ( s ) )
+#else
+#  define PROBE_CRUMB( n, s ) do { } while ( 0 )
+#endif
+
 #define ID3_HEADER_SIZE   10
 
 typedef int ( *ContainerCreator ) ( SMS_Container* );
@@ -91,6 +104,9 @@ void SMS_DestroyContainer ( SMS_Container* apCont, int afAll ) {
 
  }  /* end for */
 
+ /* A rejected probe can reuse this container for the next format. */
+ apCont -> m_nStm = 0;
+
  if ( apCont -> m_pCtx ) {
   free ( apCont -> m_pCtx );
   apCont -> m_pCtx = NULL;
@@ -117,6 +133,13 @@ SMS_Container* SMS_GetContainer ( FileContext* apFileCtx, int aPrefCont ) {
  int            lSts   = 0;
  SMS_Container* retVal = ( SMS_Container* )calloc (  1, sizeof ( SMS_Container )  );
 
+ if ( !retVal ) {
+  /* Automatic probing consumes a real file even on failure. Explicit probes
+   * leave it with the caller for retries; negative pointers encode playlists. */
+  if ( ( int )apFileCtx > 0 && aPrefCont < 0 ) apFileCtx -> Destroy ( apFileCtx );
+  return NULL;
+ }  /* end if */
+
  retVal -> m_pFileCtx  = apFileCtx;
  retVal -> AllocPacket = _AllocPacket;
 
@@ -142,6 +165,29 @@ SMS_Container* SMS_GetContainer ( FileContext* apFileCtx, int aPrefCont ) {
   } else memcpy (  lCC, s_CCreator, sizeof ( s_CCreator )  );
 
   while ( lCC[ i ] ) {
+
+/* The table exists only in DIAG builds: a release build must not grow its
+ * small-data section by even 144 bytes -- this tree already links within a
+ * hair of the GP-relative window ( see the SMS_DIAG note in the Makefile ),
+ * and pushing g_SMBServerError past it breaks the release link. The PROBE_CRUMB
+ * macro discards its arguments when SMS_DIAG is off, so the call below needs
+ * no #ifdef of its own. */
+#ifdef SMS_DIAG
+   static const char s_Crumbs[ sizeof ( s_CCreator ) / sizeof ( s_CCreator[ 0 ] ) ][ 12 ] = {
+    "probe avi",  "probe asf",  "probe ogg",  "probe m4a",
+    "probe flac", "probe aac",  "probe mp3",  "probe ac3",
+    "probe mpg",  "probe jpg",  "probe m3u",  "probe mov"
+   };
+#endif
+
+#ifdef SMS_DIAG
+   /* Identify the creator itself: extension hints change its probe position. */
+   {
+    int j;
+    for ( j = 0; s_CCreator[ j ] != lCC[ i ]; ++j );
+    PROBE_CRUMB ( 40 + j, s_Crumbs[ j ] );
+   }
+#endif
 
    if (   (  lSts = lCC[ i++ ] ( retVal )  )   ) break;
 

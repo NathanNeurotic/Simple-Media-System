@@ -82,6 +82,7 @@ class ConversionWorker(QThread):
         self._is_cancelled = False
         self._has_video_cached: Optional[bool] = None
         self._has_audio_cached: Optional[bool] = None
+        self._source_info_cached: Optional[dict] = None
         self._process: Optional[subprocess.Popen] = None
         self.console_log = deque(maxlen=_CONSOLE_LOG_MAX)
         self.cmd_str = ""
@@ -90,7 +91,7 @@ class ConversionWorker(QThread):
         """Does the source carry an audio stream? Probed once, cached alongside _has_video."""
         if self._has_audio_cached is None:
             try:
-                info = get_media_info(self.ffprobe_path, self.input_file)
+                info = self._source_info()
                 streams = info.get("streams") if isinstance(info, dict) else None
                 if not isinstance(streams, list):
                     self._has_audio_cached = True   # unreadable: let ffmpeg decide, as before
@@ -116,12 +117,17 @@ class ConversionWorker(QThread):
         if self._has_video_cached is None:
             try:
                 self._has_video_cached = has_real_video_stream(
-                    get_media_info(self.ffprobe_path, self.input_file)
+                    self._source_info()
                 )
             except Exception:
                 self._has_video_cached = True   # unreadable: behave as before, let ffmpeg decide
             crash_log.breadcrumb(f"source has real video: {self._has_video_cached}")
         return self._has_video_cached
+
+    def _source_info(self) -> dict:
+        if self._source_info_cached is None:
+            self._source_info_cached = get_media_info(self.ffprobe_path, self.input_file)
+        return self._source_info_cached
 
     def cancel(self):
         """Requests worker cancellation and terminates running process."""
@@ -258,15 +264,21 @@ class ConversionWorker(QThread):
         moves 0->50% then 50->100% instead of filling the bar twice, which would read as the
         work having restarted.
         """
-        cmd = build_ffmpeg_cmd(
-            self.ffmpeg_path,
-            self.input_file,
-            self.partial_file,
-            self.settings,
-            has_video_stream=self._has_video(),
-            pass_num=pass_num,
-            passlog=passlog
-        )
+        try:
+            cmd = build_ffmpeg_cmd(
+                self.ffmpeg_path,
+                self.input_file,
+                self.partial_file,
+                self.settings,
+                has_video_stream=self._has_video(),
+                pass_num=pass_num,
+                passlog=passlog,
+                source_info=self._source_info()
+            )
+        except ValueError as error:
+            self._cleanup_partial(passlog)
+            self.failed_signal.emit(self.item_id, f"Settings cannot be applied to this file: {error}")
+            return "failed"
         self.cmd_str = " ".join(f'"{arg}"' if " " in arg else arg for arg in cmd)
         label = f"pass {pass_num} of {total_passes}" if pass_num else "encode"
         crash_log.breadcrumb(f"ffmpeg cmd ({label}): {self.cmd_str}")

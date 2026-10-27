@@ -229,12 +229,19 @@ static void _terminate_threads ( int afDelete ) {
   s_Player.m_Flags &= ~SMS_FLAGS_STOP;
  }  /* end if */
 
- while (  SMS_RingBufferCount ( s_pVideoBuffer )  ) {
+ /* A stopped renderer can have taken a notification without releasing its
+  * slot. Drain allocated slots, including that frame and an unposted tail. */
+ while ( s_pVideoBuffer -> m_Size < s_pVideoBuffer -> m_Capacity ) {
 
-  SMS_FrameBuffer* lpFrame = ( SMS_FrameBuffer* )SMS_RingBufferWait ( s_pVideoBuffer );
+  SMS_FrameBuffer** lppFrame = ( SMS_FrameBuffer** )s_pVideoBuffer -> m_pOut;
+  SMS_FrameBuffer*  lpFrame  = *lppFrame;
 
-  if ( lpFrame -> m_FrameType == SMS_FT_T_TYPE ) free ( lpFrame );
+  if ( lpFrame ) {
+   if ( lpFrame -> m_FrameType == SMS_FT_T_TYPE ) free ( lpFrame );
+   else lpFrame -> m_FrameType = -1;
+  }  /* end if */
 
+  *lppFrame = NULL;
   SMS_RingBufferFree ( s_pVideoBuffer, 4 );
 
  }  /* end while */
@@ -282,6 +289,7 @@ static void _init_queues ( int afCreate ) {
 
  if ( afCreate ) {
 
+  memset ( s_VideoBuffer, 0, sizeof ( s_VideoBuffer ) );
   s_pVideoBuffer  = SMS_RingBufferInit (  s_VideoBuffer, sizeof ( s_VideoBuffer )  );
   s_pAudioBuffer  = SMS_RingBufferInit (  UNCACHED_SEG( SMS_AUDIO_BUFFER ), SMS_AUDIO_BUFFER_SIZE  );
 
@@ -502,6 +510,10 @@ static void _sms_video_renderer ( void* apParam ) {
    WaitSema ( s_SemaPauseVideo );
 
   }  /* end if */
+
+  /* The renderer owns this frame now. Shutdown must not reclaim a subtitle
+   * after it has been freed here or transferred to the IPU. */
+  *( SMS_FrameBuffer** )s_pVideoBuffer -> m_pOut = NULL;
 
   if ( lpFrame -> m_FrameType != SMS_FT_T_TYPE ) {
 
@@ -1061,9 +1073,17 @@ static int _sms_play ( void* apPlayer ) {
 
   PLAY_CRUMB ( 75, "file stream" );
 
-  s_Player.m_pFileCtx -> Stream (
-   s_Player.m_pFileCtx, s_Player.m_StartPos = s_Player.m_pFileCtx -> m_CurPos, s_Player.m_pFileCtx -> m_StreamSize >> 3
-  );
+/* Keep the original 48-block allocation. BDM uses bounded synchronous
+ * refill batches in STIO_Stream/STIO_Fill so packets reach the decoder
+ * without waiting for an entire 192/384 KiB RPC chain (#24).
+ * This reduces the maximum refill batch; hardware throughput is unverified. */
+  if ( s_Player.m_pFileCtx -> Stream (
+        s_Player.m_pFileCtx, s_Player.m_StartPos = s_Player.m_pFileCtx -> m_CurPos,
+        s_Player.m_pFileCtx -> m_StreamSize >> 3
+       ) <= 0 ) {
+   /* Allocation or initial read failed: restore ordinary buffered reads. */
+   s_Player.m_pFileCtx -> Stream ( s_Player.m_pFileCtx, s_Player.m_StartPos, 0 );
+  }
 
  }  /* end if */
 

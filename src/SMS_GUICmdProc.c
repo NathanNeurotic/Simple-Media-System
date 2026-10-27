@@ -21,6 +21,8 @@
 #include "SMS_GS.h"
 #include "SMS_RC.h"
 #include "SMS_PAD.h"
+#include "SMS_Config.h"
+#include "SMS_Timer.h"
 
 #include <malloc.h>
 #include <string.h>
@@ -135,11 +137,45 @@ void _start_player ( FileContext* apFileCtx, FileContext* apSubCtx, SubtitleForm
 
    if (  !lpNode || ( int )lpNode -> m_Param != GUICON_MP3  ) break;   /* audio only */
 
-   do {
-    lpNode = lpNode -> m_pNext;
-   } while (  lpNode && ( int )lpNode -> m_Param != GUICON_MP3  );
+/* SHUFFLE (#25): the "Randomize playlist" toggle ( SMS_PF_RAND, the MP3
+ * settings page ) already shuffles M3U playlists; extend it to continuous
+ * folder playback so the next track is a random audio entry other than the
+ * one that just played. Pure random per pick -- an immediate repeat becomes
+ * possible late in a folder, the same tradeoff the M3U shuffle makes. */
+   if ( g_Config.m_PlayerFlags & SMS_PF_RAND ) {
 
-   if ( !lpNode ) break;   /* last track in the folder */
+    unsigned int  lnCandidates = 0, lPick, lIdx = 0;
+    SMS_ListNode* lpCurrent = lpNode;
+    SMS_ListNode* lpScan;
+
+    g_RandSeed = ( int )g_Timer;
+
+    for ( lpScan = g_pFileList -> m_pHead; lpScan; lpScan = lpScan -> m_pNext )
+     if (  ( int )lpScan -> m_Param == GUICON_MP3 && lpScan != lpCurrent  ) ++lnCandidates;
+
+    if ( !lnCandidates ) break;
+
+    lPick = ( unsigned int )SMS_rand () % lnCandidates;
+    lpNode = NULL;
+
+    for ( lpScan = g_pFileList -> m_pHead; lpScan; lpScan = lpScan -> m_pNext )
+     if (   ( int )lpScan -> m_Param == GUICON_MP3 && lpScan != lpCurrent &&
+            lIdx++ == lPick   ) {
+      lpNode = lpScan;
+      break;
+     }  /* end if */
+
+    if ( !lpNode ) break;   /* defensive; lPick < lnCandidates guarantees a hit */
+
+   } else {
+
+    do {
+     lpNode = lpNode -> m_pNext;
+    } while (  lpNode && ( int )lpNode -> m_Param != GUICON_MP3  );
+
+    if ( !lpNode ) break;   /* last track in the folder */
+
+   }  /* end else */
 
    GUI_Initialize ( -1 );
 
@@ -173,6 +209,55 @@ static void _start_playlist ( SMS_List* apList ) {
 
  SMS_ListNode* lpNode = apList -> m_pHead;
 
+/* SHUFFLE (#25): "Randomize playlist" ( SMS_PF_RAND, the MP3 settings page )
+ * already shuffles M3U playlists and the continuous-audio path; extend it to
+ * Play-all folders -- VIDEO included, which is what ambient playback wants.
+ * Fisher-Yates over the node pointers, then relink in place: node storage ( and
+ * so each item's inline string, _STR ) moves with the pointer, nothing is freed
+ * or reallocated. */
+ if (  ( g_Config.m_PlayerFlags & SMS_PF_RAND ) && apList -> m_Size > 1  ) {
+
+  unsigned int   lnStm = apList -> m_Size, i;
+  SMS_ListNode** lpNodes = ( SMS_ListNode** )malloc ( lnStm * sizeof ( SMS_ListNode* ) );
+
+  if ( lpNodes ) {
+
+   g_RandSeed = ( int )g_Timer;
+
+   SMS_ListNode* lpScan = apList -> m_pHead;
+   for ( i = 0; i < lnStm; ++i ) {
+    lpNodes[ i ] = lpScan;
+    lpScan = lpScan -> m_pNext;
+   }
+
+   for ( i = lnStm - 1; i > 0; --i ) {
+
+    unsigned int  j   = ( unsigned int )SMS_rand () % ( i + 1 );
+    SMS_ListNode* lpT = lpNodes[ i ];
+
+    lpNodes[ i ] = lpNodes[ j ];
+    lpNodes[ j ] = lpT;
+
+   }  /* end for */
+
+   apList -> m_pHead = lpNodes[ 0         ];
+   apList -> m_pTail = lpNodes[ lnStm - 1 ];
+
+   for ( i = 0; i < lnStm; ++i ) {
+
+    lpNodes[ i ] -> m_pPrev = i          ? lpNodes[ i - 1 ] : NULL;
+    lpNodes[ i ] -> m_pNext = i + 1 < lnStm ? lpNodes[ i + 1 ] : NULL;
+
+   }  /* end for */
+
+   free ( lpNodes );
+
+  }  /* end if */
+
+ }  /* end if */
+
+ lpNode = apList -> m_pHead;
+
  if (  !_playlist_menu ( apList, &lpNode )  ) {
 
   while ( lpNode ) {
@@ -182,9 +267,19 @@ static void _start_playlist ( SMS_List* apList ) {
    if ( !lpNode -> m_Param ) {
 
     void**      lpParam  = SMS_OpenMediaFile (  _STR( lpNode ), SMS_FA_FLAGS_AVI  );
-    SMS_Player* lpPlayer = SMS_InitPlayer (
+    SMS_Player* lpPlayer;
+
+    /* A removed/unreadable playlist item must not crash Play all. The file
+     * and subtitle contexts pass to the player; the wrapper remains ours. */
+    if ( !lpParam ) {
+     lpNode = lpNode -> m_pNext;
+     continue;
+    }
+
+    lpPlayer = SMS_InitPlayer (
      ( FileContext* )lpParam[ 0 ], ( FileContext* )lpParam[ 1 ], ( SubtitleFormat )lpParam[ 2 ]
     );
+    free ( lpParam );
 
     if ( lpPlayer ) {
 

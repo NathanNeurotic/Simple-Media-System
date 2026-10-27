@@ -21,6 +21,7 @@ class QueueItem:
     # with nothing to read and made the "Allow upscaling" checkbox inert.
     src_width: int = 0
     src_height: int = 0
+    audio_track_count: int = 1
     status: str = "Ready"
     estimated_size_bytes: int = 0
     console_log: str = ""

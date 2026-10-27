@@ -8,7 +8,7 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
-from config import MPEG_ALLOWED_FPS_MAP
+from config import MPEG_ALLOWED_FPS_MAP, MAX_CONVERTER_STREAMS, MULTI_AUDIO_CONTAINERS
 
 def get_app_dir() -> Path:
     """Returns the base directory of the application."""
@@ -121,6 +121,8 @@ def get_media_info(ffprobe_path: str, file_path: str) -> Dict[str, Any]:
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
         )
@@ -199,7 +201,8 @@ def parse_media_summary(probe_info: Dict[str, Any]) -> Dict[str, Any]:
         "audio_codec": a_codec,
         "sample_rate": a_sample_rate,
         "channels": a_channels,
-        "num_streams": len(streams)
+        "num_streams": len(streams),
+        "audio_tracks": sum(s.get("codec_type") == "audio" for s in streams)
     }
 
 def calculate_estimated_output_size(duration_sec: float, vbitrate_kbps: float, abitrate_kbps: float) -> int:
@@ -241,6 +244,10 @@ def build_scale_filter(
         if target_h > src_h:
             target_h = make_even(src_h)
 
+    # Preserve the existing source color handling. The forced BT.601 transform
+    # from b943b12 did not resolve #20 and was reported worse in #23; those
+    # console symptoms need an actual sample/decoder comparison, not a blanket
+    # color transform applied to every preset.
     if scaling_mode == "Stretch":
         filters.append(f"scale={target_w}:{target_h}")
     elif scaling_mode == "Fit inside dimensions":
@@ -261,7 +268,8 @@ def build_ffmpeg_cmd(
     settings: Dict[str, Any],
     has_video_stream: bool = True,
     pass_num: int = 0,
-    passlog: str = None
+    passlog: str = None,
+    source_info: Optional[Dict[str, Any]] = None
 ) -> List[str]:
     """Builds complete FFmpeg command line arguments list.
 
@@ -294,9 +302,33 @@ def build_ffmpeg_cmd(
     vcodec = settings.get("vcodec")
     acodec = settings.get("acodec")
 
-    # Safe Stream Mapping: retain first video and first audio stream by default
+    # Track 0 stays optional for silent video. An explicit alternate track must
+    # exist: FFmpeg reports a missing required map instead of producing mute video.
     if settings.get("limit_streams", True):
-        cmd.extend(["-map", "0:v:0?", "-map", "0:a:0?", "-sn", "-dn", "-map_metadata", "-1"])
+        audio_track = int(settings.get("audio_track", 0) or 0)
+        if audio_track < 0:
+            raise ValueError("Audio track index must be nonnegative")
+        if settings.get("all_audio_tracks"):
+            if out_ext not in MULTI_AUDIO_CONTAINERS or not vcodec or not has_video_stream:
+                raise ValueError("Preserving multiple audio tracks requires a video source and an AVI, MPEG or MP4 target")
+            streams = (source_info or {}).get("streams")
+            if not isinstance(streams, list):
+                raise ValueError("Cannot inspect source tracks to preserve all audio tracks")
+            audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
+            if len(audio_streams) + int(has_video_stream) > MAX_CONVERTER_STREAMS:
+                raise ValueError(f"Output exceeds the {MAX_CONVERTER_STREAMS}-stream SMS limit; select one audio track")
+            audio_map = "0:a?"
+        else:
+            audio_map = f"0:a:{audio_track}" + ("?" if audio_track == 0 else "")
+        cmd.extend(["-map", "0:v:0?", "-map", audio_map, "-sn", "-dn", "-map_metadata", "-1"])
+        if settings.get("all_audio_tracks"):
+            for i, stream in enumerate(audio_streams):
+                for key in ("language", "title"):
+                    value = stream.get("tags", {}).get(key)
+                    if value:
+                        cmd.extend([f"-metadata:s:a:{i}", f"{key}={value}"])
+                        if key == "title" and out_ext == ".mp4":
+                            cmd.extend([f"-metadata:s:a:{i}", f"handler_name={value}"])
 
     # Video Settings
     if vcodec and has_video_stream and vcodec != "none":
@@ -329,15 +361,42 @@ def build_ffmpeg_cmd(
         # Scaling and Filters
         src_w = settings.get("src_width", 0)
         src_h = settings.get("src_height", 0)
+        if (not src_w or not src_h) and source_info:
+            video = next((s for s in source_info.get("streams") or []
+                          if s.get("codec_type") == "video" and not s.get("disposition", {}).get("attached_pic")), {})
+            src_w, src_h = int(video.get("width", 0)), int(video.get("height", 0))
         target_w = settings.get("width", 640)
         target_h = settings.get("height", 480)
         scaling_mode = settings.get("scaling_mode", "Letterbox to exact dimensions")
         allow_upscale = settings.get("allow_upscale", False)
         deinterlace = settings.get("deinterlace", False)
+        if settings.get("keep_sd_resolution") and 0 < src_w <= 720 and 0 < src_h <= 576:
+            target_w, target_h = src_w, src_h
+            allow_upscale = False
 
         vf_chain = build_scale_filter(
             src_w, src_h, target_w, target_h, scaling_mode, allow_upscale, deinterlace
         )
+
+        # Optional permanent subtitle burn-in; SMS also reads external SRT/SUB.
+        subtitle_file = (settings.get("subtitle_file") or "").strip()
+        subtitle_track = int(settings.get("embedded_subtitle_track", -1))
+        if subtitle_file and subtitle_track >= 0:
+            raise ValueError("Select either an external or embedded subtitle track")
+        if subtitle_track >= 0:
+            streams = (source_info or {}).get("streams")
+            subtitles = [s for s in streams or [] if s.get("codec_type") == "subtitle"]
+            if subtitle_track >= len(subtitles):
+                raise ValueError("The selected embedded subtitle track is absent")
+            if subtitles[subtitle_track].get("codec_name") not in {"subrip", "ass", "ssa", "webvtt", "mov_text", "text", "microdvd"}:
+                raise ValueError("Embedded subtitle burn-in requires a text track; bitmap subtitles are not supported")
+            subtitle_file = input_file
+        if subtitle_file:
+            # Two parsers consume escapes: filter options, then filtergraph.
+            esc = "".join("\\" + c if c in "\\':" else c for c in subtitle_file)
+            esc = "".join("\\" + c if c in "\\'[],;" else c for c in esc)
+            suffix = f":si={subtitle_track}" if subtitle_track >= 0 else ":charenc=UTF-8"
+            vf_chain.append(f"subtitles=filename={esc}{suffix}")
 
         # Frame rate
         fps = str(settings.get("fps", ""))
@@ -387,7 +446,7 @@ def build_ffmpeg_cmd(
         cmd.extend(["-c:a", acodec])
 
         abitrate = settings.get("abitrate_kbps")
-        if abitrate:
+        if abitrate and not acodec.startswith("pcm_"):
             cmd.extend(["-b:a", f"{abitrate}k"])
 
         sample_rate = settings.get("sample_rate", 48000)

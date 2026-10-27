@@ -50,7 +50,8 @@ def test_all_presets():
             "channels": preset.channels,
             "scaling_mode": "Letterbox to exact dimensions",
             "limit_streams": True,
-            "preset_name": preset.name
+            "preset_name": preset.name,
+            "gop": preset.gop, "keep_sd_resolution": preset.keep_sd_resolution
         }
 
         final_path, partial_path = generate_unique_output_path(input_file, preset.ext)

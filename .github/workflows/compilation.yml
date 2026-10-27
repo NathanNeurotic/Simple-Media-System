@@ -37,6 +37,32 @@ jobs:
     # committed dev9-importing blobs must stay bound to SMS's embedded dev9 v1.1.
     # Assert on the .xz blobs -- the exact bytes the build embeds -- so a re-bound
     # module committed only as .xz cannot slip a v1.9 binding past the gate.
+    - name: Install host media test dependencies
+      run: |
+        if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+        fi
+
+    - name: Host playback and file I/O regression checks
+      run: |
+        python3 tools/test_stream_allocation.py
+        python3 tools/test_stio_stream_failure.py
+        python3 tools/test_cdda_stream_failure.py
+        python3 tools/test_stream_rebuffer.py
+        python3 tools/test_stio_refill.py
+        python3 tools/test_mpeg_ps_probe.py
+        python3 tools/test_mpeg12_frame_lifetime.py
+        python3 tools/test_player_video_drain.py
+        python3 tools/test_container_probe.py
+        python3 tools/test_m3u_probe.py
+        python3 tools/test_playlist_playback.py
+        python3 tools/test_file_skip.py
+        python3 tools/test_file_string.py
+        python3 tools/test_mov_packets.py
+        python3 tools/test_mov_index.py
+        python3 tools/test_mov_parser.py
+        python3 tools/test_skin_loading.py
+
     - name: IRX ABI gate (dev9 v1.1 bindings)
       run: |
         python3 tools/irx_imports.py --assert dev9=1.1 irx/udpfs_smap.irx.xz irx/ata_bd.irx.xz
@@ -62,7 +88,6 @@ jobs:
         # recorded in the release notes, which is where it belongs.
         mkdir -p dist/smbman-licenses
         cp iop/smbman-sms/LICENSE-* iop/smbman-sms/NOTICE-DES.txt iop/smbman-sms/README.md dist/smbman-licenses/
-        ( cd dist && zip -9 -r "Simple-Media-System.zip" Simple-Media-System.elf Simple-Media-System-packed.elf Simple-Media-System-DIAG.elf smbman-licenses )
 
         # Language packs, shipped with the build they belong to. The .lng format is
         # EXACT-COUNT: a pack whose line count does not match this build's string table is
@@ -85,13 +110,33 @@ jobs:
         cp bin/SMS.elf dist/Simple-Media-System-DIAG.elf
         ls -la dist
 
+    - name: Package complete tester bundle and build identity
+      env:
+        SOURCE_SHA: ${{ github.sha }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        BUILD_EVENT: ${{ github.event_name }}
+        BUILD_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        python3 - <<'PY'
+        import hashlib, json, os
+        from pathlib import Path
+        dist = Path("dist")
+        names = ["Simple-Media-System.elf", "Simple-Media-System-packed.elf", "Simple-Media-System-DIAG.elf"]
+        info = {"source_sha": os.environ["SOURCE_SHA"], "head_sha": os.environ["HEAD_SHA"],
+                "event": os.environ["BUILD_EVENT"], "run_url": os.environ["BUILD_RUN"],
+                "sha256": {name: hashlib.sha256((dist / name).read_bytes()).hexdigest() for name in names}}
+        (dist / "build-info.json").write_text(json.dumps(info, indent=2) + "\n")
+        PY
+        ( cd dist && zip -9 -r "Simple-Media-System.zip" Simple-Media-System.elf Simple-Media-System-packed.elf Simple-Media-System-DIAG.elf build-info.json smbman-licenses )
+
     # Every build (push / PR / tag) leaves a downloadable artifact for that commit.
     - name: Upload build artifact
       if: success()
       uses: actions/upload-artifact@v7
       with:
         name: Simple-Media-System-${{ github.sha }}
-        path: dist/Simple-Media-System.elf
+        path: dist/
+        if-no-files-found: error
 
     # --- Rolling pre-release: refreshed on EVERY push to the default branch ---
     # A single "rolling" tag/release always holds the latest master build, so

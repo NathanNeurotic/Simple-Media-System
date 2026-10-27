@@ -22,6 +22,16 @@
 #include <malloc.h>
 #include <string.h>
 
+/* DIAGNOSTIC phase crumbs -- see the matching note in SMS_Container.c. These
+ * bracket the two PTS scans that run AFTER the PS probe accepts the file, so a
+ * freeze that latches one of them is the scan, not the probe. */
+#ifdef SMS_DIAG
+#  include "SMS_IOP.h"
+#  define PS_CRUMB( n, s ) SMS_ExitCrumb ( ( n ), ( s ) )
+#else
+#  define PS_CRUMB( n, s ) do { } while ( 0 )
+#endif
+
 #define MAX_SYNC_SIZE   100000
 #define MAX_DETECT_SIZE 1024 * 1024
 
@@ -77,7 +87,13 @@ static int _next_start_code ( FileContext* apFileCtx ) {
 
   if (  FILE_EOF( apFileCtx )  ) break;
 
-  lByte = File_GetByte ( apFileCtx );
+  /* A short/error read can stop before m_Size. Do not rescan the same byte
+   * position forever while probing a truncated file or a failing device. */
+  {
+   unsigned int lPos = apFileCtx -> m_CurPos;
+   lByte = File_GetByte ( apFileCtx );
+   if ( apFileCtx -> m_CurPos == lPos ) break;
+  }
   --lN;
 
   if ( lState == 1 ) {
@@ -292,20 +308,17 @@ static int _fill_video_parameters ( SMS_Container* apCont, SMS_Stream* apStm, in
 
   if (  _next_start_code ( lpFileCtx ) == 0x000001B3  ) {
 
-   char*          lpBuffer = ( char* )malloc ( aLen );
-   SMS_BitContext lBitCtx;
+   unsigned char lHeader[ 4 ];
 
-   lpFileCtx -> Read ( lpFileCtx, lpBuffer, aLen );
-   SMS_InitGetBits ( &lBitCtx, ( unsigned char* )lpBuffer, aLen );
+   /* Only the first 28 sequence-header bits are needed. Do not allocate/read
+    * an entire PES payload or parse bytes that a short read did not supply. */
+   if ( lpFileCtx -> Read ( lpFileCtx, lHeader, sizeof ( lHeader ) ) != sizeof ( lHeader ) ) goto end;
 
-   apStm -> m_pCodec -> m_Width  = SMS_GetBits ( &lBitCtx, 12 );
-   apStm -> m_pCodec -> m_Height = SMS_GetBits ( &lBitCtx, 12 );
+   apStm -> m_pCodec -> m_Width  = ( lHeader[ 0 ] << 4 ) | ( lHeader[ 1 ] >> 4 );
+   apStm -> m_pCodec -> m_Height = ( ( lHeader[ 1 ] & 15 ) << 8 ) | lHeader[ 2 ];
+   apStm -> m_pCodec -> m_fWS    = ( lHeader[ 3 ] >> 4 ) == 3;
 
-   if (  SMS_GetBits ( &lBitCtx, 4 ) == 3  ) apStm -> m_pCodec -> m_fWS = 1;
-
-   free ( lpBuffer );
-
-   retVal = 1;
+   retVal = apStm -> m_pCodec -> m_Width && apStm -> m_pCodec -> m_Height;
    break;
 
   }  /* end if */
@@ -336,18 +349,33 @@ end:
 static int _fill_audio_parameters ( FileContext* apFileCtx, SMS_Stream* apStm, int aLen ) {
 
  int         retVal = 0;
- int         lPos   = apFileCtx -> m_Pos;
- char        lBuf[ aLen ];
- char*       lpPtr  = lBuf;
+ unsigned int lPos  = apFileCtx -> m_CurPos;
+ int         lMinLen;
+ char*       lpBuffer;
+ char*       lpPtr;
  SMS_MPAInfo lInfo;
+
+ switch ( apStm -> m_pCodec -> m_ID ) {
+  case SMS_CodecID_MP2:
+  case SMS_CodecID_MP3:     lMinLen =  4; break;
+  case SMS_CodecID_AC3:     lMinLen =  7; break;
+  case SMS_CodecID_DTS:     lMinLen = 16; break;
+  case SMS_CodecID_PCM16BE: lMinLen =  3; break;
+  default: return 0;
+ }
+
+ /* PES lengths are 16-bit. A packet-sized VLA can exhaust the EE stack;
+  * keep it on the heap and check each parser's complete header length. */
+ if ( aLen < lMinLen || aLen > 65535 ) return 0;
+ lpBuffer = ( char* )malloc ( aLen );
+ if ( !lpBuffer ) return 0;
+ lpPtr = lpBuffer;
 
  lInfo.m_FreeFmtFrameSize = 0;
 
- apFileCtx -> Read ( apFileCtx, lBuf, aLen );
+ aLen = apFileCtx -> Read ( apFileCtx, lpBuffer, aLen );
 
- aLen -= 4;
-
- while ( aLen && !retVal ) {
+ while ( aLen >= lMinLen && !retVal ) {
 
   switch ( apStm -> m_pCodec -> m_ID ) {
 
@@ -414,7 +442,7 @@ static int _fill_audio_parameters ( FileContext* apFileCtx, SMS_Stream* apStm, i
 
     int lVal, lFreq;
 
-    if ( aLen > 2 ) {
+    {
 
      lVal  = lpPtr[ 1 ];
      lFreq = ( lVal >> 4 ) & 3;
@@ -440,6 +468,7 @@ static int _fill_audio_parameters ( FileContext* apFileCtx, SMS_Stream* apStm, i
 
  }  /* end while */
 end:
+ free ( lpBuffer );
  apFileCtx -> Seek ( apFileCtx, lPos );
 
  if ( retVal ) apStm -> m_Flags |= SMS_STRM_FLAGS_AUDIO;
@@ -460,9 +489,10 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  while ( 1 ) {
 
+  lPTS = lDTS = SMS_NOPTS_VALUE;
   lLen = _read_header ( apCont, &lStartCode, &lPTS, &lDTS );
 
-  if (  FILE_EOF( lpFileCtx )  ) {
+  if ( lLen <= 0 || FILE_EOF( lpFileCtx ) ) {
 
    if ( lpMyCont -> m_BufLen ) {
 
@@ -471,6 +501,7 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
      if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) {
 
       lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lpMyCont -> m_BufLen );
+      if ( !lpPkt ) goto error;
       memcpy ( lpPkt -> m_pData, lpMyCont -> m_Buff, lLen = lpMyCont -> m_BufLen );
       *apIdx = lIt - lppStm;
       break;
@@ -502,13 +533,15 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
     if ( lPackLen ) {
 
      lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lPackLen );
+     if ( !lpPkt ) goto error;
      memcpy (  lpPkt -> m_pData, lpMyCont -> m_Buff, lpMyCont -> m_BufLen );
-     lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData + lpMyCont -> m_BufLen, lnRead );
-     lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff, lpMyCont -> m_BufLen = lnRem );
+     if ( lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData + lpMyCont -> m_BufLen, lnRead ) != lnRead ) goto error;
+     if ( lnRem && lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff, lnRem ) != lnRem ) goto error;
+     lpMyCont -> m_BufLen = lnRem;
 
     } else {
 
-     lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff + lpMyCont -> m_BufLen, lLen );
+     if ( lpFileCtx -> Read ( lpFileCtx, lpMyCont -> m_Buff + lpMyCont -> m_BufLen, lLen ) != lLen ) goto error;
      lpMyCont -> m_BufLen += lLen;
      continue;
 
@@ -517,12 +550,18 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
    } else {
 
     if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_PCM16BE ) {
-     File_Skip ( lpFileCtx, 3 );
+     unsigned char lPCMHeader[ 3 ];
+     if ( lLen <= 3 ) {
+      File_Skip ( lpFileCtx, lLen );
+      continue;
+     }
+     if ( lpFileCtx -> Read ( lpFileCtx, lPCMHeader, sizeof ( lPCMHeader ) ) != sizeof ( lPCMHeader ) ) goto error;
      lLen -= 3;
     }  /* end if */
 
     lpPkt = apCont -> AllocPacket ( lpStm -> m_pPktBuf, lLen );
-    lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lLen );
+    if ( !lpPkt ) goto error;
+    if ( lpFileCtx -> Read ( lpFileCtx, lpPkt -> m_pData, lLen ) != lLen ) goto error;
 
    }  /* end else */
 end:
@@ -539,6 +578,13 @@ end:
  }  /* end while */
 
  return lLen;
+
+error:
+ /* The packet has not been posted to a decoder. Release its reservation and
+  * discard a partial alignment tail rather than exposing unread bytes. */
+ if ( lpPkt ) SMS_RingBufferUnalloc ( lpStm -> m_pPktBuf, lpPkt -> m_Size + 64 );
+ lpMyCont -> m_BufLen = 0;
+ return -1;
 
 }  /* end _ReadPacket */
 
@@ -606,6 +652,8 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
     int lCode = _next_start_code ( lpFileCtx );
 
+    if ( lCode < 0 ) break;
+
     if ( lCode == 0x000001B8 || lCode == 0x000001B3 || (
           lCode == 0x00000100 && (
            (  File_GetUInt ( lpFileCtx ) >> 19  ) & 3
@@ -645,6 +693,7 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
  lpFileCtx    = apCont -> m_pFileCtx;
  lpMyCont     = ( _MPEGPSContainer* )calloc (  1, sizeof ( _MPEGPSContainer )  );
 
+ if ( !lpMyCont ) return 0;
  apCont -> m_pCtx = lpMyCont;
 
  while (  i++ < 1024 && !FILE_EOF( lpFileCtx )  ) {
@@ -728,13 +777,21 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
    for ( lIt = lppStm; *lIt; ++lIt ) if (  ( *lIt ) -> m_ID == lID  ) break;
 
-   if (  !*lIt || ( lCodecType = SMS_CodecTypeVideo && !lfVideoParam )  ) {
+   if (  !*lIt || ( lCodecType == SMS_CodecTypeVideo && !lfVideoParam )  ) {
+
+    /* The stream walkers use a NULL sentinel, so reserve the last slot. */
+    if ( apCont -> m_nStm >= SMS_MAX_STREAMS - 1 ) break;
 
     SMS_Stream* lpStm = ( SMS_Stream* )calloc (  1, sizeof ( SMS_Stream )  );
+    int lfParams;
 
     if ( lpStm ) {
 
      lpStm -> m_pCodec = ( SMS_CodecContext* )calloc (  1, sizeof ( SMS_CodecContext )  );
+     if ( !lpStm -> m_pCodec ) {
+      free ( lpStm );
+      break;
+     }
      lpStm -> m_pCodec -> m_Type = lCodecType;
      lpStm -> m_pCodec -> m_ID   = lID;
      lpStm -> m_pCodec -> m_Tag  = lTag;
@@ -747,9 +804,22 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
      if ( lCodecType == SMS_CodecTypeVideo ) {
 
-      if ( !lfVideoParam ) lfVideoParam = _fill_video_parameters ( apCont, lpStm, lLen, lStartCode );
+      lfParams = lfVideo = lfVideoParam = _fill_video_parameters ( apCont, lpStm, lLen, lStartCode );
 
-     } else lfAudio = _fill_audio_parameters ( lpFileCtx, lpStm, lLen );
+     } else {
+      lfParams = _fill_audio_parameters ( lpFileCtx, lpStm, lLen );
+      if ( lfParams ) lfAudio = 1;
+     }
+
+     /* The first PES may contain only a continuation of a codec frame. Keep
+      * probing that stream ID until a complete header can be read. A failed
+      * secondary track must not clear a previously validated audio track. */
+     if ( !lfParams ) {
+      apCont -> m_pStm[ --apCont -> m_nStm ] = NULL;
+      free ( lpStm -> m_pCodec );
+      free ( lpStm );
+      retVal = apCont -> m_nStm != 0;
+     }
 
     }  /* end if */
 
@@ -765,17 +835,28 @@ next:
 
  }  /* end while */
 
- if ( !retVal )
+ if ( !retVal ) {
+
+/* The probe FAILED, so whatever probe (or error path) runs next -- and
+ * SMS_DestroyContainer if the container is simply dropped -- must never see
+ * lpMyCont again: the block is freed right here. Without this, a fall-through
+ * probe that succeeds without touching m_pCtx (AC3, JPG, M3U, ...) hands the
+ * caller a container whose Destroy() frees an ALREADY-FREED block, and the
+ * resulting heap corruption can wedge the player at E70 "getcontainer" on a
+ * file the PS probe scanned and rejected. */
 error:
+  apCont -> m_pCtx = NULL;
+
   free ( lpMyCont );
 
- else {
+ } else {
 
   if ( !lfVideoParam || !lfAudio ) {
 
    apCont -> m_pCtx = NULL;
 
    SMS_DestroyContainer ( apCont, 0 );
+   apCont -> m_nStm = 0;
 
    retVal = 0;
    goto error;
@@ -796,6 +877,8 @@ error:
    uint64_t lSSPTS[ lnStm ];
    uint64_t lSEPTS[ lnStm ];
 
+   PS_CRUMB ( 50, "ps pts head" );
+
    for ( i = 0; i < lnStm; ++i ) lSSPTS[ i ] = lSEPTS[ i ] = SMS_NOPTS_VALUE;
 
    while ( lStmIdx < lnStm ) {
@@ -809,10 +892,16 @@ error:
                lpFileCtx -> m_Size - 0x0001FFFF : 0
    );
 
+   PS_CRUMB ( 51, "ps pts tail" );
+
    while (  !FILE_EOF( lpFileCtx )  ) {
+    unsigned int lPos = lpFileCtx -> m_CurPos;
     _get_stm_pts ( apCont, lStmIdx, 1, lSEPTS );
+    if ( lpFileCtx -> m_CurPos <= lPos ) break;
     if ( ++lStmIdx == lnStm ) lStmIdx = 0;
    }  /* end while */
+
+   PS_CRUMB ( 52, "ps pts done" );
 
    lPTS = SMS_INT64( 0x7FFFFFFFFFFFFFFF );
    lDTS = SMS_INT64( 0x8000000000000000 );

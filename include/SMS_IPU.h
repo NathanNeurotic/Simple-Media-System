@@ -134,7 +134,7 @@ unsigned int IPU_FDEC ( unsigned                                                
 unsigned int IPU_IDEC ( unsigned, unsigned, unsigned, unsigned, unsigned, unsigned );
 void         IPU_FRST ( void                                                       );
 
-void           IPU_InitLoadImage ( IPULoadImage*, int, int                            );
+int            IPU_InitLoadImage ( IPULoadImage*, int, int                            );
 void           IPU_LoadImage     ( IPULoadImage*, void*, int, int, int, int, int, int );
 unsigned short IPU_ImageInfo     ( void*, unsigned short*                             );
 void           IPU_UnpackImage   ( void*, void*, int, int, int, int, int, int         );

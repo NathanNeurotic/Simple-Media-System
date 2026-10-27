@@ -231,14 +231,14 @@ static int _SelectFile ( SMS_Container* apCont, _M3UContainer* apMyCont ) {
  void*           lpOpenParam                     = apCont -> m_pFileCtx -> m_pOpenParam;
  int             retVal    = 0;
  SMS_Container*  lpSubCont = apMyCont -> m_pSubCont;
+ FileContext*    lpFileCtx = _open_file ( apCont, apCont -> m_pPlayItem, lpOpen, lpOpenParam );
 
- lpSubCont -> m_pFileCtx -> Destroy ( lpSubCont -> m_pFileCtx );
- lpSubCont -> m_pFileCtx = _open_file ( apCont, apCont -> m_pPlayItem, lpOpen, lpOpenParam );
+ if ( lpFileCtx ) {
 
- if ( lpSubCont -> m_pFileCtx ) {
-
+  lpSubCont -> m_pFileCtx -> Destroy ( lpSubCont -> m_pFileCtx );
+  lpSubCont -> m_pFileCtx = lpFileCtx;
   apCont -> ReadPacket = _ReadFirstPacket;
-  apCont -> m_pFileCtx = lpSubCont -> m_pFileCtx;
+  apCont -> m_pFileCtx = lpFileCtx;
 
   retVal = 1;
 
@@ -439,7 +439,11 @@ int SMS_GetContainerM3U ( SMS_Container* apCont ) {
 
   }  /* end if */
 
-  lpCont = ( _M3UContainer* )(   apCont -> m_pCtx = calloc (  1, sizeof ( _M3UContainer )  )   );
+  lpCont = ( _M3UContainer* )calloc (  1, sizeof ( _M3UContainer )  );
+  if ( !lpCont ) {
+   _m3u_destroy_list ( lpList );
+   return 0;
+  }  /* end if */
 
   if ( g_CMedia == 1 && g_pCDDACtx ) {
 
@@ -452,17 +456,6 @@ int SMS_GetContainerM3U ( SMS_Container* apCont ) {
    lpOpenParam = NULL;
 
   }  /* end else */
-
-  if (  ( int )apCont -> m_pFileCtx > 0  ) apCont -> m_pFileCtx -> Destroy ( apCont -> m_pFileCtx );
-
-  apCont -> m_pFileCtx = NULL;
-  apCont -> m_pName    = g_pM3UStr;
-  apCont -> ReadPacket = _ReadFirstPacket;
-  apCont -> Destroy    = _Destroy;
-
-  apCont -> m_pPlayList = lpList;
-  apCont -> m_pPlayItem = lpList -> m_pHead;
-  apCont -> Seek        = _Seek;
 
   lpSubFileCtx = _open_file ( apCont, lpList -> m_pHead, lpOpen, lpOpenParam );
 
@@ -495,6 +488,16 @@ int SMS_GetContainerM3U ( SMS_Container* apCont ) {
 
    if ( lpSubCont ) {
 
+    /* A failed creator leaves the input available to the generic probe chain.
+     * Transfer ownership only after the first media container is ready. */
+    if (  ( int )lpFileCtx > 0  ) lpFileCtx -> Destroy ( lpFileCtx );
+    apCont -> m_pCtx        = lpCont;
+    apCont -> m_pName       = g_pM3UStr;
+    apCont -> ReadPacket    = _ReadFirstPacket;
+    apCont -> Destroy       = _Destroy;
+    apCont -> m_pPlayList   = lpList;
+    apCont -> m_pPlayItem   = lpList -> m_pHead;
+    apCont -> Seek          = _Seek;
     apCont -> m_pFileCtx    = lpSubFileCtx;
     lpCont -> m_pSubCont    = lpSubCont;
     apCont -> m_pStm[ 0 ]   = lpSubCont -> m_pStm[ 0 ];
@@ -514,9 +517,8 @@ int SMS_GetContainerM3U ( SMS_Container* apCont ) {
 
   if ( !retVal ) {
 
-   free ( apCont -> m_pCtx );
+   free ( lpCont );
    _m3u_destroy_list ( lpList );
-   apCont -> m_pName = NULL;
 
   }  /* end if */
 
