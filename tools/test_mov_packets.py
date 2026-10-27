@@ -81,6 +81,8 @@ static void disabled(void) {
  reset();sms_streams[0].m_pPktBuf=sms_streams[1].m_pPktBuf=NULL;
  assert(_ReadPacket(&container,&selected)==-1 && allocations==0);
  assert(streams[0].m_CurSample==1 && streams[1].m_CurSample==1);
+ reset();sms_streams[0].m_pPktBuf=NULL;index_data[0][0].m_Pos=1001;
+ assert(_ReadPacket(&container,&selected)==4 && selected==1);
 }
 static void composition(void) {
  int selected;MOVStts times[2]={{1,10},{0,99}};
