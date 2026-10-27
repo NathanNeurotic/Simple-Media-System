@@ -25,7 +25,7 @@ static int stream(FileContext *c,unsigned pos,unsigned n) {
  assert(pos==c->m_CurPos && n==expected);++invocations;return 1;
 }
 int main(void) {
- FileContext ctx={123,0,stream};FileContext *lpFileCtx=&ctx;
+ static FileContext ctx={123,0,stream};FileContext *lpFileCtx=&ctx;
  unsigned lFilePos=ctx.m_CurPos;
  s_Player.m_pFileCtx=&ctx;
  for(unsigned size=384;size<=432;size+=48) {
