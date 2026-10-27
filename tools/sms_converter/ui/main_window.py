@@ -325,7 +325,8 @@ class MainWindow(QMainWindow):
 
         # Calculate estimated size based on current settings
         settings = self.advanced_settings.get_settings_dict()
-        est_bytes = self._estimate_bytes(duration, settings)
+        audio_tracks = int(summary.get("audio_tracks", 1))
+        est_bytes = self._estimate_bytes(duration, settings, audio_tracks)
 
         # Keep the probed dimensions: build_ffmpeg_cmd's upscale clamp reads src_width /
         # src_height, and nothing in the app produced them.
@@ -333,6 +334,7 @@ class MainWindow(QMainWindow):
         if _item is not None:
             _item.src_width = int(v_width or 0)
             _item.src_height = int(v_height or 0)
+            _item.audio_track_count = audio_tracks
 
         self.queue_table.update_item_metadata(item_id, duration, size, est_bytes)
         self.queue_table.update_item_status(item_id, "Ready")
@@ -359,7 +361,7 @@ class MainWindow(QMainWindow):
         settings = self.advanced_settings.get_settings_dict()
         for item_id, item in self.queue_table.items_dict.items():
             if item.duration_sec > 0:
-                item.estimated_size_bytes = self._estimate_bytes(item.duration_sec, settings)
+                item.estimated_size_bytes = self._estimate_bytes(item.duration_sec, settings, item.audio_track_count)
         self._update_total_estimated_size()
 
     @staticmethod
@@ -381,7 +383,8 @@ class MainWindow(QMainWindow):
         if preset.vcodec is not None:
             fields += [("vcodec", preset.vcodec), ("vtag", preset.vtag),
                        ("width", preset.width), ("height", preset.height),
-                       ("vbitrate_kbps", preset.vbitrate_kbps)]
+                       ("vbitrate_kbps", preset.vbitrate_kbps), ("gop", preset.gop),
+                       ("keep_sd_resolution", preset.keep_sd_resolution)]
             if preset.fps is not None:
                 fields.append(("fps", str(preset.fps)))
 
@@ -402,10 +405,12 @@ class MainWindow(QMainWindow):
             and not settings.get("two_pass")
             and not settings.get("allow_upscale")
             and not settings.get("audio_track", 0)
+            and not settings.get("all_audio_tracks")
             and (preset.vcodec is None or not settings.get("subtitle_file"))
+            and (preset.vcodec is None or settings.get("embedded_subtitle_track", -1) < 0)
         )
 
-    def _estimate_bytes(self, duration_sec, settings):
+    def _estimate_bytes(self, duration_sec, settings, audio_tracks=1):
         """Estimated output size for one file under `settings`.
 
         The video bitrate is only counted when a video codec is actually being ENCODED. Both
@@ -415,9 +420,12 @@ class MainWindow(QMainWindow):
         with it.
         """
         vbitrate = settings.get("vbitrate_kbps", 1500) if settings.get("vcodec") else 0
-        return calculate_estimated_output_size(
-            duration_sec, vbitrate, settings.get("abitrate_kbps", 128)
-        )
+        abitrate = settings.get("abitrate_kbps", 128)
+        if settings.get("acodec") == "pcm_s16le":
+            abitrate = (settings.get("sample_rate") or 48000) * (settings.get("channels") or 2) * 16 / 1000
+        if settings.get("all_audio_tracks"):
+            abitrate *= audio_tracks
+        return calculate_estimated_output_size(duration_sec, vbitrate, abitrate)
 
     def _update_total_estimated_size(self):
         total_bytes = sum(item.estimated_size_bytes for item in self.queue_table.items_dict.values())

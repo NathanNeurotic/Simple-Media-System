@@ -41,6 +41,9 @@ MAX_AUDIO_PACKET_SIZE = 524_224   # 512 KiB
 
 # Stream Limits
 MAX_SMS_STREAMS = 8
+# The player's stream walkers require a trailing NULL entry.
+MAX_CONVERTER_STREAMS = MAX_SMS_STREAMS - 1
+MULTI_AUDIO_CONTAINERS = {".avi", ".mpg", ".mpeg", ".mp4"}
 
 # Allowed Frame Rates for MPEG-1 and MPEG-2
 MPEG_ALLOWED_FPS_MAP: Dict[str, str] = {
@@ -69,6 +72,8 @@ class Preset:
     channels: int = 2
     ext: str = ".avi"
     description: str = ""
+    gop: int = 50
+    keep_sd_resolution: bool = False
 
 PRESETS: Dict[str, Preset] = {
     "Xvid-Compatible AVI [RECOMMENDED - Best PS2 Performance]": Preset(
@@ -145,6 +150,14 @@ PRESETS: Dict[str, Preset] = {
         channels=2,
         ext=".mp4",
         description="320x240 at a low bitrate - roughly a quarter the file size of the 640x480 presets. For memory cards, small USB drives, or when a full-size file will not play smoothly."
+    ),
+    "Xvid-Compatible AVI [High Quality - Fast Storage]": Preset(
+        name="Xvid-Compatible AVI [High Quality - Fast Storage]",
+        vcodec="mpeg4", vtag="XVID", width=640, height=480, fps="30",
+        vbitrate_kbps=10000, acodec="pcm_s16le", abitrate_kbps=0,
+        sample_rate=48000, channels=2, ext=".avi", gop=6,
+        keep_sd_resolution=True,
+        description="10 Mbps Xvid, uncompressed 16-bit stereo PCM at 48 kHz and keyframes every 6 frames. Keeps source SD resolution. Requires fast storage; smooth playback is content and transport dependent."
     ),
     # ----------------------------------------------------------------------------------
     # AUDIO-ONLY targets.
@@ -242,6 +255,7 @@ AUDIO_CODECS_MAP = {
     "AC-3 / Dolby Digital": "ac3",
     "FLAC [lossless]": "flac",
     "Ogg Vorbis": "libvorbis",
+    "PCM 16-bit [uncompressed for AVI]": "pcm_s16le",
 }
 
 # WHAT SMS CAN ACTUALLY DEMUX, PER CONTAINER.

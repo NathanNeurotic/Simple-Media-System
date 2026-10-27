@@ -48,6 +48,7 @@ jobs:
         QT_QPA_PLATFORM: offscreen
       run: |
         python tools/sms_converter/test_converter.py
+        python tools/sms_converter/test_multitrack.py
 
     - name: Run End-to-End Hardware Preset Tests
       env:
@@ -180,6 +181,8 @@ jobs:
     # meaningful if it is held to the same tests.
     - name: Install Windows FFmpeg
       uses: ./.github/actions/setup-ffmpeg-windows
+      with:
+        prefer-static: 'true'
 
     - name: Install Windows 7 compatible dependencies
       run: |
@@ -199,6 +202,7 @@ jobs:
       shell: bash
       run: |
         python tools/sms_converter/test_converter.py
+        python tools/sms_converter/test_multitrack.py
 
     # This step has no `shell:` key, so it runs in pwsh -- keep each command on ONE line.
     # A trailing backslash is not a line continuation there and would truncate the build.

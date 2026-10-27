@@ -83,6 +83,9 @@ hardware&#8209;decoded. Picture quality tops out lower, but it is the lightest l
 <code>.mp4</code> container with AAC audio.</td></tr>
 <tr><td><b>MPEG&#8209;4 MP4, small</b></td><td>320&times;240 at a low bitrate — roughly a quarter the
 size. For memory cards, small USB drives, or when a full&#8209;size file will not play smoothly.</td></tr>
+<tr><td><b>Xvid AVI, high quality</b></td><td>10 Mbps video, uncompressed 16-bit stereo PCM at
+48 kHz, and keyframes every six frames. Keeps source SD dimensions. Intended for fast storage;
+smooth console playback depends on the content and transport.</td></tr>
 </table>
 
 <h3>Audio</h3>
@@ -100,6 +103,22 @@ file also needs to play on older devices.</td></tr>
 
 <h2 id="advanced">Advanced settings</h2>
 <p>The defaults are chosen to work. These are for when you have a reason.</p>
+
+<h3>Audio tracks and subtitles</h3>
+<p><b>Source audio track</b> selects one source track, starting at zero. For video conversions to
+AVI, MPEG or MP4, <b>Keep all source audio tracks</b> encodes every audio track using the selected
+audio settings. The converter allows up to six audio tracks plus video and reports an error if
+the source exceeds that limit. Language and title metadata are retained where the container supports them.</p>
+<p>Choose an external subtitle file or an <b>Embedded subtitle</b> index, starting at zero, to burn
+one text subtitle track into the picture. <b>None</b> disables embedded burn-in; <b>Clear</b> removes
+either selection. Bitmap subtitles are not supported by this option. FFmpeg must include the
+subtitles filter. Burned-in subtitles cannot be switched off; SMS also supports separate SRT/SUB files.</p>
+
+<h3>Keep source SD resolution</h3>
+<p>This option preserves even source dimensions up to 720&times;576 rather than reducing an SD
+source to the preset dimensions. Larger sources still use the selected target dimensions.
+The high-quality Xvid preset enables it; existing presets retain their previous defaults.
+Its PCM audio is uncompressed output, not a promise of a bit-exact copy of higher-depth or multichannel sources.</p>
 
 <h3>Multi-pass encoding</h3>
 <p>Encodes the video twice: the first run measures the material, the second spends the bitrate where it

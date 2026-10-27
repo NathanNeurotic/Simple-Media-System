@@ -11,7 +11,7 @@ from qt_compat import (
 
 from config import (
     VIDEO_CODECS_MAP, AUDIO_CODECS_MAP, MPEG_ALLOWED_FPS_MAP,
-    MAX_WIDTH, MAX_HEIGHT, WARNING_RESOLUTION_MSG, Preset, sms_supports
+    MAX_WIDTH, MAX_HEIGHT, WARNING_RESOLUTION_MSG, Preset, sms_supports, MULTI_AUDIO_CONTAINERS
 )
 
 class AdvancedSettingsWidget(QWidget):
@@ -136,6 +136,10 @@ class AdvancedSettingsWidget(QWidget):
         self.chk_upscale.setToolTip("Disabled by default. Upscaling low-res video increases file size without improving quality.")
         self.chk_upscale.stateChanged.connect(self._on_control_changed)
 
+        self.chk_keep_sd = QCheckBox("Keep source SD resolution (up to 720 x 576)")
+        self.chk_keep_sd.setToolTip("Keep even source dimensions within SD limits; larger sources use the dimensions above.")
+        self.chk_keep_sd.stateChanged.connect(self._on_control_changed)
+
         self.combo_fps = QComboBox()
         self.combo_fps.setToolTip("Target video frame rate. 30 FPS or 24 FPS recommended for PS2 hardware. Restricted for MPEG-1/2.")
         for fps_val in MPEG_ALLOWED_FPS_MAP.keys():
@@ -240,6 +244,7 @@ class AdvancedSettingsWidget(QWidget):
         v_layout.addRow("", self.chk_aspect)
         v_layout.addRow("Scaling Mode:", self.combo_scaling)
         v_layout.addRow("", self.chk_upscale)
+        v_layout.addRow("", self.chk_keep_sd)
         v_layout.addRow("Frame Rate:", self.combo_fps)
         v_layout.addRow("Video Bitrate:", self.spin_vbitrate)
         v_layout.addRow("", self.chk_deinterlace)
@@ -318,6 +323,9 @@ class AdvancedSettingsWidget(QWidget):
             "Use it for commentary tracks and additional dubs."
         )
         self.spin_atrack.valueChanged.connect(self._on_control_changed)
+        self.chk_all_audio = QCheckBox("Keep all source audio tracks")
+        self.chk_all_audio.setToolTip("Encode every source audio track with the chosen audio settings. Limited to six audio tracks plus video; unavailable for audio-only targets.")
+        self.chk_all_audio.toggled.connect(self._all_audio_changed)
 
         # Optional burn-in (#22). SMS also supports external SRT/SUB files;
         # burn-in permanently includes this subtitle track in the picture.
@@ -330,12 +338,19 @@ class AdvancedSettingsWidget(QWidget):
         self.btn_subtitle.clicked.connect(self._pick_subtitle)
         self.lbl_subtitle = QLabel("none")
         self.lbl_subtitle.setStyleSheet("color: #A0AEC0;")
+        self.spin_strack = QSpinBox()
+        self.spin_strack.setRange(-1, 2147483647)
+        self.spin_strack.setSpecialValueText("None")
+        self.spin_strack.setValue(-1)
+        self.spin_strack.setToolTip("Embedded text subtitle to burn in: 0 = first subtitle track. Bitmap subtitles are not supported. Burn-in cannot be switched off.")
+        self.spin_strack.valueChanged.connect(self._embedded_subtitle_changed)
 
         a_layout.addRow("Codec:", self.combo_acodec)
         a_layout.addRow("Bitrate:", self.combo_abitrate)
         a_layout.addRow("Sample Rate:", self.combo_sample)
         a_layout.addRow("Channels:", self.combo_channels)
         a_layout.addRow("Source audio track:", self.spin_atrack)
+        a_layout.addRow("", self.chk_all_audio)
         sub_row = QHBoxLayout()
         self.btn_clear_subtitle = QPushButton("Clear")
         self.btn_clear_subtitle.clicked.connect(self._clear_subtitle)
@@ -343,6 +358,7 @@ class AdvancedSettingsWidget(QWidget):
         sub_row.addWidget(self.btn_clear_subtitle)
         sub_row.addWidget(self.lbl_subtitle, 1)
         a_layout.addRow("Subtitles:", sub_row)
+        a_layout.addRow("Embedded subtitle:", self.spin_strack)
         a_layout.addRow("", self.chk_normalize)
 
         container_layout.addWidget(grp_video)
@@ -418,6 +434,11 @@ class AdvancedSettingsWidget(QWidget):
         # the Xvid entry -- so reading the answer back off that widget said "mpeg4 + XVID" for
         # every audio preset. See get_settings_dict.
         self._audio_only = preset.vcodec is None
+        self.chk_all_audio.setEnabled(not self._audio_only and preset.ext in MULTI_AUDIO_CONTAINERS)
+        if not self.chk_all_audio.isEnabled():
+            self.chk_all_audio.setChecked(False)
+        self.spin_atrack.setEnabled(not self.chk_all_audio.isChecked())
+        self.spin_strack.setEnabled(not self._audio_only)
 
         # Offer only what SMS can DECODE in this preset's container. The container is
         # fixed by the preset (Preset.ext) while both codec combos used to be filled
@@ -474,6 +495,8 @@ class AdvancedSettingsWidget(QWidget):
             self.combo_fps.setCurrentText(str(preset.fps))
         if preset.vbitrate_kbps:
             self.spin_vbitrate.setValue(preset.vbitrate_kbps)
+        self.spin_gop.setValue(preset.gop)
+        self.chk_keep_sd.setChecked(preset.keep_sd_resolution)
 
         for display_name, ff_name in AUDIO_CODECS_MAP.items():
             if ff_name == preset.acodec:
@@ -541,6 +564,7 @@ class AdvancedSettingsWidget(QWidget):
             "preserve_aspect": self.chk_aspect.isChecked(),
             "scaling_mode": self.combo_scaling.currentText(),
             "allow_upscale": self.chk_upscale.isChecked(),
+            "keep_sd_resolution": self.chk_keep_sd.isChecked(),
             "fps": self.combo_fps.currentText(),
             "vbitrate_kbps": self.spin_vbitrate.value(),
             "deinterlace": self.chk_deinterlace.isChecked(),
@@ -556,13 +580,26 @@ class AdvancedSettingsWidget(QWidget):
             "channels": self.combo_channels.currentData(),
             "normalize_audio": self.chk_normalize.isChecked(),
             "audio_track": self.spin_atrack.value(),
+            "all_audio_tracks": self.chk_all_audio.isChecked(),
             "subtitle_file": self.subtitle_path,
+            "embedded_subtitle_track": self.spin_strack.value(),
             "limit_streams": True
         }
 
     def _clear_subtitle(self):
         self.subtitle_path = ""
         self.lbl_subtitle.setText("none")
+        self.spin_strack.setValue(-1)
+        self._on_control_changed()
+
+    def _all_audio_changed(self, enabled):
+        self.spin_atrack.setEnabled(not enabled)
+        self._on_control_changed()
+
+    def _embedded_subtitle_changed(self, track):
+        if track >= 0:
+            self.subtitle_path = ""
+            self.lbl_subtitle.setText("none")
         self._on_control_changed()
 
     def _pick_subtitle(self):
@@ -571,6 +608,7 @@ class AdvancedSettingsWidget(QWidget):
             "Subtitle files (*.srt *.ass *.ssa *.vtt *.sub);;All files (*)"
         )
         if path:
+            self.spin_strack.setValue(-1)
             self.subtitle_path = path
             self.lbl_subtitle.setText(Path(path).name)
             self._on_control_changed()
@@ -618,6 +656,11 @@ class AdvancedSettingsWidget(QWidget):
         self.chk_aspect.blockSignals(block)
         self.combo_scaling.blockSignals(block)
         self.chk_upscale.blockSignals(block)
+        self.chk_keep_sd.blockSignals(block)
+        self.chk_all_audio.blockSignals(block)
+        self.spin_atrack.blockSignals(block)
+        self.spin_strack.blockSignals(block)
+        self.spin_gop.blockSignals(block)
         self.combo_fps.blockSignals(block)
         self.spin_vbitrate.blockSignals(block)
         self.chk_deinterlace.blockSignals(block)

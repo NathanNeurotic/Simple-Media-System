@@ -157,11 +157,12 @@ def validate_converted_file(
         result.status = "FAIL"
         result.reasons.append(f"Stream count ({len(streams)}) exceeds the maximum SMS limit of {MAX_SMS_STREAMS}.")
 
-    video_stream = next((s for s in streams if s.get("codec_type") == "video"), None)
-    audio_stream = next((s for s in streams if s.get("codec_type") == "audio"), None)
+    video_streams = [s for s in streams if s.get("codec_type") == "video"]
+    audio_streams = [s for s in streams if s.get("codec_type") == "audio"]
 
     # Validate Video
-    if video_stream:
+    first_video_details = None
+    for video_stream in video_streams:
         v_name = video_stream.get("codec_name", "unknown")
         result.vcodec = video_stream.get("codec_long_name", v_name)
         result.vtag = video_stream.get("codec_tag_string", "N/A")
@@ -239,19 +240,27 @@ def validate_converted_file(
         if v_bitrate > 3000 and result.status != "FAIL":
             result.status = "WARN"
             result.warnings.append(f"High video bitrate ({v_bitrate} kbps) may strain PS2 USB/SMB read bandwidth.")
+        if first_video_details is None:
+            first_video_details = {key: getattr(result, key) for key in
+                                   ("vcodec", "vtag", "resolution", "fps", "vbitrate_kbps")}
+
+    if first_video_details:
+        for key, value in first_video_details.items():
+            setattr(result, key, value)
 
     # Validate Audio
-    if audio_stream:
+    for audio_index, audio_stream in enumerate(audio_streams):
         a_name = audio_stream.get("codec_name", "unknown")
-        result.acodec = audio_stream.get("codec_long_name", a_name)
-        result.sample_rate = int(audio_stream.get("sample_rate", 0))
-        result.channels = int(audio_stream.get("channels", 0))
-        result.abitrate_kbps = int(audio_stream.get("bit_rate", 0)) // 1000
+        if audio_index == 0:
+            result.acodec = audio_stream.get("codec_long_name", a_name)
+            result.sample_rate = int(audio_stream.get("sample_rate", 0))
+            result.channels = int(audio_stream.get("channels", 0))
+            result.abitrate_kbps = int(audio_stream.get("bit_rate", 0)) // 1000
 
-        valid_audio = ("mp3", "libmp3lame", "mp2", "aac", "ac3", "vorbis", "flac", "wmav1", "wmav2")
-        if not any(k in a_name.lower() for k in valid_audio):
+        valid_audio = ("mp3", "mp2", "aac", "ac3", "vorbis", "flac", "wmav1", "wmav2", "pcm_s16le", "pcm_s16be")
+        if a_name not in valid_audio:
             result.status = "FAIL"
-            result.reasons.append(f"Unsupported audio codec: {a_name.upper()}.")
+            result.reasons.append(f"Unsupported audio codec: {a_name.upper()} (audio track {audio_index}).")
         elif not sms_supports(container_ext, "audio", a_name):
             # Same container-aware backstop, same WARN-not-FAIL reasoning. AAC in an AVI is
             # the common case: SMS's AVI wFormatTag table has no AAC entry.

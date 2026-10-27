@@ -3,11 +3,18 @@ description: >-
   Puts ffmpeg AND ffprobe on PATH for a Windows runner, surviving a Chocolatey
   community-feed outage. Shared by both Windows jobs so they cannot drift apart.
 
+inputs:
+  prefer-static:
+    description: Use the digest-checked static build directly, also exercising the outage path in CI.
+    default: 'false'
+
 runs:
   using: composite
   steps:
     - name: Install ffmpeg and ffprobe
       shell: pwsh
+      env:
+        PREFER_STATIC_FFMPEG: ${{ inputs.prefer-static }}
       run: |
         $ErrorActionPreference = 'Stop'
 
@@ -91,6 +98,7 @@ runs:
         # over later, on the version check, reporting a missing command instead of an outage.
         # -------------------------------------------------------------------------------
         $attempts = 4
+        if ($env:PREFER_STATIC_FFMPEG -eq 'true') { $attempts = 0 }
         for ($i = 1; $i -le $attempts; $i++) {
             Write-Host "::group::choco install ffmpeg (attempt $i of $attempts)"
             choco install ffmpeg --no-progress --yes
@@ -121,28 +129,29 @@ runs:
         # availability with the runner already executing this, so the two go down
         # independently. Four more retries against a service that is down buys nothing.
         #
-        # Version skew is accepted: choco ships 9.x, this pin is n8.1.2. Nothing in the suite
+        # Version skew is accepted: choco ships 9.x, this pin is n8.1.3. Nothing in the suite
         # is version-gated. It needs libx264 + aac to synthesise the sample clip, then mpeg4 /
         # mpeg2video / mpeg1video / libmp3lame / mp2 / aac / flac / libvorbis for the presets.
         # All are present here, libxvid included -- which matters, because with it the
         # fallback takes the same encoder branch choco's build does instead of quietly
         # degrading through resolve_video_encoder()'s mpeg4 path.
         #
-        # PINNED to an immutable autobuild tag rather than the rolling "latest" release, and
+        # PINNED to a month-end autobuild rather than the rolling "latest" release, and
         # digest-checked before anything is unpacked. These binaries execute on a runner
         # holding a contents:write token, so "whatever upstream published today" is not a
         # good enough answer. The digest below is of the exact bytes this was validated
-        # against: 20/20 unit tests and all 9 end-to-end presets.
+        # against. The Win7 CI job exercises this path directly, including the converter tests.
         #
         # To move the pin: pick a newer tag from github.com/BtbN/FFmpeg-Builds/releases,
-        # update the URL AND the digest together, and re-run the suites. A stale pin is
-        # harmless -- it only has to work on the days Chocolatey is down -- so there is no
-        # need to chase upstream.
+        # update the URL AND the digest together, and re-run the suites. BtbN retains daily
+        # builds for only 14 days, and month-end builds for two years. This pin must therefore
+        # be refreshed before September 2028. A versioned tag alone does not ensure retention:
+        # the previous August 8 pin was deleted and returned 404 during a feed outage.
         # -------------------------------------------------------------------------------
-        Write-Host 'Chocolatey exhausted. Falling back to a static build from GitHub Releases.'
+        Write-Host 'Using the digest-checked static build from GitHub Releases.'
 
-        $url    = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-08-13-06/ffmpeg-n8.1.2-34-g9b6c8969e0-win64-gpl-8.1.zip'
-        $sha256 = '7819F8F80046BFFBB1241A0A7C2FC113D4332B3167A4DDFF6AD91C6E7E374C4A'
+        $url    = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-win64-gpl-8.1.zip'
+        $sha256 = '7B801CDD3A1A0BB54AE6F572187E68B4ED54F52086CFEE133FAB2180BFB429FA'
         $zip    = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback.zip'
         $dest   = Join-Path $env:RUNNER_TEMP 'ffmpeg-fallback'
 
