@@ -15,7 +15,7 @@ import tempfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
-CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat")
+CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -131,6 +131,10 @@ def rewrite(data, kind):
             continue
         if tag in (b"moov", b"trak", b"mdia", b"minf", b"stbl"):
             body = rewrite(body, kind)
+        if kind == "short-stts" and tag == b"stts":
+            count = struct.unpack_from(">I", body, 8)[0]
+            assert count > 0
+            body = body[:8] + struct.pack(">I", count - 1) + body[12:]
         if kind == "co64" and tag == b"stco":
             count = struct.unpack_from(">I", body, 4)[0]
             body = body[:8] + b"".join(struct.pack(">Q", struct.unpack_from(">I", body, 8 + 4 * i)[0]) for i in range(count))
@@ -165,7 +169,7 @@ with tempfile.TemporaryDirectory() as temporary:
         else:
             fixture.write_bytes(original if case == "standard" else rewrite(original, case))
         manifest = tmp / "packets.txt"
-        if case.startswith("missing-"):
+        if case.startswith("missing-") or case == "short-stts":
             mode = "reject"
         else:
             mode = "accept"

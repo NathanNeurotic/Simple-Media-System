@@ -153,9 +153,41 @@ static void timing(void) {
  m->m_pStts[0]=(MOVStts){2,10};m->m_pStts[1]=(MOVStts){3,20};m->m_pStts[2]=(MOVStts){5,30};
  _mov_build_index(&container,m,s);
  assert(m->m_nIdx==2 && m->m_pIdx[1].m_DTS==80);destroy_fixture();
+}
+static void timing_coverage(void) {
+ SMS_Stream *s;MOVStream *m;
+ /* Every fixed-size audio chunk needs timing for all of its samples. */
+ for(int covered=0;covered<4;++covered) {
+  reset();s=make_stream(SMS_CodecTypeAudio,2);m=s->m_pCtx;
+  m->m_SampleSize=2;m->m_nSamples=4;m->m_pSample2Chunk[0].m_Count=2;
+  m->m_pStts[0].m_Count=covered;
+  assert(_mov_build_index(&container,m,s)==0);destroy_fixture();
+ }
+ /* A zero-count entry is harmless if later entries cover the entire chunk. */
  reset();s=make_stream(SMS_CodecTypeAudio,2);m=s->m_pCtx;
- m->m_SampleSize=2;m->m_pStts[0].m_Count=0;
- _mov_build_index(&container,m,s);assert(m->m_nIdx==2);destroy_fixture();
+ m->m_SampleSize=2;free(m->m_pStts);m->m_nStts=2;m->m_pStts=calloc(2,sizeof(MOVStts));
+ m->m_pStts[1]=(MOVStts){2,20};
+ assert(_mov_build_index(&container,m,s)==1 && m->m_pIdx[1].m_DTS==20);destroy_fixture();
+}
+static void sample_timing_coverage(void) {
+ SMS_Stream *s;MOVStream *m;
+ /* The per-sample path must not reuse an exhausted final timing entry. */
+ reset();s=make_stream(SMS_CodecTypeVideo,2);m=s->m_pCtx;m->m_pStts[0].m_Count=1;
+ assert(_mov_build_index(&container,m,s)==0);destroy_fixture();
+ reset();s=make_stream(SMS_CodecTypeVideo,2);m=s->m_pCtx;
+ free(m->m_pStts);m->m_nStts=2;m->m_pStts=calloc(2,sizeof(MOVStts));
+ m->m_pStts[0].m_Duration=10;m->m_pStts[1]=(MOVStts){2,20};
+ assert(_mov_build_index(&container,m,s)==1 && m->m_pIdx[1].m_DTS==20);destroy_fixture();
+}
+static void timing_probe_cleanup(void) {
+ SMS_Stream *s;MOVStream *m;
+ /* Reject through the public probe path, including cleanup of a prior index. */
+ for(int prior=0;prior<=1;++prior) {
+  reset();if(prior) make_stream(SMS_CodecTypeVideo,1);
+  s=make_stream(SMS_CodecTypeAudio,2);m=s->m_pCtx;
+  m->m_SampleSize=2;m->m_pStts[0].m_Count=1;
+  assert(_GetContainerMOV(&container,NULL)==0 && !container.m_nStm && !container.m_pCtx);
+ }
 }
 static void allocations(void) {
  MOVAtom atom={0,0,100};MOVStream index={0};MOVMDat *old;
@@ -194,6 +226,9 @@ int main(int argc,char **argv) {
  const char *name=argc>1?argv[1]:"all";
  if(!strcmp(name,"all")||!strcmp(name,"lifetime")) lifetime();
  if(!strcmp(name,"all")||!strcmp(name,"timing")) timing();
+ if(!strcmp(name,"all")||!strcmp(name,"timing-coverage")) timing_coverage();
+ if(!strcmp(name,"all")||!strcmp(name,"timing-coverage")||!strcmp(name,"sample-timing")) sample_timing_coverage();
+ if(!strcmp(name,"all")||!strcmp(name,"timing-coverage")||!strcmp(name,"timing-cleanup")) timing_probe_cleanup();
  if(!strcmp(name,"all")||!strcmp(name,"allocations")) allocations();
  if(!strcmp(name,"all")||!strcmp(name,"limit")) stream_limit();
  if(!strcmp(name,"all")||!strcmp(name,"probe")) audio_probe();

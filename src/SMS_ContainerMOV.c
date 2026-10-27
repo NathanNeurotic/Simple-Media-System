@@ -846,15 +846,14 @@ static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Str
  MOVContext*  lpCtx    = ( MOVContext* )apCont -> m_pCtx;
  unsigned int i, j, k;
 
-/* Both walks below index m_pSample2Chunk and m_pStts with cursors that are NOT bounded by their
- * table sizes -- lSTSCIdx only advances when the NEXT entry matches, lSTTSIdx only when the
- * current entry is used up -- so entry 0 of each is read unconditionally. What keeps that safe
- * is the gate in _mov_read_header, which refuses to call this at all unless m_nStts, m_nChunks
+/* Both walks below need entry 0 of m_pSample2Chunk and m_pStts. The gate in
+ * _mov_read_header refuses to call this at all unless m_nStts, m_nChunks
  * and m_nSample2Chunk are non-zero ( and repairs a zero m_TimeRate, the divisor here, to 1 ).
  * That gate tests COUNTS while this code derefs POINTERS, so it is only sound as long as the
  * two move together -- which is exactly the invariant the readers above now maintain: a count is
  * published only once its table has been allocated and filled. Do not set a count before its
- * malloc is checked, or this walks a NULL table. */
+ * malloc is checked, or this walks a NULL table. The timing walks must also
+ * account for every indexed sample, rather than reusing an exhausted entry. */
  if ( apMyStm -> m_pSampleSize || apStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) {
   unsigned int lCurSample = 0;
   unsigned int lSTTSample = 0;
@@ -866,6 +865,13 @@ static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Str
    ) ++lSTSCIdx;
    for (  j = 0; j < ( unsigned int )apMyStm -> m_pSample2Chunk[ lSTSCIdx ].m_Count; ++j ) {
     if ( lCurSample >= apMyStm -> m_nSamples ) return 1;
+    while ( lSTTSIdx < apMyStm -> m_nStts &&
+            ( apMyStm -> m_pStts[ lSTTSIdx ].m_Count <= 0 ||
+              lSTTSample >= ( unsigned int )apMyStm -> m_pStts[ lSTTSIdx ].m_Count ) ) {
+     ++lSTTSIdx;
+     lSTTSample = 0;
+    }  /* end while */
+    if ( lSTTSIdx == apMyStm -> m_nStts ) return 0;
 /* A stss entry the cursor has already passed can never match again ( entry beyond the
  * indexed samples in a truncated file, or non-monotonic garbage in a crafted one ) and
  * would pin lSTSSIdx, mis-flagging every later sample as non-key. Well-formed tables are
@@ -945,6 +951,7 @@ static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Str
     lpTime -> m_Count -= lTake;
     if ( !lpTime -> m_Count ) ++lSTTSIdx;
    }  /* end while */
+   if ( lnChunkSamples ) return 0;
    lCurDTS += lChunkDuration / apMyStm -> m_TimeRate;
   }  /* end for */
  }  /* end else */
