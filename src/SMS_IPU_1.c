@@ -23,12 +23,23 @@ static void _destroy ( IPULoadImage* apLoadImg ) {
 
 }  /* end _destroy */
 
-void IPU_InitLoadImage ( IPULoadImage* apLoadImg, int aWidth, int aHeight ) {
+int IPU_InitLoadImage ( IPULoadImage* apLoadImg, int aWidth, int aHeight ) {
 
- unsigned int   lDMASize  = sizeof ( u64           ) * (  8 + 12 * ( aWidth >> 4 )  );
- unsigned int   lDataSize = aWidth << 6;
- u64*           lpDMA     = ( u64*           )malloc ( lDataSize += lDMASize );
- unsigned char* lpData    = (  ( unsigned char* )lpDMA  ) + lDMASize;
+ unsigned int   lDMASize, lDataSize;
+ u64*           lpDMA;
+ unsigned char* lpData;
+
+ apLoadImg -> m_pDMA = NULL;
+ /* One DMA packet per 16-pixel macroblock. A fractional block would overrun
+  * the packet table and send beyond the allocated output row. GS textures
+  * cannot exceed 1024 pixels per axis; the last row may be a partial block. */
+ if ( aWidth < 16 || aWidth > 1024 || ( aWidth & 15 ) || aHeight < 1 || aHeight > 1024 ) return 0;
+
+ lDMASize  = sizeof ( u64 ) * ( 8 + 12 * ( aWidth >> 4 ) );
+ lDataSize = ( aWidth << 6 ) + lDMASize;
+ lpDMA     = ( u64* )malloc ( lDataSize );
+ if ( !lpDMA ) return 0;
+ lpData    = ( ( unsigned char* )lpDMA ) + lDMASize;
 
  lpDMA[ 0 ] = DMA_TAG( 3, 0, DMATAG_ID_CNT, 0, 0, 0 );
  lpDMA[ 1 ] = VIF_DIRECT( 3 );
@@ -66,7 +77,9 @@ void IPU_InitLoadImage ( IPULoadImage* apLoadImg, int aWidth, int aHeight ) {
  (  ( GIFTag* )( lpDMA - 4 )  ) -> EOP = 1;
  (  ( DMATag* )( lpDMA - 2 )  ) -> ID  = DMATAG_ID_REFE;
 
- SyncDCache ( apLoadImg -> m_pDMA, apLoadImg -> m_pDMA + lDataSize );
+ SyncDCache ( apLoadImg -> m_pDMA, ( ( unsigned char* )apLoadImg -> m_pDMA ) + lDataSize );
+
+ return 1;
 
 }  /* end IPU_InitLoadImage */
 

@@ -171,9 +171,12 @@ static int DrawSkin ( void ) {
 
    if ( lFD >= 0 ) {
     lSize = fioLseek ( lFD, 0, SEEK_END );
-    fioLseek ( lFD, 0, SEEK_SET );
-    if ( lSize > 0 ) {
-     lpData = malloc ( lSize );
+    /* IPU_ImageInfo reads eight bytes; IPU_LoadImage sends a whole-quadword
+     * DMA transfer with a 16-bit QWC. Keep that transfer inside the allocation. */
+    if ( lSize >= 8 && lSize <= 0xFFFF0 && fioLseek ( lFD, 0, SEEK_SET ) == 0 ) {
+     unsigned int lAllocSize = ( ( unsigned int )lSize + 15 ) & ~15U;
+     lpData = malloc ( lAllocSize );
+     if ( lpData ) memset ( lpData + lSize, 0, lAllocSize - ( unsigned int )lSize );
      if (  lpData && fioRead ( lFD, lpData, lSize ) != lSize  ) {
       free ( lpData );
       lpData = NULL;
@@ -200,9 +203,10 @@ static int DrawSkin ( void ) {
 
    if ( lFD >= 0 ) {
     lSize = fioLseek ( lFD, 0, SEEK_END );
-    fioLseek ( lFD, 0, SEEK_SET );
-    if ( lSize > 0 ) {
-     lpData = malloc ( lSize );
+    if ( lSize >= 8 && lSize <= 0xFFFF0 && fioLseek ( lFD, 0, SEEK_SET ) == 0 ) {
+     unsigned int lAllocSize = ( ( unsigned int )lSize + 15 ) & ~15U;
+     lpData = malloc ( lAllocSize );
+     if ( lpData ) memset ( lpData + lSize, 0, lAllocSize - ( unsigned int )lSize );
      if (  lpData && fioRead ( lFD, lpData, lSize ) != lSize  ) {
       free ( lpData );
       lpData = NULL;
@@ -220,9 +224,10 @@ static int DrawSkin ( void ) {
 
    if ( lFD >= 0 ) {
     lSize = MC_SeekS ( lFD, 0, SEEK_END );
-    MC_SeekS ( lFD, 0, SEEK_SET );
-    if ( lSize > 0 ) {
-     lpData = malloc ( lSize );
+    if ( lSize >= 8 && lSize <= 0xFFFF0 && MC_SeekS ( lFD, 0, SEEK_SET ) == 0 ) {
+     unsigned int lAllocSize = ( ( unsigned int )lSize + 15 ) & ~15U;
+     lpData = malloc ( lAllocSize );
+     if ( lpData ) memset ( lpData + lSize, 0, lAllocSize - ( unsigned int )lSize );
      if (  lpData && MC_ReadS ( lFD, lpData, lSize ) != lSize  ) {
       free ( lpData );
       lpData = NULL;
@@ -241,25 +246,33 @@ static int DrawSkin ( void ) {
 
   lWidth = IPU_ImageInfo ( lpData, &lHeight );
 
-  if ( lWidth ) {
+  /* Validate before calculating texture sizes or changing the GS context.
+   * The IPU packet builder uses complete 16-pixel macroblock columns. */
+  if ( lWidth >= 16 && lWidth <= 1024 && !( lWidth & 15 ) && lHeight >= 1 && lHeight <= 1024 ) {
 
    IPULoadImage   lLoadImg;
    u64*           lpDMA;
    unsigned int   lTexSize;
+   unsigned int   lTBW = ( lWidth + 63 ) >> 6;
+   unsigned int   lPrevTBW = g_GSCtx.m_TBW, lPrevTexPtr = g_GSCtx.m_VRAMTexPtr;
 
-   g_GSCtx.m_TBW = ( lWidth + 63 ) >> 6;
-
-   lTexSize = (   ( g_GSCtx.m_TBW << 6 ) * (  ( lHeight + 31 ) & ~31  ) * 4   ) >> 8;
+   lTexSize = (   ( lTBW << 6 ) * (  ( lHeight + 31 ) & ~31  ) * 4   ) >> 8;
 
    if ( lTexSize >= 0x4000 ) {   /* skin texture too large for VRAM -> fall back to default */
     free ( lpData );
     return 0;
    }  /* end if */
 
+   g_GSCtx.m_TBW = lTBW;
    g_GSCtx.m_VRAMTexPtr = 0x4000 - lTexSize;
-   PowerOf2 ( lWidth, lHeight, ( int * )&g_GSCtx.m_TW, ( int * )&g_GSCtx.m_TH );
 
-   IPU_InitLoadImage ( &lLoadImg, lWidth, lHeight );
+   if ( !IPU_InitLoadImage ( &lLoadImg, lWidth, lHeight ) ) {
+    g_GSCtx.m_TBW = lPrevTBW;
+    g_GSCtx.m_VRAMTexPtr = lPrevTexPtr;
+    free ( lpData );
+    return 0;
+   }  /* end if */
+   PowerOf2 ( lWidth, lHeight, ( int * )&g_GSCtx.m_TW, ( int * )&g_GSCtx.m_TH );
    IPU_LoadImage ( &lLoadImg, lpData, lSize, 0, 0, 0, 0, 0 );
 
    if ( lLoadImg.m_fPal ) SMS_SetPalette ( lLoadImg.m_Pal );
