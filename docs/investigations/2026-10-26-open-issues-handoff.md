@@ -28,6 +28,58 @@ Audit date: 2026-10-26 (America/Los_Angeles). Repository:
 
 ## Fixes implemented in this follow-up
 
+### Continuation from e38020e: parser, stream and skin regressions
+
+The next source audit reproduced additional defects against `e38020e`; these
+are implementation fixes, not reporter or physical-console acceptance.
+
+- MPEG-PS rejects an otherwise usable video when the first AC3 PES contains no
+  complete codec header, even if a later packet has one. A failed secondary
+  audio probe also overwrites an earlier successful audio result. Failed stream
+  metadata is now discarded so later packets can retry, and validated audio is
+  retained. Packet allocation failures are checked, incomplete audio/video
+  reads terminate, and an unpublished packet reservation is returned to its
+  ring buffer. A partial video alignment tail is discarded on error; ordinary
+  cross-PES alignment and header-only LPCM packet skipping remain covered.
+- Whole-source MOV parser tests with real FFmpeg MP4 files exposed an absent
+  `co64` dispatch entry, incorrect 16-byte extended-atom payload lengths,
+  incorrect zero-size atom bounds and acceptance without either `moov` or
+  `mdat`. The parser fixes pass ordinary and fast-start controls as well as the
+  new layouts. Every indexed packet offset and length is checked against
+  FFprobe. Failed sample positioning/reads now return unpublished packet space.
+- STIO startup and async completion could publish a negative read length. An
+  actual-source ASan baseline reproduces an 8192-byte read from a 4096-byte
+  allocation. Streaming now checks positioning, read lengths, dispatch and sync
+  status; installs async callbacks only after a prefetch is queued; stops cached
+  completion replay at logical EOF; preserves partial-read counts; and recovers
+  through ordinary seeking/refill. The existing BDM/UDPFS read sizing is kept.
+- Skin loading now checks the complete eight-byte image header, rewind and read
+  results, macroblock dimensions and DMA length. DMA input allocation is padded
+  to a whole quadword. The image-packet constructor reports allocation failure
+  and flushes its byte range rather than eight times that range. Invalid skin
+  dimensions are rejected before texture arithmetic or GS state changes.
+  Valid 800x600 dimensions remain accepted by the host harness.
+
+Focused validation commands (ASan, UBSan and LeakSanitizer enabled):
+
+```sh
+python3 tools/test_mpeg_ps_probe.py
+python3 tools/test_mov_packets.py
+python3 tools/test_mov_index.py
+python3 tools/test_mov_parser.py
+python3 tools/test_stio_stream_failure.py
+python3 tools/test_skin_loading.py
+```
+
+The prior playlist, skip, allocation, refill, rebuffer and CDDA failure suites
+also pass. The new MOV, STIO and skin scripts are included in the build job's
+host regression step. Reproduction controls use the source at `e38020e`, not an
+independent reimplementation of the affected functions. MOV parser cases use
+real MP4 files but stub codec/packet/device APIs; STIO and skin cases stub
+platform I/O and IPU/GS output. They do not measure device throughput, exercise
+the full decoder/display path or confirm the original reports. No console is
+available in this continuation session, and no reporter-owned issue is closed.
+
 ### Continuation: MOV packet handling and converter #22
 
 The continuation after `a99a1a2` found additional work on our side. It adds the
