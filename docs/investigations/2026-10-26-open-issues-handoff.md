@@ -28,6 +28,36 @@ Audit date: 2026-10-26 (America/Los_Angeles). Repository:
 
 ## Fixes implemented in this follow-up
 
+### Merge-readiness follow-up (2026-10-27)
+
+The final shutdown audit found another actual player defect at `623d754`.
+The video ring contains frame pointers, but `_terminate_threads` interpreted
+a pointer slot as a frame. Notification count is also insufficient for cleanup:
+a renderer may already have consumed a notification while paused or waiting
+for GIF completion, and a producer can stop before posting its final slot.
+
+Shutdown now drains the allocated 64-byte slots after the worker threads stop,
+dereferences each stored pointer, frees queued bitmap subtitles and releases
+queued RGB frames. Slots start at NULL and the renderer clears its slot before
+freeing or transferring a frame, so the drain cannot reclaim a subtitle already
+owned by the IPU. Audio-only notifications have no allocated slots and are
+cleared by the existing ring reset.
+
+`tools/test_player_video_drain.py` compiles the actual shutdown, initialization,
+renderer and ring-buffer code with controlled kernel/IPU stubs. Its nine cases
+run both stop/reuse and thread-deletion paths: ordinary queues, a consumed
+notification at Sync/pause, freed/transferred subtitles, unpublished/empty tail
+reservations, wrap, audio-only notifications and an empty queue. Negative
+controls reproduce the original subtitle leak, a frame left owned when only
+notification count is drained, and an ASan use-after-free if handed-off slots
+are not cleared. All 18 candidate scenarios pass.
+
+All 17 host regression scripts and the dev9 ABI gate pass together, and standard,
+packed, legacy and DIAG targets build with the existing GCC toolchain. This adds
+shutdown ownership evidence; full-player seek/pause/stop and exact-file physical
+acceptance remain separate. No reporter-owned issue should close on these host
+or emulator results alone. The poster-grid request remains a separate feature.
+
 ### Continuation after eggcatroll's `8547573` (2026-10-27)
 
 Picked up eggcatroll's 12-commit continuation with a fast-forward; their parser,
@@ -56,7 +86,7 @@ lifetime fix candidate, not reporter or physical-console color acceptance.
 All 16 host regression scripts, including the new
 `tools/test_mpeg12_frame_lifetime.py`, and the dev9 ABI gate pass together. The
 new test is part of compilation CI. No converter code was changed in this
-continuation. Before merge, retain the full-player pause/resume, seek, stop,
+continuation. Before closing reporter issues, retain the full-player pause/resume, seek, stop,
 sequence-change and same-file reporter checks.
 
 ### Continuation from e38020e: parser, stream and skin regressions
