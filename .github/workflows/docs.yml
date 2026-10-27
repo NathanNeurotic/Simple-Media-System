@@ -1,0 +1,27 @@
+name: documentation
+on:
+  push:
+    paths: ['docs-site/**', 'docs/**', 'wiki/**', 'README.md', 'CHANGELOG.md', 'tools/build-docs-search-index.mjs', '.github/workflows/docs.yml', '.gitattributes']
+  pull_request:
+    paths: ['docs-site/**', 'docs/**', 'wiki/**', 'README.md', 'CHANGELOG.md', 'tools/build-docs-search-index.mjs', '.github/workflows/docs.yml', '.gitattributes']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate manual, wiki, local links, anchors and generated output
+        run: python3 docs-site/build.py --check
+      - name: Check browser scripts parse
+        run: |
+          node --check docs/assets/app.js
+          node --check docs/assets/orbs.js
+      - name: Upload the self-contained manual
+        uses: actions/upload-artifact@v7
+        with:
+          name: SMS-Documentation-${{ github.sha }}
+          path: docs/
+          include-hidden-files: true
+          if-no-files-found: error

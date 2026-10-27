@@ -1,5 +1,11 @@
 # MX4SIO support in SMS — developer review document
 
+> Historical engineering report: this preserves the original MX4SIO reproducer,
+> driver rationale and earlier EE read strategy. Later streaming changes apply
+> different batching to other sources. Use the [current device guide](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html)
+> and [open-issue status](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html)
+> for current behavior and acceptance; old file:line references are snapshots.
+
 This document is written for a PS2 developer reviewing the MX4SIO work in SMS
 (Simple Media System) for a bounty. It explains **what the bug actually was, why
 the fix is the correct one (not a workaround), and how to reproduce the build**.

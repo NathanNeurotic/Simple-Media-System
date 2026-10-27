@@ -1,0 +1,194 @@
+<h1>Audio &amp; Playlists</h1>
+<p class="lead">SMS is a media player first and foremost, so it plays music just as happily as video. Point the
+browser at an <b>MP3</b>, <b>FLAC</b>, <b>OGG</b>, <b>AAC</b>, <b>AC3</b> or <b>WMA</b> file on any connected device,
+press <kbd>✕</kbd>, and it plays. This page covers the supported audio formats, the audio player screen, and how to
+queue up a whole set of tracks with an <b>M3U playlist</b>.</p>
+
+<div class="callout info"><div class="h">ℹ Music sits anywhere — no special folder</div>
+SMS browses the <b>raw filesystem</b> of whatever device you pick. There is no mandatory folder layout for music:
+drop your tracks wherever you like — a <code>Music</code> folder, an album folder, or loose in the root — and open
+them straight from the file list. Everything below works the same on USB, MX4SIO microSD, the internal HDD, i.LINK,
+MMCE and SMB network shares.</div>
+
+<h2 id="formats">Supported audio formats</h2>
+<p>SMS recognises audio files by their extension and hands them to the matching decoder. These are the audio
+formats and file extensions this build plays:</p>
+
+<table data-sortable>
+<thead><tr><th>Format</th><th>Extensions</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>MPEG Audio Layer II / III</td><td><code>.mp2</code> <code>.mp3</code> <code>.mpa</code></td><td>MP2 and MP3 use the shared MPEG-audio decoder.</td></tr>
+<tr><td>AAC Main / LC and HE-AAC/SBR</td><td><code>.aac</code> <code>.m4a</code> <code>.mp4</code></td><td><code>.aac</code>
+is raw ADTS; <code>.m4a</code> is the audio-only ISO-BMFF route. An audio-only <code>.mp4</code> falls back to the
+same reader.</td></tr>
+<tr><td>AC3 (Dolby&nbsp;Digital)</td><td><code>.ac3</code></td><td>The same audio format SMS decodes for DVD-style video soundtracks.</td></tr>
+<tr><td>FLAC</td><td><code>.flac</code></td><td>Mono or stereo; decoded to 16-bit PCM output.</td></tr>
+<tr><td>Ogg Vorbis</td><td><code>.ogg</code></td><td>Mono or stereo; decoded to 16-bit PCM output.</td></tr>
+<tr><td>WMA v1 / v2</td><td><code>.wma</code></td><td>Windows Media Audio carried in an ASF container. This is audio,
+not WMV video.</td></tr>
+</tbody>
+</table>
+
+<p>Supported movie/container tracks can additionally use <b>DTS</b> and <b>16-bit little- or big-endian PCM</b>.
+Those codecs are registered for embedded audio, but the browser does not expose standalone <code>.dts</code> or
+<code>.wav</code> routes.</p>
+
+<h2 id="implementation-limits">Exact implementation limits</h2>
+<table>
+<thead><tr><th>Property</th><th>Current behavior / limit</th></tr></thead>
+<tbody>
+<tr><td>Compressed audio packet/sample</td><td><b>524,224 bytes maximum</b> (512 KiB packet ring minus the mandatory
+64-byte allocation overhead)</td></tr>
+<tr><td>AAC object types</td><td>AAC Main and AAC-LC, with SBR/HE-AAC extension processing</td></tr>
+<tr><td>AAC core sample rates</td><td>8, 11.025, 12, 16, 22.05, 24, 32, 44.1, 48, 64, 88.2 and 96 kHz</td></tr>
+<tr><td>AAC channels</td><td>Mono/stereo output; accepted multichannel AAC is downmixed to stereo</td></tr>
+<tr><td>FLAC and Ogg Vorbis channels</td><td>Mono or stereo only</td></tr>
+<tr><td>FLAC, Ogg and AAC decoded output</td><td>16-bit PCM</td></tr>
+<tr><td>Container tracks</td><td>Eight table slots; MP4 and MPEG-PS retain at most seven streams including video/subtitles</td></tr>
+<tr><td>Individual file size</td><td>Smaller than 4 GiB because file sizes, positions and seeks are 32-bit</td></tr>
+</tbody>
+</table>
+
+<h2 id="hardware-tested">Previously reported audio matrix</h2>
+<p>Earlier project documentation records successful playback of these 20-second audio fixtures. This is a historical reported baseline, not a new test of the current merge. The matrix uses
+a 44.1 kHz mono tone unless otherwise noted:</p>
+
+<table data-sortable>
+<thead><tr><th>Route</th><th>Fixture profile</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>MP3</td><td>192 kbit/s</td><td>Passed</td></tr>
+<tr><td>Ogg Vorbis</td><td>Quality 5</td><td>Passed</td></tr>
+<tr><td>WMA v2</td><td>128 kbit/s</td><td>Passed</td></tr>
+<tr><td>FLAC</td><td>Lossless mono fixture</td><td>Passed</td></tr>
+<tr><td>AC-3</td><td>192 kbit/s</td><td>Passed</td></tr>
+<tr><td>AAC in M4A</td><td>128 kbit/s</td><td>Passed</td></tr>
+<tr><td>Raw ADTS AAC</td><td>128 kbit/s</td><td>Passed</td></tr>
+<tr><td>MP2</td><td>192 kbit/s</td><td>Passed</td></tr>
+<tr><td>Audio-only MP4 / AAC</td><td>48 kHz stereo, 128 kbit/s</td><td>Passed as music with the visualiser</td></tr>
+</tbody>
+</table>
+
+<p>AAC Main, HE-AAC/SBR, WMA v1, DTS, embedded PCM and multichannel downmix are source-supported paths but were not
+separate cases in this hardware fixture matrix.</p>
+
+<div class="callout amber"><div class="h">Match the extension to the contents</div>
+SMS chooses the decoder from the file's extension. A file that has been renamed to the wrong extension (say, an AAC
+stream saved as <code>.mp3</code>) may fail to play. Keep the extension honest — <code>.flac</code> for FLAC,
+<code>.ogg</code> for Vorbis, and so on — and if a track refuses to open, double-check that its real format matches
+its name.</div>
+
+<h2 id="playing">Playing audio</h2>
+<p>Playing a song is exactly like opening any other file — browse to it and press Cross.</p>
+
+<div class="steps">
+<div class="step"><h3>Pick the device</h3>
+<p>In the <b>device menu</b> (the top row of device icons), press Left/Right to highlight the device your music is
+on, then press Down to drop into the file list.</p></div>
+<div class="step"><h3>Find the track</h3>
+<p>In the <b>file list</b>, move with Up/Down; use <kbd>L1</kbd>/<kbd>L2</kbd> to page-scroll long folders and
+Triangle to step up a level. The <b>status line</b> at the bottom shows your current path on the left.</p></div>
+<div class="step"><h3>Press Cross to play</h3>
+<p>Highlight the audio file and press <kbd>✕</kbd>. SMS opens the audio player and starts playback.</p></div>
+</div>
+
+<p><img src="images/usage-sms-mp3browsing.png" alt="Browsing to an MP3 file in the SMS file list" style="max-width:100%;border-radius:8px">
+</p>
+
+<h3 id="player-screen">The audio player screen</h3>
+<p>While a track plays, SMS shows its audio player rather than a video picture. From here the pad controls playback
+(see <a href="#controls">Controls</a> below). When one track finishes, SMS moves on to the next entry if there is a
+queue — either the rest of an <a href="#playlists">M3U playlist</a> or the other music in the same folder — otherwise
+playback ends and you return to the browser.</p>
+
+<p><img src="images/usage-sms-mp3playing.png" alt="The SMS audio player screen during MP3 playback" style="max-width:100%;border-radius:8px">
+</p>
+
+<details class="deep"><summary>Can SMS play every song in a folder automatically?</summary>
+<p>Yes. SMS has long had a "play all the music in this folder" behaviour, so once one track finishes it can roll on
+to the next file in the same directory rather than stopping after a single song. Simply pressing <b>Cross</b> on a
+track is enough — it plays on through the rest of the folder's music, skipping non-audio files, and stops when you
+press <b>Triangle</b>. To play a folder without picking a track first, highlight the <i>folder</i> and choose
+<b>Play all → Audio</b>. Two related options live in
+<b>Settings → Player settings → MP3 settings</b>: <b>Randomize playlist</b> and <b>Repeat mode</b>.</p>
+<p>They behave differently from what the names suggest. <b>Repeat mode</b> repeats <i>the item you are playing</i>,
+not the folder — so with an <code>.m3u</code> playlist it loops the whole playlist, but during folder playback it
+loops the current track and never advances. Turn it off if you want a folder to play through.</p></details>
+
+<h2 id="playlists">Playlists (M3U)</h2>
+<p>An <b>M3U</b> file (<code>.m3u</code>) is a plain-text list of tracks to play, in order. Instead of opening songs
+one at a time, you open the <code>.m3u</code> and SMS queues every track it lists and plays them back to back. SMS
+treats <code>.m3u</code> as a first-class media file: it appears in the browser like any other, and pressing
+<kbd>✕</kbd> on it starts the whole list.</p>
+
+<p><img src="images/usage-sms-mp3playlist01.png" alt="Opening an M3U playlist in SMS" style="max-width:100%;border-radius:8px">
+</p>
+
+<h3 id="m3u-format">What goes in an .m3u file</h3>
+<p>An M3U is just one file path per line. SMS understands both the bare form (one path per line) and the extended
+<code>#EXTM3U</code> / <code>#EXTINF</code> form that carries a duration and a display title for each entry. A minimal
+example:</p>
+<pre>#EXTM3U
+#EXTINF:213,Opening Track
+Music/track01.mp3
+#EXTINF:187,Second Track
+Music/track02.flac
+Music/track03.ogg</pre>
+<p>A few practical notes on how SMS reads them:</p>
+<ul class="checklist">
+<li><b>Relative paths work</b> — a path is taken relative to the folder the playlist lives in, so keeping the
+<code>.m3u</code> alongside its tracks is the simplest layout.</li>
+<li><b>Slashes are flexible</b> — Windows-style back-slashes in a path are accepted and treated as forward slashes.</li>
+<li><b>Mixed formats are fine</b> — a single playlist can mix MP3, FLAC, OGG and the other supported audio formats;
+SMS picks the right decoder for each entry as it reaches it.</li>
+<li><b>Titles are optional</b> — with <code>#EXTINF</code> lines SMS uses the supplied title; without them it falls
+back to the track's filename.</li>
+</ul>
+
+<p><img src="images/usage-sms-mp3playlist02.png" alt="An M3U playlist queued and playing in SMS" style="max-width:100%;border-radius:8px">
+</p>
+
+<div class="callout info"><div class="h">ℹ Shuffle a playlist</div>
+When the player's <b>randomize</b> option is on, SMS plays a playlist's tracks in a shuffled order rather than the
+order written in the file. Turn it off to hear the list exactly as it is laid out. See the
+<a href="settings.html">Settings reference</a> for where this lives.</div>
+
+<h2 id="controls">Controls during playback</h2>
+<p>Audio uses the same transport controls as video, so if you already know one you know the other:</p>
+<table>
+<thead><tr><th>Button</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><kbd>Select</kbd></td><td>Pause</td></tr>
+<tr><td><kbd>Start</kbd></td><td>Resume</td></tr>
+<tr><td><kbd>△</kbd> Triangle</td><td>Stop and return to the file browser</td></tr>
+<tr><td><kbd>Up</kbd> / <kbd>Down</kbd></td><td>Volume up / down</td></tr>
+<tr><td><kbd>Left</kbd> / <kbd>Right</kbd></td><td>Seek backward / forward within the track</td></tr>
+</tbody>
+</table>
+<p>Stopping a playlist with Triangle drops you back to the browser; there is no need to let the whole queue finish.</p>
+
+<h2 id="soundtracks">Audio inside video</h2>
+<p>The same decoders power the soundtrack of a movie. When you play an AVI, MP4 or MPEG file, SMS decodes its
+embedded audio stream — commonly MP3, MP2, AAC or AC3 — right alongside the picture. If the video codec itself is
+unsupported (for example H.264 or H.265) the supported audio track may still play by itself. So "audio format support" and
+"a video's soundtrack" are two sides of the same engine; for the video side of things, see
+<a href="video.html">Video Playback</a>.</p>
+
+<h2 id="tips">Tips</h2>
+<ul class="checklist">
+<li><b>Name files clearly.</b> The browser shows filenames, so descriptive names (<code>01 - Artist - Title.mp3</code>)
+make navigating an album far easier than cryptic ones.</li>
+<li><b>Keep a playlist with its tracks.</b> Because relative paths are resolved against the playlist's own folder,
+storing the <code>.m3u</code> in the same directory as the songs is the most portable arrangement — copy the folder
+to another device and it still works.</li>
+<li><b>Use the right extension.</b> Since SMS selects the decoder by extension, an honest extension is the single most
+reliable way to make sure a track opens on the first try.</li>
+<li><b>Lossless files increase storage demand.</b> FLAC files are large; playing them from a suitable device such as
+MX4SIO microSD or the internal HDD is smoother than from a slow source. See <a href="devices.html">Devices Overview</a>.</li>
+</ul>
+
+<div class="callout info"><div class="h">ℹ Where to go next</div>
+For the moving-picture side, read <a href="video.html">Video Playback</a>. To pick where your music lives, start at
+<a href="devices.html">Devices Overview</a> and the per-device pages. Every playback and player option is catalogued
+in the <a href="settings.html">Settings reference</a>.</div>
+
+<p class="audit-source">Code/fixture references: <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/SMS_Codec.c">decoder registration</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/include/SMS_Container.h">stream table</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/gen-test-media.sh">fixture definitions</a>. See <a href="known-issues.html">current acceptance gaps</a>.</p>

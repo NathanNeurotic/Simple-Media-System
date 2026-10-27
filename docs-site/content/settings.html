@@ -1,0 +1,280 @@
+<h1>Settings Reference</h1>
+<p class="lead">This is the full reference for the SMS settings menu — every option, grouped exactly the way SMS groups
+them, with what each one does and the values it accepts. If you only want to turn a storage device on, jump to
+<a href="#device-settings">Device settings</a>; if you're tuning subtitles or the picture, see
+<a href="#player-settings">Player settings</a> and <a href="#display-settings">Display settings</a>.</p>
+
+<div class="callout info"><div class="h">ℹ How to reach the settings menu</div>
+The settings menu is the same <b>SMS menu</b> you use for saving and quitting. Open it from the browser, then pick one
+of its top-level entries. Each entry opens a sub-menu of options. On a toggle, <b>Cross</b> flips it between
+<code>on</code> and <code>off</code>; on a value item, <b>Left/Right</b> cycles the value. <b>Triangle</b> goes back
+up a level. Nothing is committed to storage until you run <b>Save settings</b> (see <a href="#saving">Saving your
+settings</a>) — so you can experiment freely and just not save.</div>
+
+<h2 id="menu-map">The settings menu at a glance</h2>
+<p>The top level of the SMS menu has these entries. The first four open the option sub-menus documented on this page;
+the last four are actions.</p>
+<table>
+<thead><tr><th>Top-level entry</th><th>What it opens / does</th></tr></thead>
+<tbody>
+<tr><td><b>Display settings…</b></td><td>TV system, character set, language, image position, and an Advanced sub-menu for resolution &amp; sync — see <a href="#display-settings">below</a>.</td></tr>
+<tr><td><b>Device settings…</b></td><td>Every storage/network <b>Autostart</b> toggle, the <b>Start … support</b> on-demand items, CD/DVD options and controller options — see <a href="#device-settings">below</a>.</td></tr>
+<tr><td><b>Browser settings…</b></td><td>Appearance of the file browser: background image, sound FX, sorting/filtering, panel colours, the reset-button action and Exit-to target — see <a href="#browser-settings">below</a>.</td></tr>
+<tr><td><b>Player settings…</b></td><td>Everything about playback: subtitles, audio/SPDIF, volume, colour resolution, scroll bar, and an MP3 sub-menu — see <a href="#player-settings">below</a>.</td></tr>
+<tr><td>Quick help</td><td>An on-screen list of the button shortcuts (browser and player).</td></tr>
+<tr><td>Save settings</td><td>Writes your configuration to storage — see <a href="#saving">Saving your settings</a>.</td></tr>
+<tr><td>Shutdown console</td><td>Powers the PS2 off.</td></tr>
+<tr><td>Exit SMS</td><td>Leaves SMS and returns to the boot browser it was launched from.</td></tr>
+</tbody>
+</table>
+
+<div class="callout amber"><div class="h">Labels come straight from the app</div>
+Every option name and value on this page is taken from the SMS build's own on-screen strings, so it should match what
+you see on the TV. Wording can differ slightly if you load a translated language file, but the layout and behaviour are
+the same.</div>
+
+<h2 id="device-settings">Device settings — storage &amp; network</h2>
+<p>This is the menu you care about most on this fork: it is where you turn storage devices on. Each device has an
+<b>Autostart</b> toggle (whether it starts automatically at boot), and — when the device is <i>not</i> currently
+running — a matching <b>Start … support</b> item appears at the bottom of the menu so you can bring it up right now
+without rebooting.</p>
+
+<h3 id="autostart">Autostart toggles</h3>
+<p>Each toggle shows <code>on</code> or <code>off</code>. On a clean install (no saved settings) every one of these is
+<b>off</b> — SMS auto-starts <i>nothing</i>, so you enable only the devices you actually use. Once you
+<a href="#saving">save</a>, your choices persist across reboots.</p>
+<table data-sortable>
+<thead><tr><th>Option</th><th>Device it starts</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>Autostart HOST ( ps2dev )</b></td><td>The ps2dev <code>host:</code> stack (ps2client on a PC). One of three mutually exclusive network rows.</td><td>on / off</td></tr>
+<tr><td><b>Autostart SMB</b></td><td>The SMB1/CIFS share client. One of three mutually exclusive network rows. See <a href="network.html">Network Setup</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart USB</b></td><td>USB mass storage (<code>massN:</code>). See <a href="usb.html">USB</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart HDD APA</b></td><td>The internal HDD via the classic APA/PFS path (<code>hdd0:</code>); SMS lists the drive's PFS partitions so you can pick one. See <a href="hdd.html">Internal HDD</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart HDD BDM</b></td><td>The internal HDD via ATA as a BDM <code>massN:</code> device — this is the <b>exFAT</b> path added by this fork. See <a href="hdd.html">Internal HDD</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart MX4SIO</b></td><td>The MX4SIO microSD adapter over SIO2 (<code>massN:</code>). The headline feature of this fork. See <a href="mx4sio.html">MX4SIO</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart i.LINK</b></td><td>An i.LINK (IEEE&nbsp;1394 / FireWire) drive as a BDM <code>massN:</code> device. See <a href="ilink.html">i.LINK</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart MMCE</b></td><td>An MMCE device (SD2PSX / MemCard PRO2) in the memory-card slot (<code>mmce0:</code> / <code>mmce1:</code>). See <a href="mmce.html">MMCE</a>.</td><td>on / off</td></tr>
+<tr><td><b>Autostart UDPFS</b></td><td>The folder-served UDPFS network drive (<code>udpfs:</code>). Mutually exclusive with SMB/host for that boot. See <a href="network.html#udpfs">UDPFS</a>.</td><td>on / off</td></tr>
+</tbody>
+</table>
+
+<div class="callout red"><div class="h">Shared resources — choose one member of each pair</div>
+<ul>
+<li><b>MX4SIO and MMCE</b> both use the SIO2 / memory-card-slot bus. Only one can be active at a time — enable the one
+you're using, not both.</li>
+<li><b>HDD APA and HDD BDM</b> both own the internal ATA bus. Pick one; whichever starts first owns the bus. Use
+<b>HDD APA</b> for a classic APA/PFS drive, or <b>HDD BDM</b> for a modern exFAT drive.</li>
+<li><b>Network (SMB/host) and UDPFS</b> load different stacks for the one Ethernet controller. Whichever starts
+first owns it until reboot. Enable one, not both.</li>
+</ul>
+See <a href="devices.html">Devices Overview</a> for the full picture.</div>
+
+<h3 id="start-now">"Start … support" — bring a device up now</h3>
+<p>When a device isn't running yet, a matching item appears at the bottom of the Device menu. Selecting it starts that
+device immediately, so it shows up in the device row without a reboot. Once the device is up, its item disappears from
+the list. The wording matches each device:</p>
+<ul class="checklist">
+<li><b>Start SMB server support</b> (shown when an SMB server is configured)</li>
+<li><b>Start HOST ( ps2dev ) support</b></li>
+<li><b>Start USB support</b></li>
+<li><b>Start HDD support</b> (APA)</li>
+<li><b>Start HDD BDM</b> (ATA / exFAT)</li>
+<li><b>Start MX4SIO support</b></li>
+<li><b>Start i.LINK support</b></li>
+<li><b>Start MMCE support</b></li>
+<li><b>Start UDPFS network drive</b></li>
+</ul>
+<p>The Device menu also ends with a <b>Refresh connections</b> item, which re-probes the running devices — handy after
+hot-swapping a card or drive so its contents are re-read.</p>
+
+<div class="callout info"><div class="h">ℹ Autostart vs. Start-now</div>
+<b>Autostart</b> decides what comes up automatically at every boot (and is remembered once saved). <b>Start … support</b>
+is a one-shot "turn it on for this session" that doesn't change the Autostart toggle. A common flow: leave everything
+off, use <b>Start MX4SIO support</b> to test, then — once happy — flip <b>Autostart MX4SIO</b> on and
+<a href="#saving">save</a>.</div>
+
+<h3 id="cd-and-controller">CD/DVD and controller options</h3>
+<p>The rest of the Device menu covers the optical drive and controller behaviour, plus the network settings entry that
+links to the on-screen network setup.</p>
+<table>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>Network settings…</b></td><td>Opens <b>Edit IPCONFIG.DAT</b> (the PS2's static IP, mask and gateway), the <b>Network protocol</b> selector, <b>SMB server…</b> — where share entries are added, edited and deleted — and the link parameters: <b>Operating mode</b>, plus <b>Duplex mode</b> and <b>Standard</b> when the mode is manual. See <a href="network.html">Network Setup</a>.</td><td>opens sub-menu</td></tr>
+<tr><td><b>Controller port 2</b></td><td>Tells SMS what is plugged into controller port&nbsp;2 so it reads it correctly.</td><td>gamepad / remote control / none</td></tr>
+<tr><td><b>Pair Bluetooth controller</b></td><td>Pairs a DualShock&nbsp;3 or DualShock&nbsp;4 to the connected USB Bluetooth dongle. The row appears only when the Bluetooth driver is available: connect the dongle, plug the controller into USB, run this command, then unplug the cable and power on the controller.</td><td>action</td></tr>
+<tr><td><b>Disable CD/DVD</b></td><td>Turns the optical (CD/DVD) source on or off. Disable it if you never use discs, so SMS doesn't wait on the drive.</td><td>on / off</td></tr>
+<tr><td><b>CD/DVD speed</b></td><td>Read speed for the optical drive.</td><td>low / medium / high</td></tr>
+<tr><td><b>Directional buttons</b></td><td>Chooses how the D-pad is read — as a standard gamepad or as a remote control.</td><td>gamepad / remote control</td></tr>
+</tbody>
+</table>
+
+<h2 id="display-settings">Display settings — TV output &amp; language</h2>
+<p>Everything about how SMS drives the screen, plus the interface language and character set. Most people set the TV
+system once and never touch the rest.</p>
+<table>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>TV system</b></td><td>Chooses the video standard SMS outputs.</td><td>NTSC / PAL</td></tr>
+<tr><td><b>Character set</b></td><td>The code page used when drawing text (menus, file names, subtitles) — pick the one that matches your language/filenames.</td><td>cycles through the built-in character sets</td></tr>
+<tr><td><b>Language</b></td><td>English or the installed external <code>SMS.lng</code> pack; this row does not list every translation in the download ZIP. See <a href="languages.html">Languages &amp; Fonts</a>.</td><td>English / installed external pack</td></tr>
+<tr><td><b>Adjust image left / right / up / down</b></td><td>Nudge the whole picture to centre it on your TV. Four separate items, one per direction.</td><td>press to nudge</td></tr>
+<tr><td><b>Advanced settings…</b></td><td>Opens the advanced display sub-menu below (resolution, colour depth, sync parameters). Only needed for HD/VESA modes or fine tuning.</td><td>opens sub-menu</td></tr>
+</tbody>
+</table>
+
+<h3 id="advanced-display">Advanced display settings</h3>
+<p>These control the raw output resolution and timing. They are for advanced users chasing a specific mode or fixing a
+picture that doesn't sync — the defaults are fine for standard NTSC/PAL. Changes here only take effect when you run
+<b>Apply settings</b> at the bottom of the sub-menu.</p>
+<table>
+<thead><tr><th>Option</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><b>Display height</b></td><td>The output framebuffer height in scanlines.</td></tr>
+<tr><td><b>Display width</b></td><td>The output framebuffer width in pixels.</td></tr>
+<tr><td><b>Color resolution</b></td><td>Framebuffer colour depth (also selectable from the Player menu). See <a href="#colour-res">Color resolution</a>.</td></tr>
+<tr><td><b>Synch. parameter 1 (video)</b></td><td>Fine video-sync timing for the current mode. Adjust only if the picture rolls or is off-centre.</td></tr>
+<tr><td><b>Synch. parameter 2 (GUI)</b></td><td>The equivalent sync tuning for the on-screen GUI layer.</td></tr>
+<tr><td><b>Synch. parameter 3 (Audio)</b></td><td>The equivalent sync tuning for audio timing.</td></tr>
+<tr><td><b>Apply settings</b></td><td>Commits the advanced display changes to the live output so you can see the result.</td></tr>
+</tbody>
+</table>
+
+<div class="callout amber"><div class="h">HD modes and the background</div>
+The 720p/1080i modes deliberately use a gradient instead of the desktop wallpaper because of VRAM use. A gradient in those modes is not the saved-skin restart report. See <a href="themes.html#hd-known-issue">HD background behavior</a> and <a href="known-issues.html#skin">the open skin report</a>.</div>
+
+<h2 id="browser-settings">Browser settings — the file browser's look</h2>
+<p>These change how the file browser looks and behaves, and what SMS does on the reset button / on exit. Colour items
+open a small palette picker; the rest are toggles or values.</p>
+<table data-sortable>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>Skin</b> (shown at the top)</td><td>The active <code>.smi</code> skin. Shows the skin name, or <code>none</code>. See <a href="themes.html">Themes &amp; Skins</a>.</td><td>cycles installed skins / none</td></tr>
+<tr><td><b>Use background image</b></td><td>Whether the desktop background image (skin/artwork) is drawn behind the browser.</td><td>on / off</td></tr>
+<tr><td><b>Sound FX</b></td><td>Enables the browser's navigation sound effects.</td><td>on / off</td></tr>
+<tr><td><b>Sort filesystem objects</b></td><td>Whether folders/files are shown sorted rather than in raw filesystem order.</td><td>on / off</td></tr>
+<tr><td><b>Filter media files</b></td><td>Whether the browser hides files SMS doesn't recognise as playable media, so the list shows only openable files.</td><td>on / off</td></tr>
+<tr><td><b>Display HDL partitions</b></td><td>Whether HD Loader-style partitions on the internal HDD are shown in the browser.</td><td>on / off</td></tr>
+<tr><td><b>Hide system partitions</b></td><td>Whether the PS2's system partitions on the HDD are hidden from the list.</td><td>on / off</td></tr>
+<tr><td><b>Use exception handler</b></td><td>Installs SMS's exception handler (a debugging/robustness aid).</td><td>on / off</td></tr>
+<tr><td><b>Active border color</b></td><td>Palette colour of the highlighted (active) panel's border.</td><td>palette index</td></tr>
+<tr><td><b>Inactive border color</b></td><td>Palette colour of the inactive panels' borders / info bar.</td><td>palette index</td></tr>
+<tr><td><b>Text color</b></td><td>Palette colour of the browser's file-list text.</td><td>palette index</td></tr>
+<tr><td><b>Status line text color</b></td><td>Palette colour of the bottom status line (path + clock).</td><td>palette index</td></tr>
+<tr><td><b>Selection bar color</b></td><td>Palette colour of the highlight bar on the currently selected item.</td><td>palette index</td></tr>
+<tr><td><b>Reset button action</b></td><td>What the PS2 reset button does while SMS is running.</td><td>cycles actions (incl. exit)</td></tr>
+<tr><td><b>Exit to</b></td><td>Where <b>Exit SMS</b> sends you — the target program SMS returns to on exit.</td><td>cycles exit targets</td></tr>
+</tbody>
+</table>
+
+<div class="callout info"><div class="h">ℹ Palette / colour items</div>
+The colour options (<b>Active border color</b>, <b>Text color</b>, <b>Selection bar color</b>, and the subtitle colours
+in the Player menu) pick from SMS's 16-entry palette. Cycle the value to preview each colour live in the panel it
+affects, so you can match your skin. See <a href="themes.html">Themes &amp; Skins</a> for the palette itself.</div>
+
+<h2 id="player-settings">Player settings — playback, subtitles &amp; audio</h2>
+<p>The biggest sub-menu. It covers subtitles, audio/SPDIF, volume, the scroll bar, colour resolution, an auto power-off
+timer, and an <b>MP3 settings</b> sub-menu for audio playback. Toggles are on/off; value items cycle with Left/Right;
+colour items pick a palette index.</p>
+
+<h3 id="player-subtitles">Subtitles</h3>
+<p>SMS shows external subtitle files over video. These options control loading, look and placement. Some (offset,
+font width/height) show a live <b>Sample</b> while you adjust them. See the dedicated <a href="subtitles.html">Subtitles</a>
+page for the full walkthrough.</p>
+<table>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>Autoload subtitles</b></td><td>Automatically load a matching subtitle file when a video starts.</td><td>on / off</td></tr>
+<tr><td><b>Opaque subtitles</b></td><td>Draw subtitles on a solid backing rather than transparent, for readability over busy scenes.</td><td>on / off</td></tr>
+<tr><td><b>Subtitle color</b></td><td>Palette colour of normal subtitle text.</td><td>palette index</td></tr>
+<tr><td><b>Subtitle bold color</b></td><td>Palette colour used for bold subtitle text.</td><td>palette index</td></tr>
+<tr><td><b>Subtitle italic color</b></td><td>Palette colour used for italic subtitle text.</td><td>palette index</td></tr>
+<tr><td><b>Subtitle underline color</b></td><td>Palette colour used for underlined subtitle text.</td><td>palette index</td></tr>
+<tr><td><b>Subtitle alignment</b></td><td>Horizontal placement of the subtitle text.</td><td>left / center / right / center-right</td></tr>
+<tr><td><b>Subtitle offset</b></td><td>Vertical position of subtitles on screen (shows a live Sample).</td><td>value in points</td></tr>
+<tr><td><b>Subtitle font width</b></td><td>Horizontal size of the subtitle font (shows a live Sample).</td><td>value</td></tr>
+<tr><td><b>Subtitle font height</b></td><td>Vertical size of the subtitle font (shows a live Sample).</td><td>value</td></tr>
+<tr><td><b>Subtitle MBCS</b></td><td>Multi-byte character-set handling for subtitles (for languages that need it).</td><td>on / off</td></tr>
+</tbody>
+</table>
+
+<h3 id="player-audio">Audio &amp; video output</h3>
+<table>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>S/PDIF - Dolby Digital/DTS</b></td><td>Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2.</td><td>on / off</td></tr>
+<tr><td><b>Video auto 2:2 pulldown</b></td><td>Applies 2:2 pulldown handling for correct playback of certain video cadences.</td><td>on / off</td></tr>
+<tr><td><b>Default volume</b></td><td>The starting playback volume level.</td><td>value</td></tr>
+<tr><td id="colour-res"><b>Color resolution</b></td><td>Framebuffer colour depth used during playback / GUI. Higher looks better; lower saves video memory.</td><td>16 bit / 32 bit</td></tr>
+</tbody>
+</table>
+
+<h3 id="player-ui">On-screen extras &amp; scroll bar</h3>
+<table>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>Display scroll bar time</b></td><td>Whether the elapsed/remaining time is shown on the player's scroll (progress) bar.</td><td>on / off</td></tr>
+<tr><td><b>Auto power-off</b></td><td>Automatically powers the console off after a period of inactivity.</td><td>off, or a number of minutes</td></tr>
+<tr><td><b>Scroll bar length</b></td><td>The on-screen length of the player's scroll bar.</td><td>value</td></tr>
+<tr><td><b>Scroll bar position</b></td><td>Where the scroll bar sits on screen.</td><td>top / bottom / off</td></tr>
+<tr><td><b>Scroll bar color</b></td><td>Palette colour of the scroll bar.</td><td>palette index</td></tr>
+<tr><td><b>Volume bar color</b></td><td>Palette colour of the on-screen volume bar.</td><td>palette index</td></tr>
+</tbody>
+</table>
+
+<h3 id="mp3-settings">MP3 settings (audio sub-menu)</h3>
+<p>Opened from the Player settings menu via <b>MP3 settings…</b>, this covers audio and playlist behaviour,
+including the order of video folders played with <b>Play all → Video</b>.</p>
+<table>
+<thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
+<tbody>
+<tr><td><b>Audio animation display</b></td><td>Whether a visual animation is shown while audio-only files play. See <a href="audio.html">Audio &amp; Playlists</a>.</td><td>on / off</td></tr>
+<tr><td><b>Randomize playlist</b></td><td>Shuffle playlists and Play all folders, including
+<a href="video.html#folder-playback">Play all → Video</a>. Turn it off to keep the normal play order.</td><td>on / off</td></tr>
+<tr><td><b>Repeat mode</b></td><td>Repeat the current playlist/track.</td><td>on / off</td></tr>
+<tr><td><b>Audio spectrum display</b></td><td>Show a spectrum-analyser visual during audio playback.</td><td>on / off</td></tr>
+<tr><td><b>Autodetection parameter</b></td><td>A tuning value for MP3 format auto-detection.</td><td>value</td></tr>
+</tbody>
+</table>
+
+<h2 id="saving">Saving your settings — and where they go</h2>
+<p>Nothing you change in the menus is permanent until you run <b>Save settings</b> from the top level of the SMS menu.
+Until then you can change anything and simply not save. There is also a button shortcut on some builds
+(<kbd>Select</kbd>+<kbd>Square</kbd>) that saves settings from the browser.</p>
+
+<div class="steps">
+<div class="step"><h3>Make your changes</h3><p>Set your Autostart toggles, colours, subtitle look, and so on in the sub-menus. Try devices with <b>Start … support</b> first if you like.</p></div>
+<div class="step"><h3>Run Save settings</h3><p>Back out to the top of the SMS menu (Triangle), select <b>Save settings</b>, and confirm.</p></div>
+<div class="step"><h3>Reboot to confirm</h3><p>Your Autostart choices and preferences come back on the next boot.</p></div>
+</div>
+
+<div class="callout info"><div class="h">Configuration location</div>
+<p>Use <b>Save settings</b> after changes. On a remountable launch source, <code>SMS.cfg</code> normally lives beside the ELF even when a memory card is fitted; <code>SMS.smb</code> follows its resolved directory. See <a href="configuration.html">Config Files &amp; Paths</a> for card-slot, network-file and fallback rules.</p><p><code>IPCONFIG.DAT</code> has separate card/boot-folder rules. Back up the active config before renaming it to test clean defaults.</p>
+</div>
+
+<h2 id="see-also">See also</h2>
+<div class="grid">
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>Which device is which, and the bus rules</span></a>
+<a class="tile" href="network.html"><span class="icon icon-smb" aria-hidden="true"></span><b>Network Setup</b><span>On-screen IP, SMB &amp; UDPFS</span></a>
+<a class="tile" href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span><b>Subtitles</b><span>Loading, styling &amp; placement</span></a>
+<a class="tile" href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span><b>Themes &amp; Skins</b><span>Skins, palette &amp; artwork</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>Enable &amp; play from microSD</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When a device or file won't behave</span></a>
+</div>
+
+<details class="deep"><summary>Why is there both "HDD APA" and "HDD BDM" — aren't they the same drive?</summary>
+<p>They are the same physical internal HDD, but reached two different ways. <b>HDD APA</b> uses the PS2's classic
+APA/PFS filesystem and reads media from the PFS partitions on <code>hdd0:</code> — the traditional SMS
+route. <b>HDD BDM</b> reads the drive as a modern <b>exFAT</b> volume over ATA, appearing as a <code>massN:</code>
+device like USB or MX4SIO — the path this fork adds so you can use a normally-formatted drive. They share the internal
+ATA bus, so only one can be active; whichever starts first owns it. Choose the one that matches how your drive is
+formatted. See <a href="hdd.html">Internal HDD</a>.</p>
+</details>
+
+<details class="deep"><summary>I enabled Autostart MX4SIO but MMCE stopped working (or vice-versa)</summary>
+<p>That's expected. MX4SIO and MMCE both drive the SIO2 / memory-card-slot bus, so SMS can only run one of them at a
+time. Turn off the Autostart for the one you're not using, enable the one you are, and <a href="#saving">save</a>. If you
+need to switch after one has claimed SIO2, save the intended choice and relaunch SMS. Disabling Autostart does not unload an already running driver. See
+<a href="devices.html">Devices Overview</a>.</p>
+</details>
+
+<div class="note"><p><b>Boot-source exception:</b> optional Autostart flags default off, but SMS may start/remount the device holding its ELF/config during startup. A source already visible after first boot does not mean another Autostart choice was saved. See <a href="configuration.html">configuration discovery</a>.</p></div>

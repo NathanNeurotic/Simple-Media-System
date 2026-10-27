@@ -1,53 +1,26 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Subtitles · SMS Docs</title>
-<meta name="description" content="How to add and style soft subtitles in SMS: name an external SRT, SUB or TXT file to match your video, drop it alongside, and tune size, colour, alignment and position from the player menu.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Subtitles · SMS Docs</title><meta name="description" content="External SRT/SUB/TXT text, AVI DXSB bitmap subtitles, font/encoding settings and converter burn-in distinctions.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/subtitles.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Subtitles · SMS Docs"><meta property="og:description" content="External SRT/SUB/TXT text, AVI DXSB bitmap subtitles, font/encoding settings and converter burn-in distinctions.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html" class="active"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html" class="active" aria-current="page"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Subtitles</h1>
 <p class="lead">SMS plays <b>soft subtitles</b> — an external text file, laid over the video as it plays. Name the
 subtitle file to match your movie, drop it in the same folder, and SMS loads it automatically. From
@@ -56,7 +29,7 @@ subtitle file to match your movie, drop it in the same folder, and SMS loads it 
 <div class="callout info"><div class="h">ℹ Soft subtitles, external files</div>
 Subtitles in SMS are separate <code>.srt</code>, <code>.sub</code> or <code>.txt</code> files that sit next to the
 video — they are not burned into the picture, so you can turn them on or off, restyle them, and swap them without
-touching the video file. There is no separate "subtitle track" muxed inside the movie; SMS reads the sidecar text file.
+touching the video file. This text path reads a sidecar file. SMS also has an existing AVI <code>DXSB</code> bitmap-subtitle path; that is distinct from embedded SRT/ASS text tracks or the converter's burn-in option.
 </div>
 
 <h2 id="formats">Supported subtitle formats</h2>
@@ -76,8 +49,8 @@ edit, and its cues carry exact times rather than frame counts, so they line up r
 Use a <code>.sub</code>/<code>.txt</code> file when that is what you already have.</p>
 
 <div class="grid">
-<a class="tile" href="images/usage-srt.png"><span class="em">📄</span><b>SRT example</b><span>SubRip time-coded cues</span></a>
-<a class="tile" href="images/usage-sub.png"><span class="em">📄</span><b>SUB example</b><span>Frame / time-code lines</span></a>
+<a class="tile" href="images/usage-srt.png"><span class="icon icon-book" aria-hidden="true"></span><b>SRT example</b><span>SubRip time-coded cues</span></a>
+<a class="tile" href="images/usage-sub.png"><span class="icon icon-book" aria-hidden="true"></span><b>SUB example</b><span>Frame / time-code lines</span></a>
 </div>
 
 <h3 id="srt-detail">SubRip (.srt)</h3>
@@ -100,7 +73,7 @@ line — bold, italic and underline — and shows those lines in their own colou
 and end <i>frame</i>, with a pipe <code>|</code> separating lines:</p>
 <pre>{300}{375}This is the first subtitle.
 {400}{455}And this one has|two lines.</pre>
-<div class="callout amber"><div class="h">⚠ Frame-timed SUB files depend on frame rate</div>
+<div class="callout amber"><div class="h">Frame-timed SUB files depend on frame rate</div>
 Because brace-style <code>.sub</code> cues are counted in frames, SMS converts them to real time using the video's
 frame rate. If your <code>.sub</code> was authored for a different frame rate than your video, the lines will drift out
 of sync as the movie plays. SRT (real-time) files do not have this problem — if timing wanders on a SUB file, look for
@@ -112,17 +85,17 @@ and looks in the <b>same folder</b> for a file with the same base name and a <co
 <code>.txt</code> extension. If it finds one, it loads it when the video starts.</p>
 
 <div class="steps">
-<div class="step"><h3>Match the file names</h3>
+<div class="step"><h3 id="match-the-file-names">Match the file names</h3>
 <p>Rename the subtitle so its base name is identical to the video. For <code>Movie.avi</code> the subtitle should be
 <code>Movie.srt</code> (or <code>Movie.sub</code> / <code>Movie.txt</code>). The two names must agree up to the dot;
 only the extension differs.</p></div>
-<div class="step"><h3>Put them in the same folder</h3>
+<div class="step"><h3 id="put-them-in-the-same-folder">Put them in the same folder</h3>
 <p>Copy the subtitle onto the same device and into the same directory as the video, so they sit side by side in the
 file list. SMS looks for the sidecar file in that same folder — it does not search elsewhere.</p></div>
-<div class="step"><h3>Leave "Autoload subtitles" on</h3>
+<div class="step"><h3 id="leave-autoload-subtitles-on">Leave "Autoload subtitles" on</h3>
 <p>Automatic loading is controlled by the <b>Autoload subtitles</b> option in <b>Settings → Player settings</b>
 (press <b>Start</b> in the browser to open the SMS menu), which is <b>on by default</b>. As long as it is on and the names match, the subtitle loads with no extra steps.</p></div>
-<div class="step"><h3>Play the video</h3>
+<div class="step"><h3 id="play-the-video">Play the video</h3>
 <p>Open the video as usual. SMS shows a brief <i>Loading subtitles</i> progress step while it reads the file, then the
 text appears over the picture at the cue times. If the subtitle file has a problem, SMS reports a subtitle error with a
 line number instead — see <a href="#tips">Tips &amp; troubleshooting</a>.</p></div>
@@ -210,20 +183,15 @@ SRT file stores real times directly, so it is immune to this. When a SUB file dr
 use an SRT of the same subtitles.</p></details>
 
 <div class="grid">
-<a class="tile" href="video.html"><span class="em">🎬</span><b>Video Playback</b><span>Formats, controls, the player</span></a>
-<a class="tile" href="settings.html"><span class="em">🔧</span><b>Settings Reference</b><span>Every menu &amp; option</span></a>
-<a class="tile" href="troubleshooting.html"><span class="em">🛠️</span><b>Troubleshooting</b><span>When something won't play</span></a>
+<a class="tile" href="video.html"><span class="icon icon-play" aria-hidden="true"></span><b>Video Playback</b><span>Formats, controls, the player</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Every menu &amp; option</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When something won't play</span></a>
 </div>
-  </main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<h2 id="embedded-and-burned">Embedded bitmap subtitles and converter burn-in</h2>
+<p>The AVI decoder registers DXSB bitmap subtitles. That existing reader does not imply support for arbitrary embedded text tracks in MP4 or other containers. The converter can render one external or embedded text subtitle into the pixels. Burn-in cannot be switched off in SMS; external sidecars remain the flexible text option. See <a href="converter.html#burn-in">converter subtitle controls</a>.</p>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

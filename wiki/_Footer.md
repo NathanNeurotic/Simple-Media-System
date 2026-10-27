@@ -1,0 +1,1 @@
+[SMS manual](https://nathanneurotic.github.io/Simple-Media-System/) · [Downloads](https://nathanneurotic.github.io/Simple-Media-System/releases.html) · [Credits](https://nathanneurotic.github.io/Simple-Media-System/credits.html)

@@ -1,55 +1,28 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>i.LINK · SMS Docs</title>
-<meta name="description" content="Play media in SMS from an i.LINK (IEEE 1394 / FireWire) external drive — mounted as a massN: device — including enabling it, preparing a FAT32/exFAT drive, and browsing your files.">
-<link rel="stylesheet" href="assets/style.css">
+<title>i.LINK / FireWire · SMS Docs</title><meta name="description" content="SMS i.LINK/FireWire SBP-2 storage, required physical connector, setup, mass naming and device test limits.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/ilink.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="i.LINK / FireWire · SMS Docs"><meta property="og:description" content="SMS i.LINK/FireWire SBP-2 storage, required physical connector, setup, mass naming and device test limits.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html" class="active"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html" class="active" aria-current="page"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>i.LINK (IEEE&nbsp;1394 / FireWire)</h1>
-<p class="lead">Most PlayStation 2 consoles carry a small <b>i.LINK</b> port — Sony's name for
+<p class="lead">Some early PlayStation&nbsp;2 models carry a small <b>i.LINK</b> port — Sony's name for
 <b>IEEE&nbsp;1394</b>, the connector the rest of the world calls <b>FireWire</b>. This fork of SMS can bring an
 external i.LINK drive online and play media straight off it, exactly like a USB stick. The drive shows up in the
 device menu as a <code>massN:</code> volume, so once it appears you browse and play from it with the same controls
@@ -75,8 +48,8 @@ exFAT internal HDDs all ride on. That is why an i.LINK drive appears as <code>ma
 a USB drive once it is mounted: SMS does not treat i.LINK as a special "kind" of media, only as another source of
 <code>massN:</code> volumes.</p>
 
-<div class="callout amber"><div class="h">⚠ Not every PS2 has i.LINK</div>
-Sony dropped the i.LINK port from the later slimline PS2 models. If your console has no FireWire connector, this
+<div class="callout amber"><div class="h">Not every PS2 has i.LINK</div>
+Later fat models and slimline PS2s can lack the i.LINK port; do not assume that a fat case guarantees one. If your console has no FireWire connector, this
 feature simply has nothing to attach to — use <a href="usb.html">USB</a>, <a href="mx4sio.html">MX4SIO</a> or the
 <a href="hdd.html">internal HDD</a> instead. Check the front and sides of your console for a small 4-pin
 i.LINK-labelled socket before buying a cable.</div>
@@ -90,7 +63,7 @@ the same formatting rules apply.</p>
 <thead><tr><th>Property</th><th>What works</th></tr></thead>
 <tbody>
 <tr><td>Connection</td><td>i.LINK / IEEE&nbsp;1394 / FireWire, into the PS2's i.LINK port</td></tr>
-<tr><td>Device type</td><td>External hard drive or SSD enclosure that presents as FireWire mass storage</td></tr>
+<tr><td>Device type</td><td>External hard drive or SSD enclosure that implements SBP-2 storage</td></tr>
 <tr><td>Filesystem</td><td><b>FAT32</b> or <b>exFAT</b></td></tr>
 <tr><td>Appears as</td><td><code>massN:</code> (shares the BDM namespace with USB, MX4SIO and ATA/exFAT HDD)</td></tr>
 <tr><td>Role in SMS</td><td>A browsable media source — play video, audio and pictures directly from it</td></tr>
@@ -100,23 +73,23 @@ the same formatting rules apply.</p>
 <div class="callout info"><div class="h">ℹ A modest note on tested drives</div>
 i.LINK support is <b>confirmed working on real hardware</b> in this fork, mounting an exFAT drive over FireWire. That
 said, the FireWire enclosure market is wide and varied, and only a small number of drives have actually been tried.
-If your particular enclosure does not come up, it is most likely an enclosure/bridge-chip quirk rather than a problem
+If your particular enclosure does not come up, it may be an enclosure/bridge-chip quirk rather than a problem
 with your media — try a different enclosure or fall back to <a href="usb.html">USB</a>.</div>
 
 <h2 id="preparing">Preparing the drive</h2>
 <p>Set the drive up on your PC the same way you would prepare a USB drive for SMS, then copy your media onto it.</p>
 
 <div class="steps">
-<div class="step"><h3>Format FAT32 or exFAT</h3>
+<div class="step"><h3 id="format-fat32-or-exfat">Format FAT32 or exFAT</h3>
 <p>On your computer, format the FireWire drive as <b>FAT32</b> or <b>exFAT</b>. exFAT is the easy choice for large
 drives and large files; FAT32 is fine for smaller drives.</p></div>
 
-<div class="step"><h3>Copy your media on</h3>
+<div class="step"><h3 id="copy-your-media-on">Copy your media on</h3>
 <p>Drop your video, audio and picture files onto the drive. SMS browses the <b>raw filesystem</b> — there is no
 mandatory folder layout to follow. Put your files wherever you like (a simple folder such as <code>/Movies</code> or
 <code>/Music</code> just keeps things tidy) and SMS will let you navigate to them.</p></div>
 
-<div class="step"><h3>Eject, connect, and power the drive</h3>
+<div class="step"><h3 id="eject-connect-and-power-the-drive">Eject, connect, and power the drive</h3>
 <p>Safely eject the drive from your PC, then plug it into the PS2's <b>i.LINK</b> port with a FireWire cable. If your
 enclosure needs external power, make sure it is powered and the disk is spun up before (or as) SMS looks for it.</p></div>
 </div>
@@ -129,27 +102,27 @@ and <b>JPEG</b> pictures, plus
 <a href="audio.html">Audio &amp; Playlists</a> for the full detail.</div>
 
 <h2 id="enabling">Enabling i.LINK in SMS</h2>
-<p>On a clean install nothing auto-starts — you turn on the devices you want. i.LINK is off until you enable it, in
+<p>On a clean install optional Autostart choices are off — you turn on the devices you want. i.LINK is off until you enable it, in
 one of two ways.</p>
 
 <div class="steps">
-<div class="step"><h3>Turn on Autostart i.LINK (persistent)</h3>
+<div class="step"><h3 id="turn-on-autostart-i-link-persistent">Turn on Autostart i.LINK (persistent)</h3>
 <p>In the settings menu, enable the <b>Autostart i.LINK</b> toggle. From then on, every time SMS boots it will bring
 the FireWire bus up and look for an attached drive automatically. This is the "set it and forget it" option if you
 keep a drive on the i.LINK port. Your choice is saved with the rest of your settings (see <a href="settings.html">Settings</a>).</p></div>
 
-<div class="step"><h3>Or use "Start i.LINK now" (on demand)</h3>
+<div class="step"><h3 id="or-use-start-i-link-now-on-demand">Or use "Start i.LINK now" (on demand)</h3>
 <p>If i.LINK is not already running, a <b>Start i.LINK now</b> item is available so you can bring it up on the spot —
 no reboot needed. Handy when you only occasionally attach a FireWire drive and would rather not auto-start it every
 boot.</p></div>
 
-<div class="step"><h3>Give it a couple of seconds</h3>
+<div class="step"><h3 id="give-it-a-couple-of-seconds">Give it a couple of seconds</h3>
 <p>FireWire discovery is not instant. After i.LINK starts, the driver needs a <b>short moment</b> — on the order of a
 couple of seconds — to discover the drive on the bus and log in to it before it appears in the device menu. If it does
 not show up immediately, wait a beat; this delay is normal.</p></div>
 </div>
 
-<div class="callout amber"><div class="h">⚠ Have the drive connected and ready first</div>
+<div class="callout amber"><div class="h">Have the drive connected and ready first</div>
 Because discovery happens shortly after i.LINK starts, plug the drive in and make sure it is powered and spun up
 <b>before</b> you enable Autostart i.LINK or press Start i.LINK now. A drive that is still spinning up, or connected
 after the scan, may be missed until the next start.</div>
@@ -159,16 +132,16 @@ after the scan, may be missed until the next start.</div>
 behaves exactly like any other storage device in SMS:</p>
 
 <div class="steps">
-<div class="step"><h3>Pick the device</h3>
+<div class="step"><h3 id="pick-the-device">Pick the device</h3>
 <p>In the device menu at the top, use <b>Left / Right</b> to highlight your i.LINK volume (a <code>massN:</code>
 entry), then press <b>Down</b> to drop into the file list.</p></div>
 
-<div class="step"><h3>Navigate to your file</h3>
+<div class="step"><h3 id="navigate-to-your-file">Navigate to your file</h3>
 <p>In the file list, move with <b>Up / Down</b>, page through long lists with <b>L1 / L2</b>, open a folder or start a
 file with <b>Cross</b>, and go up one level with <b>Triangle</b>. The bottom status line shows your current path on
 the left and a clock on the right.</p></div>
 
-<div class="step"><h3>Play</h3>
+<div class="step"><h3 id="play">Play</h3>
 <p>Open a video, track or picture and it plays straight from the FireWire drive. During playback, <b>Select</b>
 pauses, <b>Start</b> resumes, and <b>Triangle</b> stops and returns you to the browser.</p></div>
 </div>
@@ -211,16 +184,12 @@ HDD</a>). i.LINK sits outside that entirely and can run at the same time as eith
 way once mounted. For the internal drive (APA and exFAT) see <a href="hdd.html">Internal HDD</a>. For the full list of
 per-device Autostart toggles, see the <a href="settings.html">Settings Reference</a>. For a bird's-eye view of every
 storage backend, see the <a href="devices.html">Devices Overview</a>.</div>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<p class="audit-source">The driver uses SBP-2/SCSI over IEEE 1394, not PS2 ATA commands. Historical project documentation reports an exFAT enclosure test; it does not establish every bridge, drive or console combination. Keep each media file below 4 GiB.</p>
+
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

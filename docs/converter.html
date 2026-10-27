@@ -1,178 +1,68 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Media Converter &#183; SMS Docs</title>
-<meta name="description" content="SMS Media Converter: a desktop app that converts video and audio into formats SMS plays on a PS2. Presets, multi-pass encoding, keyframe interval, and Windows 10/11, Windows 7 and Linux builds.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Media Converter · SMS Docs</title><meta name="description" content="SMS Media Converter presets, multi-audio output, text-subtitle burn-in, source SD sizing and PASS/WARN/FAIL limits.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/converter.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Media Converter · SMS Docs"><meta property="og:description" content="SMS Media Converter presets, multi-audio output, text-subtitle burn-in, source SD sizing and PASS/WARN/FAIL limits.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html" class="active"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html" class="active" aria-current="page"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Media Converter</h1>
-<p class="lead">A desktop app that turns video and audio files into formats a PlayStation&nbsp;2 running
-SMS can actually play. Drop a file in, pick a preset, get a file that works.</p>
-
-<div class="note"><p>Download it from the <a href="releases.html">releases page</a>. There are three
-builds: Windows&nbsp;10/11, Windows&nbsp;7, and Linux. It needs <b>FFmpeg</b> available — either on the
-system path or alongside the app.</p></div>
-
-<h2 id="why">Why convert at all</h2>
-<p>The PS2 decodes a specific and quite old set of formats, and most files downloaded today use none of
-them. In particular <b>H.264 will never play</b> — the console's video hardware handles MPEG&#8209;1 and
-MPEG&#8209;2 only, and everything else has to be decoded in software on a 294&nbsp;MHz CPU. Converting
-is not a workaround; it is how a modern file gets onto this machine at all.</p>
-
-<p>Every output option the app offers is one SMS is known to handle. That is why the list is short: it
-is not a general-purpose encoder with a PS2 mode, it only makes files that work.</p>
-
-<h2 id="presets">Presets</h2>
-<p>Each preset says what it is for and what it costs. If you are unsure, the first one is the right
-answer.</p>
-
-<h3>Video</h3>
-<table>
-<tr><th>Preset</th><th>When to use it</th></tr>
-<tr><td><b>Xvid&#8209;Compatible AVI</b><br><small>recommended</small></td><td>Start here. Best picture
-per megabyte, so files stay small and stream well over USB or a network share.</td></tr>
-<tr><td><b>MPEG&#8209;2</b> <small>(.mpg)</small></td><td>Use if the Xvid preset stutters. The PS2's IPU
-chip decodes MPEG&#8209;2 <em>in hardware</em>, so the CPU barely works and playback is the smoothest
-available. The trade is noticeably larger files.</td></tr>
-<tr><td><b>MPEG&#8209;1</b> <small>(.mpg)</small></td><td>The most forgiving option, also
-hardware&#8209;decoded. Picture quality tops out lower, but it is the lightest load of all.</td></tr>
-<tr><td><b>MPEG&#8209;4 MP4</b></td><td>The same video as the Xvid preset, in a modern
-<code>.mp4</code> container with AAC audio.</td></tr>
-<tr><td><b>MPEG&#8209;4 MP4, small</b></td><td>320&times;240 at a low bitrate — roughly a quarter the
-size. For memory cards, small USB drives, or when a full&#8209;size file will not play smoothly.</td></tr>
-<tr><td><b>Xvid AVI, high quality</b></td><td>10 Mbps video, uncompressed 16-bit stereo PCM at
-48 kHz, and keyframes every six frames. Keeps source SD dimensions. Intended for fast storage;
-smooth console playback depends on the content and transport.</td></tr>
-</table>
-
-<h3>Audio</h3>
-<table>
-<tr><th>Preset</th><th>When to use it</th></tr>
-<tr><td><b>MP3</b> <small>recommended</small></td><td>Start here for music. Plays everywhere, small, and
-the format SMS handles most cheaply.</td></tr>
-<tr><td><b>FLAC</b></td><td>Lossless — an exact copy of the original. Roughly 4&times; the size of an
-MP3.</td></tr>
-<tr><td><b>Ogg Vorbis</b></td><td>Slightly better quality than MP3 at the same size, and
-patent&#8209;free.</td></tr>
-<tr><td><b>AAC</b> <small>(.m4a)</small></td><td>Good quality per megabyte; choose MP3 instead if the
-file also needs to play on older devices.</td></tr>
-</table>
-
-<h2 id="advanced">Advanced settings</h2>
-<p>The defaults are chosen to work. These are for when you have a reason.</p>
-
-<h3>Audio tracks and subtitles</h3>
-<p><b>Source audio track</b> selects one source track, starting at zero. For video conversions to
-AVI, MPEG or MP4, <b>Keep all source audio tracks</b> encodes every audio track using the selected
-audio settings. The converter allows up to six audio tracks plus video and reports an error if
-the source exceeds that limit. Language and title metadata are retained where the container supports them.</p>
-<p>Choose an external subtitle file or an <b>Embedded subtitle</b> index, starting at zero, to burn
-one text subtitle track into the picture. <b>None</b> disables embedded burn-in; <b>Clear</b> removes
-either selection. Bitmap subtitles are not supported by this option. FFmpeg must include the
-subtitles filter. Burned-in subtitles cannot be switched off; SMS also supports separate SRT/SUB files.</p>
-
-<h3>Keep source SD resolution</h3>
-<p>This option preserves even source dimensions up to 720&times;576 rather than reducing an SD
-source to the preset dimensions. Larger sources still use the selected target dimensions.
-The high-quality Xvid preset enables it; existing presets retain their previous defaults.
-Its PCM audio is uncompressed output, not a promise of a bit-exact copy of higher-depth or multichannel sources.</p>
-
-<h3>Multi-pass encoding</h3>
-<p>Encodes the video twice: the first run measures the material, the second spends the bitrate where it
-is actually needed. It matters more here than in a general&#8209;purpose converter, because these presets
-aim at a <b>fixed bitrate</b> and a single pass has to guess how to spend it while still reading the
-file — so it commonly overshoots. Measured on a test clip asking for 800&nbsp;kbps, one pass produced
-959 and two produced 838.</p>
-<p>On a PS2 an overshoot is not merely a larger file: it is dropped frames over USB or a network share.
-The cost is roughly double the conversion time.</p>
-
-<div class="note"><p>The pass count is fixed at <b>2</b>. That is a limitation of FFmpeg, not of the
-format — MPEG&#8209;4 Part&nbsp;2 itself supports more, and the commercial DivX encoder implements them.
-FFmpeg's second pass never writes back to its statistics log, so a third pass has nothing new to work
-from; asking for one makes the encoder fall back to first&#8209;pass behaviour and badly overshoot.</p></div>
-
-<h3>Keyframe interval</h3>
-<p>How often a complete, self&#8209;contained frame is written; everything between keyframes is stored as
-differences. This is what decides <b>how fast seeking feels</b>: jumping to any point means decoding
-forward from the previous keyframe, so a long interval can mean many seconds of work on a 294&nbsp;MHz
-CPU before playback resumes.</p>
-<p>The default of 50 — about two seconds — sits at the knee of that curve. Raising it toward 300 saves
-only a few percent more file size but costs ten seconds or more on every jump.</p>
-
-<div class="warn"><p><b>Keyframe interval is not the same as B&#8209;frames.</b> The two are routinely
-confused. B&#8209;frames is a small number (0&#8211;4) controlling how frames are predicted from their
-neighbours; the keyframe interval is in the tens or hundreds and controls how often the picture is
-refreshed from scratch. Leave B&#8209;frames at <b>0</b> unless you have a reason — the PS2 decodes
-MPEG&#8209;4 in software, and B&#8209;frames are the first thing to cost it frames.</p></div>
-
-<h2 id="windows7">Windows 7</h2>
-<p>There is a separate <code>SMS-Media-Converter-Win7.exe</code>, because the standard build cannot start
-on Windows&nbsp;7 at all — Qt&nbsp;6 and Python&nbsp;3.9 both dropped support for it. The
-Windows&nbsp;7 build is the same application compiled against Qt&nbsp;5 and Python&nbsp;3.8. It is not a
-reduced version; the presets and validation are identical.</p>
-
-<h2 id="notes">Notes</h2>
-<ul class="checklist">
-<li><b>MP4 files are written front&#8209;loaded.</b> The index is placed at the start of the file, so SMS
-can begin playing immediately instead of reading through the whole file first.</li>
-<li><b>Real Xvid is used when available.</b> If your FFmpeg includes <code>libxvid</code>, the Xvid preset
-uses it rather than FFmpeg's built&#8209;in encoder.</li>
-<li><b>Output is checked after conversion</b> against the limits SMS actually has — resolution, stream
-count, packet size, and the 32&#8209;bit file&#8209;size ceiling.</li>
-</ul>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+<p class="lead">Convert modern source files into SMS's supported video and audio formats. The converter checks output structure and limits; final playback still depends on the file, player build and storage source.</p>
+<p><a href="releases.html#whats-in-a-release">Download Windows, Windows 7 or Linux builds</a>. The October controls are in rolling development builds and are absent from the July stable player/package.</p>
+<h2 id="why">Prepare a file for SMS</h2>
+<ol><li>Install FFmpeg and FFprobe from a trusted distribution, or let the application's setup helper locate them. A Windows executable does not guarantee they are installed. Builds need the selected encoders; text burn-in also requires the subtitles/libass filter.</li>
+<li>Add a source file, choose an output folder and start with a conservative preset. Keep a short sample for your first console test.</li>
+<li>Use Advanced settings only for deliberate changes. The settings badge tells you whether settings differ from the preset; it is not a hardware certification badge.</li>
+<li>Read the conversion/validation result and retain the log if anything fails. Test the output in SMS before converting a large library.</li></ol>
+<p>H.264, H.265, VP9 and AV1 are not SMS video decoders. An MP4 container may hold either supported <code>mp4v</code> or unsupported modern video; conversion changes the codec, not just the filename.</p>
+<h2 id="presets">Preset choices</h2>
+<table><thead><tr><th>Preset family</th><th>Default target</th><th>Tradeoff</th></tr></thead><tbody>
+<tr><td>Xvid-compatible AVI</td><td>640×480, 30 fps; 1.5 Mbps video + 128 kbps MP3.</td><td>Software MPEG-4 decode with hardware-assisted color conversion. A useful starting profile; content and transport can still cause stutter.</td></tr>
+<tr><td>MPEG-2 / MPEG-1 PS</td><td>640×480, 30 fps; 2.5 Mbps MPEG-2 or 1.15 Mbps MPEG-1 + 192 kbps MP2.</td><td>IPU-assisted MPEG path. Compare it with AVI on your setup; neither guarantees smoother playback for every source.</td></tr>
+<tr><td>MPEG-4 MP4</td><td>640×480 / 1.5 Mbps, or 320×240 / 600 kbps; 30 fps + 128 kbps AAC.</td><td>MPEG-4 Part 2, with the MP4 index front-loaded using <code>+faststart</code>. See the <a href="known-issues.html#mp4">remaining MP4 report</a>.</td></tr>
+<tr><td>High Quality — Fast Storage</td><td>10 Mbps Xvid, GOP 6, 48 kHz stereo PCM16; keeps source SD dimensions.</td><td>High storage demand; console acceptance is pending. Stereo PCM adds 1.536 Mbps before container overhead.</td></tr>
+<tr><td>MP3 / Ogg Vorbis / AAC music</td><td>192 kbps, 48 kHz stereo.</td><td>Lossy audio output. Video and embedded cover art are dropped.</td></tr>
+<tr><td>FLAC music</td><td>FLAC with the source sample rate/channel count retained when possible.</td><td>Lossless compression does not restore a lossy source or guarantee unchanged samples after format conversion. SMS's FLAC path requires mono/stereo and outputs 16-bit PCM; read validation results for your input.</td></tr>
+</tbody></table>
+<p>Ordinary video presets use GOP 50 and zero B-frames unless changed; the high-quality preset uses GOP 6. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.</p>
+<h2 id="advanced">Tracks, subtitles and advanced controls</h2>
+<h3 id="audio-tracks">One audio track or all source audio</h3>
+<p><b>Source audio track</b> selects a zero-based source index. <b>Keep all source audio tracks</b> encodes all selected source audio to the configured audio codec in AVI, MPEG-PS or MP4. At most <b>six audio tracks plus video</b> are allowed; excess tracks produce a settings error. Tracks are re-encoded, not copied bit for bit. Language/title metadata are preserved where supported by the container.</p>
+<p>The player has its own stream limits and codec/container mappings. Validate actual audio switching in SMS; a desktop muxer accepting a track does not prove that the PS2 reader can use it.</p>
+<h3 id="burn-in">Text-subtitle burn-in</h3>
+<p>Select an external subtitle or a zero-based embedded <b>text</b> subtitle index. <b>None</b> disables embedded selection; <b>Clear</b> removes the selected input. One subtitle is rendered into the video pixels. It cannot subsequently be disabled or restyled in SMS. Bitmap subtitle burn-in and switchable embedded-text output are not implemented by this control.</p>
+<p>For switchable text, retain a separate matching SRT/SUB/TXT sidecar and use SMS's <a href="subtitles.html">subtitle reader</a>. The existing AVI DXSB bitmap-subtitle reader is a different player feature.</p>
+<h3 id="source-sd">Keep source SD dimensions</h3>
+<p><b>Keep source SD resolution</b> retains even source dimensions up to 720×576. Larger sources use the selected target; it is enabled by default only for the high-quality preset. Check display aspect and pixel aspect on your TV. Choosing this option alone does not establish hardware playback speed.</p>
+<h3 id="encoding-passes">Two-pass encoding</h3>
+<p>The app implements two-pass video encoding: analysis followed by an encode using the recorded statistics. It can improve bitrate allocation, at the cost of another processing pass. It does not cap every instantaneous packet or eliminate source/transport bottlenecks. More than two passes is not exposed by this application.</p>
+<h3 id="keyframes">Keyframe interval and B-frames</h3>
+<p>GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 50 is about 1.67 seconds. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other.</p>
+<h2 id="notes">Understand PASS, WARN and FAIL</h2>
+<p>The validator checks codecs/container mappings, dimensions, frame-rate constraints, track counts, file size and observed packet sizes across audio/video streams. Video packets must fit 2,097,088 bytes and audio packets 524,224 bytes. It stops an output approaching the 32-bit file limit; keep each file below 4 GiB.</p>
+<ul><li><b>PASS</b>: the inspected output passed the host checks. It is not a console playback result.</li>
+<li><b>WARN</b>: an issue needs attention or inspection was incomplete. The packet scan is bounded for memory/time; an incomplete scan keeps the output and cannot certify unobserved packets.</li>
+<li><b>FAIL</b>: a checked constraint failed, such as an observed oversized packet. Read the reason before retrying.</li></ul>
+<p>Invalid input selections report a settings error before encoding. A real application exception can produce a crash log. Keep the preset, changed settings, source/output codec information and exact build when reporting it; do not treat every successful conversion as proof that an open player regression is fixed.</p>
+<h2 id="windows7">Windows 7 package</h2>
+<p>The Win7 executable uses Python 3.8, PySide2/Qt5 and a compatible PyInstaller bootloader. The modern package uses Qt6. Current-runner tests verify packaging and logic, not operation on a live Windows 7 installation. The Windows FFmpeg fallback is digest-pinned; the pin must be refreshed before its archive retention expires. See <a href="developers.html#converter">developer notes</a>.</p>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

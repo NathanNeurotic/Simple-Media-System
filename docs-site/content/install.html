@@ -1,0 +1,154 @@
+<h1>Install &amp; First Boot</h1>
+<p class="lead">SMS ships as a single PlayStation&nbsp;2 executable — an <code>SMS.elf</code> file. There is no
+installer and nothing to write to the console itself: you copy the ELF to storage your PS2 can read, then launch it
+however you normally launch homebrew. This page covers what you need, where to get the build, the common ways to
+run it, what the first boot looks like, and how to prepare a media device.</p>
+
+<div class="callout info"><div class="h">ℹ In one sentence</div>
+Put <code>SMS.elf</code> somewhere your PS2 can reach (a memory card or a USB drive), launch it from your homebrew
+loader, and put your videos and music on any FAT32/exFAT drive. That is the whole install.</div>
+
+<h2 id="what-you-need">What you need</h2>
+<p>SMS is homebrew: it is an unsigned program, so your console needs to be able to run unsigned programs. It does
+<b>not</b> modify your PS2, install anything to the system, or require a modchip — it just needs a way in.</p>
+<ul class="checklist">
+<li><b>A PS2 that can run homebrew.</b> Any of the usual routes works — a softmod such as <b>FreeMcBoot</b> on a
+memory card, <b>FreeDVDBoot</b> from a burned disc, or any other exploit/loader that lets you launch an ELF. If you
+already run homebrew on your PS2, you are ready.</li>
+<li><b>The SMS build</b> — the <code>SMS.elf</code> file itself. See <a href="#getting-sms">Getting SMS</a> below.</li>
+<li><b>A media device</b> to play from. The simplest is a <b>FAT32 or exFAT USB flash drive</b>; if you want to use
+MX4SIO, the internal HDD, i.LINK, MMCE, SMB or UDPFS instead, each is covered under
+<a href="devices.html">Devices</a>. On a very early / fat PS2 you can also just burn media to CD/DVD.</li>
+<li><b>A controller</b> to drive the menus: DualShock&nbsp;2, or DualShock&nbsp;3/4 over USB or Bluetooth.
+A memory card is optional throughout: settings follow the boot device, and with no card fitted SMS writes <code>IPCONFIG.DAT</code> next to the ELF too.</li>
+</ul>
+
+<div class="callout info"><div class="h">ℹ DualShock 3 / 4</div>
+Wired DS3/DS4 support uses USB and is loaded automatically. For Bluetooth, connect a compatible USB Bluetooth
+dongle, plug the controller into USB, choose <b>Device settings → Pair Bluetooth controller</b>, then unplug the
+cable and power the controller on. These USB controller paths do not contend with MX4SIO on SIO2.</div>
+
+<div class="callout amber"><div class="h">Homebrew access is up to you</div>
+This guide assumes your console can already launch homebrew. Setting up FreeMcBoot, FreeDVDBoot or another exploit
+is a separate, well-documented topic that depends on your exact console model and region — follow a current guide
+for <i>your</i> PS2. SMS itself asks nothing special of your console beyond "can run an ELF."</div>
+
+<h2 id="getting-sms">Getting SMS</h2>
+<p>You need one file: the compiled <code>SMS.elf</code>. Grab it from the project's builds — the
+<a href="releases.html">Releases &amp; Changelog</a> page tracks the available downloads. If you would rather build
+the ELF yourself from the source tree, the <a href="building.html">Building from Source</a> page walks through the
+Docker toolchain and <code>make</code>.</p>
+<p>The IOP driver modules SMS needs (USB, MX4SIO, HDD, MMCE, network and the rest) are <b>embedded inside the
+ELF</b>, so a single file is genuinely all you copy — there are no loose <code>.irx</code> files to place beside it.</p>
+
+<div class="callout info"><div class="h">ℹ One file, many names</div>
+You can rename the ELF to suit your loader (some setups expect <code>BOOT.ELF</code> on a memory card, for example).
+The program is the same regardless of the filename.</div>
+
+<h2 id="running-it">Running the ELF</h2>
+<p>SMS launches like any other PS2 homebrew ELF. Use whichever method your console is already set up for — the
+following are the common ones, not an exhaustive list. If your loader can point at an ELF, it can launch SMS.</p>
+
+<div class="steps">
+<div class="step"><h3>From a memory card via FreeMcBoot / OSDSYS</h3>
+<p>If your memory card runs <b>FreeMcBoot</b>, copy <code>SMS.elf</code> to the card (via a memory-card manager on
+the PS2, or an FTP/USB transfer tool) and add it to your FreeMcBoot / OSDSYS launch menu, or drop it where your
+menu already looks for ELFs. Then pick it from the boot menu at power-on. This is the most convenient setup —
+SMS is available every time you turn the console on, no disc required.</p></div>
+
+<div class="step"><h3>With wLaunchELF (uLaunchELF) off USB or a memory card</h3>
+<p><b>wLaunchELF</b> (uLaunchELF / uLE) is the community file-manager-and-launcher most homebrew users already have.
+Copy <code>SMS.elf</code> to a USB drive or memory card, open uLaunchELF, browse to the file (<code>mass:</code> for
+USB, <code>mc0:</code>/<code>mc1:</code> for a memory card) and press the launch/confirm button on it. uLaunchELF
+loads the ELF and SMS starts. There are legacy walk-through screenshots of this flow in the project's image set.</p></div>
+
+<div class="step"><h3>Launched by another loader or as an auto-boot ELF</h3>
+<p>Any launcher that can run an arbitrary ELF can start SMS — some people wire it into their boot menu so it runs
+automatically, or launch it from another homebrew front-end. As long as the loader hands control to
+<code>SMS.elf</code>, SMS behaves the same. Where SMS then <i>saves its settings</i> depends on where it was
+booted from — see <a href="#next-steps">Next steps</a>.</p></div>
+
+<div class="step"><h3>From a burned disc (older consoles)</h3>
+<p>On consoles set up for it, SMS can also be run from optical media (for example via FreeDVDBoot or a boot disc),
+which is handy on an early PS2 with no other storage. Preparing a bootable disc is a console-specific process;
+once it boots, the SMS experience is identical.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ Legacy install screenshots</div>
+The project keeps older step-by-step images (uLaunchELF, CD burning, FTP transfer) under
+<code>docs/images/</code> — files named <code>installation-*.png</code>. They predate this fork's UI refresh but
+still illustrate the general launch-from-USB and copy-to-card flows.</div>
+
+<h2 id="first-boot">First boot — what you see</h2>
+<p>When SMS starts you land on its <b>desktop</b>: a full-screen background with three bordered areas.</p>
+<ul>
+<li>The <b>DEVICE menu</b> across the top — a row of device icons (USB, MX4SIO, HDD, MMCE, network and so on).</li>
+<li>The <b>FILE menu</b> in the middle — the file browser / list for whatever device is selected.</li>
+<li>The <b>STATUS line</b> along the bottom — the current path on the left and a clock on the right.</li>
+</ul>
+<p>The active area is highlighted; each area sits inside its own rounded rectangle. You move between the device row
+and the file list with the D-pad — full navigation is covered in <a href="getting-started.html">Getting Started</a>
+and the <a href="devices.html">Devices Overview</a>.</p>
+
+<div class="callout amber"><div class="h">On a clean install, optional Autostart choices are off</div>
+Out of the box SMS starts with <b>no storage devices running</b> — the device row will look sparse until you turn
+something on. This is deliberate: you enable exactly the devices you use. Open the settings menu and flip the
+matching <b>Autostart</b> toggle (USB, MX4SIO, HDD, i.LINK, MMCE, network or UDPFS), or use its
+<b>Start …</b> item to bring it up on the spot without a
+reboot. Once a device is started it appears in the top row and you can browse into it. Full details are on the
+<a href="settings.html">Settings Reference</a>.</div>
+
+<div class="callout red"><div class="h">Three resource pairs — choose one from each</div>
+<b>MX4SIO and MMCE</b> share SIO2; the internal HDD's <b>APA/PFS</b> and <b>exFAT/BDM</b> paths share ATA; and
+<b>SMB/host and UDPFS</b> load different stacks for the one Ethernet controller. Whichever starts first owns the
+shared resource for that boot. See
+<a href="devices.html">Devices Overview</a> for the specifics.</div>
+
+<h2 id="prepare-device">Preparing a media device</h2>
+<p>SMS is a media player that browses the <b>raw filesystem</b> of whatever device you point it at and plays media
+files wherever they sit. There is <b>no required folder structure</b> — no special "movies" or "cover-art" tree to
+build. You just put files on a drive and browse to them.</p>
+<div class="steps">
+<div class="step"><h3>Format the drive FAT32 or exFAT</h3>
+<p>A standard <b>FAT32</b> or <b>exFAT</b> USB flash drive or microSD works. Format it on your PC the normal way;
+no special partitioning is needed for USB or MX4SIO. (The internal APA HDD is the exception — that path uses the
+PS2's own partition scheme; see <a href="hdd.html">Internal HDD</a>.)</p></div>
+<div class="step"><h3>Copy your media anywhere on it</h3>
+<p>Drop your videos, music and pictures onto the drive in whatever folders you like. SMS recognises files by
+extension — AVI/DivX/Xvid, <code>mp4v</code> MP4 and MPG/MPEG for video; MP2/MP3, AAC, AC3, FLAC, OGG and WMA
+for audio; JPEG for pictures; plus M3U playlists and external
+SRT/SUB subtitles. The full list is on the <a href="video.html">Video</a> and <a href="audio.html">Audio</a>
+pages.</p></div>
+<div class="step"><h3>Plug it in and start the device in SMS</h3>
+<p>Connect the drive, then start the matching device from the SMS device menu or its Autostart toggle. Your files
+appear in the browser, ready to open with <b>Cross</b>. That is it — no import step, no database.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ Device names you'll see</div>
+BDM mass-storage devices (USB, MX4SIO, exFAT HDD, i.LINK) all appear as <code>massN:</code> where N is
+0,&nbsp;1,&nbsp;2… MMCE units show as <code>mmce0:</code>/<code>mmce1:</code>, the internal APA HDD as
+<code>hdd0:</code>, UDPFS as <code>udpfs:</code>, and optical discs via <code>cdfs</code>. You rarely need to type these — you pick devices by
+their icon — but they show up in the status line's path.</div>
+
+<h2 id="next-steps">Next steps</h2>
+<p>SMS is running and a device is prepared — now go play something and tune the setup:</p>
+<div class="grid">
+<a class="tile" href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span><b>Getting Started</b><span>Play your first file, end to end</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>Every storage source explained</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Autostart toggles &amp; options</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>microSD playback — the headline</span></a>
+<a class="tile" href="network.html"><span class="icon icon-smb" aria-hidden="true"></span><b>Network Setup</b><span>On-screen IP, SMB &amp; UDPFS</span></a>
+<a class="tile" href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span><b>Releases</b><span>Download the latest ELF</span></a>
+</div>
+
+<details class="deep"><summary>Where do my settings get saved?</summary>
+<p>Use <b>Save settings</b> after changes. On a remountable launch source, <code>SMS.cfg</code> normally lives beside the ELF even when a memory card is fitted; <code>SMS.smb</code> follows its resolved directory. See <a href="configuration.html">Config Files &amp; Paths</a> for card-slot, network-file and fallback rules.</p>
+</details>
+
+<details class="deep"><summary>Do I have to build my media into an OPL-style folder tree?</summary>
+<p>No. SMS is not OPL — there are no ISOs, no <code>VMC</code>, no <code>ul.*</code> files and no coverart folders.
+It plays whatever media files it finds, wherever they are on the drive. Just copy your files on and browse to
+them.</p>
+</details>
+
+<div class="note"><p><b>Boot-source exception:</b> optional Autostart flags default off, but SMS may start/remount the device holding its ELF/config during startup. A source already visible after first boot does not mean another Autostart choice was saved. See <a href="configuration.html">configuration discovery</a>.</p></div>

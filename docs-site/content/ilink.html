@@ -1,0 +1,167 @@
+<h1>i.LINK (IEEE&nbsp;1394 / FireWire)</h1>
+<p class="lead">Some early PlayStation&nbsp;2 models carry a small <b>i.LINK</b> port — Sony's name for
+<b>IEEE&nbsp;1394</b>, the connector the rest of the world calls <b>FireWire</b>. This fork of SMS can bring an
+external i.LINK drive online and play media straight off it, exactly like a USB stick. The drive shows up in the
+device menu as a <code>massN:</code> volume, so once it appears you browse and play from it with the same controls
+you use everywhere else in SMS.</p>
+
+<div class="callout info"><div class="h">ℹ At a glance</div>
+An external <b>FireWire / IEEE&nbsp;1394</b> drive plugged into the PS2's <b>i.LINK</b> port is mounted by SMS as a
+<b>BDM mass device</b> (<code>mass0:</code>, <code>mass1:</code>, …). Format it <b>FAT32</b> or <b>exFAT</b>, turn on
+<b>Autostart i.LINK</b> (or use <b>Start i.LINK now</b>), give it a couple of seconds to be discovered, then browse
+and play. This has been <b>confirmed working on hardware</b> in this fork.</div>
+
+<h2 id="what-is-ilink">What is i.LINK?</h2>
+<p><b>i.LINK</b> is Sony's branding for the <b>IEEE&nbsp;1394</b> serial bus — the same standard sold elsewhere as
+<b>FireWire</b> (Apple) or <b>Lynx</b> (Texas Instruments). Many PS2 models expose a 4-pin i.LINK port on the front or
+side of the console. It was originally intended for connecting the PS2 to other PS2s and to digital video gear; in
+practice, on homebrew, it is a handy way to attach an <b>external hard drive or SSD enclosure</b> that speaks
+FireWire.</p>
+
+<p>When SMS starts its i.LINK support, it loads the IOP driver modules that walk the FireWire bus, find any attached
+storage, log in to it and expose its partitions to the console's block-device layer. From that point on the drive is
+just another <b>BDM mass device</b> — the same generic storage plumbing that USB sticks, MX4SIO microSD cards and
+exFAT internal HDDs all ride on. That is why an i.LINK drive appears as <code>massN:</code> and behaves identically to
+a USB drive once it is mounted: SMS does not treat i.LINK as a special "kind" of media, only as another source of
+<code>massN:</code> volumes.</p>
+
+<div class="callout amber"><div class="h">Not every PS2 has i.LINK</div>
+Later fat models and slimline PS2s can lack the i.LINK port; do not assume that a fat case guarantees one. If your console has no FireWire connector, this
+feature simply has nothing to attach to — use <a href="usb.html">USB</a>, <a href="mx4sio.html">MX4SIO</a> or the
+<a href="hdd.html">internal HDD</a> instead. Check the front and sides of your console for a small 4-pin
+i.LINK-labelled socket before buying a cable.</div>
+
+<h2 id="compatibility">Compatibility</h2>
+<p>i.LINK storage in SMS is for <b>external FireWire drives</b>: a hard disk or SSD in an enclosure (or a dock) that
+connects over IEEE&nbsp;1394. The drive is read through the same filesystem layer as every other BDM mass device, so
+the same formatting rules apply.</p>
+
+<table data-sortable>
+<thead><tr><th>Property</th><th>What works</th></tr></thead>
+<tbody>
+<tr><td>Connection</td><td>i.LINK / IEEE&nbsp;1394 / FireWire, into the PS2's i.LINK port</td></tr>
+<tr><td>Device type</td><td>External hard drive or SSD enclosure that implements SBP-2 storage</td></tr>
+<tr><td>Filesystem</td><td><b>FAT32</b> or <b>exFAT</b></td></tr>
+<tr><td>Appears as</td><td><code>massN:</code> (shares the BDM namespace with USB, MX4SIO and ATA/exFAT HDD)</td></tr>
+<tr><td>Role in SMS</td><td>A browsable media source — play video, audio and pictures directly from it</td></tr>
+</tbody>
+</table>
+
+<div class="callout info"><div class="h">ℹ A modest note on tested drives</div>
+i.LINK support is <b>confirmed working on real hardware</b> in this fork, mounting an exFAT drive over FireWire. That
+said, the FireWire enclosure market is wide and varied, and only a small number of drives have actually been tried.
+If your particular enclosure does not come up, it may be an enclosure/bridge-chip quirk rather than a problem
+with your media — try a different enclosure or fall back to <a href="usb.html">USB</a>.</div>
+
+<h2 id="preparing">Preparing the drive</h2>
+<p>Set the drive up on your PC the same way you would prepare a USB drive for SMS, then copy your media onto it.</p>
+
+<div class="steps">
+<div class="step"><h3>Format FAT32 or exFAT</h3>
+<p>On your computer, format the FireWire drive as <b>FAT32</b> or <b>exFAT</b>. exFAT is the easy choice for large
+drives and large files; FAT32 is fine for smaller drives.</p></div>
+
+<div class="step"><h3>Copy your media on</h3>
+<p>Drop your video, audio and picture files onto the drive. SMS browses the <b>raw filesystem</b> — there is no
+mandatory folder layout to follow. Put your files wherever you like (a simple folder such as <code>/Movies</code> or
+<code>/Music</code> just keeps things tidy) and SMS will let you navigate to them.</p></div>
+
+<div class="step"><h3>Eject, connect, and power the drive</h3>
+<p>Safely eject the drive from your PC, then plug it into the PS2's <b>i.LINK</b> port with a FireWire cable. If your
+enclosure needs external power, make sure it is powered and the disk is spun up before (or as) SMS looks for it.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ Which formats will play</div>
+Any file SMS understands will play from an i.LINK drive: <b>video</b> (DivX / XviD / MPEG-4 Part&nbsp;2 AVI,
+<code>mp4v</code> MP4, MPEG-1/2 program streams), <b>audio</b> (MP2/MP3, AAC, AC3, FLAC, OGG&nbsp;Vorbis, WMA)
+and <b>JPEG</b> pictures, plus
+<b>M3U</b> playlists and external <b>SRT / SUB</b> subtitles. See <a href="video.html">Video Playback</a> and
+<a href="audio.html">Audio &amp; Playlists</a> for the full detail.</div>
+
+<h2 id="enabling">Enabling i.LINK in SMS</h2>
+<p>On a clean install optional Autostart choices are off — you turn on the devices you want. i.LINK is off until you enable it, in
+one of two ways.</p>
+
+<div class="steps">
+<div class="step"><h3>Turn on Autostart i.LINK (persistent)</h3>
+<p>In the settings menu, enable the <b>Autostart i.LINK</b> toggle. From then on, every time SMS boots it will bring
+the FireWire bus up and look for an attached drive automatically. This is the "set it and forget it" option if you
+keep a drive on the i.LINK port. Your choice is saved with the rest of your settings (see <a href="settings.html">Settings</a>).</p></div>
+
+<div class="step"><h3>Or use "Start i.LINK now" (on demand)</h3>
+<p>If i.LINK is not already running, a <b>Start i.LINK now</b> item is available so you can bring it up on the spot —
+no reboot needed. Handy when you only occasionally attach a FireWire drive and would rather not auto-start it every
+boot.</p></div>
+
+<div class="step"><h3>Give it a couple of seconds</h3>
+<p>FireWire discovery is not instant. After i.LINK starts, the driver needs a <b>short moment</b> — on the order of a
+couple of seconds — to discover the drive on the bus and log in to it before it appears in the device menu. If it does
+not show up immediately, wait a beat; this delay is normal.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">Have the drive connected and ready first</div>
+Because discovery happens shortly after i.LINK starts, plug the drive in and make sure it is powered and spun up
+<b>before</b> you enable Autostart i.LINK or press Start i.LINK now. A drive that is still spinning up, or connected
+after the scan, may be missed until the next start.</div>
+
+<h2 id="browse-and-play">Browse &amp; play</h2>
+<p>Once the drive is discovered it appears in the top <b>device menu</b> as a <code>massN:</code> volume. From there it
+behaves exactly like any other storage device in SMS:</p>
+
+<div class="steps">
+<div class="step"><h3>Pick the device</h3>
+<p>In the device menu at the top, use <b>Left / Right</b> to highlight your i.LINK volume (a <code>massN:</code>
+entry), then press <b>Down</b> to drop into the file list.</p></div>
+
+<div class="step"><h3>Navigate to your file</h3>
+<p>In the file list, move with <b>Up / Down</b>, page through long lists with <b>L1 / L2</b>, open a folder or start a
+file with <b>Cross</b>, and go up one level with <b>Triangle</b>. The bottom status line shows your current path on
+the left and a clock on the right.</p></div>
+
+<div class="step"><h3>Play</h3>
+<p>Open a video, track or picture and it plays straight from the FireWire drive. During playback, <b>Select</b>
+pauses, <b>Start</b> resumes, and <b>Triangle</b> stops and returns you to the browser.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ Which massN: is my i.LINK drive?</div>
+USB, MX4SIO, i.LINK and exFAT/ATA HDD all share the single <code>massN:</code> numbering pool, and the number a device
+gets depends on what started and in what order. If you have several BDM devices connected at once, the simplest way to
+tell them apart is to open each <code>massN:</code> entry and recognise its contents. With only the i.LINK drive
+attached it will typically be <code>mass0:</code>.</div>
+
+<h2 id="notes">Notes &amp; good to know</h2>
+<ul class="checklist">
+<li><b>Its own bus.</b> i.LINK runs over the FireWire (IEEE&nbsp;1394) bus, independent of USB and of the SIO2 /
+memory-card bus. It happily works <b>alongside USB and MX4SIO</b> at the same time — there is no conflict between
+them.</li>
+<li><b>Confirmed on hardware.</b> i.LINK storage has been <b>tested and works on a real PS2</b> in this fork, mounting
+an exFAT drive over FireWire next to the other working devices.</li>
+<li><b>A couple of seconds to appear.</b> The short discovery/login delay after starting i.LINK is expected — give the
+bus a moment before assuming the drive is not there.</li>
+<li><b>FAT32 or exFAT only.</b> Keep the drive formatted FAT32 or exFAT; other filesystems are not read.</li>
+<li><b>No special folder tree.</b> SMS reads the raw filesystem and plays media wherever it sits — there is no required
+directory layout to build.</li>
+</ul>
+
+<details class="deep"><summary>Why does i.LINK take a moment to show up, when USB is instant?</summary>
+<p>FireWire storage is reached over a discovery-and-login handshake: after the bus comes up, the driver has to
+enumerate the devices on it, find the storage node, and log in to it before its partitions can be mounted. That
+handshake takes a short while — on the order of a couple of seconds — whereas USB tends to enumerate faster. The
+practical upshot is simply to have the drive connected, powered and spun up before you start i.LINK, and to wait a
+beat for the <code>massN:</code> entry to appear rather than assuming nothing happened.</p></details>
+
+<details class="deep"><summary>Can I use i.LINK and the internal HDD together?</summary>
+<p>Yes. i.LINK is an <i>external</i> FireWire device on its own bus, so it does not clash with the internal HDD's
+ATA bus. The one exclusivity that lives on the internal ATA bus is between the classic <b>APA/PFS</b> HDD path and the
+<b>exFAT/ATA (BDM)</b> HDD path — you pick one of those two for the internal drive (see <a href="hdd.html">Internal
+HDD</a>). i.LINK sits outside that entirely and can run at the same time as either.</p></details>
+
+<div class="callout info"><div class="h">ℹ Related pages</div>
+<a href="usb.html">USB</a> and <a href="mx4sio.html">MX4SIO</a> are the other BDM mass devices and behave the same
+way once mounted. For the internal drive (APA and exFAT) see <a href="hdd.html">Internal HDD</a>. For the full list of
+per-device Autostart toggles, see the <a href="settings.html">Settings Reference</a>. For a bird's-eye view of every
+storage backend, see the <a href="devices.html">Devices Overview</a>.</div>
+
+<p class="audit-source">The driver uses SBP-2/SCSI over IEEE 1394, not PS2 ATA commands. Historical project documentation reports an exFAT enclosure test; it does not establish every bridge, drive or console combination. Keep each media file below 4 GiB.</p>
+
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>

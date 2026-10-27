@@ -1,6 +1,18 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# Generated manual/wiki bytes must agree on Windows and Linux.
+docs/*.html text eol=lf
+docs/assets/*.css text eol=lf
+docs/assets/*.js text eol=lf
+docs/assets/*.svg text eol=lf
+docs/data/*.json text eol=lf
+docs/data/*.js text eol=lf
+docs/sitemap.xml text eol=lf
+docs-site/** text eol=lf
+docs-site/static/assets/*.png binary
+wiki/*.md text eol=lf
+
 # Custom for Visual Studio
 *.cs     diff=csharp
 

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controls · SMS Docs</title><meta name="description" content="SMS browser, video, audio and picture controls; sync adjustment and documentation keyboard shortcuts.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/controls.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Controls · SMS Docs"><meta property="og:description" content="SMS browser, video, audio and picture controls; sync adjustment and documentation keyboard shortcuts.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
+</head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="topbar">
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
+</header>
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html" class="active" aria-current="page"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
+<h1>Controls</h1>
+<p class="lead">The browser, video player, audio player and picture viewer use different button maps. Start from the context you are in.</p>
+<h2 id="browser">Browser</h2>
+<table><thead><tr><th>Button</th><th>Action</th></tr></thead><tbody>
+<tr><td>D-pad Left / Right</td><td>Choose a device; from the file list return to device selection.</td></tr>
+<tr><td>D-pad Down</td><td>Enter the selected device's file list; move down within it.</td></tr>
+<tr><td>D-pad Up</td><td>Move up in the file list.</td></tr>
+<tr><td>Cross</td><td>Open a folder or start the selected media file.</td></tr>
+<tr><td>Triangle</td><td>Parent folder / back to the device list.</td></tr>
+<tr><td>L1 / L2</td><td>Page up / down in a long list.</td></tr>
+<tr><td>Start</td><td>Open SMS settings.</td></tr>
+<tr><td>Circle on a folder</td><td>Play all menu: Audio, Video or Images. Randomize playlist also affects video folders.</td></tr>
+<tr><td>Circle on video</td><td>Choose an external subtitle manually.</td></tr>
+<tr><td>Select + Circle</td><td>Power off from the browser.</td></tr>
+</tbody></table>
+<h2 id="playback">Video and audio</h2>
+<table><thead><tr><th>Button</th><th>Action</th></tr></thead><tbody>
+<tr><td>Select</td><td>Pause / timeline controls.</td></tr>
+<tr><td>Start</td><td>Resume; during normal playback open the player menu.</td></tr>
+<tr><td>Triangle</td><td>Stop and return to the browser.</td></tr>
+<tr><td>Left / Right</td><td>Rewind / fast-forward; within a normal audio track, seek. Playlist transport can change entries.</td></tr>
+<tr><td>Up / Down</td><td>Volume.</td></tr>
+<tr><td>Cross (video)</td><td>Toggle on-screen timer; exit fast-forward/rewind preview.</td></tr>
+<tr><td>Square (video)</td><td>Cycle pan-scan/aspect modes.</td></tr>
+<tr><td>L1 / R1 (video)</td><td>Pan left / right; together reset pan/zoom.</td></tr>
+<tr><td>Circle (video)</td><td>Select V/A audio/video or S/V subtitle/video sync adjustment.</td></tr>
+<tr><td>L2 / R2 (video)</td><td>Decrease/increase the selected sync value by 10 ms; together reset it.</td></tr>
+</tbody></table>
+<p>Do not apply a fixed offset to every NTSC file. One community workaround used <code>V/A -00:060</code>, a 60 ms setting, not a universal six-frame correction. Compare your actual file with the offset reset first.</p>
+<p>Use the in-player menu for available audio/subtitle selections. Multiple audio tracks in a converted file still need a playback test in SMS.</p>
+<h2 id="pictures">Picture viewer</h2>
+<p>Cross or Right advances and Left goes back when a folder was opened with <b>Play all → Images</b>. A separately opened JPEG has no folder queue to advance through. Square toggles fit/actual size, Circle and R1 rotate, and Triangle returns to the browser.</p>
+<h2 id="keyboard">Documentation keyboard shortcuts</h2>
+<p>On this website, <kbd>/</kbd> focuses search when you are not typing in a field. Up/Down chooses a result, Enter opens it and Escape closes results. On narrow screens the navigation button opens the guide list. Optional cursor orbs can be disabled and default off for reduced-motion/touch users.</p>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
+</body></html>

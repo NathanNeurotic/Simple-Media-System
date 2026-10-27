@@ -1,0 +1,166 @@
+<h1>Credits &amp; Sources</h1>
+<p class="lead">Simple Media System is a community project with a long history. Every feature in this
+build stands on someone else's code and someone else's ideas — a media engine written two decades ago,
+a homebrew community that kept it alive and modern, and the storage-integration groundwork this fork
+was able to build on. This page names the people and projects it is grateful to, and cites its sources.</p>
+
+<div class="credit-hero"><div class="ch-tag">CREDITS</div>
+<h2>Built on twenty years of shared work</h2>
+<p>SMS began as one developer's quest to play good-looking video on an unmodified PlayStation 2,
+and became a community effort spanning USB, HDD, network, a GUI, a skin engine and a long list of
+formats. This fork adds storage breadth — MX4SIO playback, exFAT, i.LINK, MMCE, SMB and UDPFS —
+plus DualShock&nbsp;3/4 support. None of it would exist in isolation.</p></div>
+
+<h2 id="foundation">The foundation</h2>
+<p>The heart of SMS is <b>Eugene Plotnikov</b>'s original media player and the years of
+<a href="https://github.com/ps2homebrew">ps2homebrew</a> community work that modernised it. This
+fork's contribution is a focused one — making <b>MX4SIO</b> microSD playback work reliably and adding
+several more storage devices — but it rests entirely on that shared foundation.</p>
+
+<dl class="credits">
+<div class="credit"><dt>Eugene Plotnikov</dt><dd>The original author of Simple Media System (2001–2005). He
+built the PS2-optimised, FFmpeg-derived video/audio player that uses the console's IPU for colour
+conversion, and devised <b>CDDAFS</b> — the technique for storing data on an audio CD so an unmodified
+PS2 accepts a burned disc. Everything SMS is began here.</dd></div>
+
+<div class="credit"><dt>The ps2homebrew community</dt><dd>The maintainers and contributors who adopted and
+modernised SMS over many years — adding USB, internal-HDD, network (SMB) and playlist support, a GUI
+file browser, the <code>.smi</code> skin engine, and support for many more container and codec formats.
+The PS2SDK, the IOP module ecosystem, and the toolchain this fork builds with all come from that same
+open, community-maintained work.</dd></div>
+
+<div class="credit"><dt>KrahJohlito</dt><dd>Provided the <b>BDM + MX4SIO integration foundation</b> this fork
+builds on: loading the block-device (BDM) module stack, the memory-card/pad rework that a shared SIO2
+bus requires, and the device-menu wiring that lets MX4SIO appear as a first-class device. This
+groundwork is what made the playback fix possible to land.</dd></div>
+
+<div class="credit"><dt>El_isra, Ripto &amp; Berion</dt><dd>Additional work and testing around the MX4SIO
+effort. Real-hardware testing and feedback are what turn a build that merely compiles into one that
+actually plays — and this fork's MX4SIO support was shaped by that hands-on QA.</dd></div>
+
+<div class="credit"><dt>bbsan2k</dt><dd>Author of the <b>MMCE (Memory Card Mass Storage)</b> protocol —
+the protocol behind loading files from an <b>SD2PSX</b> or <b>MemCard PRO2</b> through the PS2's
+memory-card slot. This fork's <code>mmce0:</code> / <code>mmce1:</code> device support builds directly
+on that work. See <a href="mmce.html">MMCE</a>.</dd></div>
+
+<div class="credit"><dt>rickgaiser, Maximus32 &amp; the neutrino contributors</dt><dd>The
+<b>UDPFS / UDPRDMA</b>, ministack and SMAP foundation vendored from
+<a href="https://github.com/rickgaiser/neutrino">neutrino</a>. The working load sequence was cross-checked against
+<a href="https://github.com/saildot4k/wLaunchELF_R3Z">wLaunchELF-R3Z</a>. SMS carries documented local integration
+changes while preserving upstream attribution.</dd></div>
+
+<div class="credit"><dt>The Open PS2 Loader contributors</dt><dd>The DS3/DS4 USB and Bluetooth driver/client
+foundation vendored from <a href="https://github.com/ps2homebrew/Open-PS2-Loader">Open PS2 Loader</a>, adapted here
+for SMS's controller path and in-app Bluetooth pairing.</dd></div>
+
+<div class="credit"><dt>The FFmpeg project</dt><dd>SMS's video and audio decoders trace their heritage to
+<b>FFmpeg</b>. Plotnikov's original player was a heavily PS2-optimised port of parts of FFmpeg, and the
+decoder lineage — for AVI/MP4 MPEG-4, MPEG program streams, MP3, AAC, AC3, FLAC, OGG and more — reaches
+back to that project's contributors.</dd></div>
+
+<div class="credit"><dt>This fork</dt><dd>The storage-focused work documented on this site: the
+<b>MX4SIO microSD playback fix</b> (the headline feature), <b>exFAT internal HDD over ATA</b> alongside
+classic APA, <b>i.LINK</b> storage, <b>MMCE</b> devices, the <b>UDPFS network drive</b>, fully on-screen
+<b>network &amp; SMB setup</b>, DualShock&nbsp;3/4 integration, config that saves to the boot device, MP4 support,
+a refreshed theme and device icons, and this documentation.</dd></div>
+</dl>
+
+<h2 id="what-this-fork-adds">What this fork contributes</h2>
+<p>To be precise about which parts are new here versus inherited: this fork's own work is the
+storage-breadth layer and the playback fix that headlines it. At a user level, that means:</p>
+
+<ul class="checklist">
+<li><b>MX4SIO microSD playback</b> — video and audio now play smoothly from a microSD in an MX4SIO
+adapter, with a hardened driver that keeps playback reliable under a media player's load. See
+<a href="mx4sio.html">MX4SIO</a>.</li>
+<li><b>exFAT internal HDD over ATA</b> — modern exFAT drives read alongside the classic APA/PFS
+APA/PFS partitions. See <a href="hdd.html">Internal HDD</a>.</li>
+<li><b>i.LINK (IEEE&nbsp;1394) storage</b> — a FireWire drive as a media source. See <a href="ilink.html">i.LINK</a>.</li>
+<li><b>MMCE devices</b> — browsing media from an SD2PSX or MemCard PRO2 in the memory-card slot. See <a href="mmce.html">MMCE</a>.</li>
+<li><b>UDPFS network drive</b> — a folder-served network filesystem at <code>udpfs:</code>, distinct from UDPBD.
+See <a href="network.html#udpfs">Network Setup</a>.</li>
+<li><b>On-screen network &amp; SMB setup</b> — configure your IP and connect to a share entirely from
+the pad, no hand-edited config files. See <a href="network.html">Network Setup</a>.</li>
+<li><b>DualShock 3 / 4 support</b> — wired USB and Bluetooth input, with controller pairing inside SMS.</li>
+<li><b>MPEG-4 Part 2 MP4 playback</b> — <code>mp4v</code> video with AAC audio, covered by the hardware test pack.</li>
+<li><b>Settings that save anywhere</b> — configuration persists to the memory card or to the device SMS
+booted from. See <a href="settings.html">Settings</a>.</li>
+<li><b>A refreshed theme</b> — new desktop artwork and device icons, on the existing skin engine. See
+<a href="themes.html">Themes &amp; Skins</a>.</li>
+</ul>
+
+<h2 id="testing">Testing &amp; diagnosis</h2>
+<p>Some of the most valuable work on this fork was not writing code. Homebrew runs on hardware
+nobody has all of, and a fault nobody can reproduce is a fault nobody can fix. These people
+supplied the missing half.</p>
+
+<ul class="checklist">
+<li><b>Nadwiślański (Berion)</b> — the fork's graphics and interface work, and the sustained visual
+feedback behind the current theme, icons, splash and menu layout.</li>
+<li><b>GhostTownUS</b> — systematic hardware testing on PS2 and PSX&nbsp;(DESR), with recorded
+sessions rather than descriptions. Traced the memory-card-less IP problem, and the screen
+capture that localised the PSX boot hang to a single step. Also spotted that wLaunchELF&nbsp;R3Z
+keeps its boot driver loaded where SMS resets the IOP — which is why config beside the ELF
+had to be read at a different point in boot.</li>
+<li><b>israpps</b> — root-caused the PSX boot failure from a DESR&#8209;5000 ROM dump: the DESR
+BIOS has no <code>rom0:LIBSD</code>, only the XMB and testmode variants. That single observation
+turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own
+sound driver instead of relying on the console's.</li>
+<li><b>TnA</b> — encoder expertise behind the Media Converter: multi-pass encoding, the
+distinction between B&#8209;frames and the keyframe interval, and the push that led to real
+Xvid being used where the preset claimed it.</li>
+</ul>
+
+<h2 id="from-the-original-thanks">From the original SMS thanks</h2>
+<p>The original SMS <code>README</code> records the people and projects Eugene Plotnikov thanked during
+the project's early development. A few relevant to what SMS is today:</p>
+
+<table>
+<thead><tr><th>Credited</th><th>For</th></tr></thead>
+<tbody>
+<tr><td>Marcus R. Brown</td><td>The early exploit work that made PS2 homebrew possible in the first place</td></tr>
+<tr><td>The PS2Reality team</td><td>Inspiration and timer code</td></tr>
+<tr><td>ffmpeg contributors</td><td>The decoder heritage SMS's player is derived from</td></tr>
+<tr><td>Chris "Neovanglist" Gilbert</td><td>GS and DMA code</td></tr>
+<tr><td>gawd</td><td>The <code>audsrv</code> audio server</td></tr>
+</tbody>
+</table>
+
+<p>SMS was created by Eugene Plotnikov (copyright 2001–2005, ps2dev) and is documented by the
+ps2homebrew community. See the original project's
+<a href="https://ps2homebrew.github.io/SMS/">SMS documentation</a> for its full history.</p>
+
+<h2 id="trademarks">A note on trademarks &amp; affiliation</h2>
+<div class="callout info"><div class="h">ℹ A community project, unaffiliated with Sony</div>
+Simple Media System is a free, open-source, community project. <b>PlayStation 2</b> is a trademark of
+Sony Interactive Entertainment; this project and this fork are <b>unaffiliated</b> with Sony and are not
+official Sony software. Device and product names such as <b>SD2PSX</b>, <b>MemCard PRO2</b> and
+<b>MX4SIO</b> belong to their respective owners and are referenced only to describe the hardware SMS
+works with.</div>
+
+<h2 id="sister-sites">Sister documentation</h2>
+<p>This site is one of a small family of PlayStation 2 homebrew documentation projects. If you are here
+for SMS you may also want:</p>
+
+<div class="grid">
+<a class="tile" href="https://nathanneurotic.github.io/POPSLoader/"><span class="icon icon-book" aria-hidden="true"></span><b>POPStarter docs ↗</b><span>PS1 / POPSTARTER reference</span></a>
+<a class="tile" href="https://nathanneurotic.github.io/Open-PS2-Loader/"><span class="icon icon-book" aria-hidden="true"></span><b>RiptOPL docs ↗</b><span>Open PS2 Loader fork reference</span></a>
+</div>
+
+<details class="deep"><summary>Why is this a fork, and where does the canonical SMS live?</summary>
+<p>The community-maintained SMS project lives with the <a href="https://github.com/ps2homebrew">ps2homebrew</a>
+organisation, and its documentation is at <a href="https://ps2homebrew.github.io/SMS/">ps2homebrew.github.io/SMS</a>.
+This documentation covers a <b>downstream fork</b> focused on storage breadth — it makes MX4SIO microSD
+playback work and adds exFAT/ATA HDD, i.LINK, MMCE and UDPFS devices, moves network and SMB setup fully
+on-screen, adds DualShock&nbsp;3/4 support, and refreshes the look. It is a labour of love built on the work of everyone named above; the
+long-term home of SMS remains the community project.</p>
+</details>
+
+<h2 id="october-contributors">October continuation and documentation</h2>
+<ul><li><b>eggcatroll</b> — the parser, stream, skin, playlist and regression continuation incorporated before PR #30 merged.</li>
+<li><b>Nacheras</b> — updated Spanish strings and skin/language feedback.</li>
+<li><b>tktagmedia</b> — the reported high-resolution MPEG-2/MX4SIO conversion profile, retained with its settings and limits.</li>
+<li>Issue reporters supplied videos, logs, hardware comparisons and reproductions that remain essential to acceptance.</li></ul>
+<p>The documentation theme shares the black/cyan PS2 design of the <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a>, <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> and <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a> sites. Existing SMS artwork is reused; the original manual/XML, screenshots, historical downloads and original README/changelog sections are preserved.</p>
+<h2 id="source-audit">Source and evidence map</h2>
+<p>Use <a href="known-issues.html">Known Issues &amp; Testing</a> for the dated report status, <a href="developers.html">developer notes</a> for code/test boundaries and the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/investigations/2026-10-27-documentation-audit.md">documentation audit record</a> for the page-by-page coverage. A previous documentation claim of hardware success is retained as a historical report unless this audit has direct repeat evidence.</p>
