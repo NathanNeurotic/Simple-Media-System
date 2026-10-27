@@ -41,3 +41,29 @@ contains a nested `PCSX2/` directory. This repository includes no BIOS files.
 Generated streams, binaries, objects and pixel captures are ignored. Record the
 player/probe source revision, input hash, mode, decoder dimensions, emulator
 version or real-console model, and full final status line with each result.
+
+## Delayed-consumer frame-pool control
+
+`make POOL=1 COLOR16=0` or `make POOL=1 COLOR16=1` builds `pool0/probe.elf` or
+`pool1/probe.elf`. Use a stream with at least eight frames, such as the 640x480
+control in the investigation report, and compare the five captured frames with
+the same `compare.py` command. The input size limit is unchanged.
+
+This control includes the actual `SMS_MPEG12.c`, ring buffer and libmpeg/IPU
+code. A producer runs the codec, while a consumer at the same player thread
+priority retains each output buffer for 1,000 H-SYNC ticks (about 64 ms at NTSC)
+before capturing and releasing it. The consumer's frame hash must remain stable
+through that hold. The codec wrapper also counts entries that would target a
+renderer-owned buffer. It tracks libmpeg's first/next-picture function changes
+without changing the decoder algorithm.
+
+The expected final marker is
+`[sms-pool] exit=0 frames=5 produced=5 overwrites=0 changed=0`. Compare baseline
+and candidate in separate source copies with identical input and probe code.
+Build modes have separate object directories, but switching the codec source
+still requires a rebuild. The host regression is
+`python tools/test_mpeg12_frame_lifetime.py`.
+
+The pool control replaces framebuffer construction and GS upload with RAM
+buffers and a delayed consumer. It reproduces ownership failures, not the
+complete player's display, demuxing, device timing or the reporter's exact file.

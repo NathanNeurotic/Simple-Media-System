@@ -28,6 +28,37 @@ Audit date: 2026-10-26 (America/Los_Angeles). Repository:
 
 ## Fixes implemented in this follow-up
 
+### Continuation after eggcatroll's `8547573` (2026-10-27)
+
+Picked up eggcatroll's 12-commit continuation with a fast-forward; their parser,
+stream, M3U, skin, converter and regression work is retained. PR #21 is now closed
+unmerged at the same draft MKV head; it remains separate from these fixes.
+
+The pending 512x480 / 640x480 raw-decoder matrix has now run in both output
+depths. All four five-frame controls completed successfully. The greater-than-
+1,023-macroblock conversion continuation did not reproduce a failure on these
+synthetic inputs in PCSX2.
+
+Further inspection found that MPEG-1/2 reused RGB buffers without waiting for
+renderer ownership to end, and freed all RGB buffers on size changes without
+draining pending owners. Actual-function host tests reproduce both defects.
+The fix waits on the existing completion flag, using the same ownership model
+as MPEG-4 and preserving initial allocation of NULL frames.
+
+A real-codec/ring-buffer/IPU emulator control now reproduces overwritten held
+pixel buffers at `8547573` with a deliberately delayed consumer: both depths
+record two owned targets and two changed held buffers in five frames. The
+candidate records zero/zero, completes with exit 0 and matches the raw controls'
+five-frame comparison errors. See [the color report](2026-10-26-mpeg-color-control.md)
+for input hashes, measurements and excluded paths. This is a tested buffer-
+lifetime fix candidate, not reporter or physical-console color acceptance.
+
+All 16 host regression scripts, including the new
+`tools/test_mpeg12_frame_lifetime.py`, and the dev9 ABI gate pass together. The
+new test is part of compilation CI. No converter code was changed in this
+continuation. Before merge, retain the full-player pause/resume, seek, stop,
+sequence-change and same-file reporter checks.
+
 ### Continuation from e38020e: parser, stream and skin regressions
 
 The next source audit reproduced additional defects against `e38020e` and
@@ -365,12 +396,12 @@ baseline failure logs and a backup of the pre-existing unfinished audio test.
 | --- | --- |
 | [#29 MPEG-2/AC3 freeze](https://github.com/NathanNeurotic/Simple-Media-System/issues/29) | Highest regression priority. Test the unchanged reporter MPG with the new standard and DIAG builds and the same USB/boot setup, against 2.9rev4. Obtain a short failing sample if it still fails. Diagnostic numbers are decimal: MPEG-PS is **E48 probe mpg**, PTS phases are **E50/E51/E52**. Save the last code and exact artifact identity. Existing comment text saying E40-E4B uses the wrong notation. |
 | [#24 high-bitrate stutter](https://github.com/NathanNeurotic/Simple-Media-System/issues/24) | The reporter rejected the larger-buffer candidate in `aa801fec`; the current 32 KiB synchronous refill batch remains unconfirmed. Compare one unchanged MPG on USB and MX4SIO with 2.9rev4 and the new build. Measure bytes/call, elapsed read time, queue starvation and decode time before selecting a throughput change. A smaller batch does not add read-ahead or reduce the total RPC count. If starvation is proven, design an owned reader queue/cancellation path; do not switch shared fileXio global async mode casually. Preserve existing 4 KiB MX4SIO/MMCE calls and UDPFS sizing. |
-| [#20 green color](https://github.com/NathanNeurotic/Simple-Media-System/issues/20), [#23 red fluctuation](https://github.com/NathanNeurotic/Simple-Media-System/issues/23) | Unresolved. The forced BT.601/range converter change was tested and failed/worsened the result, then reverted. No decoder/color coefficient fix is supplied by this audit. Obtain the exact converted failing MPG and source/FFmpeg log. Host-decode that MPG, then compare the identical bytes in 2.9rev4/current SMS with fixed PS2 video mode, RGB/component output, cable/display and 16/32-bit color settings. Compare converter outputs using one fixed player separately. An ignored matrix tag alone does not explain or prove the cause of abrupt saturated color patches. |
+| [#20 green color](https://github.com/NathanNeurotic/Simple-Media-System/issues/20), [#23 red fluctuation](https://github.com/NathanNeurotic/Simple-Media-System/issues/23) | Reporter acceptance remains open. The newer paired recordings and converter logs are recorded in the color report; the original MPG bytes/hash are still missing. Raw 512/640x480 controls pass both depths, while a delayed-consumer control reproduces an RGB buffer overwrite. The ownership fix removes that failure in both depths. Test the candidate with the exact failing MPG, fixed video/cable/display settings and full-player pause/seek/stop controls. No color coefficient change is supplied. The forced BT.601/range converter change remains reverted. |
 | [#10 MP4 stall](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) | Large skips, failed-seek bookkeeping, disabled-stream EOF loops, truncated composition tables, 32-bit DTS multiplication and incomplete sample reads are addressed in code. The 0:28 start and 0:35 video/audio-loop stall are still unproven. Get the exact original and converter-produced files; record atom layout, codecs, timestamps, sample tables, file size and device offsets. Test moov-at-end and fast-start controls, including a device large-offset case. A fast open is not decode-stall acceptance. |
 | [#27 skin restart](https://github.com/NathanNeurotic/Simple-Media-System/issues/27) | Existing PR repaint candidate needs a USB boot with default PAL/NTSC mode: import/select skin, save configuration, restart, confirm the background. Also retain MC boot and non-default display-mode controls. Spanish submission is now integrated; validate glyphs, clipping and the installed language pack on console. Translation acceptance does not close the skin defect. |
 | [#25 shuffle](https://github.com/NathanNeurotic/Simple-Media-System/issues/25) | Folder shuffle implementation exists and failed-open/lifetime defects are now fixed. Test Randomize-playlist on/off with Play all -> Video, every eligible file appearing once, Stop/next behavior, a missing/unreadable item and a large folder. The toggle remains on the MP3 settings page, so document its effect on video folders. Console behavior is not yet accepted. |
 | [#22 converter tracks/subtitles](https://github.com/NathanNeurotic/Simple-Media-System/issues/22) | Multi-audio output, external/embedded text-subtitle burn-in, keep-source-SD sizing and the requested 10 Mbps/GOP 6 convenience preset are implemented and host-tested. Validate actual audio switching, SD aspect/display and high-quality Xvid/PCM on SMS with suitable storage. Switchable embedded subtitles, sidecar export and bitmap subtitles remain outside the implemented burn-in path; decide whether any is needed after testing the requested workflow. Uncompressed 48 kHz stereo PCM is not a bit-identical source-preservation promise. |
-| [#26 poster grid](https://github.com/NathanNeurotic/Simple-Media-System/issues/26) | No implementation in either open PR. A separate UI feature remains. Define artwork naming (e.g. same-basename JPEG), fallback behavior, dimensions, navigation and memory/VRAM budget. Reuse existing JPEG decode/rescale/upload for an initial bounded visible-page cache; release resources when changing folder or starting playback. Account for missing/corrupt/oversized art and slow/disconnected storage. PNG support must be established separately. Keep the normal list usable without artwork. |
+| [#26 poster grid](https://github.com/NathanNeurotic/Simple-Media-System/issues/26) | No implementation in PR #30 or the closed MKV draft. A separate UI feature remains. Define artwork naming (e.g. same-basename JPEG), fallback behavior, dimensions, navigation and memory/VRAM budget. Reuse existing JPEG decode/rescale/upload for an initial bounded visible-page cache; release resources when changing folder or starting playback. Account for missing/corrupt/oversized art and slow/disconnected storage. PNG support must be established separately. Keep the normal list usable without artwork. |
 
 ## Next-agent execution order
 

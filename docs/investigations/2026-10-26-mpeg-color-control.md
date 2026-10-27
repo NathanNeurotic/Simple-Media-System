@@ -1,10 +1,10 @@
-# Decoder-only color control for #20 and #23
+# MPEG color controls and frame-buffer ownership for #20 and #23
 
-This investigation did not reproduce or fix the reported saturated red/green
-patches. It adds a repeatable way to separate raw MPEG-1/2 decoding from demux,
-player buffers, GS upload and physical video output before choosing another
-color change. The forced BT.601/range converter transform was already rejected
-by reporter testing and remains reverted.
+The raw decoder controls did not reproduce the reported saturated red/green
+patches. A subsequent delayed-consumer experiment reproduced a player-codec
+buffer ownership defect and now has a tested fix candidate. That result does
+not establish acceptance of the reporter's exact files. The forced BT.601/range
+converter transform was already rejected by reporter testing and remains reverted.
 
 ## Reproduction and identity
 
@@ -48,7 +48,7 @@ suggested initial 32/16-bit framebuffer mismatch is therefore not established
 by this path. No speculative change to color coefficients, decoder patch
 addresses or framebuffer format was made.
 
-## New reporter evidence and pending continuation control
+## New reporter evidence and completed continuation control
 
 The reporter has now supplied paired player recordings and converter logs in
 [#20's follow-up](https://github.com/NathanNeurotic/Simple-Media-System/issues/20#issuecomment-6433977603)
@@ -69,10 +69,10 @@ The successful small probe did not exercise that continuation. A useful next
 control is 512x480 (**960 macroblocks**) versus 640x480, each in both 16-bit and
 32-bit modes, using the reported frame rate/GOP/B-frame settings.
 
-The following synthetic controls and their PS2/emulator runs **have not been
-executed** in this follow-up. Generate from the repository root, then run each
-elementary stream through the existing probe workflow in an isolated build;
-preserve each input, ELF, log and pixel capture separately:
+The following controls were generated and run on 2026-10-27 using FFmpeg
+`n8.1.3-9-g29e619e767-20260930`, the existing GCC toolchain and the isolated
+PCSX2 2.9.52 setup. Input, ELF, log and capture files were retained separately
+under ignored `build/color-continuation/`:
 
 ```sh
 mkdir -p build/color-continuation
@@ -85,11 +85,68 @@ for probe_width in 512 640; do
 done
 ```
 
-If both dimensions pass the decoder-only comparison, repeat with the same
-elementary streams remuxed into MPEG-PS through the full player to include
-packet queues, GS upload and display. A size-dependent failure would narrow
-the investigation; it would not alone prove the continuation is its cause.
-No decoder source change or color fix is established by this audit.
+| Raw decoder control | Macroblocks | Exit / frames | Mean absolute channel error |
+| --- | ---: | --- | ---: |
+| 512x480, 32-bit | 960 | 0 / 5 | 1.2013096788194444 |
+| 512x480, 16-bit | 960 | 0 / 5 | 3.5627208116319444 |
+| 640x480, 32-bit | 1,200 | 0 / 5 | 1.083361545138889 |
+| 640x480, 16-bit | 1,200 | 0 / 5 | 3.4660401475694442 |
+
+Input SHA-256 values:
+
+- 512x480: `e8826fa1ba33066781a4af49b60238c016d1824dded71e2faa5e89dbbe9fdc39`.
+- 640x480: `6ba28c1a7e61749883ffc7b68abebcd340b7abafacdf5d9a05ef00bd22b9767a`.
+
+All four decoded the same five frames as the host reference. The larger case
+exercised the conversion continuation successfully in emulation. This does not
+rule out a content-dependent or physical-console fault, but supplies no basis
+for changing the continuation code or color coefficients on this control.
+
+## Reproduced frame-pool ownership defect and fix candidate
+
+`SMS_MPEG12.c` cycled through three RGB buffers and called `MPEG_Picture` before
+checking whether the target frame was still queued or uploading. A free output
+pointer-queue slot does not prove the referenced pixel buffer is free. The
+existing MPEG-4 path already waits for `m_FrameType < 0`, which the GIF completion
+handler publishes after upload. MPEG-1/2 omitted that ownership check. Its
+sequence-size callback also destroyed every RGB buffer without draining owners.
+
+The candidate waits for the selected allocated frame before decoding and waits
+for all allocated frames before a size-changing reallocation. Initial NULL
+buffers are skipped, so first-sequence allocation remains possible. It uses the
+existing player thread priority and renderer completion flag. No color matrix,
+IPU conversion command or storage protocol was changed.
+
+`tools/test_mpeg12_frame_lifetime.py` compiles the actual callback/decode functions
+under ASan/UBSan with controlled renderer/decoder stubs. At baseline `8547573`,
+separate tests fail because the decoder targets an owned frame and resize frees
+an owned frame. The candidate passes delayed-release, resize-drain, first
+allocation, same-size sequence, EOF and pool-wrap cases. Target disassembly
+confirms the completion flag is reloaded on every wait iteration.
+
+The new `POOL=1` probe then exercises the actual codec, ring buffer, libmpeg,
+IPU conversion and kernel scheduling in PCSX2. Its consumer has the same thread
+priority as the producer and holds each RGB buffer for 1,000 H-SYNC ticks before
+capturing/releasing it. Framebuffer construction and GS upload are RAM/test
+replacements. Baseline and candidate use identical probe code and the 640x480
+input above. Both complete all five frames:
+
+| Codec source / output | Targets still owned | Held buffers whose hash changed | Exit | Mean absolute channel error |
+| --- | ---: | ---: | ---: | ---: |
+| `8547573`, 32-bit | 2 | 2 | 1 | 4.123024956597222 |
+| Candidate, 32-bit | 0 | 0 | 0 | 1.083361545138889 |
+| `8547573`, 16-bit | 2 | 2 | 1 | 6.344892144097222 |
+| Candidate, 16-bit | 0 | 0 | 0 | 3.4660401475694442 |
+
+This is an observed overwrite of held pixel buffers. The candidate restores
+the same five-frame output as the raw decoder controls under this scheduling
+stress. It is a concrete lifetime fix, while causation of the reporter's exact
+color symptoms still needs their file and affected-console test.
+
+Final pool-control ELF SHA-256 values and logs are retained alongside each
+capture in `build/color-continuation/pool-{baseline,fixed}/mode{0,1}/`.
+The final stress logs use the 1,000-tick alarm; earlier exploratory logs that
+used voluntary yields alone are not the final delayed-consumer result.
 
 ## What remains
 
@@ -104,4 +161,7 @@ Keep byte identity when extracting; do not re-encode away the failure.
 The probe excludes the full demuxer, player packet queues, framebuffer upload
 chains, GS display, physical PS2 IPU and device timing. A successful synthetic
 progressive emulator decode neither establishes full-player correctness nor
-rules out a content-dependent decoder defect. Issues #20/#23 remain open.
+rules out a content-dependent decoder defect. Test the ownership candidate with
+the actual player, including pause/resume, seek, stop and sequence-size changes;
+the change deliberately constrains producer/render scheduling. Issues #20/#23
+remain open for that acceptance work.
