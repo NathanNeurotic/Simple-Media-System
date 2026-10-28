@@ -1,0 +1,202 @@
+<h1>CD / DVD / CDDA</h1>
+<p class="lead">The optical drive is where SMS began. Long before USB sticks and SD adapters, SMS's whole reason
+for existing was to play a good-resolution movie <b>from a burned disc on a completely unmodified PlayStation 2</b> —
+no hard drive, no network adapter, no modchip. This page covers the disc types SMS understands, the clever
+<b>CDDAFS</b> trick that started it all, DVD-Video and data-disc playback, plain Audio CDs, and how to burn discs
+that your PS2 will actually read.</p>
+
+<div class="callout info"><div class="h">ℹ How discs appear in SMS</div>
+Insert a disc and give the drive a moment to spin up and identify it. SMS auto-detects optical media and shows a
+<b>disc device</b> in the DEVICE menu (the top row of device icons); press <kbd>Down</kbd> to drop into the file
+list and browse it. A data disc (CDDAFS, ISO, or DVD-Video) shows its folders and media files; an Audio CD shows
+its tracks. You do not mount anything by hand — SMS reads the disc's table of contents and presents whatever it
+finds. If you would rather SMS <i>not</i> touch the drive at all (for example on a console where probing the drive
+is slow or unwanted), there is a <b>Disable CD/DVD</b> option in Device settings — see <a href="#notes">Notes</a>.
+</div>
+
+<h2 id="disc-types">The disc types SMS understands</h2>
+<p>SMS reads four kinds of optical media, each with its own history and its own use. All of them work on a stock
+console; none require a chip.</p>
+<table data-sortable>
+<thead><tr><th>Disc type</th><th>What it is</th><th>What you get</th></tr></thead>
+<tbody>
+<tr><td><b>CDDAFS</b></td><td>Data hidden on an audio-CD layout so a stock PS2 accepts a burned CD-R</td><td>Browse a small filesystem of media files burned onto the disc — the original SMS trick</td></tr>
+<tr><td><b>DVD-Video</b></td><td>A disc authored in the DVD-Video (UDF) layout, holding your media files</td><td>Play video/audio files straight from a burned DVD on an unmodded PS2</td></tr>
+<tr><td><b>Data CD / DVD (ISO)</b></td><td>An ordinary ISO 9660 / UDF data disc</td><td>Browse the disc like any other filesystem and open media files on it</td></tr>
+<tr><td><b>Audio CD (CDDA)</b></td><td>A standard Red Book music CD</td><td>Play the CD's audio tracks directly</td></tr>
+</tbody>
+</table>
+<p>Whichever disc you insert, the flow is the same: SMS identifies it, shows a disc device, and lets you browse or
+play. The differences below are about <i>how the disc was made</i>, not how you use it once it's in the tray.</p>
+
+<h2 id="cddafs">CDDAFS — the burned-CD trick that started SMS</h2>
+<p>A stock PlayStation 2 refuses to boot or read a burned data CD-R — the console's copy protection treats it as an
+"illegal" disc. Eugene Plotnikov's answer, borrowing an idea from Drakonite's UMCDR, was <b>CDDAFS</b>: a way of
+storing ordinary data files on a disc that is physically laid out as an <b>audio CD</b>. Because the PS2 happily
+authenticates an audio-CD-shaped disc, a CDDAFS disc reads on (in Eugene's words) hopefully any PS2 — no modchip
+needed. This is the very first component of SMS, and the reason the project is a "system" and not just a player.</p>
+
+<div class="callout info"><div class="h">ℹ What CDDAFS actually is</div>
+In Eugene's own description, CDDAFS "just stores data on a CD audio disk, which can be read on any PS2." The disc's
+audio tracks act as <b>directories</b>, and a control track at the start holds global disc information — a name, a
+description, even little icon bitmaps that a browser can decorate itself with. It is a tiny, purpose-built
+filesystem riding inside an audio-CD table of contents. SMS reads that structure directly and shows you the files
+inside.
+</div>
+
+<h3 id="cddafs-build">Building a CDDAFS disc (conceptually)</h3>
+<p>You do not author a CDDAFS disc on the PS2 — you build it on a PC and burn it. Eugene wrote a companion Windows
+program, <b>CDXplorer</b>, whose job is to take your files and produce a <b>cue/bin pair</b> describing the special
+audio-CD-with-data layout. You then burn that cue/bin to a CD-R with a burning program, using a <b>Disc-At-Once</b>
+mode (Eugene used Nero's "Disc-At-Once / 96" option). CDXplorer can also read an existing CDDAFS disc back, so you
+can copy your files off again.</p>
+
+<div class="callout amber"><div class="h">CDDAFS is a create-on-PC, play-on-PS2 workflow</div>
+The CDDAFS filesystem is intentionally simple, and the tooling is old and Windows-only. Treat the exact cue/bin
+build as a PC task with CDXplorer (or a compatible CDDAFS builder), not something you do from the SMS menus. This
+page describes CDDAFS <i>conceptually</i> so you understand what the disc is and why it works — for the precise
+button-by-button burn, follow the tool you use to make the disc.
+</div>
+
+<figure>
+  <img src="images/usage-cdxplorer01.png" alt="CDXplorer on Windows showing a new, empty CDDAFS tree ready to have files added.">
+  <figcaption>CDXplorer, Eugene's PC companion tool, building a new CDDAFS layout before it writes the cue/bin pair
+  you burn to CD-R.</figcaption>
+</figure>
+
+<figure>
+  <img src="images/installation-cdburn01.png" alt="A burning program's Open dialog filtered to image files, with a CDDAFS .cue file selected.">
+  <figcaption>Burning a CDDAFS disc: your burning software opens the <code>.cue</code> that CDXplorer produced and
+  writes it to a blank CD-R.</figcaption>
+</figure>
+
+<div class="steps">
+<div class="step"><h3>Add your files on the PC</h3>
+<p>In CDXplorer (or a compatible CDDAFS tool), start a new disc and add the media files you want on it — for
+example a DivX/XviD movie and its soundtrack. The classic use is a single feature-length movie per disc.</p></div>
+<div class="step"><h3>Produce the cue/bin</h3>
+<p>Have the tool generate the <b>cue/bin pair</b> that describes the CDDAFS (audio-CD) layout. This is the image
+you will burn — not a normal data ISO.</p></div>
+<div class="step"><h3>Burn to CD-R with Disc-At-Once</h3>
+<p>Burn the cue/bin to a blank CD-R using a <b>Disc-At-Once</b> write mode. Because the disc masquerades as an
+audio CD, the PS2 accepts it. Burn slowly and use good media (see <a href="#notes">Notes</a>).</p></div>
+<div class="step"><h3>Play it in SMS</h3>
+<p>Put the disc in the PS2, launch SMS, wait for the disc device to appear, drop into the file list, and open your
+movie. It plays straight off the burned CD-R on a stock console.</p></div>
+</div>
+
+<details class="deep"><summary>How does a CDDAFS disc lay its data out? (the historical detail)</summary>
+<p>From Eugene's README: track&nbsp;0 is a <b>control track</b> holding a GUID, a disc name and description, a small
+disc picture, and a table of 32&times;32 icon images, followed by a directory table. Each remaining audio track is a
+<b>directory</b> containing file entries — a name, an icon index, and the file's start offset and size — followed by
+the file data itself. There is one level of directories (historically capped at 99), and the number of files is
+limited only by the disc's capacity. Eugene notes fitting an ~800&nbsp;MB movie onto an ordinary 700&nbsp;MB disc
+without trouble, since the audio-CD layout foregoes the extra error-correction overhead of a data disc. This is
+deep background — you never touch these structures by hand; the PC tool writes them and SMS reads them.</p>
+</details>
+
+<h2 id="dvd-video">DVD-Video — playing files from a burned DVD</h2>
+<p>SMS can also read media files from a <b>DVD-Video</b> disc on an unmodified console. Support for reading
+<code>.avi</code> (and other) files from DVD-Video discs was added with a <code>cdvd.irx</code> driver that
+understands the <b>UDF</b> filesystem DVD-Video uses. In practice this means you can author a burned DVD in the
+DVD-Video layout, drop your media files into it, and browse them in SMS exactly like any other device — with the
+big advantage that a DVD holds far more than a CD-R, so you are not limited to a single small movie per disc.</p>
+
+<div class="callout info"><div class="h">ℹ Why "DVD-Video" and not a plain data DVD</div>
+The DVD-Video layout is the burned-disc form a stock PS2 is happiest reading, which is why SMS's DVD path targets
+it. When you make the disc on your PC, choose your burning program's <b>DVD-Video</b> compilation type (rather than
+a plain DVD-ROM data project) and place your media files into it before burning.
+</div>
+
+<figure>
+  <img src="images/usage-dvdr01.png" alt="A burning program's New Compilation dialog with the DVD-Video project type selected.">
+  <figcaption>Authoring the disc on the PC: pick the <b>DVD-Video</b> compilation type in your burning software,
+  then add your media files and burn to a blank DVD-R.</figcaption>
+</figure>
+
+<p>Once burned, the DVD behaves like a data source in SMS: wait for the disc device to appear, enter the file list,
+and open a file. Video decoding uses the PS2's IPU for colour conversion, the same as from any other device — so
+DivX / XviD / MPEG-4 AVIs, MPEG program streams and the other <a href="video.html">supported formats</a> all play
+from disc. Soft <a href="subtitles.html">subtitles</a> sitting alongside a video on the disc are picked up too.</p>
+
+<h2 id="data-iso">Data CD / DVD (ISO)</h2>
+<p>Beyond the two burned-disc tricks above, SMS also reads ordinary <b>ISO 9660 / UDF data discs</b> — the standard
+data-disc format. On consoles able to read them, an ISO data CD or DVD simply appears as a disc device you can
+browse, with your media files inside. This is handy when you already have media on a normal data disc, or when your
+setup can read data discs directly. The browsing and playback experience is identical to CDDAFS and DVD-Video once
+the disc is recognised — the only difference is how the disc was mastered.</p>
+
+<h2 id="audio-cd">Audio CD (CDDA)</h2>
+<p>SMS also plays plain <b>Audio CDs</b> — ordinary Red Book music CDs. Insert a music CD and SMS reads its table of
+contents, mounts it as an audio disc, and lists its tracks for playback. This is separate from CDDAFS: a CDDAFS disc
+only <i>looks</i> like an audio CD to sneak data past the copy protection, whereas a genuine Audio CD holds real
+audio tracks that SMS plays as music.</p>
+
+<div class="callout info"><div class="h">ℹ Audio CD vs data disc — SMS decides for you</div>
+When a disc goes in, SMS inspects it and routes it correctly on its own: a real music CD becomes an <b>Audio CD</b>
+you play track by track, while a data disc (CDDAFS, ISO, or DVD-Video) becomes a filesystem you browse. You do not
+pick a mode — you just insert the disc and browse or play whatever SMS shows.
+</div>
+
+<h2 id="notes">Notes — burning quality, compatibility &amp; what boots</h2>
+
+<h3 id="quality">Burning quality &amp; media</h3>
+<ul class="checklist">
+<li><b>Burn slowly, on good media.</b> A stock PS2 optical drive — especially an older or well-used one — is far
+happier reading a carefully burned disc. Use quality blank CD-R / DVD-R media and a conservative write speed.</li>
+<li><b>CDDAFS needs Disc-At-Once.</b> Because a CDDAFS disc is written as an audio CD, burn its cue/bin with a
+<b>Disc-At-Once</b> write mode, not Track-At-Once. Eugene developed and tested with Nero's Disc-At-Once/96.</li>
+<li><b>One movie per CD-R is the classic case.</b> A CDDAFS CD-R is small; if you want more media (or larger files)
+per disc, a DVD-Video disc holds far more. For libraries of media, a rewritable storage device such as
+<a href="usb.html">USB</a> or <a href="mx4sio.html">MX4SIO</a> is far more convenient than juggling discs.</li>
+</ul>
+
+<h3 id="compat">Disc &amp; console compatibility</h3>
+<div class="callout amber"><div class="h">Optical playback depends on your drive and how you boot</div>
+Every PS2 optical drive is a little different, and older drives read burned media less reliably as they age. Beyond
+the drive itself, <b>how your console is set up to boot homebrew affects what discs it will start.</b> A stock
+console typically needs a boot method (such as a memory-card exploit) to launch SMS in the first place; solutions
+like a modchip or a disc-boot exploit (e.g. FreeDVDBoot) change what the console will boot directly from a disc.
+Those boot mechanics are outside SMS itself — once SMS is running, this page describes what it does with whatever
+disc you insert. If a burned disc will not read, re-burn slower on fresh media before assuming SMS is at fault.</div>
+
+<h3 id="disc-settings">Disc-related settings</h3>
+<p>SMS's Device settings include a couple of options that affect the optical drive:</p>
+<table data-sortable>
+<thead><tr><th>Option</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><b>Disable CD/DVD</b></td><td>Turns off SMS's automatic CD/DVD detection, so SMS leaves the optical drive alone. Handy if probing the drive is slow or you never use discs.</td></tr>
+<tr><td><b>CD/DVD speed</b></td><td>Controls the optical read speed (low / medium / high). A lower speed can help a marginal drive read a burned disc; a higher speed is faster when your media and drive are healthy.</td></tr>
+</tbody>
+</table>
+<p>SMS also stops the disc spinning while a movie is paused or while you scroll the file list, and stops the drive
+at startup — small touches that keep the drive quieter and cooler. See the <a href="settings.html">Settings
+Reference</a> for where these live in the menus.</p>
+
+<h3 id="passthrough">Optical audio out (a bonus)</h3>
+<p>If your PS2 is connected to a receiver over its <b>S/PDIF optical</b> output, SMS can pass compressed
+<b>Dolby Digital (AC3)</b> and <b>DTS</b> audio through to that receiver rather than decoding it on the console —
+useful for films with surround soundtracks played from disc. This is unrelated to CD burning; it is just what SMS
+can do with a film's audio once it is playing.</p>
+
+<h2 id="which-disc">Which disc type should I use?</h2>
+<div class="grid">
+<a class="tile" href="#cddafs"><span class="icon icon-book" aria-hidden="true"></span><b>CDDAFS</b><span>Burned CD-R, stock PS2, one movie</span></a>
+<a class="tile" href="#dvd-video"><span class="icon icon-book" aria-hidden="true"></span><b>DVD-Video</b><span>Burned DVD, more media per disc</span></a>
+<a class="tile" href="#audio-cd"><span class="icon icon-book" aria-hidden="true"></span><b>Audio CD</b><span>Play a normal music CD</span></a>
+<a class="tile" href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span><b>Prefer no discs?</b><span>USB, MX4SIO &amp; more are easier</span></a>
+</div>
+<p class="lead">Optical media is SMS's roots and still works on a bone-stock console — but if you have a USB stick,
+an MX4SIO microSD adapter, an internal HDD or a network share, those hold far more and never wear out a drive. See
+the <a href="devices.html">Devices Overview</a> for the full picture.</p>
+
+<details class="deep"><summary>A short history: why SMS is a "system", not just a player</summary>
+<p>SMS was created by Eugene Plotnikov (2001–2005) to answer one question: could an unmodified PS2 play a
+good-resolution DivX movie with sound, straight off a burned disc, with no extra hardware? To make that possible he
+needed three pieces — hence "system": <b>CDDAFS</b> (the audio-CD data trick so a burned disc would read),
+<b>CDXplorer</b> (the PC tool that builds the disc), and the <b>player</b> itself (a heavily PS2-optimised port of
+parts of FFmpeg, using the console's IPU for colour conversion). The community later added USB, HDD, network, a GUI
+browser, a skin engine and many more formats — and this fork adds MX4SIO, exFAT HDD, i.LINK, MMCE and on-screen
+network setup — but the optical-disc heart described on this page is where it all began. See
+<a href="credits.html">Credits &amp; Sources</a>.</p>
+</details>

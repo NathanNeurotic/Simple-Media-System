@@ -1,53 +1,26 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Video Playback · SMS Docs</title>
-<meta name="description" content="Exact SMS video support: MPEG-4 Part 2/DivX/Xvid in AVI or MP4, MPEG-1/2 program streams, the 1024-pixel-per-axis source limit, hardware-tested profiles and unsupported modern codecs.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Video Playback · SMS Docs</title><meta name="description" content="SMS video containers, codecs, source limits, previously reported profiles, controls, conversion guidance and open regressions.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/video.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Video Playback · SMS Docs"><meta property="og:description" content="SMS video containers, codecs, source limits, previously reported profiles, controls, conversion guidance and open regressions.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html" class="active"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html" class="active" aria-current="page"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Video Playback</h1>
 <p class="lead">SMS turns a bone-stock PlayStation 2 into a video player. Point it at a movie file on any storage
 device — a burned disc, a USB stick, an MX4SIO microSD card, the internal HDD, SMB or UDPFS — press one
@@ -73,7 +46,7 @@ plays and the file extensions SMS looks for.</p>
 </tbody>
 </table>
 
-<div class="callout red"><div class="h">✕ Modern video codecs are not supported</div>
+<div class="callout red"><div class="h">Modern video codecs are not supported</div>
 <b>H.264/AVC, H.265/HEVC, VP9 and AV1 are not decoded.</b> An MP4 carrying one of those video codecs may still play
 its AAC soundtrack, which looks like successful audio-only playback, but that does not mean the video codec is
 supported. WMV video is also not registered; <code>.wma</code> is a standalone Windows Media <i>audio</i> route.</div>
@@ -94,22 +67,21 @@ dimension is greater than 1024.</td></tr>
 rate table, including MPEG-2 extensions.</td></tr>
 <tr><td>Compressed video packet/sample</td><td><b>2,097,088 bytes</b></td><td>The 2 MiB packet ring minus its
 mandatory 64-byte allocation overhead.</td></tr>
-<tr><td>Streams/tracks</td><td><b>8 total</b></td><td>The container-wide stream table includes video, audio and
+<tr><td>Streams/tracks</td><td><b>Eight table slots; MP4/MPEG-PS retain at most seven usable streams</b></td><td>The container-wide stream table includes video, audio and
 subtitle tracks.</td></tr>
 <tr><td>Individual file size</td><td><b>smaller than 4 GiB</b></td><td>File sizes, positions and seeks use 32-bit
 addressing.</td></tr>
 </tbody>
 </table>
 
-<div class="callout amber"><div class="h">⚠ 1024×1024 is an acceptance ceiling, not a speed guarantee</div>
+<div class="callout amber"><div class="h">1024×1024 is an acceptance ceiling, not a speed guarantee</div>
 The player has no universal maximum bitrate or generic MPEG-4 frame-rate rejection. A file that passes the
 dimension check can still be too demanding for real-time playback. Work varies with frame rate, B-frames,
 QPel/GMC, interlacing, motion complexity, audio decoding, device throughput and fragmentation. Large frames may
 also switch automatically from 32/24-bit to dithered 16-bit GS textures to fit video memory.</div>
 
-<h2 id="hardware-tested">Hardware-confirmed profiles</h2>
-<p>The generated repository fixtures were played on a real PS2. Every positive case below played correctly,
-including seeking/pause/return-to-browser checks, while unsupported modern-codec cases failed as expected.</p>
+<h2 id="hardware-tested">Previously reported console profiles</h2>
+<p>Earlier project documentation records these fixtures as having played on a real PS2, including transport checks. This audit did not rerun that hardware matrix or qualify the October changes on the affected consoles. The generation script defines the inputs; CI generation alone is not a playback result.</p>
 
 <table data-sortable>
 <thead><tr><th>Container / codec</th><th>Resolution / rate</th><th>Encoded profile</th><th>Result</th></tr></thead>
@@ -133,20 +105,20 @@ video, as expected; supported audio can still play</td></tr>
 <p>Opening a movie is a three-key affair: pick the device, walk into the folder, press play.</p>
 
 <div class="steps">
-<div class="step"><h3>Pick the device</h3>
+<div class="step"><h3 id="pick-the-device">Pick the device</h3>
 <p>SMS opens on the <b>device menu</b> — the top row of device icons. Use <b>Left</b> / <b>Right</b> to highlight the
 device your movie lives on (a <code>massN:</code> device for USB / MX4SIO / HDD-exFAT / i.LINK, an
 <code>mmce0:</code> card, the internal <code>hdd0:</code>, a CD/DVD, <code>smb:</code> or <code>udpfs:</code>). If the device you want
 is not listed, it may not be started yet — see <a href="devices.html">Devices Overview</a> for the Autostart
 toggles and the "Start &lt;device&gt; now" option.</p></div>
 
-<div class="step"><h3>Enter the file list</h3>
+<div class="step"><h3 id="enter-the-file-list">Enter the file list</h3>
 <p>Press <b>Down</b> to drop into the <b>file menu</b> (the middle browser). Move with <b>Up</b> / <b>Down</b>,
 page through long folders with <b>L1</b> / <b>L2</b>, open a folder with <kbd>✕</kbd>, and step back up one level
 with <kbd>△</kbd> (folder → parent → device menu). The status line at the bottom shows the current path on the left
 and a clock on the right.</p></div>
 
-<div class="step"><h3>Press play</h3>
+<div class="step"><h3 id="press-play">Press play</h3>
 <p>Highlight the video file and press <kbd>✕</kbd>. SMS reads the file straight from the device and starts
 playback. When the movie ends — or when you stop it — you land back in the browser exactly where you were.</p></div>
 </div>
@@ -180,7 +152,7 @@ fix for audio or subtitles that drift out of step.</td></tr>
 </tbody>
 </table>
 <div class="note"><p>Cross, Circle, L2 and R2 are video-only. During audio-only playback those buttons do nothing,
-and Left/Right seek within the track.</p></div>
+and Left/Right seek within an ordinary track; M3U transport can move between playlist entries.</p></div>
 
 <p>If the movie has an external subtitle file alongside it, SMS displays it over the picture — see
 <a href="subtitles.html">Subtitles</a> for how subtitle files are matched and styled.</p>
@@ -214,7 +186,7 @@ cycles decoding — which is exactly why a plain, unmodified PS2 can play good-r
 with no HDD and no extra hardware.</li>
 </ul>
 
-<div class="callout amber"><div class="h">⚠ Performance depends on the file</div>
+<div class="callout amber"><div class="h">Performance depends on the file</div>
 The PS2 is a fixed console, so how smoothly a movie plays comes down to how demanding the file is. Resolution,
 frame rate and coding tools affect decoder work; bitrate also affects storage demand but is not a complete measure
 of decode complexity. A demanding encode can push the console past real-time, especially from a slower or
@@ -238,8 +210,7 @@ work. The hardware-confirmed fixtures use no B-frames.</li>
 <li><b>Defragment on slower devices.</b> On a device with limited read throughput, a heavily fragmented file forces
 the console to seek constantly, which can starve the decoder. Copying the file back onto a freshly-formatted card or
 drive so it lands contiguously gives the smoothest reads, which helps most on the slowest media.</li>
-<li><b>Add subtitles as a separate file.</b> SMS reads external subtitle files rather than baked-in subtitles, so
-keep the subtitle track out of the video and drop the <code>.srt</code> / <code>.sub</code> next to it — details on
+<li><b>Add subtitles as a separate file.</b> Use external text subtitles when you want to switch or restyle them; put a matching <code>.srt</code> / <code>.sub</code> next to the movie. Converter burn-in is available when permanent text is preferred — details on
 the <a href="subtitles.html">Subtitles</a> page.</li>
 </ul>
 
@@ -248,6 +219,9 @@ the <a href="subtitles.html">Subtitles</a> page.</li>
   -s 640x480 -c:a aac -b:a 128k -ar 48000 -ac 2 \
   -movflags +faststart OUTPUT.mp4</pre>
 
+<h3 id="community-mpeg2">Community 960×544 MPEG-2 profile</h3>
+<p>tktagmedia reported a successful 44-minute MX4SIO playback using the higher-resolution MPEG-2/MP2 approach. The <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/tktagmedia-recommended-dragndrop-converter.bat">preserved Windows drag-and-drop script</a> scales to 960×540, pads to 960×544, forces a 16:9 display aspect, uses two passes at 3 Mbps (3.4 Mbps maxrate), GOP 15, two B-frames and 224 kbps/48 kHz stereo MP2.</p>
+<p>This is a reported profile, not a universal default or a confirmed fix for the open USB/color reports. The script does not cap the source frame rate at 30 fps, and its forced aspect is unsuitable for every source. Start with a short sample and compare the same file/settings on your console. A 60 ms <code>V/A -00:060</code> workaround is not a universal six-frame NTSC correction; use <a href="controls.html#playback">the sync controls</a> only as needed.</p>
 <h2 id="limitations">Limitations</h2>
 <p>SMS is a stock-console player, and a few historic limits come with that. Knowing them up front saves a lot of
 "why won't this play" head-scratching.</p>
@@ -269,27 +243,22 @@ IPU as an interrupt-driven, parallel process, and it re-shaped the FFmpeg decode
 format the IPU wants — cutting the traffic between CPU and memory and freeing the main processor to keep decoding.
 That parallelism, plus scratchpad-and-DMA optimisation, is what let the original author benchmark peak frame rates
 well above real-time on standard-definition DivX. It is the same architecture this fork still relies on — the fork's
-work went into <i>reaching</i> those files on more devices (like MX4SIO), not into the decoder itself.</p></details>
+work includes parser, streaming and frame-lifetime changes as well as access to more devices. See
+<a href="known-issues.html">the current issue map</a> for the limits of validation.</p></details>
 
 <h2 id="next">Where to next</h2>
 <div class="grid">
-<a class="tile" href="subtitles.html"><span class="em">💬</span><b>Subtitles</b><span>SRT / SUB over your video</span></a>
-<a class="tile" href="audio.html"><span class="em">🎵</span><b>Audio &amp; Playlists</b><span>Soundtracks, music, M3U</span></a>
-<a class="tile" href="mx4sio.html"><span class="em">💠</span><b>MX4SIO</b><span>Play movies from microSD</span></a>
-<a class="tile" href="usb.html"><span class="em">🔌</span><b>USB</b><span>The easiest source</span></a>
-<a class="tile" href="devices.html"><span class="em">🗂️</span><b>Devices Overview</b><span>Start the device you need</span></a>
-<a class="tile" href="troubleshooting.html"><span class="em">🛠️</span><b>Troubleshooting</b><span>When a file won't play</span></a>
+<a class="tile" href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span><b>Subtitles</b><span>SRT / SUB over your video</span></a>
+<a class="tile" href="audio.html"><span class="icon icon-play" aria-hidden="true"></span><b>Audio &amp; Playlists</b><span>Soundtracks, music, M3U</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>Play movies from microSD</span></a>
+<a class="tile" href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span><b>USB</b><span>The easiest source</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>Start the device you need</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When a file won't play</span></a>
 </div>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<p class="audit-source">Code/fixture references: <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/SMS_Codec.c">decoder registration</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/include/SMS_Container.h">stream table</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/gen-test-media.sh">fixture definitions</a>. See <a href="known-issues.html">current acceptance gaps</a>.</p>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

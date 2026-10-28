@@ -1,0 +1,19 @@
+<h1>Languages &amp; Fonts</h1>
+<p class="lead">Install a language pack from the same build as your player. The current table has 311 strings; a pack from an older release can leave the Language row ineffective.</p>
+<h2 id="install">Install an external language</h2>
+<ol><li>Download the <a href="releases.html#whats-in-a-release">matching language ZIP</a>. It contains 19 named variants (including an English variant), the base English template and translator guide.</li>
+<li>Choose a variant such as <code>SMS.lng_ES</code> and rename it <code>SMS.lng</code>. Copy it beside the ELF, or to <code>mc?:/SMS/SMS.lng</code>. A boot-folder copy has priority.</li>
+<li>Alternatively highlight a language file in the browser and use its import/update action. Enable the external language with <b>Browser settings → Language</b>; choosing English uses the built-in strings.</li>
+<li>Select the matching <b>Character set</b>, save settings and check the UI after relaunch.</li></ol>
+<p>Spanish was updated with Nacheras's submitted strings in the October work. Other variants can retain English placeholders for newer entries. Integrated strings and host checks do not establish that every glyph or long label fits on a console.</p>
+<h2 id="encoding">Encoding matters</h2>
+<p>Menu language files use the player's single-byte code pages, not general UTF-8 text rendering. Use the relevant WinLatin1, WinLatin2, Cyrillic or Greek setting. An external <code>.mbf</code> font is a separate mechanism, particularly for multibyte subtitles.</p>
+<p>Subtitle encoding is different: the subtitle reader recognizes UTF-8 with a BOM and has its own MBCS/font selection. Do not apply menu-language encoding rules to every SRT. See <a href="subtitles.html">Subtitles</a>.</p>
+<h2 id="translate">Translate safely</h2>
+<ul><li>Start with the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/SMS.lng">current English template</a>. Keep all 311 entries in order and do not leave blank entries.</li>
+<li>Preserve every printf placeholder, including its type, order, width and precision. The loader does not validate all formatting mistakes for you.</li>
+<li>Keep zero-based entries 166 and 167 as boot paths. Device/protocol names such as MX4SIO, MMCE and UDPFS should remain recognizable.</li>
+<li>Keep labels short enough for the fixed menu boxes. Check real glyph rendering and clipping after import.</li></ul>
+<p>The full <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/TRANSLATING.txt">translator reference</a> explains the fixed positions. If the language does not activate, check file location, pack/build pairing, blank lines and character set before assuming the toggle itself is broken.</p>
+<h2 id="report">Report a language issue</h2>
+<p>Include the build manifest, variant, active file path, character set, affected menu and a photograph of clipping or incorrect glyphs. If sharing an edited pack, retain its original byte encoding.</p>

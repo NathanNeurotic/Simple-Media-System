@@ -1,0 +1,163 @@
+<h1>MX4SIO (microSD)</h1>
+<p class="lead"><b>MX4SIO</b> is a microSD adapter that plugs into the PlayStation 2's memory-card slot and talks
+to the console over its <b>SIO2</b> bus. This build of SMS mounts the card as a <code>massN:</code> device and
+plays media straight off it — video, audio and pictures — <b>reliably</b>. Working MX4SIO playback is the
+headline feature of this fork, and the card gets its own device icon in the menu so you can tell it apart from USB.</p>
+
+<div class="callout info"><div class="h">ℹ MX4SIO is not MMCE</div>
+Two very different SD-card adapters live in the memory-card slot. <b>MX4SIO</b> is an SD/SPI adapter that SMS reads
+as a <b>BDM mass-storage device</b> (<code>massN:</code>), sharing that namespace with USB, exFAT HDD and i.LINK.
+An <b>MMCE</b> device (SD2PSX or MemCard PRO2) speaks a different protocol and mounts as <code>mmce0:</code> /
+<code>mmce1:</code>. Because both sit on the same SIO2 / memory-card bus, <b>only one can be active at a time</b>.
+If you own an SD2PSX or MemCard PRO2, see <a href="mmce.html">MMCE (SD2PSX)</a> instead.</div>
+
+<h2 id="what-is-mx4sio">What MX4SIO is</h2>
+<p>An MX4SIO adapter takes a microSD card and presents it to the PS2 through the memory-card slot, communicating
+over the console's <b>SIO2</b> controller bus (the same bus the pad and memory card use). To SMS the card looks
+like any other <b>BDM</b> (Block Device Manager) mass-storage volume: it is mounted from the FAT/exFAT layer and
+surfaces as <code>massN:</code>, exactly the abstraction USB, exFAT-over-ATA and i.LINK all share. That means SMS
+does not need a special "MX4SIO file browser" — it simply browses the card's raw filesystem and plays whatever
+media files it finds, wherever they sit. There is no mandatory folder tree to build.</p>
+
+<p>In the device menu the card appears with the same <code>massN:</code> naming as the other mass devices, where
+<code>N</code> is <code>0</code>, <code>1</code>, <code>2</code>… depending on what else is mounted. Point the browser
+at the card, walk into your folders, and open a file.</p>
+
+<h2 id="why-notable">Why it is the headline feature</h2>
+<p>Plenty of PS2 tools can <i>mount</i> an MX4SIO card and list its directories — but that is the easy part. A media
+player is different: it streams <b>large</b> reads continuously while the rest of the console is busy decoding audio,
+driving the GUI and polling the pad. Under exactly those conditions, earlier attempts to use MX4SIO in SMS would
+mount the card and show the file list, then <b>stall the moment you tried to actually play a file</b>.</p>
+
+<p>This build fixes that. Video and audio now play smoothly from a microSD in an MX4SIO adapter — the same
+experience you get from USB or the internal HDD. To make it a first-class citizen, MX4SIO also gets:</p>
+<ul class="checklist">
+<li>Its <b>own device icon</b> in the top device bar, visually distinct from the USB icon, so you always know which
+card you are browsing.</li>
+<li>An <b>Autostart MX4SIO</b> toggle in the settings menu, so it can come up automatically at boot if you want it to.</li>
+<li>A <b>Start MX4SIO support</b> item, always present in Device settings, so you can bring the card online on demand without rebooting.</li>
+</ul>
+
+<div class="callout amber"><div class="h">MX4SIO and MMCE cannot both run</div>
+MX4SIO and MMCE both use the SIO2 / memory-card bus, so SMS can only drive <b>one of them at a time</b>. Turn on
+Autostart for the one you actually use, and leave the other off. See <a href="#vs-mmce">MX4SIO vs MMCE</a> below.</div>
+
+<h2 id="compatibility">Compatibility</h2>
+<p>SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as <b>FAT32</b> or <b>exFAT</b>
+will mount. Use FAT32 or exFAT supported by your device/firmware. exFAT filesystem support does not remove SMS's below-4-GiB limit for each media file. Either way, the media files themselves must be a format SMS can play — see
+<a href="video.html">Video</a>, <a href="audio.html">Audio</a> and <a href="pictures.html">Pictures</a> for the full
+list (MPEG-4 Part&nbsp;2 AVI, <code>mp4v</code> MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC,
+OGG, WMA, JPEG, and so on).</p>
+
+<div class="callout info"><div class="h">ℹ Hardware note</div>
+Playback was confirmed on real PS2 hardware with a FAT32-formatted microSD in an MX4SIO adapter — a 640×480
+XviD&nbsp;+&nbsp;MP3 AVI and a standalone MP3 both play smoothly. As with any SD adapter, cheap or worn cards can
+misbehave; if a particular card gives trouble, try a different, known-good one.</div>
+
+<h2 id="prepare-card">Preparing the card</h2>
+<div class="steps">
+<div class="step"><h3>Format the microSD</h3>
+<p>Use a compatible <b>FAT32</b> or <b>exFAT</b> volume. Keep each SMS media file below 4 GiB on either filesystem.
+Back up the contents before reformatting; an already compatible volume can be used as it is.</p></div>
+
+<div class="step"><h3>Copy your media on</h3>
+<p>Copy your video, audio, picture and playlist files onto the card from your PC. You can organise them into folders
+however you like — SMS browses the raw filesystem, so there is no required directory layout. Keep external subtitle
+files (<code>.srt</code> / <code>.sub</code>) next to the video they belong to; see
+<a href="subtitles.html">Subtitles</a>.</p></div>
+
+<div class="step"><h3>Seat the adapter</h3>
+<p>With the card loaded, insert the MX4SIO adapter into one of the PS2's memory-card slots. Remember that this is the
+same slot family MMCE devices and the memory card use — plan around the one-device-at-a-time rule below.</p></div>
+
+<div class="step"><h3>Boot SMS and enable MX4SIO</h3>
+<p>Boot the PS2 into SMS, then turn MX4SIO on (next section). On a clean install optional Autostart choices are off, so you choose
+what to bring up.</p></div>
+</div>
+
+<h2 id="enabling">Enabling MX4SIO</h2>
+<p>On a fresh install SMS leaves optional Autostart flags off — you switch on the devices you want. There are two ways to
+bring MX4SIO up.</p>
+
+<h3 id="autostart">Autostart MX4SIO</h3>
+<p>In the settings menu, turn on <b>Autostart MX4SIO</b>. From then on SMS loads the MX4SIO driver at boot and the
+card is ready to browse as soon as the desktop appears. This is the option to use if MX4SIO is your everyday media
+source. Your choice is saved with the rest of your settings (see <a href="settings.html">Settings</a>), so it sticks
+across reboots.</p>
+
+<h3 id="start-now">Start MX4SIO now</h3>
+<p>Device settings always lists <b>Start MX4SIO support</b>, so you can bring the card online on demand — no reboot needed. It is shown even when MX4SIO is already up (a harmless no-op) and even when MMCE holds the SIO2 bus, in which case it reports an error explaining why MX4SIO cannot start. This is handy when you didn't autostart it but decided you want it this session, or when
+you have just seated the adapter.</p>
+
+<h3 id="pick-in-menu">Pick it in the device menu</h3>
+<p>Once MX4SIO is running, the card shows up in the <b>device menu</b> (the top row of device icons) with its own
+icon, separate from USB. Use <b>Left</b>/<b>Right</b> to land on it, then press <b>Down</b> to drop into the file
+list and start browsing. From there it behaves like any SMS browser: <b>Up</b>/<b>Down</b> to move, <b>L1</b>/<b>L2</b>
+to page-scroll, <b>Cross</b> to open a file or folder, and <b>Triangle</b> to step up a level (file list → parent →
+back to the device menu).</p>
+
+<div class="callout info"><div class="h">ℹ Telling MX4SIO apart from USB</div>
+USB and MX4SIO both live in the <code>massN:</code> namespace, so under the hood they are the same kind of device.
+SMS keeps them visually distinct in the device bar by giving MX4SIO its <b>own icon</b> — so even with a USB stick
+and an MX4SIO card mounted at the same time, you can see at a glance which one you are on.</div>
+
+<h2 id="vs-mmce">MX4SIO vs MMCE</h2>
+<p>This is the one gotcha worth internalising. Both MX4SIO and MMCE devices physically occupy a memory-card slot and
+talk over the SIO2 bus — so SMS can only drive <b>one of them at a time</b>. They are not interchangeable, either:
+they use different drivers and mount under different names.</p>
+<table data-sortable>
+<thead><tr><th>&nbsp;</th><th>MX4SIO</th><th>MMCE (SD2PSX / MemCard PRO2)</th></tr></thead>
+<tbody>
+<tr><td>Card type</td><td>microSD in an SD/SPI adapter</td><td>SD card in an SD2PSX or MemCard PRO2</td></tr>
+<tr><td>How SMS sees it</td><td>BDM mass storage — <code>massN:</code></td><td>MMCE device — <code>mmce0:</code> / <code>mmce1:</code></td></tr>
+<tr><td>Shares the slot with</td><td>USB / HDD / i.LINK (the <code>massN:</code> pool)</td><td>Its own <code>mmce</code> namespace</td></tr>
+<tr><td>Enable via</td><td>Autostart MX4SIO / Start MX4SIO now</td><td>Autostart MMCE / Start MMCE now</td></tr>
+<tr><td>Device icon</td><td>Its own icon, distinct from USB</td><td>Its own icon</td></tr>
+</tbody>
+</table>
+<p>Rule of thumb: turn on Autostart for the adapter you actually own, and leave the other off. If your device is an
+SD2PSX or MemCard PRO2, use the <a href="mmce.html">MMCE</a> page. If it's a plain SD-over-SIO2 adapter, you're in the
+right place.</p>
+
+<div class="callout amber"><div class="h">The other exclusion — HDD paths</div>
+Separately from the SIO2 rule, note that the two <i>internal-HDD</i> access paths — classic APA/PFS and exFAT over
+ATA (BDM) — both own the internal ATA bus, so only one of those can run at once either. That's unrelated to MX4SIO,
+but if you're enabling several devices it's worth knowing. See <a href="hdd.html">Internal HDD</a>.</div>
+
+<h2 id="how-it-works">How it works (at a glance)</h2>
+<p>You don't need to know any of this to use MX4SIO — but in short: a continuously-streaming media player asks a lot
+more of an SD-over-SIO2 card than a lightweight file manager does, because it reads constantly while also decoding
+audio and driving the GUI. This build carries the MX4SIO driver and access-path hardening needed to keep playback
+reliable under exactly those demands. It is entirely automatic — there is nothing to enable, tune, or configure.</p>
+
+<div class="callout info"><div class="h">ℹ Nothing to configure</div>
+The reliability work is all under the hood; the deeper engineering details live in the project's developer notes,
+not here. To use MX4SIO you simply format the card, copy your media, enable MX4SIO, and play.</div>
+
+<h2 id="tips">Notes &amp; tips</h2>
+<ul class="checklist">
+<li>MX4SIO reads any format SMS can play — it is a storage device, not a format. Point the browser at your files and
+open them like on any other device.</li>
+<li>You can browse into any folder structure; there is no mandatory layout. Keep <code>.srt</code>/<code>.sub</code>
+subtitle files beside their video.</li>
+<li>Enable <b>either</b> MX4SIO <b>or</b> MMCE, never both — they share the SIO2 slot bus.</li>
+<li>Prefer <b>FAT32</b> for maximum compatibility; use <b>exFAT</b> if supported by your setup. Keep individual SMS media files below 4 GiB on either filesystem.</li>
+<li>If a specific card acts up, try another known-good microSD before assuming a software fault.</li>
+<li>Your Autostart MX4SIO choice is saved with your settings and persists across reboots — see
+<a href="settings.html">Settings</a> for where the config lives.</li>
+</ul>
+
+<details class="deep"><summary>Why is MX4SIO reliable here when it can be finicky elsewhere?</summary>
+<p>An SD-over-SIO2 card behaves differently in a continuously-streaming media player than in a lightweight file
+manager that reads a little and then sits idle. This build carries the MX4SIO driver and access-path hardening
+needed for the media-player case, so playback stays smooth even while SMS is busy decoding audio and drawing the
+GUI. To the user it simply works — the reliability work is entirely under the hood.</p>
+</details>
+
+<details class="deep"><summary>Do I have to build a folder tree like OPL's DVD/CD/ART?</summary>
+<p>No. SMS is a media player, not a game loader — it browses the raw filesystem of the card and plays media files
+wherever they are. There is no OPL-style mandatory folder structure and no ISO/coverart convention to follow. Copy
+your files on, organise them however you like, and browse to them.</p>
+</details>
+
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>

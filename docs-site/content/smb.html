@@ -1,0 +1,190 @@
+<h1>SMB Network Share</h1>
+<p class="lead">SMS has a built-in <b>SMB (CIFS) client</b>: point it at a shared folder on a PC or NAS over
+wired Ethernet and it appears in the device menu like any other storage, so you can browse the share and play
+your video, audio and pictures straight off the network — no need to copy files onto a memory card or USB stick
+first. In this fork you enter the server address, share, and login <b>entirely on-screen</b> with an on-screen
+keyboard; there are no config files to hand-edit.</p>
+
+<div class="callout amber"><div class="h">Your server must offer SMB1 / CIFS — this is the #1 gotcha</div>
+SMS speaks the original <b>SMB1 (CIFS)</b> protocol only. Modern Windows and modern Samba <b>disable SMBv1 by
+default</b> and lean on SMB2/SMB3, which SMS does <b>not</b> speak. If your share is on an up-to-date Windows PC
+or NAS, you will almost certainly have to <b>turn the SMB1 feature back on</b> (or use a device that still serves
+SMB1) before SMS can see it. If SMS refuses to connect and everything else looks right, assume SMBv1 is the cause
+first. See <a href="#troubleshooting">Troubleshooting</a> and the <a href="#limitation">limitation</a> below.</div>
+
+<h2 id="overview">Overview</h2>
+<p>An SMB (Server Message Block) share is just a folder on another computer that has been made available over the
+local network. Windows calls this "File Sharing"; Linux and NAS boxes usually run <b>Samba</b>, an open-source
+implementation of the same protocol. SMS includes a small SMB1/CIFS client that connects to one of these shares
+over the PS2's Ethernet port and lets you walk its folders exactly as if it were a local disc — pick a movie and
+press play, and SMS streams it over the wire.</p>
+<p>On the device menu the share shows up as a <b>network device</b> alongside your other sources. Once connected,
+navigation, playback, subtitles and playlists all behave the same as they do for a local device — the only
+difference is that the bytes are arriving over Ethernet instead of off a disc or card.</p>
+
+<div class="callout info"><div class="h">ℹ SMB needs the network up first</div>
+The SMB client rides on top of the PS2's TCP/IP stack, so the console needs a working wired network connection —
+an IP address and a link to your router or switch — before it can reach a share. Configure that on the
+<a href="network.html">Network Setup</a> page first; this page assumes the PS2 is already on your LAN.</div>
+<div class="callout amber"><div class="h">SMB/host and UDPFS require separate IOP sessions</div>
+SMS's ordinary SMB/host stack and the <a href="network.html#udpfs">UDPFS network drive</a> use different drivers
+for the one Ethernet controller. Whichever starts first owns it until reboot. Enable <b>Autostart SMB</b> — picking
+it automatically clears <b>Autostart HOST ( ps2dev )</b> and <b>Autostart UDPFS</b>, so the three can never fight.</div>
+
+<h2 id="requirements">Requirements</h2>
+<ul class="checklist">
+<li>A PS2 <b>network adapter</b> and a <b>wired</b> Ethernet connection to the same LAN as your PC or NAS. SMS's
+network support is wired only — there is no built-in Wi-Fi.</li>
+<li>A PC, NAS, or other device on that LAN that is <b>sharing a folder over SMB1 / CIFS</b>. Because modern
+Windows and Samba ship with SMBv1 switched off, you generally have to <b>enable the SMB1 feature</b> on the server
+(or use a device/NAS that still serves it) — this is the single most common reason a share is invisible.</li>
+<li>The server's <b>IP address</b> on the LAN, the exact <b>share name</b>, and a set of <b>credentials</b> — a
+username and password, or a guest / anonymous login if the share allows it.</li>
+<li>The PS2 already on the network with an IP address (see <a href="network.html">Network Setup</a>).</li>
+</ul>
+
+<h2 id="create-share">Setting up the share on your PC or NAS</h2>
+<p>This part happens on the computer, not on the PS2. The goal is a shared folder that answers to SMB1 and that
+you can reach with a known username and password (or as a guest). The exact steps differ by operating system, but
+the shape is always the same:</p>
+<div class="steps">
+<div class="step"><h3>Create and share a folder</h3>
+<p>Make a folder to hold your media — for example a "Movies" folder — and turn on file sharing for it. On Windows
+this is Properties → Sharing (or "Give access to"); on a NAS it is the box's Shared Folders / SMB service; on
+Linux it is a Samba <code>[share]</code> entry. <b>Write down the exact share name</b> you give it — SMS needs it
+spelled the same way, case included.</p></div>
+<div class="step"><h3>Decide on access: user or guest</h3>
+<p>Either grant a specific <b>username</b> access to the share and set a <b>password</b> for it, or (if your OS
+allows it and you don't mind) enable <b>guest / anonymous</b> access so no password is needed. Note down whichever
+you choose — you'll type it into SMS.</p></div>
+<div class="step"><h3>Make sure SMB1 is being served</h3>
+<p>On a modern Windows PC, enable the <b>"SMB 1.0/CIFS File Sharing Support"</b> Windows feature; on a modern
+Samba server, allow the old protocol (an <code>SMB1</code>-friendly <code>min protocol</code> in the Samba
+config). Many NAS units have a checkbox to allow SMBv1 as well. Without this step the share exists but SMS cannot
+speak to it.</p></div>
+<div class="step"><h3>Find the server's IP address</h3>
+<p>Note the PC / NAS <b>IP address</b> on your LAN (for example <code>192.168.1.50</code>). SMS connects by IP.
+Give the machine a fixed / reserved address if you can, so it doesn't change between sessions.</p></div>
+</div>
+
+<h2 id="configuring">Configuring the SMB share in SMS</h2>
+<p>Everything below is done <b>on the console</b> with the pad. This fork replaces the old fiddly per-character
+picker with a real <b>on-screen keyboard</b>, so you type the server address, share and credentials directly —
+there is no config file to prepare on a PC beforehand. You add a share once; SMS remembers it.</p>
+
+<div class="callout info"><div class="h">ℹ The on-screen keyboard</div>
+When you open one of the text fields, SMS pops up a full on-screen keyboard: move the D-pad to a character and
+press <b>Cross</b> to type it, use <b>Circle</b> to backspace and <b>Square</b> for a space, and commit the field
+with <b>Triangle</b> (or the OK key). It covers digits, upper- and lower-case letters and the common symbols
+(<code>. _ - / @ :</code> and more), so full server names, usernames and passwords are all typeable from the
+pad.</div>
+
+<p>Open the SMB / network configuration from SMS's settings, then choose <b>Add server…</b> to create a new
+entry (or <b>Edit server…</b> to change an existing one). The add/edit form walks top-to-bottom through these
+fields:</p>
+
+<table>
+<thead><tr><th>Field</th><th>What to enter</th></tr></thead>
+<tbody>
+<tr><td><b>IP address</b></td><td>The server's LAN address, entered as four numbers. Each octet is set with an
+on-screen spinner rather than the keyboard — e.g. <code>192</code> · <code>168</code> · <code>1</code> ·
+<code>50</code>.</td></tr>
+<tr><td><b>Server name</b></td><td>A short name for the share/host. Keep it brief — SMS is happiest with short
+server names.</td></tr>
+<tr><td><b>Username</b></td><td>The account allowed to access the share. Leave it as your guest login if the share
+permits anonymous access.</td></tr>
+<tr><td><b>Password</b></td><td>The password for that account (blank / guest if the share is open).</td></tr>
+<tr><td><b>Client name</b></td><td>The name the PS2 announces itself as to the server. A default is fine; you can
+set something recognisable if you like.</td></tr>
+<tr><td><b>Port</b></td><td>The TCP port SMS connects to. A normal SMB server listens on <code>445</code>
+(or <code>139</code> for the older NetBIOS transport); leave the pre-filled default in place unless your server
+uses a non-standard port, and set it to <code>445</code> for a standard Windows / Samba share.</td></tr>
+<tr><td><b>Share (optional)</b></td><td>The share name you noted on the server. You can leave this blank to browse
+the server's list of shares, or fill it in to jump straight into one named share.</td></tr>
+</tbody>
+</table>
+
+<p>When the fields are filled in, choose the <b>Save Settings</b> item at the bottom of the form to store the
+entry. SMS keeps the server list in a separate <code>SMS.smb</code> file in the same directory as the general
+<code>SMS.cfg</code>, so it follows the configuration location and you do not have to re-type it next time.</p>
+
+<div class="callout info"><div class="h">ℹ Turn the network device on</div>
+As with the other sources, SMS only brings up the network stack when you ask it to. The settings menu has an
+<b>Autostart SMB</b> toggle so the share is available automatically on boot, and — when networking isn't
+running yet and a server is configured — a <b>Start SMB server support</b> action so you can bring it up on demand without rebooting. On a clean install
+optional Autostart choices are off; you enable networking when you want it.</div>
+
+<h2 id="connecting">Connecting &amp; browsing</h2>
+<div class="steps">
+<div class="step"><h3>Bring up the network</h3>
+<p>With the network configured (and Autostart SMB on, or started on demand), SMS connects to your LAN and
+then to the SMB server you saved.</p></div>
+<div class="step"><h3>Select the network device</h3>
+<p>In the top row <b>Device menu</b>, use <b>Left / Right</b> to land on the network / SMB device, then press
+<b>Down</b> to drop into the file list.</p></div>
+<div class="step"><h3>Browse the share</h3>
+<p>The middle <b>File menu</b> now lists the contents of the share. Move with <b>Up / Down</b> (use <b>L1 / L2</b>
+to page through long folders), press <b>Cross</b> to open a folder or start a file, and <b>Triangle</b> to go up
+one level. The current path shows in the status line at the bottom left.</p></div>
+<div class="step"><h3>Play</h3>
+<p>Pick a video, track or picture and press <b>Cross</b>. Playback, subtitles and playlists work just as they do
+from a local device — during playback <b>Select</b> pauses, <b>Start</b> resumes, and <b>Triangle</b> stops and
+returns you to the browser.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">Streaming over the network</div>
+Playback quality depends on your LAN and the file's bitrate. A wired connection to a modern router handles typical
+SMS video fine, but very high-bitrate files may benefit from copying to a local device (USB, MX4SIO, HDD) instead.
+If a file stutters over SMB but plays cleanly from a local source, the network is the limiting factor.</div>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead><tr><th>Symptom</th><th>Most likely cause &amp; fix</th></tr></thead>
+<tbody>
+<tr><td>The share never appears / SMS can't connect at all</td><td><b>SMBv1 is disabled on the server</b> — the
+number-one cause. Enable "SMB 1.0/CIFS File Sharing Support" on Windows, allow the old protocol in Samba, or use a
+device that still serves SMB1.</td></tr>
+<tr><td>Can't reach the server, but the LAN seems fine</td><td>Check the <b>IP address</b> you typed matches the
+server's current address (it may have changed if it isn't reserved). Confirm the PS2 itself has a valid IP — see
+<a href="network.html">Network Setup</a>.</td></tr>
+<tr><td>Connects, but access is refused</td><td>Wrong <b>credentials</b>. Re-check the username and password, and
+confirm that account actually has permission to the share. If you meant to use guest access, make sure the share
+allows it.</td></tr>
+<tr><td>Server is unreachable / times out</td><td>A <b>firewall</b> on the PC is often blocking SMB. Allow file
+sharing (ports <code>445</code> / <code>139</code>) through the firewall, and make sure the sharing service is
+actually running.</td></tr>
+<tr><td>Right server, but the folder is empty or wrong</td><td>The <b>share name</b> is misspelled or points at
+the wrong folder. Re-open <b>Edit server…</b> and correct the Share field (or clear it to browse the server's
+share list).</td></tr>
+</tbody>
+</table>
+
+<div class="callout info"><div class="h">ℹ A quick sanity check</div>
+Before blaming SMS, confirm another computer on the same network can open the share with the same IP, username and
+password. If a second PC can't reach it either, the problem is on the server (usually SMBv1 or the firewall), not
+on the PS2.</div>
+
+<h2 id="limitation">Limitation: SMB1 only</h2>
+<p>SMS's network share support is built on the original <b>SMB1 (CIFS)</b> protocol. It does <b>not</b> speak
+<b>SMB2 or SMB3</b>, the newer versions that modern operating systems prefer. That is why a stock, up-to-date
+Windows PC or NAS won't be visible until you re-enable the legacy SMB1 feature on it. Speaking the newer protocols
+would require a substantial rewrite of the client, so for now the rule of thumb is simple: <b>if the server serves
+SMB1, SMS can use it; if it only serves SMB2/3, it can't.</b></p>
+
+<details class="deep"><summary>Why is SMB1 a security concern, and is enabling it safe?</summary>
+<p>SMBv1 is an old protocol with known weaknesses, which is exactly why Microsoft and the Samba project switched it
+off by default. Do not expose it to the internet. If you choose to use it, isolate the service to a trusted LAN or
+a dedicated media host. If you would rather not enable SMB1, use the <a href="network.html#udpfs">UDPFS network
+drive</a> or a local source such as <a href="usb.html">USB</a>, <a href="mx4sio.html">MX4SIO</a> or the
+<a href="hdd.html">internal HDD</a>.</p>
+</details>
+
+<h2 id="see-also">See also</h2>
+<div class="grid">
+<a class="tile" href="network.html"><span class="icon icon-smb" aria-hidden="true"></span><b>Network Setup</b><span>Get the PS2 on your LAN first</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Autostart SMB &amp; where config lives</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>How all the sources compare</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When something won't play</span></a>
+</div>
+
+<p>Changing an already running network personality requires the explicit IOP restart prompt or relaunching SMS. An IOP restart also invalidates other mounted drivers; start the required storage again. See <a href="network.html">Network Setup</a>.</p>

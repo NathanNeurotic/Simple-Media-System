@@ -1,58 +1,30 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Troubleshooting · SMS Docs</title>
-<meta name="description" content="Fix common SMS problems: unsupported or slow video, missing devices, SMB or UDPFS network failures, settings that do not save, and HD display issues.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Troubleshooting · SMS Docs</title><meta name="description" content="SMS playback, storage, network and config troubleshooting, diagnostic labels and reproducible bug reports.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/troubleshooting.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Troubleshooting · SMS Docs"><meta property="og:description" content="SMS playback, storage, network and config troubleshooting, diagnostic labels and reproducible bug reports.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html" class="active"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html" class="active" aria-current="page"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Troubleshooting</h1>
 <p class="lead">A problem-and-solution reference for the things that most commonly trip people up: video
 that stutters or won't start, a storage device that refuses to appear, an SMB share that won't connect,
-settings that don't stick, and a garbled screen in HD video modes. Each entry is a self-contained fix —
-open the one that matches your symptom.</p>
+settings that don't stick, and a garbled screen in HD video modes. Start with the matching checks, then compare the <a href="known-issues.html">open issue map</a>; some reported regressions are still under investigation.</p>
 
 <div class="callout info"><div class="h">ℹ Start with the obvious</div>
 Before diving in, sanity-check the basics: the file is actually on the device you're browsing; the device is
@@ -65,7 +37,7 @@ a fixed budget — a file that is too demanding for the console will stutter no 
 through these in order.</p>
 
 <div class="steps">
-  <div class="step"><h3>Confirm the format is supported</h3>
+  <div class="step"><h3 id="confirm-the-format-is-supported">Confirm the format is supported</h3>
   <p>SMS plays a specific set of containers and codecs. If a file uses anything outside this list, it will fail to
   open or may play only its supported audio track. Supported video is <b>AVI</b> (DivX / Xvid / MPEG-4 Part 2),
   <b>MP4</b> (<code>mp4v</code>, MPEG-4 Part 2), and <b>MPEG program streams</b> (MPEG-1/2,
@@ -73,26 +45,26 @@ through these in order.</p>
   re-encode those to MPEG-4 Part 2 first. See
   <a href="video.html">Video Playback</a> for the full format table.</p></div>
 
-  <div class="step"><h3>Lower the bitrate and resolution</h3>
+  <div class="step"><h3 id="lower-the-bitrate-and-resolution">Lower the bitrate and resolution</h3>
   <p>SMS rejects either video dimension above <b>1024 pixels</b>, but passing that check does not guarantee real-time
   playback. Resolution, frame rate, B-frames, QPel/GMC, motion complexity, audio work, bitrate and storage speed all
-  matter. Start from the confirmed 640×480, 30 fps, 1.5 Mbit/s MPEG-4 Part 2 profile and reduce resolution, frame
+  matter. Start from the previously reported 640×480, 30 fps, 1.5 Mbit/s MPEG-4 Part 2 profile and reduce resolution, frame
   rate or bitrate if needed. If the same file plays from USB but stutters over the network or from MX4SIO, storage
   throughput or fragmentation is the likely difference.</p></div>
 
-  <div class="step"><h3>Rule out a damaged or fragmented file</h3>
+  <div class="step"><h3 id="rule-out-a-damaged-or-fragmented-file">Rule out a damaged or fragmented file</h3>
   <p>A partial download, a bad burn, or a heavily fragmented file can cause hitching or a mid-file stop. Re-copy the
   file to the device (ideally to a freshly formatted or defragmented card/drive), or re-download it, and try again.
-  A file that plays cleanly on a PC but stalls on the PS2 is the classic sign of a marginal encode or a bad copy.</p></div>
+  A PC passing the file does not distinguish a PS2 parser/decoder regression from a demanding encode or storage problem. Keep an unchanged copy and its hash before converting or reorganizing it.</p></div>
 
-  <div class="step"><h3>Check the encode features</h3>
+  <div class="step"><h3 id="check-the-encode-features">Check the encode features</h3>
   <p>Interlaced MPEG-4 and MPEG-2 decode paths exist, but the current hardware fixture baseline is progressive.
   B-frames, QPel, GMC and interlacing can add work or expose compatibility differences. If a supported file is
   marginal, re-encode it progressive with no B-frames using the known-good command on the
   <a href="video.html#encoding">Video Playback</a> page.</p></div>
 </div>
 
-<div class="callout amber"><div class="h">⚠ Audio-only files that won't play</div>
+<div class="callout amber"><div class="h">Audio-only files that won't play</div>
 The same "is it a supported format" rule applies to audio. SMS handles <b>MP3, AAC, AC3, FLAC, OGG&nbsp;Vorbis</b>
 and <b>WMA</b>. A file with an unusual codec inside a familiar-looking container (for example a lossless track the
 decoder doesn't recognise) can fail to open — re-encode to plain MP3 to confirm the file, then work back from there.</div>
@@ -102,19 +74,19 @@ decoder doesn't recognise) can fail to open — re-encode to plain MP3 to confir
 it isn't started, it isn't formatted the way SMS expects, or it's blocked by a mutual exclusion.</p>
 
 <div class="steps">
-  <div class="step"><h3>Start the device (or turn on its Autostart)</h3>
-  <p>On a clean install <b>nothing auto-starts</b> — this is by design (see below). Open the settings menu and either
+  <div class="step"><h3 id="start-the-device-or-turn-on-its-autostart">Start the device (or turn on its Autostart)</h3>
+  <p>On a clean install <b>optional Autostart choices are off</b> — this is by design (see below). Open the settings menu and either
   flip on that device's <b>Autostart</b> toggle (Autostart USB, Autostart MX4SIO, Autostart HDD APA, Autostart HDD
   flip on that device's <b>Autostart</b> toggle (Autostart USB, Autostart i.LINK, Autostart MX4SIO, Autostart MMCE, Autostart HDD APA, Autostart HDD BDM for ATA/exFAT, then the three mutually exclusive network rows — <b>Autostart HOST ( ps2dev )</b>, <b>Autostart SMB</b> and <b>Autostart UDPFS</b>, where picking one clears the other two), or use the matching <b>Start …</b>
   item that appears when a device isn't running yet. Starting it on demand does not need a reboot.</p></div>
 
-  <div class="step"><h3>Check the filesystem format</h3>
+  <div class="step"><h3 id="check-the-filesystem-format">Check the filesystem format</h3>
   <p>BDM mass devices (USB, MX4SIO, ATA/exFAT) expect a <b>FAT32</b> or <b>exFAT</b> filesystem. A drive formatted
   NTFS, HFS+ or ext4 will not mount. Re-format the card or drive as FAT32 (or exFAT for large volumes) and copy your
   media back. The internal-HDD APA/PFS path is different — that uses a PlayStation&nbsp;2 PFS
   partition rather than a PC filesystem; see <a href="hdd.html">Internal HDD</a>.</p></div>
 
-  <div class="step"><h3>Rule out a mutual exclusion</h3>
+  <div class="step"><h3 id="rule-out-a-mutual-exclusion">Rule out a mutual exclusion</h3>
   <p>Three resource pairs cannot both be active in one boot:</p>
   <ul class="checklist">
     <li><b>MX4SIO and MMCE</b> both use the SIO2 / memory-card-slot bus. If one is running, the other won't appear —
@@ -136,7 +108,7 @@ order — check the path shown on the status line at the bottom of the screen.</
 <p>SMS speaks the older <b>SMB1 / CIFS</b> network-share protocol. By far the most common reason a share won't
 connect is that the server no longer accepts SMB1.</p>
 
-<div class="callout red"><div class="h">✖ Top cause: SMB1 is disabled on the server</div>
+<div class="callout red"><div class="h">Top cause: SMB1 is disabled on the server</div>
 Modern Windows and Samba ship with <b>SMB1 turned off by default</b> for security. SMS needs it enabled to connect.
 This is a server-side setting, not something SMS can work around from the PS2.</div>
 
@@ -149,23 +121,23 @@ minimum protocol to <code>NT1</code>) and restart the service. Consult your NAS 
 option, as it varies by version.</p></details>
 
 <div class="steps">
-  <div class="step"><h3>Verify the address, share name and credentials</h3>
+  <div class="step"><h3 id="verify-the-address-share-name-and-credentials">Verify the address, share name and credentials</h3>
   <p>Once SMB1 is on, re-check the server's IP address, the exact share name, and the username/password — all entered
   on-screen with the built-in keyboard (see <a href="network.html">Network Setup</a>). A typo in any of these looks
   identical to "server refused". Case can matter for share names and usernames.</p></div>
 
-  <div class="step"><h3>Check the PS2's own network settings</h3>
+  <div class="step"><h3 id="check-the-ps2-s-own-network-settings">Check the PS2's own network settings</h3>
   <p>Make sure the PS2 has a valid static IP on the same subnet as the server, saved through
   <b>Device settings → Network settings → Edit IPCONFIG.DAT</b>, and that the network device is started. If the console can't reach the network at all, no share
   will connect.</p></div>
 
-  <div class="step"><h3>Check firewalls and the server's file sharing</h3>
+  <div class="step"><h3 id="check-firewalls-and-the-server-s-file-sharing">Check firewalls and the server's file sharing</h3>
   <p>A firewall on the server (or router) can block the PS2's connection even with everything else correct. Confirm
   file sharing is enabled on the server and that its firewall allows connections from the PS2's IP on your local
   network.</p></div>
 </div>
 
-<div class="callout amber"><div class="h">⚠ SMB1 is a legacy protocol</div>
+<div class="callout amber"><div class="h">SMB1 is a legacy protocol</div>
 The SMB client in SMS is the legacy SMB1 stack, and modernising it to SMB2 is separate work beyond this build. If
 you can't or won't enable SMB1 on your server, use the <a href="network.html#udpfs">UDPFS network drive</a> or a
 directly-attached device instead.</div>
@@ -184,28 +156,27 @@ share the NIC in one boot.</li>
 being saved — or isn't being found on the next boot.</p>
 
 <div class="steps">
-  <div class="step"><h3>Insert a memory card (or understand where config goes)</h3>
-  <p>By default SMS saves its configuration to the memory card at <code>mc0:/SMS/SMS.cfg</code>. No memory card in
-  slot&nbsp;1 means nowhere to write — so settings can't persist. Insert a memory card and save again.</p></div>
+  <div class="step"><h3 id="find-the-active-configuration">Find the active configuration</h3>
+  <p>Use <b>Save settings</b> after changes. On a remountable launch source, <code>SMS.cfg</code> normally lives beside the ELF even when a memory card is fitted; <code>SMS.smb</code> follows its resolved directory. See <a href="configuration.html">Config Files &amp; Paths</a> for card-slot, network-file and fallback rules.</p></div>
 
-  <div class="step"><h3>This fork can save to the boot device instead</h3>
-  <p>If SMS was booted from another device (USB, HDD…) and there's no memory card, this fork saves the config
+  <div class="step"><h3 id="this-fork-can-save-to-the-boot-device-instead">This fork can save to the boot device instead</h3>
+  <p>When SMS remounts its boot device, this fork saves the config
   <b>next to the SMS ELF on that boot device</b> instead. So a memory-card-less setup can still keep its settings —
   as long as the boot device is writable and present at each boot.</p></div>
 
-  <div class="step"><h3>Save after changing settings</h3>
+  <div class="step"><h3 id="save-after-changing-settings">Save after changing settings</h3>
   <p>Make your changes, then save through the settings menu so they're written out. If a setting only ever holds for
   the current session, it wasn't committed to storage.</p></div>
 </div>
 
 <div class="callout info"><div class="h">ℹ Resetting to a clean state</div>
-Deleting the config file returns SMS to <b>clean defaults</b> — which means <b>nothing auto-starts</b> and every
+Deleting the config file returns SMS to <b>clean defaults</b> — which means <b>optional Autostart choices are off</b> and every
 Autostart toggle is off. If SMS is misbehaving after a lot of tweaking, clearing the config is a reliable way to get
 back to a known-good baseline; you then turn back on only the devices you use.</div>
 
 <h2 id="nothing-autostarts">Nothing starts up on the first boot</h2>
 <div class="callout info"><div class="h">ℹ This is by design</div>
-On a clean install, <b>no device auto-starts</b>. SMS boots to the desktop with the device menu waiting, and you
+On a clean install, <b>optional Autostart flags start off</b>. SMS boots to the desktop with the device menu waiting, and you
 enable what you need. This is deliberate — it avoids forcing a device (such as an internal HDD) that you may not
 have, and it keeps the first boot fast and predictable.</div>
 <p>To bring a device online, either turn on its <b>Autostart</b> toggle in settings (so it comes up automatically on
@@ -214,7 +185,7 @@ Once you save your settings, your chosen devices will auto-start from then on. T
 fault.</p>
 
 <h2 id="hd-corruption">The screen looks corrupted in HD video modes</h2>
-<div class="callout amber"><div class="h">⚠ Known issue in HD output modes</div>
+<div class="callout amber"><div class="h">Known issue in HD output modes</div>
 In the two high-definition modes (720p and 1080i) SMS does not draw the desktop wallpaper at all — it paints a plain gradient background instead. This is deliberate: the HD framebuffer leaves no room in VRAM for the full-screen artwork, and forcing it there used to comb the text and leave black bars. Everything else works normally; if you want the artwork, use a standard-definition mode (480i/480p/576p), all of which are unaffected.</div>
 <p>HD modes use a much larger framebuffer than standard definition, which leaves little room for the full-screen
 desktop artwork; the result can be a corrupted or garbled background on the desktop. This is a known, open issue in
@@ -240,21 +211,28 @@ So the last code visible is the thing that hung.</p>
 graphics hardware, so they still appear when almost nothing else is working. That is the whole point: it
 reports faults that a log file could not, because nothing was left running to write one.</p></div>
 
-<h3>How to use it</h3>
+<h3 id="how-to-use-it">How to use it</h3>
 <div class="steps">
-<div class="step"><h3>Run it</h3><p>Boot <code>Simple-Media-System-DIAG.elf</code> the same way you boot the
+<div class="step"><h3 id="run-it">Run it</h3><p>Boot <code>Simple-Media-System-DIAG.elf</code> the same way you boot the
 normal ELF.</p></div>
-<div class="step"><h3>Watch the status bar</h3><p>Codes appear at the bottom of the screen as startup
+<div class="step"><h3 id="watch-the-status-bar">Watch the status bar</h3><p>Codes appear at the bottom of the screen as startup
 progresses. On a healthy console they flick past quickly and you end up at the file browser.</p></div>
-<div class="step"><h3>Note where it stops</h3><p>If it freezes, write down or photograph the last code shown.
+<div class="step"><h3 id="note-where-it-stops">Note where it stops</h3><p>If it freezes, write down or photograph the last code <b>and its text label</b> shown.
 A recording is even better — it captures the order they appeared in.</p></div>
-<div class="step"><h3>Report it</h3><p>Open an issue with that code, your console model, and what was
-connected. One code usually identifies the exact call.</p></div>
+<div class="step"><h3 id="report-it">Report it</h3><p>Open an issue with that code, your console model, and what was
+connected. Include the label as well as the number; numeric phase values can overlap.</p></div>
 </div>
 
 <p>Use the standard ELF for normal playback — the diagnostic build is not faster or better, it simply talks
 more.</p>
 
+<h3 id="reproduction-details">Include a reproducible comparison</h3>
+<ul><li>The bundle's <code>build-info.json</code>, standard/packed/DIAG choice and exact release/run.</li>
+<li>Console model, boot method, storage device/format, video mode, cable/display and relevant settings.</li>
+<li>The unchanged original and converted file, or a short failing sample where you can share one; include a SHA-256, codecs, dimensions, frame rate, bitrate, audio tracks and timestamps.</li>
+<li>The exact trigger and time of failure. Record pause/seek/stop separately. Compare with 2.9rev4 where the issue reports that version working.</li>
+<li>Converter settings and logs when applicable. Successful encoding is a host result, not proof of console output. Remove SMB credentials from shared configuration/logs.</li></ul>
+<p>For a color fault, compare the same bytes and fixed display settings before applying any matrix/range transform. For stutter, compare sources and record timing before assuming fragmentation or bitrate is the cause. <a href="known-issues.html">Current fixes and unconfirmed reports</a> show which evidence is still missing.</p>
 <h2 id="quick-reference">Quick reference</h2>
 <table data-sortable>
 <thead><tr><th>Symptom</th><th>Most likely cause</th><th>Fix</th></tr></thead>
@@ -266,21 +244,13 @@ more.</p>
 <tr><td>HDD APA and ATA/exFAT clash</td><td>Both own the internal ATA bus</td><td>Pick one; first to start owns the bus</td></tr>
 <tr><td>SMB share won't connect</td><td>SMB1 disabled on the server</td><td>Re-enable SMB1; then check IP / credentials / firewall</td></tr>
 <tr><td>UDPFS drive won't appear</td><td>No static PS2 IP, no server response, firewall, or SMB already owns the NIC</td><td>Save IPCONFIG; run UDPFSD with Modulo off; allow UDP 62966; reboot to switch stacks</td></tr>
-<tr><td>Settings reset each boot</td><td>No memory card, or config not saved</td><td>Insert a card (or save to the boot device); save after changes</td></tr>
+<tr><td>Settings reset each boot</td><td>Wrong active config, failed write/remount, or unsaved changes</td><td>Check <a href="configuration.html">the actual boot-folder/fallback path</a>, save and compare timestamps</td></tr>
 <tr><td>Nothing auto-starts</td><td>Clean-install default</td><td>Enable Autostart for the devices you use</td></tr>
-<tr><td>Corrupted screen in HD</td><td>Known theme issue at HD resolutions</td><td>Use 480i output</td></tr>
+<tr><td>No wallpaper in 720p/1080i</td><td>Deliberate VRAM-saving gradient</td><td>Use an SD mode for skin checks; report actual corruption separately</td></tr>
 </tbody>
 </table>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

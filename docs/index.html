@@ -1,206 +1,65 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Home · SMS Docs</title>
-<meta name="description" content="Simple Media System (SMS) for PlayStation 2: exact supported video/audio formats, source-enforced playback limits, hardware-tested profiles, storage devices, setup and troubleshooting for v3.0.0-rev1.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Home · SMS Docs</title><meta name="description" content="Simple Media System for PlayStation 2: current downloads, supported media, storage, converter and open playback issues.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Home · SMS Docs"><meta property="og:description" content="Simple Media System for PlayStation 2: current downloads, supported media, storage, converter and open playback issues.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html" class="active"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content"><div class="hero">
-<h1>Simple Media System <span class="g">for PlayStation 2</span></h1>
-<p class="lead"><b>SMS</b> turns a bone-stock PlayStation 2 into a media player. It plays <b>video</b>
-(DivX / XviD / MPEG-4 Part 2 and MPEG-1/2), <b>audio</b> (MP2/MP3, AAC, AC3, FLAC, OGG and WMA) and <b>pictures</b> (JPEG),
-with soft <b>subtitles</b> and <b>M3U playlists</b> — read from just about every storage device the PS2 can reach:
-CD/DVD, USB, <b>MX4SIO</b> microSD, the internal HDD (APA <i>and</i> exFAT), i.LINK, <b>MMCE</b> (SD2PSX / MemCard PRO2),
-<b>SMB</b> shares, a <b>host:</b> folder over ps2client and the <b>UDPFS</b> network drive. No HDD, no network adapter,
-no chip required.</p>
-<div class="btn-row">
-  <a class="btn" href="getting-started.html">🚀 New here? Play your first file</a>
-  <a class="btn ghost" href="https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1">📦 Download v3.0.0-rev1</a>
-  <a class="btn ghost" href="#sections">Browse the full reference</a>
-</div>
-<div class="stat-row">
-  <div class="stat"><b>9</b><span>storage backends</span></div>
-  <div class="stat"><b>1024 px</b><span>per-axis source limit</span></div>
-  <div class="stat"><b>640×480</b><span>30 fps hardware baseline</span></div>
-  <div class="stat"><b>MX4SIO</b><span>playback — a first</span></div>
-</div>
-</div>
-
-<div class="callout info"><div class="h">ℹ What SMS is (and what this build is)</div>
-<b>Simple Media System (SMS)</b> is a free, open-source media player for the PS2, originally written by
-<b>Eugene Plotnikov</b> (2001–2005) and maintained since by the PS2 homebrew community. Its party trick has always
-been playing good-resolution video with sound on an <b>unmodified</b> console straight off a burned disc — no hard
-drive, no network adapter. This documentation covers an <b>enhanced fork</b> that adds first-class <b>MX4SIO</b>
-microSD playback, exFAT support on the internal HDD, i.LINK and MMCE devices, a fully on-screen network/SMB setup,
-the UDPFS network drive, DualShock&nbsp;3/4 support and a refreshed look — while staying a stock-console media player at heart. The
-<a href="getting-started.html"><b>Getting Started</b></a> guide gets a file playing in minutes; the sections below
-are the deep reference.</div>
-
-<h2 id="whats-new">What this build adds on top of SMS</h2>
-<ul class="checklist">
-<li><b>MX4SIO microSD playback</b> — video and audio play smoothly from a microSD in an MX4SIO (SIO2) adapter, with
-its own device icon and an <b>Autostart MX4SIO</b> toggle. This is the headline feature — see <a href="mx4sio.html">MX4SIO</a>.</li>
-<li><b>Internal HDD, exFAT <i>and</i> APA</b> — read media from a modern <b>exFAT</b> drive over ATA (BDM) as well as
-the classic APA/PFS partitions, which SMS lists so you can pick one. See <a href="hdd.html">Internal HDD</a>.</li>
-<li><b>i.LINK (IEEE&nbsp;1394) storage</b> — mount a FireWire drive as a game/media source. See <a href="ilink.html">i.LINK</a>.</li>
-<li><b>MMCE devices</b> — browse media from an <b>SD2PSX</b> or <b>MemCard PRO2</b> in the memory-card slot
-(<code>mmce0:</code> / <code>mmce1:</code>). See <a href="mmce.html">MMCE</a>.</li>
-<li><b>UDPFS network drive</b> — browse a real PC folder as <code>udpfs:</code> through PS2-Servers UDPFSD;
-boot, playback and clean exit are hardware-confirmed. See <a href="network.html#udpfs">Network Setup</a>.</li>
-<li><b>On-screen network &amp; SMB setup</b> — configure your IP and connect to a Windows / Samba share entirely from
-the pad, with a real on-screen keyboard — no pre-made config files to hand-edit. See <a href="network.html">Network Setup</a>.</li>
-<li><b>Three network modes, one at a time</b> — <b>HOST&nbsp;( ps2dev )</b>, <b>SMB</b> and <b>UDPFS</b> are separate
-autostart rows, and picking one clears the other two. They share a single Ethernet controller, so this makes the
-conflict impossible to set up by accident. See <a href="network.html">Network Setup</a>.</li>
-<li><b>Continuous folder playback</b> — highlight a folder and choose <b>Play all</b> to run every track in it back
-to back, instead of stopping after one song. See <a href="audio.html">Audio &amp; Playlists</a>.</li>
-<li><b>A desktop Media Converter</b> — a companion app that turns modern video and audio into formats the PS2 can
-actually decode, with presets that only produce files SMS plays. Windows&nbsp;10/11, Windows&nbsp;7 and Linux builds.
-See <a href="converter.html">Media Converter</a>.</li>
-<li><b>PSX / DESR support</b> — the DVD-recorder PlayStation models boot and play; consoles without
-<code>rom0:LIBSD</code> fall back to an embedded sound driver rather than hanging silently.</li>
-<li><b>A diagnostic build</b> — <code>Simple-Media-System-DIAG.elf</code> prints a short code for each startup step,
-so a freeze can be reported precisely even when nothing is left running to write a log.
-See <a href="troubleshooting.html#reporting">Reporting a freeze</a>.</li>
-<li><b>DualShock 3 &amp; 4</b> — wired USB and Bluetooth controller support, including in-app Bluetooth pairing.
-These paths stay on USB and do not contend with MX4SIO on SIO2.</li>
-<li><b>Native MP4 playback</b> — MPEG-4 Part&nbsp;2 <code>mp4v</code> video with AAC audio, now included in the
-hardware test matrix. H.264/H.265 remain unsupported.</li>
-<li><b>Clock redraw reliability</b> — status rendering now waits for the pending VIF1 DMA before resuming the clock,
-preventing doubled or fragmented digits after menus and playback.</li>
-<li><b>Settings that save anywhere</b> — configuration persists to the memory card <i>or</i> to the device SMS booted
-from (USB, HDD…), so a memory-card-less setup keeps its settings. See <a href="settings.html">Settings</a>.</li>
-<li><b>A refreshed theme</b> — new desktop artwork and device icons, on top of the existing <code>.smi</code> skin
-engine. See <a href="themes.html">Themes &amp; Skins</a>.</li>
-</ul>
-
-<h2 id="playback-spec">Playback support and exact limits</h2>
-<p>There are two useful boundaries: what the current source accepts, and what has been confirmed at full speed on
-real hardware. SMS rejects video when either dimension exceeds <b>1024 pixels</b>, but that is an input ceiling rather
-than a promise that every 1024×1024 encode will be real-time.</p>
-
-<table>
-<thead><tr><th>Property</th><th>Current support / limit</th></tr></thead>
-<tbody>
-<tr><td>Video codecs</td><td>MPEG-4 Part 2 / ASP (DivX, Xvid and Microsoft MPEG-4 v3); MPEG-1; MPEG-2</td></tr>
-<tr><td>Video files</td><td>AVI (<code>.avi</code>, <code>.divx</code>, <code>.xvid</code>), MP4
-(<code>.mp4</code> with <code>mp4v</code>), MPEG program stream (<code>.mpg</code>, <code>.mpeg</code>)</td></tr>
-<tr><td>Video dimensions</td><td>Width ≤ 1024 and height ≤ 1024</td></tr>
-<tr><td>MPEG-1/2 frame rates</td><td>23.976, 24, 25, 29.97, 30, 50, 59.94 and 60 fps</td></tr>
-<tr><td>Standalone audio</td><td>MP2/MP3/MPA, Ogg Vorbis, WMA v1/v2, AAC Main/LC and HE-AAC/SBR, AC-3 and
-mono/stereo FLAC</td></tr>
-<tr><td>Container / file limits</td><td>8 streams maximum; 32-bit file addressing (individual files smaller than
-4 GiB); compressed packets up to 2,097,088 bytes for video and 524,224 bytes for audio</td></tr>
-<tr><td>Unsupported video</td><td>H.264/AVC, H.265/HEVC, VP9 and AV1. Supported audio in such a file may still
-play without video.</td></tr>
-</tbody>
-</table>
-
-<div class="callout info"><div class="h">✓ Hardware-confirmed baseline</div>
-The complete generated test pack has been exercised on a real PS2. Confirmed video cases include Xvid AVI at
-<b>640×480, 30 fps and 1.5 Mbit/s</b>; MPEG-2 PS at <b>640×480, 30 fps and 2.5 Mbit/s</b>; MPEG-1 PS at
-<b>640×480, 30 fps and 1.15 Mbit/s</b>; and <code>mp4v</code> + AAC MP4 at <b>640×480, 30 fps,
-1.5 Mbit/s</b>. MP3, Ogg Vorbis, WMA v2, FLAC, AC-3, M4A/AAC, ADTS AAC and MP2 standalone audio also passed.
-H.264 and H.265 video remained unsupported as expected. See <a href="video.html">Video Playback</a> and
-<a href="audio.html">Audio &amp; Playlists</a> for the full profiles and the distinction between accepted and
-performance-tested limits.</div>
-
-<h2 id="sections">Full reference</h2>
-<p class="lead">Jump straight in, or use the search box up top to find any device, format, or setting instantly
-(press <kbd>/</kbd> to focus it).</p>
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html" class="active" aria-current="page"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
+<section class="hero-sms">
+<div class="eyebrow">PlayStation 2 / Media player</div>
+<h1>Simple Media System</h1>
+<p class="lead">Your videos, music and photographs on the PS2. Browse files from USB, MX4SIO, internal HDD, MMCE, i.LINK, discs or a network share, with a companion converter for modern media.</p>
+<div class="hero-actions"><a class="btn primary" href="getting-started.html">Play your first file</a><a class="btn" href="releases.html">Get SMS &amp; the converter</a></div>
+<div class="hero-tags"><span>MPEG-1 / MPEG-2</span><span>DIVX / XVID</span><span>AUDIO &amp; JPEG</span><span>MX4SIO</span><span>SMB / UDPFS</span></div>
+</section>
+<div class="release-strip"><b>Following the October fixes?</b> Use the <a href="releases.html#this-build">rolling development build</a>. The July stable tag does not include the October parser, streaming, frame-ownership and converter changes. <a href="known-issues.html">Reported console regressions still need confirmation.</a></div>
+<h2 id="whats-new">The maintained SMS fork</h2>
+<p>SMS was created by <b>Eugene Plotnikov</b> and developed by the PS2 homebrew community. This storage-focused fork adds MX4SIO, ATA/exFAT, i.LINK and MMCE paths, a folder-served UDPFS network drive, on-screen network configuration, USB/Bluetooth DualShock 3/4 input and updated artwork. You need a PS2 that can already launch homebrew; a hard disk or network adapter is optional.</p>
+<p>The October development work adds folder shuffle, converter multi-audio output and text-subtitle burn-in, and fixes reproduced parser, streaming and frame-lifetime defects. <a href="known-issues.html">Known issues</a> distinguishes implemented fixes from the reports still awaiting affected-console tests. Poster-grid browsing remains a feature request.</p>
+<h2 id="sections">Choose your next step</h2>
 <div class="grid">
-<a class="tile" href="getting-started.html"><span class="em">🚀</span><b>Getting Started</b><span>First file, end to end</span></a>
-<a class="tile" href="video.html"><span class="em">🎬</span><b>Video Playback</b><span>Formats, controls, the player</span></a>
-<a class="tile" href="audio.html"><span class="em">🎵</span><b>Audio &amp; Playlists</b><span>MP3, FLAC, OGG, M3U</span></a>
-<a class="tile" href="subtitles.html"><span class="em">💬</span><b>Subtitles</b><span>SRT / SUB, styling</span></a>
-<a class="tile" href="mx4sio.html"><span class="em">💠</span><b>MX4SIO</b><span>microSD over SIO2</span></a>
-<a class="tile" href="usb.html"><span class="em">🔌</span><b>USB</b><span>FAT32 &amp; exFAT mass storage</span></a>
-<a class="tile" href="hdd.html"><span class="em">💽</span><b>Internal HDD</b><span>APA/PFS &amp; exFAT</span></a>
-<a class="tile" href="mmce.html"><span class="em">🧩</span><b>MMCE</b><span>SD2PSX / MemCard PRO2</span></a>
-<a class="tile" href="smb.html"><span class="em">🌐</span><b>SMB Network</b><span>Windows / Samba shares</span></a>
-<a class="tile" href="settings.html"><span class="em">🔧</span><b>Settings Reference</b><span>Every menu &amp; option</span></a>
-<a class="tile" href="themes.html"><span class="em">🎨</span><b>Themes &amp; Skins</b><span>.smi skins &amp; artwork</span></a>
-<a class="tile" href="troubleshooting.html"><span class="em">🛠️</span><b>Troubleshooting</b><span>When something won't play</span></a>
+<a class="card" href="getting-started.html"><h3 id="first-playback">First playback</h3><p>Install, enable a source and open a file.</p></a>
+<a class="card" href="converter.html"><h3 id="prepare-media">Prepare media</h3><p>Presets, tracks, subtitles and output validation.</p></a>
+<a class="card" href="devices.html"><h3 id="choose-storage">Choose storage</h3><p>Device names, setup and driver exclusions.</p></a>
+<a class="card" href="configuration.html"><h3 id="keep-your-settings">Keep your settings</h3><p>Boot-folder config, network files and fallback paths.</p></a>
+<a class="card" href="known-issues.html"><h3 id="check-current-issues">Check current issues</h3><p>Open reports, tested scope and useful reproductions.</p></a>
+<a class="card" href="wiki.html"><h3 id="browse-the-wiki">Browse the wiki</h3><p>The complete guide and reference map.</p></a>
 </div>
-
-<h2 id="at-a-glance">SMS at a glance</h2>
-<table>
-<thead><tr><th>Capability</th><th>What SMS does</th></tr></thead>
-<tbody>
-<tr><td>Video</td><td>DivX / Xvid / MPEG-4 Part 2 (AVI or MP4), MPEG-1/2 (MPG/MPEG program streams)</td></tr>
-<tr><td>Audio</td><td>MP2/MP3, AAC (ADTS, M4A or audio-only MP4), AC3, FLAC, OGG&nbsp;Vorbis and WMA</td></tr>
-<tr><td>Pictures</td><td>JPEG viewer</td></tr>
-<tr><td>Subtitles</td><td>External SRT / SUB, shown over video with adjustable size &amp; colour</td></tr>
-<tr><td>Playlists</td><td>M3U</td></tr>
-<tr><td>Sources</td><td>CD/DVD (incl. CDDAFS &amp; DVD-Video), Audio&nbsp;CD (CDDA), USB, MX4SIO, internal HDD (APA &amp; exFAT), i.LINK, MMCE, SMB and UDPFS</td></tr>
-<tr><td>Requirements</td><td>Any PS2 that can run homebrew. HDD and network adapter are <b>optional</b> — used only if you want those sources.</td></tr>
-</tbody>
-</table>
-
-<details class="deep"><summary>Where did SMS come from, and what is this fork?</summary>
-<p><b>Simple Media System</b> was created by <b>Eugene Plotnikov</b> around 2001–2005 as, in his words, "the simplest
-DivX player able to play good-resolution movies at good frame rate on the unmodded PS2 without any extra equipment."
-It introduced <b>CDDAFS</b> — a trick for storing data on an audio CD so the PS2's copy protection accepts a burned
-disc — and a heavily PS2-optimised port of parts of <b>FFmpeg</b> using the console's IPU for colour conversion. The
-project was later adopted and modernised by the <b>ps2homebrew</b> community, gaining USB, HDD, network (SMB), a GUI
-browser, a skin engine and many more formats.</p>
-<p>This documentation is for a <b>downstream fork</b> focused on <b>storage breadth</b>: it makes <b>MX4SIO</b> microSD
-playback work, adds exFAT/ATA HDD, i.LINK, MMCE and UDPFS devices, moves network and SMB setup fully on-screen,
-adds DualShock&nbsp;3/4 support, and refreshes the look. It is a labour of love built on the work of many — see
-<a href="credits.html">Credits &amp; Sources</a>.</p>
-</details>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+<h2 id="playback-spec">Formats and limits</h2>
+<table><thead><tr><th>Media</th><th>Current routes</th></tr></thead><tbody>
+<tr><td>Video</td><td>MPEG-4 Part 2 / Xvid / DivX in AVI; <code>mp4v</code> in MP4; MPEG-1/2 in MPEG program streams. <a href="video.html">Format details</a>.</td></tr>
+<tr><td>Music</td><td>MP2/MP3/MPA, AAC/M4A, AC-3, FLAC, Ogg Vorbis and WMA v1/v2. <a href="audio.html">Audio constraints</a>.</td></tr>
+<tr><td>Pictures and text</td><td>Baseline JPEG, M3U playlists and external SRT/SUB/TXT subtitles. Existing AVI DXSB bitmap subtitles are a separate path.</td></tr>
+<tr><td>Video dimensions</td><td>At most 1024 pixels on either axis. This is an acceptance check, not a real-time playback guarantee.</td></tr>
+<tr><td>Files</td><td>Keep each file below 4 GiB on every source, including exFAT.</td></tr>
+<tr><td>Tracks</td><td>Eight stream-table slots; MP4 and MPEG-PS retain at most seven streams to reserve a terminator. The converter allows video plus six audio tracks.</td></tr>
+<tr><td>Unsupported video</td><td>H.264/AVC, H.265/HEVC, VP9, AV1 and WMV. An MP4 extension alone does not identify the video codec.</td></tr>
+</tbody></table>
+<p>Earlier project documentation records successful standard-definition fixture playback. Those are useful starting profiles; generating the <a href="releases.html#test-media">test-media pack</a> in CI does not retest a console. High bitrate, resolution, audio workload and source throughput still matter.</p>
+<h2 id="at-a-glance">Start with a small, known file</h2>
+<ol><li><a href="install.html">Download and launch the standard ELF</a> with your homebrew loader.</li>
+<li>Use a supported existing FAT32/exFAT volume, copy a small MP3 or conservative video onto it, and enable that source in <b>Device settings</b>.</li>
+<li>Pick the source, press Down to enter its files and Cross to open a file. Start opens settings from the browser; Triangle stops playback.</li>
+<li>If it fails, keep the file unchanged and follow <a href="troubleshooting.html#reporting">the reporting checklist</a>.</li></ol>
+<p>Read the <a href="controls.html">controls</a>, <a href="settings.html">settings reference</a> and <a href="languages.html">language guide</a> when you are ready to customize. <a href="credits.html">Credits and preserved historical manuals</a> retain the project's lineage.</p>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

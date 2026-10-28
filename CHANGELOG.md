@@ -6,14 +6,38 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
-## Unreleased
+## Rolling development — 2026-10-27
+
+Merged in [PR #30](https://github.com/NathanNeurotic/Simple-Media-System/pull/30)
+as `4a6959a`. These changes are in rolling development and are not part of the
+July `v3.0.0-rev1` stable tag.
+
+- MPEG-PS probing restores logical position, retries incomplete codec headers,
+  checks allocations/short reads and exits stalled packet scans.
+- MOV/MP4 probing and packet/index handling cover disabled-stream EOF, composition
+  timing, 64-bit offsets, extended atoms, exhausted timing and allocation ownership.
+- STIO/CDDA allocation and stream recovery preserve valid state on failures;
+  bounded synchronous fileXio batches do not establish a USB-throughput fix.
+- MPEG-1/2 RGB frames wait for renderer ownership before reuse/resize. Shutdown
+  drains allocated pointer slots and respects subtitle handoffs.
+- Folder shuffle and playlist ownership fixes, skin validation, late-config repaint
+  and updated Spanish strings.
+- Converter multi-audio, text burn-in, source-SD sizing, Xvid/GOP6/PCM preset,
+  bounded packet inspection and repaired digest-pinned Windows FFmpeg fallback.
+- Actual-source host regressions and controlled decoder/frame-pool probes.
+
+Affected-console color, USB stutter, exact-file playback, skin restart, shuffle
+and converter acceptance remain open. Poster-grid browsing is not implemented.
+See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html).
+
+## Earlier fork development
 
 ### Playback
 
 - **MP4 video now plays.** `.mp4` files previously opened as audio only — the video track was
   discarded before it was ever looked at. MPEG-4 Part 2 (`mp4v`) video with AAC audio now
   plays, seeks, and is treated as video throughout the browser. H.264 (`avc1`) is not
-  supported and cannot be: the PS2's IPU decodes MPEG-1/2 only.
+  supported by this build; the IPU does not provide an H.264 decoder.
 - **Continuous playback.** Finishing a song now continues into the rest of the folder.
   Previously this only happened via the file context menu → *Play all*. Audio only —
   videos deliberately do not chain into one another.

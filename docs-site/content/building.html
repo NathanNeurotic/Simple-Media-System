@@ -1,0 +1,44 @@
+<h1>Building from Source</h1>
+<p class="lead">Build the EE application with the repository's existing legacy GCC toolchain. IOP module rebuilding is a separate task; a normal player build uses the committed compressed modules.</p>
+<p>You do not need a compiler to run SMS. Use <a href="releases.html">the prebuilt downloads</a> for ordinary installation.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul><li>Docker running on your host and a source checkout, including <code>irx/</code>, artwork and fonts.</li>
+<li>The known-working <code>ps2dev/ps2dev:v1.0</code> image for the application, using EE GCC 3.2.3. Do not silently replace it with a current SDK or LLVM build.</li>
+<li>A separate checkout/build directory when comparing variants. Changing make flags without cleaning can reuse objects built for a different variant.</li></ul>
+<h2 id="toolchain">The pinned application toolchain</h2>
+<p>The old Alpine image can compile SMS, but its musl runtime cannot run modern GitHub Actions JavaScript steps. CI checks out and uploads on the host and runs only make inside Docker. A tag selects the expected toolchain; verify actual output hashes rather than assuming a tag alone guarantees every future build is identical.</p>
+<h2 id="build">Standard and packed builds</h2>
+<h3 id="posix">Linux / macOS / Git Bash</h3>
+<pre>git clone https://github.com/NathanNeurotic/Simple-Media-System.git
+cd Simple-Media-System
+docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
+  sh -c 'apk add --no-cache build-base git zip &amp;&amp; make all pack'</pre>
+<h3 id="powershell">Windows PowerShell</h3>
+<pre>docker run --rm -v "${PWD}:/src" -w /src ps2dev/ps2dev:v1.0 sh -c 'apk add --no-cache build-base git zip &amp;&amp; make all pack'</pre>
+<p>Run the PowerShell command from the repository root. Shell quoting and line continuation differ from POSIX/cmd.exe; do not copy the backslash-continued command into cmd.exe unchanged.</p>
+<p>Outputs are <code>bin/SMS.elf</code> and <code>bin/SMS-packed.elf</code>. BDM defaults to enabled; that is the distributed full-device player.</p>
+<h2 id="variants">Diagnostic and compatibility variants</h2>
+<p>In a disposable build checkout, clean between variants, then use the same container setup with:</p>
+<pre>make clean
+make SMS_DIAG=1 all
+# Save/copy bin/SMS.elf before cleaning again.
+make clean
+make BDM=0 all</pre>
+<p><code>SMS_DIAG=1</code> adds on-screen diagnostic labels. <code>BDM=0</code> verifies the legacy build still links; it is not the standard rolling download. Cleaning removes that checkout's build outputs, so keep any binaries or symbols you need before running it.</p>
+<h2 id="iop">Embedded IOP modules</h2>
+<p>The Makefile converts committed <code>irx/*.irx.xz</code> into embedded arrays. SMS decompresses and starts them on the IOP. Normal installation/building does not require a separate IRX build or copying loose modules next to the player.</p>
+<p>The modules include iomanX/fileXio, BDM/FAT/exFAT, USB, MX4SIO, ATA, i.LINK, MMCE, card/pad support and network stacks. Consult the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/Makefile">actual Makefile</a> for the selected objects; the enabled stack depends on the build flags and runtime choices.</p>
+<h2 id="mx4sio-driver">Rebuilding the MX4SIO driver</h2>
+<p>The embedded MX4SIO module carries <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/patches/mx4sio_bd-sms.patch">a local driver patch</a>. Preserve its watchdog, bounded SIO2 waits, batch limit and partial-read progress handling. <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/patches/README.md">Patch notes</a> describe the rebuild; <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/MX4SIO_SOLUTION.md">the historical investigation</a> records the original reproducer and earlier read strategy.</p>
+<p>An IOP module's compiler/SDK requirements can differ from the EE application. In particular, the UDPFS module build uses its own script/toolchain and must retain SMS's dev9 import ordinals. See <a href="developers.html#drivers">IOP and network development</a>. Do not replace compressed modules with arbitrary SDK builds.</p>
+<h2 id="ci">Build and publication workflow</h2>
+<table><thead><tr><th>Trigger</th><th>Result</th></tr></thead><tbody>
+<tr><td>Push / PR</td><td>Host regressions, ABI checks, standard/packed/DIAG and separate legacy builds; downloadable per-run artifacts.</td></tr>
+<tr><td>Successful <code>master</code> push</td><td>Updates the rolling player assets. Separate converter jobs update Windows, Win7 and Linux assets on the same release.</td></tr>
+<tr><td><code>v*</code> tag</td><td>Versioned release publication.</td></tr>
+<tr><td>Master test-media workflow</td><td>Regenerates synthetic media. This does not execute console playback.</td></tr>
+<tr><td>Documentation changes</td><td>Checks shared generation, local links/anchors, search targets and browser-script syntax. Pages serves <code>master:/docs</code>.</td></tr>
+</tbody></table>
+<p>See <a href="developers.html#build-tests">host test prerequisites</a> and the <a href="https://github.com/NathanNeurotic/Simple-Media-System/tree/master/.github/workflows">workflow sources</a>. A successful compile is not a device test. Keep the build manifest, symbols and exact media when reporting results.</p>
+<h2 id="next">Next steps</h2>
+<p><a href="developers.html">Architecture and contributing</a> · <a href="known-issues.html">Known issues and acceptance</a> · <a href="releases.html">Build identity and downloads</a>.</p>

@@ -1,25 +1,23 @@
-# Previewing and building the SMS documentation
+# Previewing and building SMS documentation
 
-## Current GitHub Pages site
+## Maintained manual and wiki
 
-The current site is static and needs no build step. From the repository root, serve
-it locally with any static HTTP server, for example:
+Use Python 3.9 or newer. From the repository root:
 
 ```sh
+python docs-site/build.py
+python docs-site/build.py --check
 python -m http.server 8000 --directory docs
 ```
 
-Then open <http://localhost:8000/>.
+Open <http://localhost:8000/>. No Python packages, Jekyll build, external fonts or
+hosted search service are required. The generated local search script also works
+offline. HTTP preview remains useful for checking live-equivalent routes and
+browser errors. `--check` rejects stale output and invalid local links/anchors.
 
-Regenerate the client-side search index after changing page text or headings:
-
-```sh
-node tools/build-docs-search-index.mjs
-```
-
-GitHub Pages publishes the same `/docs` files from `master`, so the local preview is
-the deployed structure. Do not preview with `file://`; the browser may block the
-search index request.
+The old Node search-index command delegates to the same Python generator. See
+[`docs-site/README.md`](../docs-site/README.md) for source editing, publication,
+native wiki sync and preservation of historical material.
 
 ## Archived DocBook manual
 

@@ -1,239 +1,72 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Building from Source · SMS Docs</title>
-<meta name="description" content="How to build SMS from source: the pinned ps2dev/ps2dev:v1.0 Docker toolchain, running make to produce bin/SMS.elf, the embedded IOP driver modules, the patched MX4SIO driver, and continuous integration.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Building from Source · SMS Docs</title><meta name="description" content="Build SMS with its existing GCC/Docker toolchain, separate target variants and embedded IOP module requirements.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/building.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Building from Source · SMS Docs"><meta property="og:description" content="Build SMS with its existing GCC/Docker toolchain, separate target variants and embedded IOP module requirements.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html" class="active"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html" class="active" aria-current="page"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Building from Source</h1>
-<p class="lead">SMS is an EE (Emotion Engine) application that builds with the PS2 homebrew toolchain and links a set
-of IOP driver modules directly into the ELF. This page is for developers: it walks through the one prerequisite
-(Docker), the single <code>make</code> command that produces <code>bin/SMS.elf</code>, the driver modules embedded
-at build time, the patched MX4SIO driver, and the CI workflow that rebuilds on every push.</p>
-
-<div class="callout info"><div class="h">ℹ You do not need to build to run SMS</div>
-If you just want to play media, grab a prebuilt ELF from the <a href="releases.html">Releases</a> page and follow
-<a href="install.html">Install &amp; First Boot</a>. This page is only for people who want to compile SMS themselves
-or hack on it.</div>
-
+<p class="lead">Build the EE application with the repository's existing legacy GCC toolchain. IOP module rebuilding is a separate task; a normal player build uses the committed compressed modules.</p>
+<p>You do not need a compiler to run SMS. Use <a href="releases.html">the prebuilt downloads</a> for ordinary installation.</p>
 <h2 id="prerequisites">Prerequisites</h2>
-<p>The build uses the pinned <b>ps2dev</b> toolchain image, so the only thing you need on your machine is
-<b>Docker</b> and a checkout of the source tree. Everything else — the EE compiler, the IOP compiler, the PS2SDK
-headers and libraries, <code>bin2c</code>, and so on — comes from inside the container.</p>
-<ul class="checklist">
-<li><b>Docker</b> installed and running (Docker Desktop on Windows/macOS, or the Docker engine on Linux).</li>
-<li>A clone of the SMS source tree (this repository), including its committed <code>irx/</code> and
-<code>images/</code> assets.</li>
-<li>Enough disk to pull the toolchain image the first time you run it.</li>
-</ul>
-
-<h3 id="the-image">The pinned toolchain image</h3>
-<p>SMS builds against a single, version-pinned toolchain image: <code>ps2dev/ps2dev:v1.0</code>. This is the
-public PS2 homebrew toolchain (its EE compiler is <b>ee-gcc 3.2.3</b>). Pinning to a specific tag matters — it is
-what lets the build be reproducible: the project's CI produces a <b>byte-identical</b> ELF from the same source on
-this exact image. Do not substitute a "latest" tag; use <code>v1.0</code>.</p>
-
-<div class="callout amber"><div class="h">⚠ Why only the build runs in the container</div>
-The <code>ps2dev/ps2dev:v1.0</code> image is built on an older Alpine (musl) base. That base is fine for compiling,
-but modern GitHub Actions steps (checkout, artifact upload) run JavaScript on a Node runtime that this old musl
-can't load. So on CI the checkout happens on the host and only the <code>make</code> step runs inside the
-container. Locally you can do the whole thing in one <code>docker run</code>, as shown below.</div>
-
-<h2 id="building-ee">Building the EE app</h2>
-<p>From the root of the source tree, run the toolchain container with the repo mounted and invoke <code>make</code>.
-The image is minimal, so the command also installs the small build-base package set it needs before building:</p>
-
-<pre>docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
-  sh -c 'apk add --no-cache build-base &amp;&amp; make all'</pre>
-
-<p>That single command compiles every EE source file, embeds the IOP driver modules and the artwork, links the
-program, and strips it. The output is:</p>
-
-<pre>bin/SMS.elf</pre>
-
-<div class="steps">
-<div class="step"><h3>Mount the repo into the container</h3>
-<p><code>-v "$PWD":/src -w /src</code> maps your current directory (the repo root) to <code>/src</code> inside the
-container and makes it the working directory, so the build writes <code>bin/SMS.elf</code> straight back onto your
-host filesystem. <code>--rm</code> discards the container when it exits.</p></div>
-
-<div class="step"><h3>Install the build-base and run make</h3>
-<p><code>apk add --no-cache build-base</code> pulls in the host-side build tools the make run needs; then
-<code>make all</code> does the actual compile and link. On CI the same step also adds <code>git</code> and
-<code>zip</code> for packaging, but a plain local build only needs <code>build-base</code>.</p></div>
-
-<div class="step"><h3>Collect the ELF</h3>
-<p>When <code>make</code> finishes, the finished program is at <code>bin/SMS.elf</code>. That is the file you copy
-to a device and boot — see <a href="install.html">Install &amp; First Boot</a>.</p></div>
-</div>
-
-<p>The build defaults to the full-device configuration (<code>BDM ?= 1</code> in the Makefile), which enables the
-BDM storage stack and the extra devices. That is the configuration this documentation describes, and the one you
-want.</p>
-
-<details class="deep"><summary>What if I'm on Windows and <code>$PWD</code> isn't expanded?</summary>
-<p><code>$PWD</code> is a shell variable that expands to the current directory in a POSIX shell (bash, Git Bash,
-WSL, macOS/Linux terminals). In PowerShell use <code>${PWD}</code>, and in cmd.exe use <code>%cd%</code>. The rest
-of the command is identical. The important part is that the repo root is bind-mounted to <code>/src</code> and
-<code>make all</code> runs there.</p></details>
-
-<h2 id="embedded-modules">Embedded IOP driver modules</h2>
-<p>SMS runs its storage and I/O drivers on the PS2's IOP (I/O Processor) as <code>.irx</code> modules. Rather than
-load these off a device at runtime, SMS <b>embeds them into the ELF at build time</b> and loads them from memory as
-it boots. That is what makes SMS self-contained — the single <code>bin/SMS.elf</code> carries every driver it
-needs.</p>
-
-<p>The Makefile lists the module set that gets linked in (the <code>IOP_OBJS</code> group, gated behind
-<code>BDM=1</code>). In this fork that set is:</p>
-
-<table data-sortable>
-<thead><tr><th>Module</th><th>Role</th></tr></thead>
-<tbody>
-<tr><td><code>iomanx</code></td><td>Extended I/O manager — the modern file-I/O core the device layers sit on</td></tr>
-<tr><td><code>filexio</code></td><td>EE↔IOP file-I/O bridge (the <code>fileXio</code> API SMS uses for BDM devices)</td></tr>
-<tr><td><code>bdm</code></td><td>Block Device Manager — the common layer all <code>massN:</code> devices share</td></tr>
-<tr><td><code>bdmfs_fatfs</code></td><td>FAT / exFAT filesystem layer on top of BDM</td></tr>
-<tr><td><code>sio2man</code></td><td>SIO2 controller manager (the PS2SDK build, used so the SIO2 devices can hook it)</td></tr>
-<tr><td><code>mcman</code> / <code>mcserv</code></td><td>Memory-card manager and server</td></tr>
-<tr><td><code>padman</code></td><td>Controller (pad) manager</td></tr>
-<tr><td><code>usbd</code></td><td>USB host driver</td></tr>
-<tr><td><code>usbmass_bd</code></td><td>USB mass-storage block device → <code>massN:</code></td></tr>
-<tr><td><code>mx4sio_bd</code></td><td>MX4SIO microSD (SIO2) block device → <code>massN:</code> (the hardened build — see below)</td></tr>
-<tr><td><code>ata_bd</code></td><td>Internal ATA (exFAT HDD) block device → <code>massN:</code></td></tr>
-<tr><td><code>iLinkman</code> / <code>IEEE1394_bd</code></td><td>i.LINK (FireWire) manager and block device → <code>massN:</code></td></tr>
-<tr><td><code>mmceman</code></td><td>MMCE device manager (SD2PSX / MemCard PRO2) → <code>mmce0:</code> / <code>mmce1:</code></td></tr>
-<tr><td><code>smbman</code></td><td>SMB network share client module</td></tr>
-</tbody>
-</table>
-
-<p>On the EE side the Makefile links the libraries these need — <code>-lmc</code> (memory card),
-<code>-lpadx</code> (pad), and <code>-lfileXio</code> — and defines <code>-DBDM</code> so the device code is
-compiled in.</p>
-
-<div class="callout info"><div class="h">ℹ The modules are committed and XZ-compressed</div>
-The embedded modules live in the repo under <code>irx/</code> and are stored <b>XZ-compressed</b> (as
-<code>irx/*.irx.xz</code>). At build time the Makefile runs each through <code>bin2c</code> to turn it into a C
-array that links into the ELF, and SMS decompresses and loads them at boot with its own bundled XZ decoder. Because
-the compressed modules (and the artwork) are committed, a fresh checkout already has every input the build needs —
-<code>make all</code> just works, no separate module-build step required.</div>
-
-<h2 id="patched-mx4sio">The patched MX4SIO driver</h2>
-<p>The headline feature of this fork — reliable <a href="mx4sio.html">MX4SIO</a> playback — depends on a
-<b>hardened</b> version of the <code>mx4sio_bd</code> block-device driver. That driver is not the stock one: it is
-rebuilt from the PS2SDK source with reliability hardening so playback stays robust under the demands a
-continuously-streaming media player puts on the console.</p>
-
-<p>So that the embedded binary is reproducible and reviewable, the patch is kept in the repo alongside the built
-module:</p>
-<ul class="checklist">
-<li><code>patches/mx4sio_bd-sms.patch</code> — the source patch, applied to PS2SDK's
-<code>iop/sio/mx4sio_bd/</code>.</li>
-<li><code>irx/mx4sio_bd.irx</code> — the resulting hardened module (committed compressed, like the others), which
-the EE app embeds.</li>
-</ul>
-
-<p>Because the built module is already committed, <b>you do not need to rebuild the driver to build SMS</b> — the
-standard <code>make all</code> above uses the committed <code>irx/</code>. You only rebuild the driver if you want
-to change or re-verify it. To do that, in a PS2SDK source checkout:</p>
-
-<pre>patch -p1 &lt; &lt;repo&gt;/patches/mx4sio_bd-sms.patch
-cd iop/sio/mx4sio_bd &amp;&amp; PS2SDKSRC=&lt;ps2sdk-root&gt; make   # -&gt; mx4sio_bd.irx</pre>
-
-<p>then copy the resulting <code>mx4sio_bd.irx</code> back into the repo's <code>irx/</code> (re-compressing it into
-the committed <code>irx/*.irx.xz</code> form) and rebuild the EE app.</p>
-
-<div class="callout amber"><div class="h">⚠ Driver internals are out of scope here</div>
-This page documents <i>where</i> the patched driver lives and <i>how</i> to rebuild it, not the specifics of the
-fix. The rationale and internals are written up in the repo's developer notes (<code>MX4SIO_SOLUTION.md</code>) and
-the patch itself for anyone who needs them.</div>
-
-<h2 id="ci">Continuous integration</h2>
-<p>A GitHub Actions workflow (<code>.github/workflows/compilation.yml</code>) builds SMS on <b>every push</b> (and
-on pull requests and version tags). It checks the tree out on the host, then runs the same
-<code>docker run … ps2dev/ps2dev:v1.0 … make all</code> build inside the pinned container — the identical command
-you run locally — and packages the resulting <code>bin/SMS.elf</code>.</p>
-
-<table data-sortable>
-<thead><tr><th>Trigger</th><th>What CI does</th></tr></thead>
-<tbody>
-<tr><td>Any push / PR / tag</td><td>Build in <code>ps2dev/ps2dev:v1.0</code> and upload the built ELF as a per-commit artifact.</td></tr>
-<tr><td>Push to the working branch</td><td>Refresh a single <b>rolling</b> pre-release that always holds the latest development ELF, so testers can grab the newest build from one stable URL.</td></tr>
-<tr><td>Push of a <code>v*</code> tag</td><td>Cut a <b>stable release</b> for that version tag with the built ELF attached.</td></tr>
-</tbody>
-</table>
-
-<p>The workflow needs <code>contents: write</code> permission so it can publish the rolling and stable releases.
-Because CI uses the same pinned toolchain as a local build, the ELF it produces matches a local
-<code>make all</code> — a green CI run is a real signal that the tree still compiles cleanly end to end. See the
-<a href="releases.html">Releases &amp; Changelog</a> page for where the built ELFs land.</p>
-
-<div class="callout info"><div class="h">ℹ Reproducibility in one line</div>
-Local build and CI build run the <i>same</i> command against the <i>same</i> pinned image, and a fresh checkout
-carries every build input (compressed modules, artwork). That is the whole reproducibility story: clone,
-<code>docker run … make all</code>, get <code>bin/SMS.elf</code>.</div>
-
-<h2 id="recap">Recap</h2>
-<ul class="checklist">
-<li>Install <b>Docker</b>; no local toolchain needed.</li>
-<li>Build with <code>docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 sh -c 'apk add --no-cache build-base &amp;&amp; make all'</code>.</li>
-<li>Output is <code>bin/SMS.elf</code> (default full-device / <code>BDM=1</code> build).</li>
-<li>All IOP driver modules are embedded into the ELF from the committed, XZ-compressed <code>irx/</code>.</li>
-<li>The hardened MX4SIO driver ships prebuilt; rebuild it from <code>patches/mx4sio_bd-sms.patch</code> only if you're changing it.</li>
-<li>CI rebuilds on every push with the same pinned toolchain and publishes the ELF.</li>
-</ul>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+<ul><li>Docker running on your host and a source checkout, including <code>irx/</code>, artwork and fonts.</li>
+<li>The known-working <code>ps2dev/ps2dev:v1.0</code> image for the application, using EE GCC 3.2.3. Do not silently replace it with a current SDK or LLVM build.</li>
+<li>A separate checkout/build directory when comparing variants. Changing make flags without cleaning can reuse objects built for a different variant.</li></ul>
+<h2 id="toolchain">The pinned application toolchain</h2>
+<p>The old Alpine image can compile SMS, but its musl runtime cannot run modern GitHub Actions JavaScript steps. CI checks out and uploads on the host and runs only make inside Docker. A tag selects the expected toolchain; verify actual output hashes rather than assuming a tag alone guarantees every future build is identical.</p>
+<h2 id="build">Standard and packed builds</h2>
+<h3 id="posix">Linux / macOS / Git Bash</h3>
+<pre>git clone https://github.com/NathanNeurotic/Simple-Media-System.git
+cd Simple-Media-System
+docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
+  sh -c 'apk add --no-cache build-base git zip &amp;&amp; make all pack'</pre>
+<h3 id="powershell">Windows PowerShell</h3>
+<pre>docker run --rm -v "${PWD}:/src" -w /src ps2dev/ps2dev:v1.0 sh -c 'apk add --no-cache build-base git zip &amp;&amp; make all pack'</pre>
+<p>Run the PowerShell command from the repository root. Shell quoting and line continuation differ from POSIX/cmd.exe; do not copy the backslash-continued command into cmd.exe unchanged.</p>
+<p>Outputs are <code>bin/SMS.elf</code> and <code>bin/SMS-packed.elf</code>. BDM defaults to enabled; that is the distributed full-device player.</p>
+<h2 id="variants">Diagnostic and compatibility variants</h2>
+<p>In a disposable build checkout, clean between variants, then use the same container setup with:</p>
+<pre>make clean
+make SMS_DIAG=1 all
+# Save/copy bin/SMS.elf before cleaning again.
+make clean
+make BDM=0 all</pre>
+<p><code>SMS_DIAG=1</code> adds on-screen diagnostic labels. <code>BDM=0</code> verifies the legacy build still links; it is not the standard rolling download. Cleaning removes that checkout's build outputs, so keep any binaries or symbols you need before running it.</p>
+<h2 id="iop">Embedded IOP modules</h2>
+<p>The Makefile converts committed <code>irx/*.irx.xz</code> into embedded arrays. SMS decompresses and starts them on the IOP. Normal installation/building does not require a separate IRX build or copying loose modules next to the player.</p>
+<p>The modules include iomanX/fileXio, BDM/FAT/exFAT, USB, MX4SIO, ATA, i.LINK, MMCE, card/pad support and network stacks. Consult the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/Makefile">actual Makefile</a> for the selected objects; the enabled stack depends on the build flags and runtime choices.</p>
+<h2 id="mx4sio-driver">Rebuilding the MX4SIO driver</h2>
+<p>The embedded MX4SIO module carries <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/patches/mx4sio_bd-sms.patch">a local driver patch</a>. Preserve its watchdog, bounded SIO2 waits, batch limit and partial-read progress handling. <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/patches/README.md">Patch notes</a> describe the rebuild; <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/MX4SIO_SOLUTION.md">the historical investigation</a> records the original reproducer and earlier read strategy.</p>
+<p>An IOP module's compiler/SDK requirements can differ from the EE application. In particular, the UDPFS module build uses its own script/toolchain and must retain SMS's dev9 import ordinals. See <a href="developers.html#drivers">IOP and network development</a>. Do not replace compressed modules with arbitrary SDK builds.</p>
+<h2 id="ci">Build and publication workflow</h2>
+<table><thead><tr><th>Trigger</th><th>Result</th></tr></thead><tbody>
+<tr><td>Push / PR</td><td>Host regressions, ABI checks, standard/packed/DIAG and separate legacy builds; downloadable per-run artifacts.</td></tr>
+<tr><td>Successful <code>master</code> push</td><td>Updates the rolling player assets. Separate converter jobs update Windows, Win7 and Linux assets on the same release.</td></tr>
+<tr><td><code>v*</code> tag</td><td>Versioned release publication.</td></tr>
+<tr><td>Master test-media workflow</td><td>Regenerates synthetic media. This does not execute console playback.</td></tr>
+<tr><td>Documentation changes</td><td>Checks shared generation, local links/anchors, search targets and browser-script syntax. Pages serves <code>master:/docs</code>.</td></tr>
+</tbody></table>
+<p>See <a href="developers.html#build-tests">host test prerequisites</a> and the <a href="https://github.com/NathanNeurotic/Simple-Media-System/tree/master/.github/workflows">workflow sources</a>. A successful compile is not a device test. Keep the build manifest, symbols and exact media when reporting results.</p>
+<h2 id="next">Next steps</h2>
+<p><a href="developers.html">Architecture and contributing</a> · <a href="known-issues.html">Known issues and acceptance</a> · <a href="releases.html">Build identity and downloads</a>.</p>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

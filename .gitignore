@@ -40,3 +40,6 @@ dist/
 
 # Generated at runtime by the converter (crash_log.py)
 sms-converter-crash.log
+
+# Host documentation tooling caches
+__pycache__/

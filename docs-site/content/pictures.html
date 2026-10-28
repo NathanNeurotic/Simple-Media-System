@@ -1,0 +1,83 @@
+<h1>Pictures</h1>
+<p class="lead">SMS has a built-in <b>JPEG photo viewer</b>. Point the file browser at a
+<code>.jpg</code> or <code>.jpeg</code> file, press <b>Cross</b>, and SMS decodes it on the PS2's
+JPEG path and fills the screen with your photo. From there you can step forward and back through
+the pictures in the same folder, rotate an image, and flip between fit-to-screen and actual size.</p>
+
+<h2 id="overview">Overview</h2>
+<p>Alongside video and audio, SMS reads <b>JPEG</b> still images. JPEG decoding, rescaling and GS upload consume time and memory; large images can take longer to open. The viewer works the same way
+no matter where the file lives — a burned disc, USB stick, MX4SIO microSD, the internal HDD, i.LINK, MMCE,
+an SMB share or the UDPFS network drive. If you can browse to the file, you can view it.</p>
+
+<div class="callout info"><div class="h">ℹ What SMS shows</div>
+The viewer handles standard baseline JPEG photos — the everyday <code>.jpg</code>/<code>.jpeg</code>
+files that cameras and phones produce. It is a picture <i>viewer</i>, not an editor: it opens and displays
+images, and lets you page through, rotate, and rescale them on screen.</div>
+
+<h2 id="viewing">Viewing a picture</h2>
+<p>Getting a photo on screen is the same three-area workflow you use for any file in SMS.</p>
+
+<div class="steps">
+<div class="step"><h3>Pick the device</h3>
+<p>In the <b>device menu</b> (the top row of icons), use <b>Left/Right</b> to highlight the device that
+holds your photos, then press <b>Down</b> to drop into the file list.</p></div>
+
+<div class="step"><h3>Browse to the folder</h3>
+<p>In the <b>file list</b> use <b>Up/Down</b> to move (L1/L2 page-scroll long lists), <b>Cross</b> to open a
+folder, and <b>Triangle</b> to go up one level. Photos can sit anywhere on the device — SMS browses the
+raw filesystem, so there is no special "pictures" folder you have to use.</p></div>
+
+<div class="step"><h3>Open the JPEG</h3>
+<p>Highlight a <code>.jpg</code> or <code>.jpeg</code> file and press <b>Cross</b>. SMS decodes the image and
+displays it full-screen, with the file's path shown briefly along the bottom.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">If a picture won't open</div>
+If SMS can't decode a file, it shows the filename with an error indication instead of the photo. Progressive
+or unusual JPEG variants, or files that aren't really JPEGs, are the usual cause — re-save the image as a
+standard (baseline) JPEG and try again. You can still step to the next picture with <b>Right</b>.</div>
+
+<h2 id="controls">Controls in the viewer</h2>
+<p>Once a photo is on screen, the pad controls the viewer directly (these also respond to the equivalent
+buttons on a PS2 DVD remote):</p>
+
+<table data-sortable>
+<thead><tr><th>Button</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><b>Right</b> (or <b>Cross</b>)</td><td>Next picture in the set. At the last image it wraps back to the first. <i>Only when a folder was opened with Play all → Images; a single photo opened on its own has nothing to step to.</i></td></tr>
+<tr><td><b>Left</b></td><td>Previous picture. At the first image it wraps to the last. <i>Same condition as above.</i></td></tr>
+<tr><td><b>Square</b></td><td>Toggle how the image is sized on screen — switches between fit-to-screen and actual (unscaled) view.</td></tr>
+<tr><td><b>Circle</b></td><td>Rotate the picture.</td></tr>
+<tr><td><b>R1</b></td><td>Rotate the picture the other way.</td></tr>
+<tr><td><b>Triangle</b></td><td>Leave the viewer and return to the file browser.</td></tr>
+</tbody>
+</table>
+
+<div class="callout info"><div class="h">ℹ Stepping through a folder</div>
+Opening a single <code>.jpg</code> with <b>Cross</b> shows just that one picture — Left and Right have nothing
+to step to. To page through a folder, highlight the <i>folder</i> itself and choose <b>Play all → Images</b>; Left
+and Right then walk the whole set in order, wrapping at each end.</div>
+
+<h2 id="tips">Tips</h2>
+<ul class="checklist">
+<li>Use <b>standard baseline JPEG</b> files (the normal output of cameras, phones, and most photo software).
+That is what the viewer is built for.</li>
+<li>The PS2 outputs a standard-definition-style picture, so there is nothing to gain from enormous
+multi-megapixel files — SMS fits the image to the screen anyway. Reasonable, screen-sized JPEGs open fastest
+and use the least memory.</li>
+<li>Keep the photos you want to flip through <b>together in one folder</b>. Because Left/Right step through the
+current folder, a tidy folder becomes an easy, browsable set of pictures.</li>
+<li>Faster storage means faster loading. Reading large photos from a quick device (USB, MX4SIO microSD, the
+internal HDD) feels snappier than over a slow disc or a busy network share.</li>
+</ul>
+
+<details class="deep"><summary>Can SMS play a slideshow, or zoom into a photo?</summary>
+<p>The viewer's confirmed on-screen actions are stepping between images (Left/Right), rotating (Circle / R1),
+switching between fit-to-screen and actual size (Square), and returning to the browser (Triangle). This
+documentation only describes controls that are verified in the build, so if you're looking for an automatic
+timed slideshow or a free zoom-and-pan, treat those as not part of the picture viewer here.</p></details>
+
+<div class="callout info"><div class="h">ℹ Related pages</div>
+Looking for moving pictures instead? See <a href="video.html">Video Playback</a>. For where your files can
+live and how to turn devices on, see the <a href="devices.html">Devices Overview</a> and the
+<a href="settings.html">Settings Reference</a>.</div>

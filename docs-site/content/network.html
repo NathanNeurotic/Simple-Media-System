@@ -1,0 +1,102 @@
+<h1>Network Setup</h1>
+<p class="lead">SMS has two ways to browse media over wired Ethernet: the established <b>SMB1/CIFS share</b>
+client and this fork's <b>UDPFS network drive</b>. SMB connects to a configured Windows or Samba share.
+UDPFS discovers a PC folder served by PS2-Servers UDPFSD and mounts it as <code>udpfs:</code>. Both use settings
+entered from the pad; no hand-edited network file is required.</p>
+
+<div class="callout amber"><div class="h">Choose SMB/host or UDPFS for each boot</div>
+The two paths load different network stacks for the PS2's one EMAC3 Ethernet controller. Whichever starts first owns
+the NIC until reboot. The menu now enforces this: <b>Autostart HOST</b>, <b>Autostart SMB</b> and <b>Autostart UDPFS</b> are a single choice — turning one on turns the other two off, and selecting the one already lit switches networking off entirely.
+This does not conflict with MX4SIO or MMCE because those use SIO2, not Ethernet.</div>
+
+<h2 id="requirements">Requirements</h2>
+<ul class="checklist">
+<li>A fat PS2 with a <b>Network Adapter</b>, or a slim PS2 with built-in Ethernet.</li>
+<li>A wired Ethernet connection to the same LAN as the server PC. The PS2 has no built-in Wi-Fi.</li>
+<li>For SMB: a Windows, Samba or NAS host offering an <b>SMB1/CIFS</b> share.</li>
+<li>For UDPFS: <a href="https://github.com/NathanNeurotic/PS2-Servers"><b>PS2-Servers</b></a> running its
+<b>UDPFSD</b> folder server.</li>
+</ul>
+
+<h2 id="ip-config">Set the PS2's static IP on-screen</h2>
+<p>Open <b>Device settings → Network settings → Edit IPCONFIG.DAT</b>. Enter the PS2's own IP address,
+network mask and gateway one octet at a time, then choose <b>Save/Update IPCONFIG.DAT</b>. With a memory card present SMS writes <code>mc0:/SYS-CONF/IPCONFIG.DAT</code>, the same place the PS2 browser and other software expect it. <b>With no memory card fitted</b> it writes <code>IPCONFIG.DAT</code> beside <code>SMS.ELF</code> instead, and reads it back from there on the next boot — so a console with no card can still be given an address. UDPFS requires a valid static PS2 IP; SMB uses the same network
+configuration.</p>
+<div class="steps">
+<div class="step"><h3>Choose an address</h3><p>Give the PS2 an unused static address on the same subnet as the
+server, such as <code>192.168.1.20</code> when the PC is <code>192.168.1.10</code>.</p></div>
+<div class="step"><h3>Enter mask and gateway</h3><p>For a typical home LAN the mask is
+<code>255.255.255.0</code>; use your router's address as the gateway. Match your actual network.</p></div>
+<div class="step"><h3>Save</h3><p>Choose <b>Save/Update IPCONFIG.DAT</b>. With a memory card fitted the file goes
+to the card, where the PS2 browser and other titles expect it; with no card fitted SMS writes it beside the ELF
+instead, and reads it back from there next boot — so a card-less console can still be networked.</p></div>
+</div>
+
+<h2 id="modes">Choosing a network mode</h2>
+<p>SMS can use the network in three different ways, and the console can only do <b>one of them per
+boot</b>. They all drive the same single network adapter, and an IOP module cannot be unloaded once
+it has claimed it — so the choice is settled the moment one starts.</p>
+
+<p>Because of that, the three autostart entries in <b>Device settings</b> behave as one setting
+rather than three switches:</p>
+
+<table>
+<tr><th>Mode</th><th>What it is for</th></tr>
+<tr><td><b>Autostart HOST</b></td><td><code>host:</code> access from a PC running ps2client — mainly a
+development convenience.</td></tr>
+<tr><td><b>Autostart SMB</b></td><td>A Windows / Samba / NAS file share. See <a href="smb.html">SMB</a>.</td></tr>
+<tr><td><b>Autostart UDPFS</b></td><td>A folder served over UDP from a PC. See <a href="#udpfs">UDPFS</a> below.</td></tr>
+</table>
+
+<div class="note"><p>Turning one on turns the other two off automatically. Selecting the one that is
+already lit switches networking off. Previously two could be enabled at the same time, and the
+second one simply failed with no message — that is no longer possible.</p></div>
+
+<p>If you change the mode while a network stack is already running, SMS offers to restart the
+network there and then. Accepting reboots the console's I/O processor in place, which takes a moment
+and leaves SMS running; declining is safe — the choice is saved either way and applies next launch.</p>
+
+<h2 id="smb">SMB network shares</h2>
+<p>The SMB browser stores a server address, share, user, password, client name and port. Add or edit the server
+under <b>Device settings → Network settings → SMB server…</b> using the on-screen keyboard; see <a href="smb.html">SMB Network</a> for the complete field
+reference. Start it with <b>Start SMB support</b>, or set <b>Autostart SMB</b> to have it come up on every boot.</p>
+<div class="callout amber"><div class="h">SMB1 is required</div>
+SMS speaks SMB1/CIFS. Modern Windows disables SMB1 by default, so a Samba/NAS configuration that permits SMB1 is
+usually safer than enabling an obsolete protocol broadly on a general-purpose PC. Keep this service on a trusted
+LAN.</div>
+
+<h2 id="udpfs">UDPFS network drive</h2>
+<p>UDPFS serves a real PC directory over the UDPFS/UDPRDMA protocol. It is a <b>file-level</b> service:
+the folder mounts directly as <code>udpfs:</code>. It is not UDPBD, does not require a disk image, and does not
+appear as <code>massN:</code>.</p>
+<div class="steps">
+<div class="step"><h3>Configure the PS2 IP</h3><p>Complete the static-IP steps above and save
+<code>IPCONFIG.DAT</code>.</p></div>
+<div class="step"><h3>Serve the folder</h3><p>Run the UDPFSD server from
+<a href="https://github.com/NathanNeurotic/PS2-Servers">PS2-Servers</a>, select the folder to expose, and keep
+<b>Modulo mode off</b>. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is
+no server IP to enter in SMS.</p></div>
+<div class="step"><h3>Start the drive</h3><p>Choose <b>Start UDPFS network drive</b>, or enable
+<b>Autostart UDPFS</b> and save settings. When discovery succeeds, browse the <code>udpfs:</code> device like any
+other source.</p></div>
+</div>
+<div class="callout info"><div class="h">Earlier project hardware report</div>
+Earlier project documentation reports UDPFS boot, browsing, playback and clean exit on real PS2 hardware. The current documentation audit checked the source/configuration and did not repeat those console runs.</div>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ul class="checklist">
+<li><b>Check link and subnet.</b> Confirm Ethernet link lights and put the PS2 and server on the same subnet.</li>
+<li><b>UDPFS says NOIP.</b> Save the PS2's static IP through <b>Edit IPCONFIG.DAT</b> first.</li>
+<li><b>UDPFS discovery fails.</b> Start UDPFSD before retrying, keep Modulo mode off, and allow UDP port
+<code>0xF5F6</code> (62966) through the PC firewall on the trusted LAN.</li>
+<li><b>The other network option disappeared.</b> One network stack already owns the NIC. Reboot, then start only
+the path you intend to use.</li>
+<li><b>SMB reaches the host but cannot list or open shares.</b> Check SMB1 availability and the configured
+credentials. Administrative shares ending in <code>$</code> are intentionally hidden.</li>
+</ul>
+
+<div class="grid">
+<a class="tile" href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span><b>SMB Network</b><span>Share fields and login</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Autostart and Start-now controls</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>All sources and exclusion rules</span></a>
+</div>

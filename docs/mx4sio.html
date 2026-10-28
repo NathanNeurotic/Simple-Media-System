@@ -1,53 +1,26 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MX4SIO (microSD) · SMS Docs</title>
-<meta name="description" content="Play video, audio and pictures from a microSD in an MX4SIO adapter — the headline feature of this SMS build: reliable MX4SIO playback over the PS2 memory-card (SIO2) bus, with its own device icon.">
-<link rel="stylesheet" href="assets/style.css">
+<title>MX4SIO microSD · SMS Docs</title><meta name="description" content="MX4SIO microSD playback in SMS: setup, mass device naming, driver constraints and file-size/performance limits.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="MX4SIO microSD · SMS Docs"><meta property="og:description" content="MX4SIO microSD playback in SMS: setup, mass device naming, driver constraints and file-size/performance limits.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html" class="active"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html" class="active" aria-current="page"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>MX4SIO (microSD)</h1>
 <p class="lead"><b>MX4SIO</b> is a microSD adapter that plugs into the PlayStation 2's memory-card slot and talks
 to the console over its <b>SIO2</b> bus. This build of SMS mounts the card as a <code>massN:</code> device and
@@ -88,14 +61,13 @@ card you are browsing.</li>
 <li>A <b>Start MX4SIO support</b> item, always present in Device settings, so you can bring the card online on demand without rebooting.</li>
 </ul>
 
-<div class="callout amber"><div class="h">⚠ MX4SIO and MMCE cannot both run</div>
+<div class="callout amber"><div class="h">MX4SIO and MMCE cannot both run</div>
 MX4SIO and MMCE both use the SIO2 / memory-card bus, so SMS can only drive <b>one of them at a time</b>. Turn on
 Autostart for the one you actually use, and leave the other off. See <a href="#vs-mmce">MX4SIO vs MMCE</a> below.</div>
 
 <h2 id="compatibility">Compatibility</h2>
 <p>SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as <b>FAT32</b> or <b>exFAT</b>
-will mount. FAT32 is the safe, universally-compatible choice; exFAT lets you use larger cards and store files bigger
-than 4&nbsp;GB. Either way, the media files themselves must be a format SMS can play — see
+will mount. Use FAT32 or exFAT supported by your device/firmware. exFAT filesystem support does not remove SMS's below-4-GiB limit for each media file. Either way, the media files themselves must be a format SMS can play — see
 <a href="video.html">Video</a>, <a href="audio.html">Audio</a> and <a href="pictures.html">Pictures</a> for the full
 list (MPEG-4 Part&nbsp;2 AVI, <code>mp4v</code> MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC,
 OGG, WMA, JPEG, and so on).</p>
@@ -107,27 +79,27 @@ misbehave; if a particular card gives trouble, try a different, known-good one.<
 
 <h2 id="prepare-card">Preparing the card</h2>
 <div class="steps">
-<div class="step"><h3>Format the microSD</h3>
-<p>Format the card as <b>FAT32</b> (recommended for broad compatibility) or <b>exFAT</b> (for cards over 32&nbsp;GB
-or files over 4&nbsp;GB). A standard single-partition format is fine — SMS just reads the filesystem.</p></div>
+<div class="step"><h3 id="format-the-microsd">Format the microSD</h3>
+<p>Use a compatible <b>FAT32</b> or <b>exFAT</b> volume. Keep each SMS media file below 4 GiB on either filesystem.
+Back up the contents before reformatting; an already compatible volume can be used as it is.</p></div>
 
-<div class="step"><h3>Copy your media on</h3>
+<div class="step"><h3 id="copy-your-media-on">Copy your media on</h3>
 <p>Copy your video, audio, picture and playlist files onto the card from your PC. You can organise them into folders
 however you like — SMS browses the raw filesystem, so there is no required directory layout. Keep external subtitle
 files (<code>.srt</code> / <code>.sub</code>) next to the video they belong to; see
 <a href="subtitles.html">Subtitles</a>.</p></div>
 
-<div class="step"><h3>Seat the adapter</h3>
+<div class="step"><h3 id="seat-the-adapter">Seat the adapter</h3>
 <p>With the card loaded, insert the MX4SIO adapter into one of the PS2's memory-card slots. Remember that this is the
 same slot family MMCE devices and the memory card use — plan around the one-device-at-a-time rule below.</p></div>
 
-<div class="step"><h3>Boot SMS and enable MX4SIO</h3>
-<p>Boot the PS2 into SMS, then turn MX4SIO on (next section). On a clean install nothing auto-starts, so you choose
+<div class="step"><h3 id="boot-sms-and-enable-mx4sio">Boot SMS and enable MX4SIO</h3>
+<p>Boot the PS2 into SMS, then turn MX4SIO on (next section). On a clean install optional Autostart choices are off, so you choose
 what to bring up.</p></div>
 </div>
 
 <h2 id="enabling">Enabling MX4SIO</h2>
-<p>On a fresh install SMS starts nothing automatically — you switch on the devices you want. There are two ways to
+<p>On a fresh install SMS leaves optional Autostart flags off — you switch on the devices you want. There are two ways to
 bring MX4SIO up.</p>
 
 <h3 id="autostart">Autostart MX4SIO</h3>
@@ -170,7 +142,7 @@ they use different drivers and mount under different names.</p>
 SD2PSX or MemCard PRO2, use the <a href="mmce.html">MMCE</a> page. If it's a plain SD-over-SIO2 adapter, you're in the
 right place.</p>
 
-<div class="callout amber"><div class="h">⚠ The other exclusion — HDD paths</div>
+<div class="callout amber"><div class="h">The other exclusion — HDD paths</div>
 Separately from the SIO2 rule, note that the two <i>internal-HDD</i> access paths — classic APA/PFS and exFAT over
 ATA (BDM) — both own the internal ATA bus, so only one of those can run at once either. That's unrelated to MX4SIO,
 but if you're enabling several devices it's worth knowing. See <a href="hdd.html">Internal HDD</a>.</div>
@@ -192,7 +164,7 @@ open them like on any other device.</li>
 <li>You can browse into any folder structure; there is no mandatory layout. Keep <code>.srt</code>/<code>.sub</code>
 subtitle files beside their video.</li>
 <li>Enable <b>either</b> MX4SIO <b>or</b> MMCE, never both — they share the SIO2 slot bus.</li>
-<li>Prefer <b>FAT32</b> for maximum compatibility; use <b>exFAT</b> for very large cards or files over 4&nbsp;GB.</li>
+<li>Prefer <b>FAT32</b> for maximum compatibility; use <b>exFAT</b> if supported by your setup. Keep individual SMS media files below 4 GiB on either filesystem.</li>
 <li>If a specific card acts up, try another known-good microSD before assuming a software fault.</li>
 <li>Your Autostart MX4SIO choice is saved with your settings and persists across reboots — see
 <a href="settings.html">Settings</a> for where the config lives.</li>
@@ -210,16 +182,10 @@ GUI. To the user it simply works — the reliability work is entirely under the 
 wherever they are. There is no OPL-style mandatory folder structure and no ISO/coverart convention to follow. Copy
 your files on, organise them however you like, and browse to them.</p>
 </details>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

@@ -1,0 +1,37 @@
+<section class="hero-sms">
+<div class="eyebrow">PlayStation 2 / Media player</div>
+<h1>Simple Media System</h1>
+<p class="lead">Your videos, music and photographs on the PS2. Browse files from USB, MX4SIO, internal HDD, MMCE, i.LINK, discs or a network share, with a companion converter for modern media.</p>
+<div class="hero-actions"><a class="btn primary" href="getting-started.html">Play your first file</a><a class="btn" href="releases.html">Get SMS &amp; the converter</a></div>
+<div class="hero-tags"><span>MPEG-1 / MPEG-2</span><span>DIVX / XVID</span><span>AUDIO &amp; JPEG</span><span>MX4SIO</span><span>SMB / UDPFS</span></div>
+</section>
+<div class="release-strip"><b>Following the October fixes?</b> Use the <a href="releases.html#this-build">rolling development build</a>. The July stable tag does not include the October parser, streaming, frame-ownership and converter changes. <a href="known-issues.html">Reported console regressions still need confirmation.</a></div>
+<h2 id="whats-new">The maintained SMS fork</h2>
+<p>SMS was created by <b>Eugene Plotnikov</b> and developed by the PS2 homebrew community. This storage-focused fork adds MX4SIO, ATA/exFAT, i.LINK and MMCE paths, a folder-served UDPFS network drive, on-screen network configuration, USB/Bluetooth DualShock 3/4 input and updated artwork. You need a PS2 that can already launch homebrew; a hard disk or network adapter is optional.</p>
+<p>The October development work adds folder shuffle, converter multi-audio output and text-subtitle burn-in, and fixes reproduced parser, streaming and frame-lifetime defects. <a href="known-issues.html">Known issues</a> distinguishes implemented fixes from the reports still awaiting affected-console tests. Poster-grid browsing remains a feature request.</p>
+<h2 id="sections">Choose your next step</h2>
+<div class="grid">
+<a class="card" href="getting-started.html"><h3>First playback</h3><p>Install, enable a source and open a file.</p></a>
+<a class="card" href="converter.html"><h3>Prepare media</h3><p>Presets, tracks, subtitles and output validation.</p></a>
+<a class="card" href="devices.html"><h3>Choose storage</h3><p>Device names, setup and driver exclusions.</p></a>
+<a class="card" href="configuration.html"><h3>Keep your settings</h3><p>Boot-folder config, network files and fallback paths.</p></a>
+<a class="card" href="known-issues.html"><h3>Check current issues</h3><p>Open reports, tested scope and useful reproductions.</p></a>
+<a class="card" href="wiki.html"><h3>Browse the wiki</h3><p>The complete guide and reference map.</p></a>
+</div>
+<h2 id="playback-spec">Formats and limits</h2>
+<table><thead><tr><th>Media</th><th>Current routes</th></tr></thead><tbody>
+<tr><td>Video</td><td>MPEG-4 Part 2 / Xvid / DivX in AVI; <code>mp4v</code> in MP4; MPEG-1/2 in MPEG program streams. <a href="video.html">Format details</a>.</td></tr>
+<tr><td>Music</td><td>MP2/MP3/MPA, AAC/M4A, AC-3, FLAC, Ogg Vorbis and WMA v1/v2. <a href="audio.html">Audio constraints</a>.</td></tr>
+<tr><td>Pictures and text</td><td>Baseline JPEG, M3U playlists and external SRT/SUB/TXT subtitles. Existing AVI DXSB bitmap subtitles are a separate path.</td></tr>
+<tr><td>Video dimensions</td><td>At most 1024 pixels on either axis. This is an acceptance check, not a real-time playback guarantee.</td></tr>
+<tr><td>Files</td><td>Keep each file below 4 GiB on every source, including exFAT.</td></tr>
+<tr><td>Tracks</td><td>Eight stream-table slots; MP4 and MPEG-PS retain at most seven streams to reserve a terminator. The converter allows video plus six audio tracks.</td></tr>
+<tr><td>Unsupported video</td><td>H.264/AVC, H.265/HEVC, VP9, AV1 and WMV. An MP4 extension alone does not identify the video codec.</td></tr>
+</tbody></table>
+<p>Earlier project documentation records successful standard-definition fixture playback. Those are useful starting profiles; generating the <a href="releases.html#test-media">test-media pack</a> in CI does not retest a console. High bitrate, resolution, audio workload and source throughput still matter.</p>
+<h2 id="at-a-glance">Start with a small, known file</h2>
+<ol><li><a href="install.html">Download and launch the standard ELF</a> with your homebrew loader.</li>
+<li>Use a supported existing FAT32/exFAT volume, copy a small MP3 or conservative video onto it, and enable that source in <b>Device settings</b>.</li>
+<li>Pick the source, press Down to enter its files and Cross to open a file. Start opens settings from the browser; Triangle stops playback.</li>
+<li>If it fails, keep the file unchanged and follow <a href="troubleshooting.html#reporting">the reporting checklist</a>.</li></ol>
+<p>Read the <a href="controls.html">controls</a>, <a href="settings.html">settings reference</a> and <a href="languages.html">language guide</a> when you are ready to customize. <a href="credits.html">Credits and preserved historical manuals</a> retain the project's lineage.</p>

@@ -1,0 +1,37 @@
+<h1>Contributing &amp; Architecture</h1>
+<p class="lead">SMS combines an EE application, an FFmpeg-derived media pipeline, IPU/GS rendering and embedded IOP drivers. Keep compatibility changes narrow and tie claims to a reproducible file, build and device.</p>
+<h2 id="layout">Repository map</h2>
+<table><thead><tr><th>Path</th><th>Responsibility</th></tr></thead><tbody>
+<tr><td><code>src/</code>, <code>include/</code></td><td>EE player, UI, config, container parsers, codecs, file contexts and rendering.</td></tr>
+<tr><td><code>iop/</code>, <code>irx/</code></td><td>IOP module sources and embedded/compressed modules. Their build tools and import ABIs can differ from the EE application's toolchain.</td></tr>
+<tr><td><code>images/</code>, <code>theme/</code>, <code>fonts/</code></td><td>Embedded artwork and fonts. A user <code>.smi</code> skin does not replace every icon.</td></tr>
+<tr><td><code>tools/test_*.py</code></td><td>Actual-source host regressions and controlled failure tests.</td></tr>
+<tr><td><code>tools/mpeg_color_probe/</code></td><td>Explicit decoder/frame-pool controls with documented scope.</td></tr>
+<tr><td><code>tools/sms_converter/</code></td><td>Python converter, Qt compatibility layer, output validator and FFmpeg tests.</td></tr>
+<tr><td><code>docs-site/</code>, <code>docs/</code>, <code>wiki/</code></td><td>Maintained article sources, published static site and generated native-wiki mirror.</td></tr>
+</tbody></table>
+<h2 id="pipeline">Media and ownership boundaries</h2>
+<p>The file context supplies bytes to a container probe/parser. Supported streams feed packet rings; decoder threads publish frame pointers or audio data to the renderer. MPEG-1/2 reuses RGB buffers only after renderer completion; size changes wait before replacing allocated frames. Shutdown distinguishes allocated pointer slots from notification counts and respects subtitle ownership transfers.</p>
+<p>When changing this path, test failure cleanup, partial reads, stalled input, queue reservations, seek/reset, pause/resume, sequence changes and final stop. Preserve packet alignment and limits. A test that replaces storage or display with a stub does not validate the replaced subsystem.</p>
+<h2 id="build-tests">Build and test</h2>
+<p>Use the <a href="building.html">existing GCC build instructions</a>. The application uses <code>ps2dev/ps2dev:v1.0</code>, EE GCC 3.2.3; this documentation update does not migrate it. Standard, packed, DIAG and BDM=0 compatibility builds have different purposes.</p>
+<pre>python3 tools/test_mpeg_ps_probe.py
+python3 tools/test_mpeg12_frame_lifetime.py
+python3 tools/test_player_video_drain.py
+python3 tools/test_mov_parser.py
+python3 tools/irx_imports.py --assert dev9=1.1 irx/udpfs_smap.irx.xz irx/ata_bd.irx.xz</pre>
+<p>Host C harnesses need a supported host compiler and sanitizer runtime; the MOV parser fixture test also needs FFmpeg/FFprobe. The <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/.github/workflows/compilation.yml">compilation workflow</a> lists all 17 current host regressions. Do not submit a physical-console program merely to check whether the console is online.</p>
+<h2 id="drivers">IOP and network changes</h2>
+<p>SMS embeds a dev9 v1.1 provider. IOP imports bind by library/major and ordinal, so an apparently successful module load can still bind the wrong functions. Run the ABI gate on the compressed bytes actually embedded. Keep local changes in <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/iop/SMSUdpfs/ATTRIBUTION.md">UDPFS attribution/build notes</a> and <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/iop/smbman-sms/README.md">SMB module notes</a>.</p>
+<p>SMB/HOST and UDPFS own different Ethernet stacks. Changing modes requires the explicit IOP restart/relaunch boundary; restarting can invalidate storage mounts. Avoid changing global fileXio async mode without a demonstrated ownership and cancellation design.</p>
+<h2 id="converter">Converter development</h2>
+<p>Keep modern PySide6 and Win7 PySide2 paths consistent. Preserve Python 3.8 compatibility in shared code and retain the Win7 bootloader pins. The <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/.github/actions/setup-ffmpeg-windows/action.yml">Windows FFmpeg setup action</a> uses a retained, SHA-checked fallback archive; refresh that pin before September 2028. Do not turn an encoder/host-package fault into a PS2 SDK defect.</p>
+<p>Run unit, real-FFmpeg multitrack/worker and preset tests appropriate to a converter change. PASS/WARN/FAIL describe inspected output constraints, not playback certification. Bounded packet scanning must disclose incomplete inspection.</p>
+<h2 id="documentation">Documentation and wiki workflow</h2>
+<p>Edit <code>docs-site/content/*.html</code>, the manifest and shared assets, then generate both the static site and the Markdown mirror:</p>
+<pre>python docs-site/build.py
+python docs-site/build.py --check
+python -m http.server 8000 --directory docs</pre>
+<p>GitHub Pages continues publishing <code>master:/docs</code>; a new hosting service is unnecessary. Search also loads from a local script, allowing the generated site to work without a search service. Review <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs-site/README.md">the maintainer workflow</a> before adding routes, changing shared navigation or syncing the native wiki.</p>
+<h2 id="contribute">Useful contributions</h2>
+<p>Start with the <a href="known-issues.html">open issue map</a>. Include the trigger, exact media identity, before/after result, test limits and relevant logs. Preserve unrelated dirty work and historical manuals. For format or performance claims, identify the codec settings and transport, not just the extension or filename.</p>
