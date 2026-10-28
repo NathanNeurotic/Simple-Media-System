@@ -2,7 +2,9 @@
 
 Only PS2 byte-swap assembly, codec registration, packet rings and device I/O are
 host adapters. Parser/index/packet functions are compiled together unchanged.
-This exercises atom layouts and sample indexing; it does not run a decoder.
+This exercises atom layouts, indexing and packet timelines; it does not run a
+decoder. The adapter records DTS before SMSContainer_CalcPktFields applies
+SMS's existing DTS-to-PTS scheduling rule.
 """
 import argparse
 import json
@@ -15,7 +17,8 @@ import tempfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
-CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts")
+CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts",
+         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "m4a-metadata")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -47,7 +50,7 @@ typedef struct { unsigned m_FrameRate,m_FrameRateBase,m_FrameSize;int m_Width,m_
 typedef struct FileContext FileContext;
 struct FileContext { unsigned m_Size,m_CurPos;const unsigned char *data;int (*Read)(FileContext *,void *,unsigned);int (*Seek)(FileContext *,unsigned); };
 typedef struct SMS_Stream SMS_Stream;
-struct SMS_Stream { SMS_CodecContext *m_pCodec;void *m_pCtx,*m_pPktBuf;unsigned m_ID;int64_t m_Duration;void (*Destroy)(SMS_Stream *); };
+struct SMS_Stream { SMS_CodecContext *m_pCodec;void *m_pCtx,*m_pPktBuf;unsigned m_ID;int64_t m_Duration;void (*Destroy)(SMS_Stream *);int time_num,time_den; };
 typedef struct { int m_Size,m_StmIdx,m_Flags;unsigned char *m_pData;int64_t m_DTS,m_PTS; } SMS_AVPacket;
 typedef struct SMS_Container SMS_Container;
 struct SMS_Container { SMS_Stream *m_pStm[8];unsigned m_nStm,m_Flags;void *m_pCtx;FileContext *m_pFileCtx;char *m_pName; SMS_AVPacket *(*AllocPacket)(void *,int);int (*ReadPacket)(SMS_Container *,int *);int (*Seek)(SMS_Container *,int,int,unsigned); };
@@ -62,12 +65,21 @@ static unsigned SMS_bswap32(unsigned n) { return __builtin_bswap32(n); }
 static void File_Skip(FileContext *f,unsigned n) { unsigned p=n>f->m_Size-f->m_CurPos?f->m_Size:f->m_CurPos+n;seek_file(f,p); }
 static SMS_CodecID SMS_CodecGetID(int type,unsigned tag) { (void)tag;return type==SMS_CodecTypeVideo?SMS_CodecID_MPEG4:SMS_CodecID_AAC; }
 static void *SMS_Realloc(void *p,unsigned *size,unsigned need) { if(need<*size)return p;*size=17*need/16+32;return realloc(p,*size); }
-static void SMSContainer_SetPTSInfo(SMS_Stream *s,int n,int d) { (void)s;assert(n>0&&d>0); }
-static void SMSContainer_CalcPktFields(SMS_Stream *s,SMS_AVPacket *p) { (void)s;(void)p; }
+static void SMSContainer_SetPTSInfo(SMS_Stream *s,int n,int d) { assert(n>0&&d>0);s->time_num=n;s->time_den=d; }
+static void SMSContainer_CalcPktFields(SMS_Stream *s,SMS_AVPacket *p) {
+ p->m_PTS=p->m_PTS*s->time_num*SMS_TIME_BASE/s->time_den;
+ p->m_DTS=p->m_DTS*s->time_num*SMS_TIME_BASE/s->time_den;
+}
 static int SMSContainer_SetName(SMS_Container *c,FileContext *f) { (void)c;(void)f;return 1; }
 static int64_t SMS_Rescale(int64_t n,int64_t mul,int64_t div) { assert(div);return n*mul/div; }
 static void SMS_DestroyContainer(SMS_Container *,int);
 static void SMS_RingBufferUnalloc(void *p,int n) { (void)p;(void)n; }
+static SMS_AVPacket packet;
+static unsigned char packet_data[65536];
+static SMS_AVPacket *packet_alloc(void *buffer,int n) {
+ (void)buffer;assert(n>0 && n<=sizeof(packet_data));memset(&packet,0,sizeof(packet));
+ packet.m_Size=n;packet.m_pData=packet_data;return &packet;
+}
 """
 post = r"""
 static void SMS_DestroyContainer(SMS_Container *c,int all) {
@@ -84,27 +96,52 @@ int main(int argc,char **argv) {
  fseek(in,0,SEEK_END);long size=ftell(in);rewind(in);
  unsigned char *data=malloc(size);assert(data);
  assert(fread(data,1,size,in)==(size_t)size);fclose(in);
- FileContext f={size,0,data,read_file,seek_file};SMS_Container c={0};c.m_pFileCtx=&f;
+ FileContext f={size,0,data,read_file,seek_file};SMS_Container c={0};c.m_pFileCtx=&f;c.AllocPacket=packet_alloc;
+ if(!strcmp(argv[3],"probe")) {
+  SMS_AudioInfo info={0};assert(SMS_M4AProbe(&f,&info)==1);
+  assert(info.m_SampleRate==8000 && info.m_nChannels==1 && info.m_BitRate>0 && f.m_CurPos==0);
+  free(data);return 0;
+ }
  int result=_GetContainerMOV(&c,s_MOVParseTbl);
  if(!strcmp(argv[3],"reject")) {
   assert(!result && !c.m_nStm && !c.m_pCtx);free(data);return 0;
  }
  assert(result==1 && c.m_nStm==2);
- unsigned counts[SMS_MAX_STREAMS]={0};unsigned stream,pos,bytes;
+ unsigned counts[SMS_MAX_STREAMS]={0},read_counts[SMS_MAX_STREAMS]={0};unsigned stream,pos,bytes,total=0;
+ struct { unsigned pos,bytes;long long pts,dts; } expected[SMS_MAX_STREAMS][256];
+ long long pts,dts;
  in=fopen(argv[2],"r");assert(in);
  /* FFprobe is the independent oracle for every packet's on-disk range. */
- while(fscanf(in,"%u %u %u",&stream,&pos,&bytes)==3) {
+ while(fscanf(in,"%u %u %u %lld %lld",&stream,&pos,&bytes,&pts,&dts)==5) {
   assert(stream<c.m_nStm);
   MOVStream *m=c.m_pStm[stream]->m_pCtx;
   assert(counts[stream]<(unsigned)m->m_nIdx);
-  MOVIndex *idx=m->m_pIdx+counts[stream]++;
+  assert(counts[stream]<256);
+  expected[stream][counts[stream]].pos=pos;expected[stream][counts[stream]].bytes=bytes;
+  expected[stream][counts[stream]].pts=pts;expected[stream][counts[stream]].dts=dts;
+  MOVIndex *idx=m->m_pIdx+counts[stream]++;++total;
   assert(idx->m_Pos==pos && idx->m_Size==bytes);
  }
  fclose(in);
  for(unsigned i=0;i<c.m_nStm;++i) {
   MOVStream *m=c.m_pStm[i]->m_pCtx;
   assert(counts[i]>0 && counts[i]==(unsigned)m->m_nIdx && counts[i]==m->m_nSamples);
+  c.m_pStm[i]->m_pPktBuf=m;
  }
+ for(unsigned i=0;i<total;++i) {
+  int selected=-1;assert(_ReadPacket(&c,&selected)>0);
+  assert(selected>=0 && (unsigned)selected<c.m_nStm);
+  unsigned j=read_counts[selected]++;assert(j<counts[selected]);
+  assert(packet.m_Size==(int)expected[selected][j].bytes);
+  assert(!memcmp(packet.m_pData,data+expected[selected][j].pos,packet.m_Size));
+  if(llabs(packet.m_PTS-expected[selected][j].pts)>1 || llabs(packet.m_DTS-expected[selected][j].dts)>1) {
+   fprintf(stderr,"stream%d packet%u PTS=%lld expected=%lld DTS=%lld expected=%lld\n",selected,j,
+           (long long)packet.m_PTS,expected[selected][j].pts,(long long)packet.m_DTS,expected[selected][j].dts);
+   assert(0);
+  }
+ }
+ int selected;assert(_ReadPacket(&c,&selected)<0);
+ for(unsigned i=0;i<c.m_nStm;++i) assert(read_counts[i]==counts[i]);
  SMS_DestroyContainer(&c,0);free(data);return 0;
 }
 """
@@ -120,7 +157,7 @@ def atoms(data):
     assert pos == len(data)
 
 
-def rewrite(data, kind):
+def rewrite(data, kind, video=False):
     result = bytearray()
     for tag, body in atoms(data):
         if kind == "zero" and tag == b"udta":
@@ -129,8 +166,28 @@ def rewrite(data, kind):
             continue
         if kind == "missing-mdat" and tag == b"mdat":
             continue
-        if tag in (b"moov", b"trak", b"mdia", b"minf", b"stbl"):
-            body = rewrite(body, kind)
+        if tag in (b"moov", b"trak", b"mdia", b"minf", b"stbl", b"edts"):
+            body = rewrite(body, kind, b"vide" in body if tag == b"trak" else video)
+        if tag == b"elst":
+            count = struct.unpack_from(">I", body, 4)[0]
+            if kind == "edit-v1":
+                entries = [struct.unpack_from(">Iihh", body, 8 + 12 * i) for i in range(count)]
+                body = b"\x01\x00\x00\x00" + body[4:8] + b"".join(struct.pack(">Qqhh", *entry) for entry in entries)
+            elif kind == "edit-rate":
+                body = body[:16] + struct.pack(">h", 2) + body[18:]
+            elif kind == "edit-multiple":
+                body = body[:4] + struct.pack(">I", 2) + body[8:20] * 2
+            elif kind in ("edit-trim", "edit-tail"):
+                body = body[:4] + struct.pack(">I", 1) + struct.pack(">Iihh", 2000, 10240 if kind == "edit-trim" else 0, 1, 0)
+            elif kind == "ctts-v0-two-frame" and video:
+                media_time = struct.unpack_from(">i", body, 12)[0]
+                body = body[:12] + struct.pack(">i", media_time + 1024) + body[16:]
+        if kind == "ctts-v0-two-frame" and tag == b"ctts":
+            count = struct.unpack_from(">I", body, 4)[0]
+            entries = [struct.unpack_from(">II", body, 8 + 8 * i) for i in range(count)]
+            body = body[:8] + b"".join(struct.pack(">II", n, offset + 1024) for n, offset in entries)
+        if kind == "ctts-unknown" and tag == b"ctts":
+            body = b"\x02" + body[1:]
         if kind == "short-stts" and tag == b"stts":
             count = struct.unpack_from(">I", body, 8)[0]
             assert count > 0
@@ -166,14 +223,32 @@ with tempfile.TemporaryDirectory() as temporary:
         if case == "faststart":
             subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(media), "-c", "copy",
                             "-movflags", "+faststart", str(fixture)], check=True, timeout=20)
+        elif case in ("ctts-v0", "ctts-v0-two-frame", "ctts-v1", "ctts-unknown", "edit-delay", "edit-v1", "no-edits", "edit-trim", "edit-tail"):
+            generated = tmp / "generated.mp4"
+            command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"]
+            delayed = case in ("edit-delay", "edit-v1")
+            trimmed = case in ("edit-trim", "edit-tail")
+            if delayed:
+                command += ["-itsoffset", "2"]
+            command += ["-f", "lavfi", "-i", f"testsrc2=s=64x64:r=10:d={10 if trimmed else 1}", "-f", "lavfi", "-i",
+                        f"sine=sample_rate=8000:duration={10 if trimmed else 3 if delayed else 1}", "-vsync", "0",
+                        "-c:v", "mpeg4", "-bf", "2" if case.startswith("ctts-") else "0", "-c:a", "aac"]
+            if case == "ctts-v1":
+                command += ["-movflags", "+negative_cts_offsets"]
+            if case == "no-edits":
+                command += ["-use_editlist", "0"]
+            subprocess.run(command + [str(generated)], check=True, timeout=20)
+            fixture.write_bytes(rewrite(generated.read_bytes(), case))
         else:
             fixture.write_bytes(original if case == "standard" else rewrite(original, case))
         manifest = tmp / "packets.txt"
-        if case.startswith("missing-") or case == "short-stts":
+        if case == "m4a-metadata":
+            mode = "probe"
+        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail"):
             mode = "reject"
         else:
             mode = "accept"
             probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_packets", "-of", "json", str(fixture)], timeout=10))
-            manifest.write_text("".join(f"{p['stream_index']} {p['pos']} {p['size']}\n" for p in probe["packets"]))
+            manifest.write_text("".join(f"{p['stream_index']} {p['pos']} {p['size']} {round(float(p['pts_time']) * 1000000)} {round(float(p['dts_time']) * 1000000)}\n" for p in probe["packets"]))
         subprocess.run([str(exe), str(fixture), str(manifest), mode], check=True, timeout=5)
         print(f"MOV parser: {case} passed")

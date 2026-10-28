@@ -73,6 +73,12 @@ typedef struct MOVStream {
  unsigned int m_CurSample;
  unsigned int m_BytesPerFrame;
  unsigned int m_SamplesPerFrame;
+ int64_t      m_TimeOffset;       /* Edited timeline offset, in indexed time-base units. */
+ int64_t      m_DTSShift;         /* Decode preroll for signed composition offsets. */
+ int64_t      m_EditEmpty;        /* Initial empty edit, in movie timescale units. */
+ int64_t      m_EditStart;        /* First media time, in track timescale units. */
+ int64_t      m_EditDuration;     /* Media edit duration, in movie timescale units. */
+ int          m_HasEdit;
 } MOVStream;
 
 struct MOVContext;
@@ -95,6 +101,7 @@ typedef struct MOVContext {
  char                 m_fMOOV;
  char                 m_fMDAT;
  char                 m_fISOM;
+ char                 m_fError;
 } MOVContext;
 
 static uint32_t _read_int_be ( FileContext* apFileCtx ) {
@@ -170,7 +177,8 @@ static int _mov_read_ftyp ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 }  /* end _mov_read_ftyp */
 
 static int _mov_read_moov ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom) {
- _mov_read_dflt ( apCtx, apFileCtx, apAtom );
+ int lResult = _mov_read_dflt ( apCtx, apFileCtx, apAtom );
+ if ( lResult < 0 ) return lResult;
  apCtx -> m_fMOOV = 1;
  if ( apCtx -> m_fMDAT ) return 1;
  return 0;
@@ -226,6 +234,43 @@ static int _mov_read_mdhd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  File_Skip ( apFileCtx, 2 );
  return 0;
 }  /* end _mov_read_mdhd */
+
+static int _mov_read_elst ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
+ SMS_Stream* lpStm = apCtx -> m_pBase -> m_pStm[ apCtx -> m_pBase -> m_nStm - 1 ];
+ MOVStream* lpMyStm;
+ unsigned int lVersion, lCount, i, lStart = apFileCtx -> m_CurPos;
+ if ( !lpStm ) return 0;
+ lpMyStm = ( MOVStream* )lpStm -> m_pCtx;
+ if ( lpMyStm -> m_HasEdit || apAtom -> m_Size < 8 ) goto error;
+ lVersion = File_GetByte ( apFileCtx );
+ File_Skip ( apFileCtx, 3 );
+ lCount = _read_int_be ( apFileCtx );
+ if ( lVersion > 1 || lCount < 1 || lCount > 2 ||
+      !_tbl_fits ( apAtom, lCount, lVersion ? 20 : 12, 8 ) ) goto error;
+ for ( i = 0; i < lCount; ++i ) {
+  uint64_t lDuration = lVersion ? _read_long_be ( apFileCtx ) : _read_int_be ( apFileCtx );
+  int64_t lMediaTime = lVersion ? ( int64_t )_read_long_be ( apFileCtx ) : ( int32_t )_read_int_be ( apFileCtx );
+  int lRate = File_GetShortBE ( apFileCtx );
+  int lFraction = File_GetShortBE ( apFileCtx );
+  /* SMS has one continuous track timeline. Do not silently misplay splices,
+   * repeated segments, dwell edits or speed changes as an ordinary track. */
+  if ( lRate != 1 || lFraction || lDuration > UINT_MAX ) goto error;
+  if ( lMediaTime == -1 && i == 0 && lCount == 2 )
+   lpMyStm -> m_EditEmpty = lDuration;
+  else {
+   if ( i + 1 != lCount || lMediaTime < 0 || lMediaTime > UINT_MAX ) goto error;
+   lpMyStm -> m_EditStart = lMediaTime;
+   lpMyStm -> m_EditDuration = lDuration;
+  }  /* end else */
+ }  /* end for */
+ if ( apFileCtx -> m_CurPos != lStart + 8 + lCount * ( lVersion ? 20 : 12 ) ) goto error;
+ if ( !lpMyStm -> m_EditDuration ) goto error;
+ lpMyStm -> m_HasEdit = 1;
+ return 0;
+error:
+ apCtx -> m_fError = 1;
+ return -1;
+}  /* end _mov_read_elst */
 
 static int _mov_read_hdlr ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
  SMS_Stream* lpStm = apCtx -> m_pBase -> m_pStm[ apCtx -> m_pBase -> m_nStm - 1 ];
@@ -325,8 +370,10 @@ static int _mov_read_stsd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
     }  /* end if */
    } else File_Skip ( apFileCtx, apFileCtx -> m_CurPos - lStartPos );
    lAtom.m_Size = lSize - ( apFileCtx -> m_CurPos - lStartPos );
-   if ( lAtom.m_Size > 8 )
-    _mov_read_dflt ( apCtx, apFileCtx, &lAtom );
+   if ( lAtom.m_Size > 8 ) {
+    int lResult = _mov_read_dflt ( apCtx, apFileCtx, &lAtom );
+    if ( lResult ) return lResult;
+   }  /* end if */
    else if ( lAtom.m_Size > 0 ) File_Skip (  apFileCtx, ( uint32_t )lAtom.m_Size  );
   }  /* end while */
  } else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
@@ -419,7 +466,15 @@ static int _mov_read_esds ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 }  /* end _mov_read_esds */
 
 static int32_t _gcd ( int32_t anA, int32_t aB ) {
- return aB ? _gcd ( aB, anA % aB ) : anA;
+ int64_t lA = anA, lB = aB;
+ if ( lA < 0 ) lA = -lA;
+ if ( lB < 0 ) lB = -lB;
+ while ( lB ) {
+  int64_t lRemainder = lA % lB;
+  lA = lB;
+  lB = lRemainder;
+ }  /* end while */
+ return lA > INT_MAX ? 1 : ( int32_t )lA;
 }  /* end _gcd */
 
 static int _mov_read_stts ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
@@ -561,7 +616,7 @@ static int _mov_read_wave ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  if (  ( uint64_t )apAtom -> m_Size > ( 1 << 30 )  )
   return -1;
  else if ( apAtom -> m_Size > 8 )
-  _mov_read_dflt ( apCtx, apFileCtx, apAtom );
+  return _mov_read_dflt ( apCtx, apFileCtx, apAtom );
  else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
  return 0;
 }  /* end _mov_read_wave */
@@ -570,8 +625,10 @@ static int _mov_read_ctts ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  SMS_Stream* lpStm = apCtx -> m_pBase -> m_pStm[ apCtx -> m_pBase -> m_nStm - 1 ];
  if ( lpStm ) {
   MOVStream* lpMyStm = ( MOVStream* )lpStm -> m_pCtx;
-  unsigned int i, lnEntries;
-  File_Skip ( apFileCtx, 4 );
+  unsigned int i, lnEntries, lVersion;
+  lVersion = File_GetByte ( apFileCtx );
+  File_Skip ( apFileCtx, 3 );
+  if ( lVersion > 1 ) { apCtx -> m_fError = 1; return -1; }
   lnEntries = _read_int_be ( apFileCtx );
   if (  lnEntries >= UINT_MAX / sizeof ( MOVStts )  ) return -1;
   lpMyStm -> m_nCtts = 0;
@@ -582,11 +639,8 @@ static int _mov_read_ctts ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   for ( i = 0; i < lnEntries; ++i ) {
    int lCount    = _read_int_be ( apFileCtx );
    int lDuration = _read_int_be ( apFileCtx );
-   if ( lDuration < 0 ) {
-    lpMyStm -> m_nCtts = 0;
-    File_Skip (  apFileCtx, 8 * ( lnEntries - i - 1 )  );
-    break;
-   }  /* end if */
+   if ( !lVersion && lDuration < 0 ) { apCtx -> m_fError = 1; return -1; }
+   if ( lVersion && -( int64_t )lDuration > lpMyStm -> m_DTSShift ) lpMyStm -> m_DTSShift = -( int64_t )lDuration;
    lpMyStm -> m_pCtts[ i ].m_Count    = lCount;
    lpMyStm -> m_pCtts[ i ].m_Duration = lDuration;
    lpMyStm -> m_TimeRate = _gcd ( lpMyStm -> m_TimeRate, lDuration );
@@ -686,8 +740,10 @@ static int _mov_read_stsd_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVA
     }  /* end if */
    }  /* end if */
    lAtom.m_Size = lSize - ( apFileCtx -> m_CurPos - lStartPos );
-   if ( lAtom.m_Size > 8 )
-    _mov_read_dflt ( apCtx, apFileCtx, &lAtom );
+   if ( lAtom.m_Size > 8 ) {
+    int lResult = _mov_read_dflt ( apCtx, apFileCtx, &lAtom );
+    if ( lResult ) return lResult;
+   }  /* end if */
    else if ( lAtom.m_Size > 0 ) File_Skip (  apFileCtx, ( uint32_t )lAtom.m_Size  );
   }  /* end while */
  } else File_Skip (  apFileCtx, ( uint32_t )( apAtom -> m_Size )  );
@@ -720,7 +776,7 @@ static MOVParseEntry s_MOVParseTbl[] = {
  { SMS_MKTAG( 't', 'r', 'a', 'k' ), _mov_read_trak },
  { SMS_MKTAG( 't', 'k', 'h', 'd' ), _mov_read_tkhd },
  { SMS_MKTAG( 'e', 'd', 't', 's' ), _mov_read_dflt },
- { SMS_MKTAG( 'e', 'l', 's', 't' ), _mov_read_dflt },
+ { SMS_MKTAG( 'e', 'l', 's', 't' ), _mov_read_elst },
  { SMS_MKTAG( 'm', 'd', 'i', 'a' ), _mov_read_dflt },
  { SMS_MKTAG( 'm', 'd', 'h', 'd' ), _mov_read_mdhd },
  { SMS_MKTAG( 'm', 'i', 'n', 'f' ), _mov_read_dflt },
@@ -763,7 +819,7 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 
  if ( apAtom -> m_Size < 0 ) apAtom -> m_Size = SMS_MAXINT64;
 
- while (   (  ( lTotalSize + 8 ) <= apAtom -> m_Size ) && !FILE_EOF( apFileCtx ) && !retVal   ) {
+ while (   (  ( lTotalSize + 8 ) <= apAtom -> m_Size ) && !FILE_EOF( apFileCtx ) && !retVal && !apCtx -> m_fError   ) {
   int lHeaderSize = 8;
   lAtom.m_Size = apAtom -> m_Size;
   lAtom.m_Type = 0;
@@ -793,6 +849,7 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  * deref garbage. Those handlers are valid only inside a trak, so skip them here. */
   else if (  apCtx -> m_pBase -> m_nStm == 0 && (
               lpIt -> m_Func == _mov_read_tkhd || lpIt -> m_Func == _mov_read_mdhd     ||
+              lpIt -> m_Func == _mov_read_elst ||
               lpIt -> m_Func == _mov_read_hdlr || lpIt -> m_Func == _mov_read_hdlr_m4a ||
               lpIt -> m_Func == _mov_read_stsd || lpIt -> m_Func == _mov_read_esds     ||
               lpIt -> m_Func == _mov_read_stts || lpIt -> m_Func == _mov_read_stsc     ||
@@ -812,7 +869,7 @@ static int _mov_read_dflt ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
 
  if ( !retVal && lTotalSize < lAtom.m_Size && lAtom.m_Size < 0x7FFFF ) File_Skip (  apFileCtx, ( uint32_t )( lAtom.m_Size - lTotalSize )  );
 
- return !retVal;
+ return retVal;
 
 }  /* end _mov_read_dflt */
 
@@ -959,6 +1016,38 @@ static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Str
  return 1;
 }  /* end _mov_build_index */
 
+static int _mov_edit_fits ( SMS_Stream* apStm, MOVStream* apMyStm, MOVContext* apCtx ) {
+ int64_t lStart = 0, lEnd = apStm -> m_Duration;
+ int64_t lLength = SMS_Rescale ( apMyStm -> m_EditDuration, apMyStm -> m_TimeScale, apCtx -> m_TimeScale );
+ int lFirstDelta = apMyStm -> m_pStts[ 0 ].m_Duration;
+ int lLastDelta = apMyStm -> m_pStts[ apMyStm -> m_nStts - 1 ].m_Duration;
+ unsigned int i, lCTimeIdx = 0, lCTimeSample = 0;
+ if ( apMyStm -> m_pCtts && apMyStm -> m_nCtts ) {
+  lStart = SMS_MAXINT64;
+  lEnd = -SMS_MAXINT64;
+  for ( i = 0; i < ( unsigned int )apMyStm -> m_nIdx; ++i ) {
+   int lOffset = 0;
+   int64_t lPTS, lDelta;
+   while ( lCTimeIdx < apMyStm -> m_nCtts && apMyStm -> m_pCtts[ lCTimeIdx ].m_Count <= 0 ) ++lCTimeIdx;
+   if ( lCTimeIdx < apMyStm -> m_nCtts ) {
+    MOVStts* lpTime = &apMyStm -> m_pCtts[ lCTimeIdx ];
+    lOffset = lpTime -> m_Duration;
+    if ( ++lCTimeSample == ( unsigned int )lpTime -> m_Count ) { ++lCTimeIdx; lCTimeSample = 0; }
+   }  /* end if */
+   lPTS = ( int64_t )apMyStm -> m_pIdx[ i ].m_DTS * apMyStm -> m_TimeRate + lOffset;
+   lDelta = i + 1 < ( unsigned int )apMyStm -> m_nIdx ?
+            ( int64_t )( apMyStm -> m_pIdx[ i + 1 ].m_DTS - apMyStm -> m_pIdx[ i ].m_DTS ) * apMyStm -> m_TimeRate : lLastDelta;
+   if ( lPTS < lStart ) lStart = lPTS;
+   if ( lPTS + lDelta > lEnd ) lEnd = lPTS + lDelta;
+  }  /* end for */
+ }  /* end if */
+ /* Retain at most one codec sample of priming/tail rounding. Composition
+  * reorder origin is part of the presentation coverage, not a content trim. */
+ return lFirstDelta > 0 && lLastDelta > 0 && apMyStm -> m_EditStart <= lStart + lFirstDelta &&
+        lEnd >= apMyStm -> m_EditStart && lLength >= lEnd - apMyStm -> m_EditStart - lLastDelta &&
+        lLength <= lEnd - apMyStm -> m_EditStart + lLastDelta;
+}  /* end _mov_edit_fits */
+
 static int _mov_read_header ( SMS_Container* apCont ) {
 
  MOVContext*  lpMOV     = ( MOVContext* )apCont -> m_pCtx;
@@ -968,7 +1057,7 @@ static int _mov_read_header ( SMS_Container* apCont ) {
 
  retVal = _mov_read_dflt ( lpMOV, lpFileCtx, &lAtom );
 
- if (  retVal < 0 || !lpMOV -> m_fMOOV || !lpMOV -> m_fMDAT  ) return 0;
+ if (  retVal < 0 || lpMOV -> m_fError || !lpMOV -> m_fMOOV || !lpMOV -> m_fMDAT  ) return 0;
 
  if ( lpFileCtx -> m_CurPos != lpMOV -> m_MDATOffset ) lpFileCtx -> Seek (  lpFileCtx, ( uint32_t )( lpMOV -> m_MDATOffset )  );
 
@@ -1001,15 +1090,36 @@ static int _mov_read_header ( SMS_Container* apCont ) {
   if ( !lpMyStm -> m_TimeRate  ) lpMyStm -> m_TimeRate  = 1;
   if ( !lpMyStm -> m_TimeScale ) lpMyStm -> m_TimeScale = lpMOV -> m_TimeScale;
 
+  if ( lpMyStm -> m_HasEdit ) {
+   int64_t lOffset;
+   if ( lpMOV -> m_TimeScale <= 0 || lpMyStm -> m_TimeScale <= 0 ||
+        lpMyStm -> m_EditEmpty + lpMyStm -> m_EditDuration > UINT_MAX ) return 0;
+   lOffset = SMS_Rescale ( lpMyStm -> m_EditEmpty, lpMyStm -> m_TimeScale, lpMOV -> m_TimeScale ) - lpMyStm -> m_EditStart;
+   lpMyStm -> m_TimeRate = _gcd ( lpMyStm -> m_TimeRate, ( int32_t )( lOffset % lpMyStm -> m_TimeRate ) );
+   lpMyStm -> m_TimeOffset = lOffset / lpMyStm -> m_TimeRate;
+   if ( lpMyStm -> m_TimeOffset < INT_MIN || lpMyStm -> m_TimeOffset > UINT_MAX ) return 0;
+  }  /* end if */
+
+  lpMyStm -> m_DTSShift /= lpMyStm -> m_TimeRate;
+
   SMSContainer_SetPTSInfo ( lpStm, lpMyStm -> m_TimeRate, lpMyStm -> m_TimeScale );
 
   if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeAudio &&
        lpMyStm -> m_nStts == 1
   ) lpStm -> m_pCodec -> m_FrameSize = lpMyStm -> m_pStts[ 0 ].m_Duration;
 
-  if ( lpStm -> m_Duration != SMS_NOPTS_VALUE ) lpStm -> m_Duration /= lpMyStm -> m_TimeRate;
-
   if ( !_mov_build_index ( apCont, lpMyStm, lpStm ) ) return 0;
+  if ( lpMyStm -> m_HasEdit ) {
+   if ( !_mov_edit_fits ( lpStm, lpMyStm, lpMOV ) ) return 0;
+   lpStm -> m_Duration = SMS_Rescale ( lpMyStm -> m_EditEmpty + lpMyStm -> m_EditDuration,
+                                     lpMyStm -> m_TimeScale, lpMOV -> m_TimeScale );
+  }  /* end if */
+  if ( lpStm -> m_Duration != SMS_NOPTS_VALUE ) lpStm -> m_Duration /= lpMyStm -> m_TimeRate;
+  if ( lpMyStm -> m_HasEdit ) {
+   unsigned int j;
+   for ( j = 0; j < ( unsigned int )lpMyStm -> m_nIdx; ++j )
+    if ( ( int64_t )lpMyStm -> m_pIdx[ j ].m_DTS + lpMyStm -> m_TimeOffset > UINT_MAX ) return 0;
+  }  /* end if */
 
 /* _ReadPacket bounds the sample cursor with m_nSamples but indexes m_pIdx with it, and the
  * seek repositions that same cursor -- so a file whose tables declare more samples than the
@@ -1090,7 +1200,7 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
         lpMyCurStm -> m_CurSample < lpMyCurStm -> m_nSamples &&
         lpMyCurStm -> m_CurSample < ( unsigned int )lpMyCurStm -> m_nIdx ) {
     MOVIndex* lpCurSample = &lpMyCurStm -> m_pIdx[ lpMyCurStm -> m_CurSample ];
-    int64_t   lDTS = SMS_Rescale ( ( int64_t )lpCurSample -> m_DTS * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
+    int64_t   lDTS = SMS_Rescale ( ( ( int64_t )lpCurSample -> m_DTS + lpMyCurStm -> m_TimeOffset - lpMyCurStm -> m_DTSShift ) * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
     if ( lDTS < lBestDTS ) {
      lpSample = lpCurSample;
      lBestDTS = lDTS;
@@ -1128,9 +1238,8 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
  }  /* end if */
 
  lpPkt -> m_StmIdx = lIdx;
- lpPkt -> m_DTS    = lpSample -> m_DTS;
-
- lpPkt -> m_PTS = lpPkt -> m_DTS + lCTime / lpMyStm -> m_TimeRate;
+ lpPkt -> m_DTS = ( int64_t )lpSample -> m_DTS + lpMyStm -> m_TimeOffset - lpMyStm -> m_DTSShift;
+ lpPkt -> m_PTS = ( int64_t )lpSample -> m_DTS + lpMyStm -> m_TimeOffset + lCTime / lpMyStm -> m_TimeRate;
 
  lpPkt -> m_Flags |= lpSample -> m_Flags ? SMS_PKT_FLAG_KEY : 0;
 
@@ -1143,36 +1252,16 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 }  /* end _ReadPacket */
 
 static unsigned int _mov_locate_sample ( MOVIndex* apIdx, int anIdx, uint32_t aDTS ) {
-
  unsigned int lA, lB, lM;
- uint32_t     lDTS;
-
+ if ( anIdx <= 0 ) return 0;
  lA = 0;
- lB = anIdx - 1;
-
- while ( lA <= lB ) {
-
-  lM   = ( lA + lB ) >> 1;
-  lDTS = apIdx[ lM ].m_DTS;
-
-  if ( lDTS == aDTS || !lM )
-
-   goto found;
-
-  else if ( lDTS > aDTS )
-
-   lB = lM - 1;
-
-  else lA = lM + 1;
-
+ lB = anIdx;
+ while ( lA < lB ) {
+  lM = lA + ( ( lB - lA ) >> 1 );
+  if ( apIdx[ lM ].m_DTS <= aDTS ) lA = lM + 1;
+  else lB = lM;
  }  /* end while */
-
- lM = lA;
-
- if ( lM > 0 ) --lM;
-found:
- return lM;
-
+ return lA ? lA - 1 : 0;
 }  /* end _mov_locate_sample */
 
 static void _mov_sync_ctime ( MOVStream* apMyStm ) {
@@ -1183,8 +1272,7 @@ static void _mov_sync_ctime ( MOVStream* apMyStm ) {
 /* _ReadPacket walks the ctts table linearly alongside the sample cursor, so a seek that
  * moves m_CurSample must replay this walk up to the same sample or every PTS from here on
  * is garbage. No ctts ( no B-frames ) means PTS == DTS and there is nothing to replay.
- * m_nCtts == 0 with m_pCtts still allocated happens when _mov_read_ctts bailed on a
- * negative duration -- same nothing-to-replay case. */
+ * A retained allocation with no published entries is also nothing to replay. */
  if ( !apMyStm -> m_pCtts || !apMyStm -> m_nCtts ) return;
 
  lCovered = 0;
@@ -1216,49 +1304,55 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
  SMS_Stream*  lpStm;
  MOVStream*   lpMyStm;
  FileContext* lpFileCtx = apCont -> m_pFileCtx;
- int64_t      lTime;
- uint32_t     lSample, lEnd, lPos, i;
+ int64_t      lTime, lTarget;
+ uint32_t     lSample, lEnd, lPos, i, lOldPos;
+ uint32_t     lSamples[ SMS_MAX_STREAMS ];
 
- if (  anIdx < 0 || anIdx >= ( int )apCont -> m_nStm  ) return 0;
+ if (  anIdx < 0 || anIdx >= ( int )apCont -> m_nStm || apCont -> m_nStm > SMS_MAX_STREAMS  ) return 0;
 
  lpStm   = apCont -> m_pStm[ anIdx ];
  lpMyStm = ( MOVStream* )lpStm -> m_pCtx;
 
- if (  !lpMyStm -> m_nIdx || !lpMyStm -> m_pIdx  ) return 0;
+ if (  lpMyStm -> m_nIdx <= 0 || !lpMyStm -> m_pIdx ||
+       lpMyStm -> m_TimeRate <= 0 || lpMyStm -> m_TimeScale <= 0  ) return 0;
 
 /* CONTRACT -- mirrors _Seek in SMS_ContainerAVI.c, which every caller was written against.
  * aPos is the target timestamp in the INDEXED ( video ) stream's time-base units: callers
  * ( PlayerControl_Scroll / PlayerControl_ScrollBar for FF-REW and the scrollbar, _sms_play
  * for resume-from-history ) rescale wall time with lpStm -> m_TimeBase, and the index DTS
- * is stored in those very units by _mov_build_index, so the two compare directly. aDir is
+ * is stored in those units before the edit-list offset, which is removed below. aDir is
  * +1 forward / -1 backward and picks which side of aPos the keyframe is taken from; return
  * is 1 on success, 0 when the target is out of range. The packet ring buffers are NOT
  * flushed here: every caller drains and resets them around the seek ( _init_queues /
  * InitQueues ), exactly as with AVI. aDir == 0 never comes from the video seek paths --
  * treat it as backward instead of walking "in direction 0" forever. */
- if ( !aDir ) aDir = -1;
+ aDir = aDir > 0 ? 1 : -1;
 
 /* Same range check AVI does ( target past the last frame fails ). */
- if (  aPos > lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS  ) return 0;
+ lTarget = ( int64_t )aPos - lpMyStm -> m_TimeOffset;
+ if ( lTarget < 0 ) lTarget = 0;
+ if (  lTarget > lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS  ) return 0;
 
- lSample = _mov_locate_sample ( lpMyStm -> m_pIdx, lpMyStm -> m_nIdx, aPos );
+ lSample = _mov_locate_sample ( lpMyStm -> m_pIdx, lpMyStm -> m_nIdx, ( uint32_t )lTarget );
+ if ( aDir > 0 && lpMyStm -> m_pIdx[ lSample ].m_DTS < lTarget ) ++lSample;
  lEnd    = aDir > 0 ? ( uint32_t )lpMyStm -> m_nIdx : 0;
 
  while (  lSample != lEnd && !lpMyStm -> m_pIdx[ lSample ].m_Flags  ) lSample += aDir;
 
- if (  lSample == ( uint32_t )lpMyStm -> m_nIdx  ) return 0;
+ if (  lSample == ( uint32_t )lpMyStm -> m_nIdx || !lpMyStm -> m_pIdx[ lSample ].m_Flags  ) return 0;
 
 /* The keyframe's timestamp in the neutral SMS_TIME_BASE units _ReadPacket uses to pick the
  * lowest-DTS stream. The other streams' cursors are placed on that same instant so the
  * interleave resumes consistently -- audio typically lands a few frames BEFORE the video
  * keyframe, which is exactly what the decoders expect after a seek. */
  lTime = SMS_Rescale (
-  ( int64_t )lpMyStm -> m_pIdx[ lSample ].m_DTS * lpMyStm -> m_TimeRate,
+  ( ( int64_t )lpMyStm -> m_pIdx[ lSample ].m_DTS + lpMyStm -> m_TimeOffset ) * lpMyStm -> m_TimeRate,
   SMS_TIME_BASE, lpMyStm -> m_TimeScale
  );
 
- lpMyStm -> m_CurSample = lSample;
- _mov_sync_ctime ( lpMyStm );
+ for ( i = 0; i < apCont -> m_nStm; ++i )
+  lSamples[ i ] = ( ( MOVStream* )apCont -> m_pStm[ i ] -> m_pCtx ) -> m_CurSample;
+ lSamples[ anIdx ] = lSample;
 
  lPos = lpMyStm -> m_pIdx[ lSample ].m_Pos;
 
@@ -1271,14 +1365,17 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
   lpMyCurStm = ( MOVStream* )apCont -> m_pStm[ i ] -> m_pCtx;
 
   if (  !lpMyCurStm -> m_nIdx  ) continue;
+  if ( !lpMyCurStm -> m_pIdx || lpMyCurStm -> m_TimeRate <= 0 || lpMyCurStm -> m_TimeScale <= 0 ) return 0;
 
+  lTarget = SMS_Rescale ( lTime, lpMyCurStm -> m_TimeScale, SMS_TIME_BASE * ( int64_t )lpMyCurStm -> m_TimeRate ) - lpMyCurStm -> m_TimeOffset;
+  if ( lTarget < 0 ) lTarget = 0;
+  if ( lTarget > UINT_MAX ) lTarget = UINT_MAX;
   lSample = _mov_locate_sample (
    lpMyCurStm -> m_pIdx, lpMyCurStm -> m_nIdx,
-   ( uint32_t )SMS_Rescale (  lTime, lpMyCurStm -> m_TimeScale, SMS_TIME_BASE * ( int64_t )lpMyCurStm -> m_TimeRate  )
+   ( uint32_t )lTarget
   );
 
-  lpMyCurStm -> m_CurSample = lSample;
-  _mov_sync_ctime ( lpMyCurStm );
+  lSamples[ i ] = lSample;
 
   if (  lpMyCurStm -> m_pIdx[ lSample ].m_Pos < lPos  ) lPos = lpMyCurStm -> m_pIdx[ lSample ].m_Pos;
 
@@ -1287,13 +1384,22 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 /* The scrollbar restarts file streaming at m_CurPos right after this returns, so leave the
  * file on the earliest sample ANY stream will read, not on the video keyframe. _ReadPacket
  * re-seeks per sample anyway, but starting the streamer here keeps the buffer ahead full. */
- if (  lPos < lpFileCtx -> m_Size  ) {
-
+ if ( lPos >= lpFileCtx -> m_Size ) return 0;
+ lOldPos = lpFileCtx -> m_CurPos;
+ if ( lOldPos != lPos ) {
   lpFileCtx -> Seek ( lpFileCtx, lPos );
-
-  return 1;
-
- } else return 0;
+  if ( lpFileCtx -> m_CurPos != lPos ) {
+   if ( lpFileCtx -> m_CurPos != lOldPos ) lpFileCtx -> Seek ( lpFileCtx, lOldPos );
+   return 0;
+  }  /* end if */
+ }  /* end if */
+ /* Publish all sample/composition cursors only once positioning succeeds. */
+ for ( i = 0; i < apCont -> m_nStm; ++i ) {
+  MOVStream* lpCur = ( MOVStream* )apCont -> m_pStm[ i ] -> m_pCtx;
+  lpCur -> m_CurSample = lSamples[ i ];
+  _mov_sync_ctime ( lpCur );
+ }  /* end for */
+ return 1;
 
 }  /* end _Seek */
 

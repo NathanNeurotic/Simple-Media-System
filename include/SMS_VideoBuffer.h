@@ -56,7 +56,7 @@ void             SMS_CSCResume          ( void                                 )
 void             SMS_CSCSuspend         ( void                                 );
 void             SMS_CSCSync            ( void                                 );
 void             SMS_CSC                ( SMS_CSCParam*, u64*          , void* );
-void             SMS_FrameBufferInit    ( SMS_FrameBuffer*, int, int, int, int );
+int              SMS_FrameBufferInit    ( SMS_FrameBuffer*, int, int, int, int );
 void             SMS_FrameBufferDestroy ( SMS_FrameBuffer*, int                );
 
 #ifdef __cplusplus

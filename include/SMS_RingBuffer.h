@@ -27,6 +27,10 @@ typedef struct SMS_RingBuffer {
  void ( *WaitCB ) ( struct SMS_RingBuffer* );
  int            m_Sema[ 3 ];
  int            m_nRef;
+#ifdef SMS_DIAG
+ unsigned int   m_WaitEvents, m_WaitMs, m_MaxWaitMs;
+ const char*    m_pDiagName;
+#endif
  void*          m_pBlockCBParam;
  void*          m_pUserCBParam;
  void*          m_pWaitCBParam;
@@ -35,6 +39,12 @@ typedef struct SMS_RingBuffer {
  void ( *UserCB  ) ( struct SMS_RingBuffer* );
 
 } SMS_RingBuffer;
+
+#ifdef SMS_DIAG
+#define SMS_RingBufferName( rb, name ) ( ( rb ) -> m_pDiagName = ( name ) )
+#else
+#define SMS_RingBufferName( rb, name ) do { } while ( 0 )
+#endif
 
 #ifdef __cplusplus
 extern "C" {

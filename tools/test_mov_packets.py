@@ -13,7 +13,8 @@ root = Path(__file__).resolve().parents[1]
 source = (args.source or root / "src/SMS_ContainerMOV.c").read_text()
 
 def extract(name):
-    signature = "static int " + name + " (" if name != "_mov_sync_ctime" else "static void " + name + " ("
+    kind = {"_mov_sync_ctime": "void", "_mov_locate_sample": "unsigned int"}.get(name, "int")
+    signature = f"static {kind} {name} ("
     if signature not in source:
         return ""
     start = source.index(signature)
@@ -21,11 +22,16 @@ def extract(name):
     return source[start:source.index(marker, start) + len(marker)]
 
 types = source[source.index("typedef struct MOVIndex"):source.index("struct MOVContext;")]
+if "m_TimeOffset" not in types:
+    # Test-only extension lets the old seek implementation run the same tests.
+    types = types.replace("} MOVStream;", "int64_t m_TimeOffset; } MOVStream;")
 harness = r"""
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#define SMS_MAX_STREAMS 8
 #define SMS_TIME_BASE 1
 #define SMS_MAXINT64 INT64_MAX
 #define SMS_PKT_FLAG_KEY 1
@@ -44,14 +50,17 @@ typedef struct {
 } SMS_Container;
 static int64_t SMS_Rescale(int64_t a,int64_t b,int64_t c) { assert(c>0);return a*b/c; }
 static void SMSContainer_CalcPktFields(SMS_Stream *s,SMS_AVPacket *p) {(void)s;(void)p;}
-static int short_read,seek_fail,allocations,reserved;
+static int short_read,seek_fail,seek_wrong,allocations,reserved;
 static SMS_AVPacket packet;
 static unsigned char payload[64];
 static int read_file(FileContext *c,void *p,unsigned n) {
  if(short_read && n) --n;
  memset(p,0x5a,n);c->m_CurPos+=n;return n;
 }
-static int seek_file(FileContext *c,unsigned p) { if(seek_fail) return -1;c->m_CurPos=p;return p; }
+static int seek_file(FileContext *c,unsigned p) {
+ if(seek_fail) return -1;
+ c->m_CurPos=p+(seek_wrong && p!=777);return c->m_CurPos;
+}
 static void File_Skip(FileContext *c,unsigned n) { seek_file(c,c->m_CurPos+n); }
 static SMS_AVPacket *allocate(void *buffer,int n) {
  (void)buffer;assert(n>=0 && n<=64);++allocations;
@@ -61,7 +70,7 @@ static SMS_AVPacket *allocate(void *buffer,int n) {
 static void SMS_RingBufferUnalloc(void *buffer,int n) {
  (void)buffer;assert(n>0 && n<=reserved);reserved-=n;
 }
-""" + types + extract("_mov_next_ctime") + extract("_ReadPacket") + extract("_mov_sync_ctime") + r"""
+""" + types + extract("_mov_next_ctime") + extract("_ReadPacket") + extract("_mov_sync_ctime") + extract("_mov_locate_sample") + extract("_Seek") + r"""
 static FileContext file;
 static MOVStream streams[2];
 static MOVIndex index_data[2][3];
@@ -72,7 +81,7 @@ static void reset(void) {
  memset(index_data,0,sizeof(index_data));
  file=(FileContext){1000,0,read_file,seek_file};
  container.m_pFileCtx=&file;container.m_nStm=2;container.AllocPacket=allocate;
- short_read=seek_fail=allocations=reserved=0;
+ short_read=seek_fail=seek_wrong=allocations=reserved=0;
  for(int i=0;i<2;++i) {
   streams[i].m_TimeRate=streams[i].m_TimeScale=1;
   streams[i].m_pIdx=index_data[i];streams[i].m_nSamples=streams[i].m_nIdx=1;
@@ -125,12 +134,49 @@ static void failures(void) {
  reset();container.m_nStm=1;index_data[0][0].m_Size=0;
  assert(_ReadPacket(&container,&selected)==-1 && allocations==0);
 }
+static void sample_search(void) {
+ MOVIndex index[8]={{0}};
+ assert(_mov_locate_sample(NULL,0,0)==0);
+ for(int n=1;n<=8;++n) {
+  for(int i=0;i<n;++i) index[i].m_DTS=5+10*i;
+  for(unsigned target=0;target<100;++target) {
+   unsigned expected=0;
+   for(int i=0;i<n;++i) if(index[i].m_DTS<=target) expected=i;
+   assert(_mov_locate_sample(index,n,target)==expected);
+  }
+ }
+}
+static void seeking(void) {
+ MOVStts offsets[2]={{1,-5},{2,7}};
+ reset();file.m_CurPos=777;
+ for(int i=0;i<2;++i) {
+  MOVStream *m=streams+i;m->m_nSamples=m->m_nIdx=3;m->m_CurSample=1;
+  m->m_pCtts=offsets;m->m_nCtts=2;_mov_sync_ctime(m);
+  for(int j=0;j<3;++j) index_data[i][j]=(MOVIndex){j!=1,10*j,100+100*i+4*j,4};
+ }
+ seek_fail=1;assert(_Seek(&container,0,1,20)==0 && file.m_CurPos==777);
+ for(int i=0;i<2;++i) assert(streams[i].m_CurSample==1 && streams[i].m_Sample2CTimeIdx==1 && !streams[i].m_Sample2CTimeSample);
+ seek_fail=0;seek_wrong=1;assert(_Seek(&container,0,1,20)==0 && file.m_CurPos==777);
+ for(int i=0;i<2;++i) assert(streams[i].m_CurSample==1 && !streams[i].m_Sample2CTimeSample);
+ seek_wrong=0;assert(_Seek(&container,0,1,20)==1 && file.m_CurPos==108);
+ for(int i=0;i<2;++i) assert(streams[i].m_CurSample==2 && streams[i].m_Sample2CTimeSample==1);
+ assert(_Seek(&container,0,1,15)==1 && streams[0].m_CurSample==2);
+ assert(_Seek(&container,0,-1,15)==1 && streams[0].m_CurSample==0);
+ assert(_Seek(&container,0,0,15)==1 && streams[0].m_CurSample==0);
+ assert(_Seek(&container,0,1,21)==0 && streams[0].m_CurSample==0);
+ /* A movie-time offset must affect both the video target and other streams. */
+ streams[0].m_TimeOffset=20;
+ assert(_Seek(&container,0,-1,25)==1 && streams[0].m_CurSample==0 && streams[1].m_CurSample==2);
+ assert(_Seek(&container,0,-1,0)==1 && streams[0].m_CurSample==0);
+}
 int main(int argc,char **argv) {
  const char *name=argc>1?argv[1]:"all";
  if(!strcmp(name,"all")||!strcmp(name,"disabled")) disabled();
  if(!strcmp(name,"all")||!strcmp(name,"composition")) composition();
  if(!strcmp(name,"all")||!strcmp(name,"ordering")) ordering();
  if(!strcmp(name,"all")||!strcmp(name,"failures")) failures();
+ if(!strcmp(name,"all")||!strcmp(name,"sample-search")) sample_search();
+ if(!strcmp(name,"all")||!strcmp(name,"seeking")) seeking();
  return 0;
 }
 """

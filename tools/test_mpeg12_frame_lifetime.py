@@ -11,7 +11,7 @@ import tempfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
-parser.add_argument("--case", default="all", choices=("all", "busy", "resize", "normal"))
+parser.add_argument("--case", default="all", choices=("all", "busy", "resize", "normal", "failure"))
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
 source = (args.source or root / "src/SMS_MPEG12.c").read_text()
@@ -38,15 +38,15 @@ harness = r"""
 typedef struct { void *m_pBase,*m_pData;int m_FrameType;int64_t m_StartPTS; } SMS_FrameBuffer;
 typedef struct { int m_Width,m_Height,m_MSPerFrame; } MPEGSequenceInfo;
 typedef struct { int unused; } SMS_RingBuffer;
-typedef struct { int unused; } SMS_CodecContext;
-typedef struct { int unused; } SMS_AVPacket;
+typedef struct { int m_HardwareError; } SMS_CodecContext;
+typedef struct { int m_Size; } SMS_AVPacket;
 """ + source[state_start:state_end] + r"""
 static MPEGState s_MPEGState;
 static unsigned char pixels[3][32];
 static SMS_FrameBuffer *queued;
 static unsigned yields,pictures,posted,allocations,destroys,release_after;
 static unsigned holds[3];
-static int picture_result;
+static int picture_result,frame_failure,freed_packets;
 static int RotateThreadReadyQueue(int priority) {
  assert(priority==SMS_THREAD_PRIORITY);assert(++yields<100);
  for(unsigned i=0;i<3;++i) {
@@ -68,6 +68,7 @@ static void *SMS_RingBufferAlloc(SMS_RingBuffer *q,int size) {
  (void)q;assert(size==4 && pictures);++allocations;return &queued;
 }
 static void SMS_RingBufferPost(SMS_RingBuffer *q) { (void)q;++posted; }
+static void SMS_RingBufferFree(SMS_RingBuffer *q,int size) { (void)q;assert(size==80);++freed_packets; }
 static void SMS_FrameBufferDestroy(SMS_FrameBuffer *frames,int count) {
  ++destroys;
  for(int i=0;i<count;++i) {
@@ -75,11 +76,14 @@ static void SMS_FrameBufferDestroy(SMS_FrameBuffer *frames,int count) {
   frames[i].m_pBase=NULL;
  }
 }
-static void SMS_FrameBufferInit(SMS_FrameBuffer *frames,int count,int w,int h,int depth) {
+static int SMS_FrameBufferInit(SMS_FrameBuffer *frames,int count,int w,int h,int depth) {
  assert(count==3 && w==640 && h==480 && depth==0);
+ if(frame_failure)return 0;
  for(int i=0;i<count;++i) { frames[i].m_pBase=pixels[i];frames[i].m_FrameType=-1; }
+ return 1;
 }
 static void FlushCache(int mode) { assert(mode==0); }
+static void IPU_FRST(void) {}
 """ + function("_wait_frame") + function("_init_cb") + function("MPEG12_Decode") + r"""
 static MPEGSequenceInfo info={640,480,33};
 static SMS_RingBuffer input,output;
@@ -88,7 +92,7 @@ static void reset(void) {
  memset(&s_MPEGState,0,sizeof(s_MPEGState));memset(holds,0,sizeof(holds));
  s_MPEGState.m_pInfo=&info;
  queued=NULL;yields=pictures=posted=allocations=destroys=0;
- release_after=3;picture_result=1;
+ release_after=3;picture_result=1;frame_failure=freed_packets=codec.m_HardwareError=0;
  for(int i=0;i<3;++i) {
   s_MPEGState.m_Pics[i].m_pBase=pixels[i];s_MPEGState.m_Pics[i].m_FrameType=-1;
  }
@@ -121,11 +125,24 @@ static void normal(void) {
  assert(MPEG12_Decode(&codec,&output,&input)==0 && !yields);
  assert(_init_cb(&s_MPEGState,&info)==pixels[0] && !yields && destroys==1);
 }
+static void failure(void) {
+ reset();frame_failure=1;
+ assert(!_init_cb(&s_MPEGState,&info));
+ assert(s_MPEGState.m_AllocationFailed && !s_MPEGState.m_Width && !s_MPEGState.m_Height);
+ SMS_AVPacket packet={16};s_MPEGState.m_pPacket=&packet;picture_result=-1;
+ assert(!MPEG12_Decode(&codec,&output,&input));
+ assert(codec.m_HardwareError && freed_packets==1 && !s_MPEGState.m_pPacket && !posted);
+ reset();picture_result=-1;
+ assert(!MPEG12_Decode(&codec,&output,&input) && codec.m_HardwareError && !posted);
+ unsigned previous=pictures;
+ assert(!MPEG12_Decode(&codec,&output,&input) && pictures==previous && !posted);
+}
 int main(int argc,char **argv) {
  const char *which=argc>1?argv[1]:"all";
  if(!strcmp(which,"all") || !strcmp(which,"busy")) busy();
  if(!strcmp(which,"all") || !strcmp(which,"resize")) resize();
  if(!strcmp(which,"all") || !strcmp(which,"normal")) normal();
+ if(!strcmp(which,"all") || !strcmp(which,"failure")) failure();
  return 0;
 }
 """

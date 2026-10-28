@@ -775,7 +775,7 @@ static int PlayerControl_Scroll ( int aDir ) {
    lpIPUCtx -> Display ( lpFrame, -1 );
    lpIPUCtx -> Sync ();
 
-  } else if (  FILE_EOF( lpCont -> m_pFileCtx )  ) {
+  } else if ( lpStm -> m_pCodec -> m_HardwareError || FILE_EOF( lpCont -> m_pFileCtx ) ) {
 
    retVal = 0;
    break;

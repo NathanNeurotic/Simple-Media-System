@@ -1574,7 +1574,7 @@ static int32_t MSMPEG4_Init ( SMS_CodecContext* apCtx ) {
 
   SMS_MPEGContext_Init ( apCtx -> m_Width, apCtx -> m_Height );
 
-  MPEG4_CommonInit ( apCtx );
+  if ( !MPEG4_CommonInit ( apCtx ) ) goto allocation_error;
 
   SMS_MPEG_InitScanTable ( &g_MPEGCtx.m_InterScanTbl,  g_SMS_DSP_zigzag_direct             );
   SMS_MPEG_InitScanTable ( &g_MPEGCtx.m_IntraScanTbl,  g_SMS_DSP_zigzag_direct             );
@@ -1588,6 +1588,7 @@ static int32_t MSMPEG4_Init ( SMS_CodecContext* apCtx ) {
   BASECTX().m_pCodedBlockBase = calloc (
    1, BASECTX().m_B8Stride * (  2 * BASECTX().m_MBH + 1  )
   );
+  if ( !BASECTX().m_pCodedBlockBase ) goto allocation_error;
   BASECTX().m_pCodedBlock     = g_MPEGCtx.m_pCodedBlockBase + g_MPEGCtx.m_B8Stride + 1;
 
  }  /* end if */
@@ -1595,6 +1596,12 @@ static int32_t MSMPEG4_Init ( SMS_CodecContext* apCtx ) {
  ++s_Init;
 
  return 1;
+
+allocation_error:
+ s_Init = 1;
+ MSMPEG4_Destroy ( apCtx );
+ apCtx -> m_HardwareError = 1;
+ return 0;
 
 }  /* end MSMPEG4_Init */
 
@@ -1634,6 +1641,7 @@ static void MSMPEG4_Destroy ( SMS_CodecContext* apCtx ) {
   MPEG4_CommonDestroy     ();
 
   free (  BASECTX().m_pCodedBlockBase  );
+  BASECTX().m_pCodedBlockBase = BASECTX().m_pCodedBlock = NULL;
 
  }  /* end if */
 
@@ -2290,9 +2298,11 @@ static int32_t MSMPEG4_Decode ( SMS_CodecContext* apCtx, SMS_RingBuffer* apOutpu
  SMS_FrameBuffer*  lpFrame;
  SMS_BitContext*   lpBitCtx;
  int               retVal   = 0;
- SMS_AVPacket*     lpPkt    = ( SMS_AVPacket* )SMS_RingBufferWait ( apInput );
+ SMS_AVPacket*     lpPkt;
  SMS_FrameBuffer** lppFrame;
 
+ if ( apCtx -> m_HardwareError ) return 0;
+ lpPkt = ( SMS_AVPacket* )SMS_RingBufferWait ( apInput );
  if ( !lpPkt ) return retVal;
 
  if (  !( lpPkt -> m_Flags & SMS_PKT_FLAG_SUB )  ) {

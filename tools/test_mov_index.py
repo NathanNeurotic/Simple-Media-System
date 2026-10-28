@@ -32,6 +32,7 @@ prefix = r"""
 #include <limits.h>
 #define SMS_MAX_STREAMS 8
 #define SMS_NOPTS_VALUE INT64_MIN
+#define SMS_MAXINT64 INT64_MAX
 #define SMS_CONT_FLAGS_SEEKABLE 1
 enum { SMS_CodecTypeUnknown, SMS_CodecTypeVideo, SMS_CodecTypeAudio };
 typedef struct { int m_Type,m_FrameSize; } SMS_CodecContext;
@@ -68,6 +69,7 @@ static void _free(void *p) { free(p); }
 static int seek_file(FileContext *f,unsigned n) { f->m_CurPos=n;return n; }
 static void File_Skip(FileContext *f,unsigned n) { f->Seek(f,f->m_CurPos+n); }
 static void SMSContainer_SetPTSInfo(SMS_Stream *s,int n,int d) { (void)s;assert(n>0 && d>0); }
+static int64_t SMS_Rescale(int64_t a,int64_t b,int64_t c) { assert(c>0);return a*b/c; }
 static uint32_t _mov_probe(FileContext *f) { (void)f;return 1; }
 static int _ReadPacket(SMS_Container *c,int *i) { (void)c;(void)i;return -1; }
 static int _Seek(SMS_Container *c,int i,int d,uint32_t p) { (void)c;(void)i;(void)d;(void)p;return 0; }
@@ -84,7 +86,10 @@ static int _mov_read_dflt(MOVContext *c,FileContext *f,MOVAtom *atom) {
 }
 """
 functions = free_tables + extract("_DestroyStream") + extract("_mov_read_trak") + extract("_mov_read_mdat")
-functions += extract("_add_idx_entry") + extract("_mov_build_index") + extract("_mov_read_header")
+functions += extract("_gcd") + extract("_add_idx_entry") + extract("_mov_build_index")
+if "end _mov_edit_fits" in source:
+    functions += extract("_mov_edit_fits")
+functions += extract("_mov_read_header")
 cleanup = r"""
 static void SMS_DestroyContainer(SMS_Container *c,int all) {
  (void)all;

@@ -86,6 +86,7 @@ typedef struct SMS_CodecContext {
 
  void ( *HWCtl ) ( struct SMS_CodecContext*, SMS_CodecHWCtl );
  void*         m_pHWData;
+ volatile int  m_HardwareError;
 
 } SMS_CodecContext;
 

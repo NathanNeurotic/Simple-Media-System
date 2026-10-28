@@ -168,6 +168,11 @@ static void* _init_seq ( void ) {
   s_MPEG12Ctx.m_pBckFrame = ( _MPEGMacroBlock8* )memalign ( 128, lSize );
   s_MPEG12Ctx.m_pAuxFrame = ( _MPEGMacroBlock8* )memalign ( 128, lSize );
 
+  if ( !s_MPEG12Ctx.m_pFwdFrame || !s_MPEG12Ctx.m_pBckFrame || !s_MPEG12Ctx.m_pAuxFrame ) {
+   _destroy_seq ();
+   return NULL;
+  }  /* end if */
+
   memset ( s_MPEG12Ctx.m_pFwdFrame, 0, lSize );
   memset ( s_MPEG12Ctx.m_pBckFrame, 0, lSize );
   memset ( s_MPEG12Ctx.m_pAuxFrame, 0, lSize );
@@ -175,6 +180,10 @@ static void* _init_seq ( void ) {
   s_MPEG12Ctx.m_pMBXY = ( _MPEGMBXY* )malloc (
    sizeof ( _MPEGMBXY ) * ( s_MPEG12Ctx.m_MBCount = s_MPEG12Ctx.m_MBWidth * s_MPEG12Ctx.m_MBHeight )
   );
+  if ( !s_MPEG12Ctx.m_pMBXY ) {
+   _destroy_seq ();
+   return NULL;
+  }  /* end if */
 
   for ( i = 0; i < s_MPEG12Ctx.m_MBCount; ++i ) {
    s_MPEG12Ctx.m_pMBXY[ i ].m_X = i % lMBWidth;
@@ -632,6 +641,7 @@ static int _get_first_picture ( void* apData, s64*  apPTS ) {
   s_MPEG12Ctx.m_SI.m_FrameCnt = 0;
 
   apData = _init_seq ();
+  if ( !apData ) return -1;
   _mpeg12_picture_data ();
 
   if ( s_MPEG12Ctx.m_PictStruct != _MPEG_PS_FRAME ) s_MPEG12Ctx.m_fSecField ^= 1;

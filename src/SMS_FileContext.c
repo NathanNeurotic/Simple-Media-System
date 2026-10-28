@@ -11,6 +11,10 @@
 #include "SMS_FileContext.h"
 #include "SMS_Sounds.h"
 #include "SMS_GUI.h"
+#if defined(SMS_DIAG) && !defined(_WIN32)
+#include "SMS_Timer.h"
+#include <stdio.h>
+#endif
 #ifdef BDM
 #include <fileXio_rpc.h>
 /* mass: (MX4SIO/BDM) reads are issued to the device in chunks no larger than this.
@@ -1256,9 +1260,29 @@ typedef struct STIOFilePrivate {
  int m_FD;
  int m_fXio;      /* 1 = opened via fileXio (mass:/BDM); 0 = legacy fio */
  int m_RdChunk;   /* max bytes per fileXio read on THIS device ( see the note at top ) */
+#ifdef SMS_DIAG
+ unsigned int m_ReadCalls, m_ReadBytes, m_ReadMs, m_MaxReadMs, m_ReadErrors;
+ unsigned int m_Refills, m_RefillMs, m_MaxRefillMs;
+#endif
 
 } STIOFilePrivate;
 #endif  /* _WIN32 */
+#if defined(SMS_DIAG) && !defined(_WIN32)
+/* Milliseconds, quantized to the existing timer's 8 ms tick. Read once per
+ * boundary, and report only on close so logging cannot slow a refill. */
+static unsigned int STIO_DiagNow ( void ) {
+ return ( unsigned int )*( volatile u64* )&g_Timer;
+}
+
+static void STIO_DiagRead ( STIOFilePrivate* apPriv, unsigned int aStart, int aBytes ) {
+ unsigned int lMs = STIO_DiagNow () - aStart;
+ ++apPriv -> m_ReadCalls;
+ if ( aBytes > 0 ) apPriv -> m_ReadBytes += aBytes;
+ if ( aBytes < 0 ) ++apPriv -> m_ReadErrors;
+ apPriv -> m_ReadMs += lMs;
+ if ( lMs > apPriv -> m_MaxReadMs ) apPriv -> m_MaxReadMs = lMs;
+}
+#endif
 static void STIO_DestroyFileContext ( FileContext* apCtx ) {
 
  if ( apCtx != NULL ) {
@@ -1266,6 +1290,15 @@ static void STIO_DestroyFileContext ( FileContext* apCtx ) {
   CloseHandle (   (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_hFile         );
   CloseHandle (   (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_Ovlp.hEvent   );
 #else  /* PS2 */
+#ifdef SMS_DIAG
+  {
+   STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
+   printf ( "[sms-io] path=%s chunk=%d calls=%u bytes=%u read_ms=%u max_read_ms=%u errors=%u refills=%u refill_ms=%u max_refill_ms=%u\n",
+    apCtx -> m_pPath, lpPriv -> m_RdChunk, lpPriv -> m_ReadCalls,
+    lpPriv -> m_ReadBytes, lpPriv -> m_ReadMs, lpPriv -> m_MaxReadMs,
+    lpPriv -> m_ReadErrors, lpPriv -> m_Refills, lpPriv -> m_RefillMs, lpPriv -> m_MaxRefillMs );
+  }
+#endif
   fioSetBlockMode ( FIO_WAIT );
 #ifdef BDM
   if (  (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_fXio  )
@@ -1355,6 +1388,9 @@ static int STIO_Fill ( FileContext* apCtx ) {
 
  int              lLen;
  STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
+#if defined(SMS_DIAG) && !defined(_WIN32)
+ unsigned int lFillStart = STIO_DiagNow ();
+#endif
 #ifdef _WIN32
  DWORD lnRead;
 
@@ -1385,15 +1421,37 @@ static int STIO_Fill ( FileContext* apCtx ) {
    _want = 8 * MX4SIO_RD_CHUNK;
   while ( _tot < _want ) {
    int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
+#ifdef SMS_DIAG
+   unsigned int lReadStart = STIO_DiagNow ();
+#endif
    _n = fileXioRead ( lpPriv -> m_FD, ( char* )apCtx -> m_pBuff[ apCtx -> m_CurBuf ] + _tot, _chunk );
+#ifdef SMS_DIAG
+   STIO_DiagRead ( lpPriv, lReadStart, _n );
+#endif
    if ( _n <= 0 ) break;
    _tot += _n;
   }
   lLen = _tot;
  } else
 #endif
- lLen = fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ apCtx -> m_CurBuf ], apCtx -> m_BufSize );
+ {
+#ifdef SMS_DIAG
+  unsigned int lReadStart = STIO_DiagNow ();
+#endif
+  lLen = fioRead ( lpPriv -> m_FD, apCtx -> m_pBuff[ apCtx -> m_CurBuf ], apCtx -> m_BufSize );
+#ifdef SMS_DIAG
+  STIO_DiagRead ( lpPriv, lReadStart, lLen );
+#endif
+ }
 
+#ifdef SMS_DIAG
+ {
+  unsigned int lMs = STIO_DiagNow () - lFillStart;
+  ++lpPriv -> m_Refills;
+  lpPriv -> m_RefillMs += lMs;
+  if ( lMs > lpPriv -> m_MaxRefillMs ) lpPriv -> m_MaxRefillMs = lMs;
+ }
+#endif
  if ( lLen < 0 ) lLen = 0;
 #endif  /* _WIN32 */
  apCtx -> m_pPos = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
@@ -1695,6 +1753,9 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
 
     strcpy ( retVal -> m_pPath, aFileName );
 
+#ifdef SMS_DIAG
+    memset ( retVal -> m_pData, 0, sizeof ( STIOFilePrivate ) );
+#endif
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_FD = lFD;
 #ifdef BDM
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_fXio    = lXio;
