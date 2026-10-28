@@ -6,6 +6,11 @@ commit correctly, but the existing rolling tag was stale: `gh release edit
 updates the lightweight tag after upload, uses `force=false`, and verifies its
 readback. Stable version tags and converter asset names are unchanged.
 
+The live tag was repaired to approved master `83c94b8` after the player bundle
+and all three ELF hashes were verified. The repair checked commit ancestry and
+used a lease on the observed old tag `874d96f`; it did not change version tags.
+This PR makes subsequent publications advance and verify the tag automatically.
+
 ## Ordering follow-up
 
 A head check at the start of a step does not serialize its later writes. An
@@ -59,3 +64,27 @@ failed-publish condition. The groups prevent updated writers of the same asset
 family from overlapping; they do not promise that every platform has the same
 commit during a rolling update or after a platform build fails. Actual rolling
 publication remains pending merge through the existing master workflow.
+
+## Publication recovery
+
+GitHub [reruns retain the original event's commit and ref](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs).
+A run from before this fix still has its historical publication steps and does
+not gain the new concurrency groups or stale-build checks. Do not rerun those
+old master-push publishers to repair a current rolling release; they can still
+overwrite newer assets. Use their existing Actions artifacts when historical
+builds are needed.
+
+After a failed publication, inspect the current master SHA, queued/running
+publishers, rolling ref and downloaded bundle's `build-info.json`. For a retry,
+use the latest master-push run containing this fix, and confirm its commit is
+still current master. A manual `workflow_dispatch` build produces artifacts but
+does not run the push-only rolling publication steps. If the fast-forward tag
+update is rejected, reconcile the tag's provenance before attempting a repair;
+deleting the release or forcing the tag is not a routine retry.
+
+`queue: max` retains at most 100 pending jobs in each group. Further arrivals
+are canceled when that queue is full, so the configuration does not guarantee
+that a newest-master publisher survives arbitrary rerun volume. If this happens,
+let the queue drain and retry the current master-push run, then verify the
+published manifest, tag and asset hashes again. Converter platforms publish
+independently, so verify each required asset after its own job completes.
