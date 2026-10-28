@@ -55,7 +55,7 @@ main = r'''
 int main(void) {
  unsigned char data[65536];STIOFilePrivate priv={0};FileContext ctx={0};
  ctx.m_pData=&priv;ctx.m_pBuff[0]=data;ctx.m_BufSize=sizeof(data);
- priv.m_fXio=1;priv.m_RdChunk=4096;
+ priv.m_fXio=1;priv.m_RdChunk=4096;priv.m_FillLimit=32768;
  assert(STIO_Fill(&ctx)==32768);
  assert(priv.m_ReadCalls==8 && priv.m_ReadBytes==32768);
  assert(priv.m_ReadMs==64 && priv.m_MaxReadMs==8 && !priv.m_ReadErrors);

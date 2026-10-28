@@ -50,9 +50,11 @@ jobs:
         python3 tools/test_cdda_stream_failure.py
         python3 tools/test_stream_rebuffer.py
         python3 tools/test_stio_refill.py
+        python3 tools/test_stio_device_reads.py
         python3 tools/test_io_diagnostics.py
         python3 tools/test_mpeg_ps_probe.py
         python3 tools/test_mpeg12_frame_lifetime.py
+        python3 tools/test_mpeg_color_feed.py
         python3 tools/test_frame_buffer_allocation.py
         python3 tools/test_mpeg4_init_allocation.py
         python3 tools/test_rescale_allocation.py

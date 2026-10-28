@@ -1,6 +1,11 @@
 COLOR16 ?= 0
 POOL ?= 0
+CAPTURE_FRAMES ?= 5
+INPUT ?= probe.m2v
 OUT = obj$(COLOR16)
+ifneq ($(CAPTURE_FRAMES),5)
+OUT = obj$(COLOR16)-$(CAPTURE_FRAMES)
+endif
 MAIN_SOURCE = main.c
 ifeq ($(POOL),1)
 OUT = pool$(COLOR16)
@@ -13,7 +18,7 @@ EE_OBJS += $(OUT)/ring.o $(OUT)/ipu.o
 endif
 EE_INCS = -I../../include
 EE_LIBS = -lc -lkernel
-EE_CFLAGS = -O2 -G8192 -D_EE -DCOLOR16=$(COLOR16)
+EE_CFLAGS = -O2 -G8192 -D_EE -DCOLOR16=$(COLOR16) -DCAPTURE_FRAMES=$(CAPTURE_FRAMES)
 
 all: $(OUT) $(EE_BIN)
 $(OUT):
@@ -24,7 +29,7 @@ $(OUT)/libmpeg.o: ../../src/libmpeg.c | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 $(OUT)/libmpeg_core.o: ../../src/libmpeg_core.S | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
-$(OUT)/input.c: probe.m2v | $(OUT)
+$(OUT)/input.c: $(INPUT) | $(OUT)
 	bin2c $< $@ probe_m2v
 $(OUT)/input.o: $(OUT)/input.c
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
