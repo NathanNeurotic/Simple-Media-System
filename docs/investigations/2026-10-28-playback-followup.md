@@ -148,6 +148,16 @@ B-picture integration, beyond the isolated interpolation oracle. Do not treat
 the remaining large differences as explained quantization or label this case
 fully corrected. No new regression is inferred from its lower aggregate error.
 
+Skipped-block investigation must preserve the implicit prediction rules in
+[H.262 section 7.6.6](https://www.ee.columbia.edu/~eleft/e6880-Spring97/docs/is138182.pdf#page=116):
+frame pictures use frame prediction, field pictures use same-parity field
+prediction, P predictors reset, and B predictors/directions are retained.
+Blindly retaining the preceding B block's field motion mode is incorrect. A
+trial of that change worsened this control and was discarded. The actual
+slice/MC dispatch regression `tools/test_mpeg_skipped_motion.py` guards the
+required behavior with controlled VLC/IPU calls; it rejects the discarded trial
+and passes the unchanged production skip path.
+
 The [machine-readable metrics](data/2026-10-28-mpeg-chroma-metrics.json) retain
 input hashes, frame picture types, exact aggregate errors, per-frame means,
 candidate decoder source hashes and the baseline/candidate revision identity.
@@ -157,7 +167,7 @@ when investigating a residual.
 
 ## Remaining validation at this checkpoint
 
-- All 28 host scripts pass. Pinned release/packed, DIAG and BDM=0 player builds
+- All 29 host scripts pass. Pinned release/packed, DIAG and BDM=0 player builds
   pass after the decoder correction. Release small-data and small-BSS sizes
   remain `0x96be` / `0x63cc`; no GP threshold or linker-script change is needed.
 - Follow the reproducible interlaced B-picture residual above through reference
