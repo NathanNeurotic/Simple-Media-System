@@ -151,6 +151,17 @@ class TestGeometrySettings(unittest.TestCase):
             widget.load_preset(preset)
             self.assertFalse(widget.chk_upscale.isChecked())
             self.assertTrue(MainWindow._matches_preset(widget.get_settings_dict(), preset))
+            keep_sd_preset = next(p for p in PRESETS.values() if p.keep_sd_resolution)
+            widget.load_preset(keep_sd_preset)
+            self.assertTrue(widget.chk_keep_sd.isChecked())
+            self.assertTrue(MainWindow._matches_preset(widget.get_settings_dict(), keep_sd_preset))
+            widget.chk_keep_sd.setChecked(False)
+            self.assertFalse(MainWindow._matches_preset(widget.get_settings_dict(), keep_sd_preset))
+            widget.load_preset(keep_sd_preset)
+            self.assertTrue(widget.chk_keep_sd.isChecked())
+            widget.load_preset(preset)
+            self.assertFalse(widget.chk_keep_sd.isChecked())
+            self.assertTrue(MainWindow._matches_preset(widget.get_settings_dict(), preset))
         finally:
             widget.close()
 
