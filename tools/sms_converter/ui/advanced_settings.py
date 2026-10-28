@@ -110,18 +110,14 @@ class AdvancedSettingsWidget(QWidget):
         res_layout.addWidget(QLabel("×"))
         res_layout.addWidget(self.spin_height)
 
-        self.chk_aspect = QCheckBox("Preserve aspect ratio (Recommended)")
-        self.chk_aspect.setChecked(True)
-        self.chk_aspect.setToolTip("Preserves original video proportions by applying black letterbox bars when scaling.")
-        self.chk_aspect.stateChanged.connect(self._on_control_changed)
-
         self.combo_scaling = QComboBox()
         self.combo_scaling.setToolTip(
             "Choose scaling mode:\n"
             "• Letterbox to exact dimensions (Recommended): Pad black bars to fit target resolution.\n"
             "• Fit inside dimensions: Scale down without adding black bars.\n"
-            "• Crop to fill: Scale up and crop edges to fill entire screen.\n"
-            "• Stretch: Force stretch image to target resolution."
+            "• Crop to fill: Remove edges to fill the output, preserving proportions.\n"
+            "• Stretch: Force the target proportions; the picture may be distorted.\n"
+            "Allow upscaling controls whether smaller sources can be enlarged."
         )
         self.combo_scaling.addItems([
             "Letterbox to exact dimensions",
@@ -133,11 +129,11 @@ class AdvancedSettingsWidget(QWidget):
 
         self.chk_upscale = QCheckBox("Allow upscaling (default off)")
         self.chk_upscale.setChecked(False)
-        self.chk_upscale.setToolTip("Disabled by default. Upscaling low-res video increases file size without improving quality.")
+        self.chk_upscale.setToolTip("Disabled by default. Smaller sources produce smaller output; Crop may reduce it further to avoid enlarging the cropped picture.")
         self.chk_upscale.stateChanged.connect(self._on_control_changed)
 
         self.chk_keep_sd = QCheckBox("Keep source SD resolution (up to 720 x 576)")
-        self.chk_keep_sd.setToolTip("Keep even source dimensions within SD limits; larger sources use the dimensions above.")
+        self.chk_keep_sd.setToolTip("Keep even source dimensions and pixel aspect within SD limits. The dimensions and scaling mode above apply to larger sources.")
         self.chk_keep_sd.stateChanged.connect(self._on_control_changed)
 
         self.combo_fps = QComboBox()
@@ -241,7 +237,6 @@ class AdvancedSettingsWidget(QWidget):
 
         v_layout.addRow("Codec:", self.combo_vcodec)
         v_layout.addRow("Dimensions:", res_layout)
-        v_layout.addRow("", self.chk_aspect)
         v_layout.addRow("Scaling Mode:", self.combo_scaling)
         v_layout.addRow("", self.chk_upscale)
         v_layout.addRow("", self.chk_keep_sd)
@@ -497,6 +492,8 @@ class AdvancedSettingsWidget(QWidget):
             self.spin_vbitrate.setValue(preset.vbitrate_kbps)
         self.spin_gop.setValue(preset.gop)
         self.chk_keep_sd.setChecked(preset.keep_sd_resolution)
+        self.combo_scaling.setCurrentText(preset.scaling_mode)
+        self.chk_upscale.setChecked(False)
 
         for display_name, ff_name in AUDIO_CODECS_MAP.items():
             if ff_name == preset.acodec:
@@ -561,7 +558,6 @@ class AdvancedSettingsWidget(QWidget):
             "vtag": vtag,
             "width": w,
             "height": h,
-            "preserve_aspect": self.chk_aspect.isChecked(),
             "scaling_mode": self.combo_scaling.currentText(),
             "allow_upscale": self.chk_upscale.isChecked(),
             "keep_sd_resolution": self.chk_keep_sd.isChecked(),
@@ -653,7 +649,6 @@ class AdvancedSettingsWidget(QWidget):
         self.combo_vcodec.blockSignals(block)
         self.spin_width.blockSignals(block)
         self.spin_height.blockSignals(block)
-        self.chk_aspect.blockSignals(block)
         self.combo_scaling.blockSignals(block)
         self.chk_upscale.blockSignals(block)
         self.chk_keep_sd.blockSignals(block)

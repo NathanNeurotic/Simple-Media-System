@@ -41,6 +41,17 @@
 </tbody></table>
 <p>Ordinary video presets use GOP 50 and zero B-frames unless changed; the high-quality preset uses GOP 6. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.</p>
 <h2 id="advanced">Tracks, subtitles and advanced controls</h2>
+<h3 id="scaling">Scaling mode and output size</h3>
+<p>The target width and height define a bounding box or output canvas according to <b>Scaling mode</b>. For a 1280×720 widescreen source and a 640×480 target, the modes produce these results:</p>
+<table><thead><tr><th>Mode</th><th>Output in this example</th><th>Picture treatment</th></tr></thead><tbody>
+<tr><td>Fit inside dimensions</td><td>640×360</td><td>Keeps the full picture and its display proportions. Adds no borders; the encoded frame can be smaller than the target.</td></tr>
+<tr><td>Letterbox to exact dimensions</td><td>640×480</td><td>Keeps the full picture inside the canvas. Adds black borders above and below this widescreen source.</td></tr>
+<tr><td>Crop to fill</td><td>640×480</td><td>Keeps picture proportions, fills the canvas and removes the excess edges. This example loses picture at the left and right.</td></tr>
+<tr><td>Stretch</td><td>640×480</td><td>Fills the canvas by changing picture proportions. Circles and faces can become narrower or wider.</td></tr>
+</tbody></table>
+<p>The default is letterbox with <b>Allow upscaling</b> off. When upscaling is disabled, a small input can also reduce the canvas for letterbox, crop and stretch. For example, a square-pixel 320×180 source with a requested 640×480 target produces 320×180 with Fit and a 240×180 canvas with the other three modes. Enable upscaling when you deliberately want that small source enlarged to the requested canvas. Final dimensions are even for the supported encoders.</p>
+<p>Normal scaling converts anamorphic sources to square pixels using their display aspect ratio. A 720×480 source tagged with a 32:27 sample aspect ratio therefore has a 16:9 picture, and fits 640×360 rather than being treated as a square-pixel 3:2 image. The source-SD option below has precedence for eligible sources and preserves their pixel aspect.</p>
+<p>Loading a preset restores the default scaling mode and disables upscaling. Changing either setting makes the settings badge custom. These controls determine encoded geometry; final TV presentation still depends on SMS's display and aspect settings.</p>
 <h3 id="audio-tracks">One audio track or all source audio</h3>
 <p><b>Source audio track</b> selects a zero-based source index. <b>Keep all source audio tracks</b> encodes all selected source audio to the configured audio codec in AVI, MPEG-PS or MP4. At most <b>six audio tracks plus video</b> are allowed; excess tracks produce a settings error. Tracks are re-encoded, not copied bit for bit. Language/title metadata are preserved where supported by the container.</p>
 <p>The player has its own stream limits and codec/container mappings. Validate actual audio switching in SMS; a desktop muxer accepting a track does not prove that the PS2 reader can use it.</p>
@@ -48,7 +59,7 @@
 <p>Select an external subtitle or a zero-based embedded <b>text</b> subtitle index. <b>None</b> disables embedded selection; <b>Clear</b> removes the selected input. One subtitle is rendered into the video pixels. It cannot subsequently be disabled or restyled in SMS. Bitmap subtitle burn-in and switchable embedded-text output are not implemented by this control.</p>
 <p>For switchable text, retain a separate matching SRT/SUB/TXT sidecar and use SMS's <a href="subtitles.html">subtitle reader</a>. The existing AVI DXSB bitmap-subtitle reader is a different player feature.</p>
 <h3 id="source-sd">Keep source SD dimensions</h3>
-<p><b>Keep source SD resolution</b> retains even source dimensions up to 720×576. Larger sources use the selected target; it is enabled by default only for the high-quality preset. Check display aspect and pixel aspect on your TV. Choosing this option alone does not establish hardware playback speed.</p>
+<p><b>Keep source SD resolution</b> retains source dimensions up to 720×576, rounded down to even values when needed, and preserves the source display aspect through its sample aspect ratio. It takes precedence over the selected scaling mode for eligible sources: choosing Stretch or Crop does not reshape an SD source while this option is enabled. Larger sources use the selected scaling mode and target. It is enabled by default only for the high-quality preset. Check display aspect and pixel aspect on your TV. Choosing this option alone does not establish hardware playback speed.</p>
 <h3 id="encoding-passes">Two-pass encoding</h3>
 <p>The app implements two-pass video encoding: analysis followed by an encode using the recorded statistics. It can improve bitrate allocation, at the cost of another processing pass. It does not cap every instantaneous packet or eliminate source/transport bottlenecks. More than two passes is not exposed by this application.</p>
 <h3 id="keyframes">Keyframe interval and B-frames</h3>
