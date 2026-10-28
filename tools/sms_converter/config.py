@@ -77,6 +77,14 @@ class Preset:
     keep_sd_resolution: bool = False
     scaling_mode: str = DEFAULT_SCALING_MODE
 
+# MPEG-1/2 keyframe interval. The PS2 decodes these on the IPU, whose IDCT does not
+# reconstruct exactly what FFmpeg's encoder reconstructed; the small difference is
+# copied forward by every P-frame until the next I-frame. Over the generic 50-frame
+# GOP that error visibly builds up and then snaps back -- the green cast (#20) and
+# "pumping" reds (#23), which play the same way in 2.9rev4. DVD and VCD cap the GOP
+# at 15-18 frames for exactly this reason, so the IPU presets follow the standard.
+MPEG_IPU_GOP = 15
+
 PRESETS: Dict[str, Preset] = {
     "Xvid-Compatible AVI [RECOMMENDED - Best PS2 Performance]": Preset(
         name="Xvid-Compatible AVI [RECOMMENDED - Best PS2 Performance]",
@@ -106,6 +114,7 @@ PRESETS: Dict[str, Preset] = {
         sample_rate=48000,
         channels=2,
         ext=".mpg",
+        gop=MPEG_IPU_GOP,
         description="Use if the Xvid preset stutters. The PS2's IPU chip decodes MPEG-2 in hardware, so the CPU barely works and playback is the smoothest available. Trade-off: noticeably larger files for the same quality."
     ),
     "MPEG-1 [Maximum Compatibility - VCD Standard]": Preset(
@@ -121,6 +130,7 @@ PRESETS: Dict[str, Preset] = {
         sample_rate=48000,
         channels=2,
         ext=".mpg",
+        gop=MPEG_IPU_GOP,
         description="The most forgiving option, also decoded by the IPU chip rather than the CPU. Picture quality tops out lower, but it is the lightest load of all - try it if everything else struggles."
     ),
     "MPEG-4 MP4 [RECOMMENDED for MP4 files]": Preset(
