@@ -43,7 +43,7 @@ typedef struct { int m_hFile; OVERLAPPED m_Ovlp; } STIOFilePrivate;
 #define TRUE 1
 #define ERROR_IO_PENDING 997
 #else
-typedef struct { int m_FD,m_fXio,m_RdChunk; } STIOFilePrivate;
+typedef struct { int m_FD,m_fXio,m_RdChunk,m_FillLimit; } STIOFilePrivate;
 #endif
 typedef struct FileContext FileContext;
 struct FileContext {
@@ -120,7 +120,7 @@ static void init(FileContext *c,STIOFilePrivate *p,int xio) {
  block_mode=FIO_WAIT;seek_error=read_error=dispatch_error=completion_error=sync_error=0;
  read_calls=sync_calls=native_pos=0;actual_size=16384;
 #ifndef _WIN32
- p->m_fXio=xio;p->m_RdChunk=4096;
+ p->m_fXio=xio;p->m_RdChunk=4096;p->m_FillLimit=32768;
 #endif
  c->m_pData=p;c->m_Size=actual_size;
  c->Fill=STIO_Fill;c->Seek=STIO_Seek;c->Stream=STIO_Stream;

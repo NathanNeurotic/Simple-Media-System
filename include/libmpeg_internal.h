@@ -78,8 +78,12 @@ typedef struct _MPEGMotion {
  unsigned char* m_pSrc;
  short*         m_pDstY;
  short*         m_pDstCbCr;
- int            m_X;
- int            m_Y;
+ /* Separate luma/chroma coordinates share the original two words. Their
+  * bounded values fit in halfwords; keep the EE assembly layout at 40 bytes. */
+ unsigned short m_X;
+ unsigned short m_ChromaX;
+ unsigned short m_Y;
+ unsigned short m_ChromaY;
  int            m_H;
  int            m_fInt;
  int            m_Field;
@@ -88,6 +92,17 @@ typedef struct _MPEGMotion {
  void ( *MC_Chroma ) ( void                );
 
 } _MPEGMotion;
+
+#ifdef _EE
+/* libmpeg_core.S accesses these offsets and advances motions by 40 bytes. */
+#include <stddef.h>
+typedef char _MPEGMotionLayout[
+ sizeof ( _MPEGMotion ) == 40 && offsetof ( _MPEGMotion, m_X ) == 12 &&
+ offsetof ( _MPEGMotion, m_ChromaX ) == 14 && offsetof ( _MPEGMotion, m_Y ) == 16 &&
+ offsetof ( _MPEGMotion, m_ChromaY ) == 18 && offsetof ( _MPEGMotion, m_H ) == 20 &&
+ offsetof ( _MPEGMotion, MC_Luma ) == 32 && offsetof ( _MPEGMotion, MC_Chroma ) == 36 ? 1 : -1
+];
+#endif
 
 typedef struct _MPEGMotions {
 

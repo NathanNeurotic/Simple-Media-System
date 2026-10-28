@@ -1,6 +1,6 @@
 # Known Issues & Testing
 
-Status reviewed 2026-10-27 against `4a6959a`, the merge of PR #30. All nine reports below were open. Consult the linked issue for newer reports; this page is a dated evidence summary.
+Status reviewed 2026-10-28 against merged baseline `26c3d2e` and the playback fixes in [PR #35](https://github.com/NathanNeurotic/Simple-Media-System/pull/35). All nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
 
 ## MPEG-2/AC3 opening freeze — #29
 
@@ -8,13 +8,13 @@ Status reviewed 2026-10-27 against `4a6959a`, the merge of PR #30. All nine repo
 
 ## High-bitrate USB stutter — #24
 
-[USB stutter remained in the reporter's later test; MX4SIO reduced it and 2.9rev4 played the same USB video smoothly.](https://github.com/NathanNeurotic/Simple-Media-System/issues/24) Allocation/recovery fixes and bounded 32 KiB synchronous refills are implemented. A smaller batch is not asynchronous read-ahead and does not establish a throughput fix. Compare the identical file, source and settings while measuring read time, queue starvation and decode time before selecting another I/O change.
+[USB stutter remained in the reporter's later test; MX4SIO reduced it and 2.9rev4 played the same USB video smoothly.](https://github.com/NathanNeurotic/Simple-Media-System/issues/24) PR #35 adds driver-confirmed USB reads with a 64 KiB synchronous refill bound. Unknown/non-USB mass devices retain 4 KiB reads and 32 KiB refills; the MX4SIO workaround is preserved. Host controls establish routing, byte continuity and bounds; console throughput is unmeasured. Compare the identical file, source and settings with matched DIAG read/refill and queue measurements before calling the stutter resolved.
 
 ## Green or red video color — #20 / #23
 
 [Green color](https://github.com/NathanNeurotic/Simple-Media-System/issues/20) and [red fluctuation](https://github.com/NathanNeurotic/Simple-Media-System/issues/23) have newer paired recordings and converter logs. Conversion success does not establish correct console output. The exact failing MPG bytes/hash are still needed.
 
-The MPEG RGB ownership fix removes a reproduced held-buffer overwrite in controlled host/emulator tests. Synthetic raw decoder controls also pass at 512×480 and 640×480 in 16/32-bit modes. These controls exclude the affected console's full display path. Test the unchanged failing MPG, pause/resume, seek, stop and sequence changes on the affected setup. No blanket BT.601/range transform is supplied.
+The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer controls in PR #35 exposed signed chroma-vector rounding, XY interpolation and field-row order defects. Their fixes pass a native C/DMA/MMI and field-output oracle; unchanged 150-frame MPEG-1/2 inputs have substantially lower error in both 16/32-bit output. The field-row fix also removes all channel differences over 32 levels in the interlaced B-picture control. Read the [measured decoder report](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/investigations/2026-10-28-playback-followup.md) for scope and residual errors. These controls exclude the affected console's full display path. Test the unchanged failing MPG, pause/resume, seek, stop and sequence changes on the affected setup. No blanket BT.601/range transform or GOP-default change is supplied.
 
 ## MP4 late start and stall — #10
 
@@ -34,7 +34,7 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite in control
 
 ## Poster / cover-art grid — #26
 
-[#26 remains open.](https://github.com/NathanNeurotic/Simple-Media-System/issues/26) A separate development candidate adds an optional R2 poster grid with same-basename JPEG sidecars, a six-thumbnail cache, fallback icons and browser/player cleanup. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Host lookup/cache/navigation and upload-packet checks are implemented; console acceptance for display modes, memory/VRAM, slow or disconnected storage, and returning from playback is pending. The candidate depends on the companion JPEG parser/allocation fixes; it is not part of the PR #30 baseline summarized above.
+[Draft PR #34 implements an optional R2 JPEG cover grid for #26.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. The candidate includes PR #35's playback fixes, while console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
 
 ## How to read validation claims
 

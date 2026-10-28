@@ -55,8 +55,29 @@ constructed. Those packets are heap allocations, separate from the decoder's
 scratchpad (`0x70000000..0x70001fff`) and VU memory. The existing
 partial browser redraw still suspends the clock around its actual display DMA.
 
-This feature must be built on the companion JPEG parser/allocation fixes. It
-does not make unbounded or malformed JPEGs safe by filename or extension alone.
+This feature includes the JPEG parser/allocation fixes merged in `26c3d2e`.
+It does not make unbounded or malformed JPEGs safe by filename or extension alone.
+
+## Playback integration (2026-10-28)
+
+The candidate integrates playback PR #35 at
+`47b7df63abc0a05eb4f1c6c5c0b08851a03ae886`. This includes confirmed-USB refill
+selection/allocation cleanup and the three measured MPEG chroma fixes. The
+decoder evidence and remaining reporter gates are in the
+[playback report](2026-10-28-playback-followup.md). This integration does not
+extend the isolated decoder evidence to the browser's full display path.
+
+The known-issues article combines current playback status with artwork setup,
+then regenerates the derived Pages/search/wiki outputs. The combined tree
+validates 30 pages, 380 search entries and 32 wiki files. All 31 host regression
+scripts pass, including both artwork controls, the new vector/skip controls and
+the existing playback/I/O checks. Pinned GCC 3.2.3 release, packed, diagnostic
+and BDM=0 players and the native motion oracle compile successfully.
+
+Keep PR #34 draft for console acceptance and merge PR #35 first. The artwork
+PR is stacked on the playback branch for a focused review; retarget it to master
+once the playback change has merged. Preserve a separate artwork tester bundle
+with its own source/head manifest identity.
 
 ## Host verification
 

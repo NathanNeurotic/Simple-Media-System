@@ -34,6 +34,13 @@
  * it is deliberately a named constant so a tester can be given one value to change.
  * MX4SIO's path MUST keep using MX4SIO_RD_CHUNK, byte-for-byte -- that is the bounty. */
 #define UDPFS_RD_CHUNK  ( 64 * 1024 )
+/* Only a positive query on the opened mass file enables USB bulk reads.
+ * Browser unit/icon masks are hints and can misclassify hot-plugged devices.
+ * bdmfs_fatfs ioctl2(3) returns the first driver-name word ("usb\0", LE).
+ * Unknown/older drivers retain the SIO2-safe policy. */
+#define BDM_IOCTL_GET_DRIVERNAME 0x0003
+#define BDM_DRIVER_USB          0x00627375
+#define USB_RD_CHUNK            ( 64 * 1024 )
 #endif
 
 #include <malloc.h>
@@ -1260,6 +1267,7 @@ typedef struct STIOFilePrivate {
  int m_FD;
  int m_fXio;      /* 1 = opened via fileXio (mass:/BDM); 0 = legacy fio */
  int m_RdChunk;   /* max bytes per fileXio read on THIS device ( see the note at top ) */
+ int m_FillLimit; /* max bytes per synchronous refill; zero keeps the full buffer */
 #ifdef SMS_DIAG
  unsigned int m_ReadCalls, m_ReadBytes, m_ReadMs, m_MaxReadMs, m_ReadErrors;
  unsigned int m_Refills, m_RefillMs, m_MaxRefillMs;
@@ -1293,8 +1301,8 @@ static void STIO_DestroyFileContext ( FileContext* apCtx ) {
 #ifdef SMS_DIAG
   {
    STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
-   printf ( "[sms-io] path=%s chunk=%d calls=%u bytes=%u read_ms=%u max_read_ms=%u errors=%u refills=%u refill_ms=%u max_refill_ms=%u\n",
-    apCtx -> m_pPath, lpPriv -> m_RdChunk, lpPriv -> m_ReadCalls,
+   printf ( "[sms-io] path=%s chunk=%d fill_limit=%d calls=%u bytes=%u read_ms=%u max_read_ms=%u errors=%u refills=%u refill_ms=%u max_refill_ms=%u\n",
+    apCtx -> m_pPath, lpPriv -> m_RdChunk, lpPriv -> m_FillLimit, lpPriv -> m_ReadCalls,
     lpPriv -> m_ReadBytes, lpPriv -> m_ReadMs, lpPriv -> m_MaxReadMs,
     lpPriv -> m_ReadErrors, lpPriv -> m_Refills, lpPriv -> m_RefillMs, lpPriv -> m_MaxRefillMs );
   }
@@ -1411,14 +1419,11 @@ static int STIO_Fill ( FileContext* apCtx ) {
 #else  /* PS2 */
 #ifdef BDM
  if ( lpPriv -> m_fXio ) {
-  /* mass: large reads stall in the bdmfs/fileXio transfer path; issue them to the
-   * device in driver-safe MX4SIO_RD_CHUNK pieces (see note at top of file). */
+  /* Per-file request and refill limits preserve the SIO2 workaround while
+   * positively identified USB files use bounded bulk reads. */
   int _tot = 0, _want = apCtx -> m_BufSize, _n;
-  /* Bound one synchronous refill to eight driver-safe RPCs. A deeper
-   * buffer only makes each blocking fill longer; yield packets to the
-   * decoder sooner instead. UDPFS retains its independent read sizing. */
-  if ( lpPriv -> m_RdChunk == MX4SIO_RD_CHUNK && _want > 8 * MX4SIO_RD_CHUNK )
-   _want = 8 * MX4SIO_RD_CHUNK;
+  if ( lpPriv -> m_FillLimit > 0 && _want > lpPriv -> m_FillLimit )
+   _want = lpPriv -> m_FillLimit;
   while ( _tot < _want ) {
    int _chunk = _want - _tot; if ( _chunk > lpPriv -> m_RdChunk ) _chunk = lpPriv -> m_RdChunk;
 #ifdef SMS_DIAG
@@ -1719,12 +1724,21 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
  int lUdpfs = ( aFileName != NULL && strncmp ( aFileName, "udpfs", 5 ) == 0 );   /* the udpfs: network drive -- an iomanX device, read via fileXio like mass:/mmce: */
  int lXio = ( aFileName != NULL && ( strncmp ( aFileName, "mass", 4 ) == 0 || strncmp ( aFileName, "smb", 3 ) == 0 || strncmp ( aFileName, "mmce", 4 ) == 0 ) ) || lUdpfs;   /* mmce: read via fileXio + STIO_Fill 4KB chunks -- mmce_fs_read does the whole request in ONE SIO2 shot ( no driver chunking ), the same large-read stall that hit MX4SIO on this bus */
  int lRdChunk = lUdpfs ? UDPFS_RD_CHUNK : MX4SIO_RD_CHUNK;   /* per-device: udpfs must NOT inherit MX4SIO's 4 KiB SIO2 workaround ( see note at top ) */
+ int lFillLimit = lXio && !lUdpfs ? 8 * MX4SIO_RD_CHUNK : 0;
  int lFD  = lXio ? fileXioOpen ( aFileName, O_RDONLY ) : fioOpen ( aFileName, O_RDONLY );
 #else
  int lFD = fioOpen ( aFileName, O_RDONLY );
 #endif
 
  if ( lFD >= 0 ) {
+
+#ifdef BDM
+  if ( lXio && !lUdpfs && strncmp ( aFileName, "mass", 4 ) == 0 &&
+       fileXioIoctl2 ( lFD, BDM_IOCTL_GET_DRIVERNAME, NULL, 0, NULL, 0 ) == BDM_DRIVER_USB ) {
+   lRdChunk = USB_RD_CHUNK;
+   lFillLimit = USB_RD_CHUNK;
+  }  /* end if */
+#endif
 
   retVal = malloc (  sizeof ( FileContext )  );
 
@@ -1750,6 +1764,7 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
     retVal -> m_pEnd       = retVal -> m_pPos;
     retVal -> m_StreamSize = 384;
     retVal -> m_pPath      = ( char* )malloc (  strlen ( aFileName ) + 1  );
+    if ( !retVal -> m_pPath ) goto stio_open_done;
 
     strcpy ( retVal -> m_pPath, aFileName );
 
@@ -1760,6 +1775,7 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
 #ifdef BDM
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_fXio    = lXio;
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_RdChunk = lRdChunk;
+    (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_FillLimit = lFillLimit;
 #endif
 
     retVal -> Fill    = STIO_Fill;
@@ -1783,6 +1799,7 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
 
  }  /* end if */
 
+stio_open_done:
  if ( !lfSuccess ) {
 
   if ( retVal != NULL ) {

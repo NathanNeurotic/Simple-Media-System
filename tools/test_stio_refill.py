@@ -19,7 +19,7 @@ harness = r"""
 #define MX4SIO_RD_CHUNK 4096
 #define MAX_SYNC_SIZE 100000
 #define FILE_EOF(f) ((f)->m_CurPos >= (f)->m_Size)
-typedef struct { int m_fXio, m_FD, m_RdChunk; } STIOFilePrivate;
+typedef struct { int m_fXio, m_FD, m_RdChunk, m_FillLimit; } STIOFilePrivate;
 typedef struct {
  void *m_pData;
  unsigned m_BufSize, m_CurBuf, m_CurPos, m_Size;
@@ -48,7 +48,7 @@ static unsigned File_GetByte(FileContext *ctx) {
 """ + fill + scan + r"""
 int main(void) {
  unsigned char buffer[393216], data[] = {0,0,1,0xBA};
- STIOFilePrivate priv = {1, 0, 4096};
+ STIOFilePrivate priv = {1, 0, 4096, 32768};
  FileContext ctx;
  unsigned i;
  memset(&ctx, 0, sizeof(ctx));
@@ -63,7 +63,7 @@ int main(void) {
  }
  assert(total == 100000);
  assert(STIO_Fill(&ctx) == 0);
- priv.m_RdChunk = 65536; max_request = 65536;
+ priv.m_RdChunk = 65536; priv.m_FillLimit = 0; max_request = 65536;
  remaining = sizeof(buffer); calls = 0;
  assert(STIO_Fill(&ctx) == sizeof(buffer));
  assert(calls == 6);
