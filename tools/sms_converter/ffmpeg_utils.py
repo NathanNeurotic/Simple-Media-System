@@ -8,7 +8,7 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
-from config import MPEG_ALLOWED_FPS_MAP, MAX_CONVERTER_STREAMS, MULTI_AUDIO_CONTAINERS
+from config import DEFAULT_SCALING_MODE, MPEG_ALLOWED_FPS_MAP, MAX_CONVERTER_STREAMS, MULTI_AUDIO_CONTAINERS
 
 def get_app_dir() -> Path:
     """Returns the base directory of the application."""
@@ -238,26 +238,46 @@ def build_scale_filter(
     target_w = make_even(target_w)
     target_h = make_even(target_h)
 
-    if not allow_upscale and src_w > 0 and src_h > 0:
-        if target_w > src_w:
-            target_w = make_even(src_w)
-        if target_h > src_h:
-            target_h = make_even(src_h)
+    if not allow_upscale and src_w > 0 and src_h > 0 and scaling_mode != "Fit inside dimensions":
+        # Shrink the canvas proportionally: separate axis clamps would turn a
+        # requested 4:3 crop/stretch into 16:9 on a small widescreen source.
+        factor = min(1.0, src_w / target_w, src_h / target_h)
+        target_w, target_h = make_even(target_w * factor), make_even(target_h * factor)
 
-    # Preserve the existing source color handling. The forced BT.601 transform
-    # from b943b12 did not resolve #20 and was reported worse in #23; those
-    # console symptoms need an actual sample/decoder comparison, not a blanket
-    # color transform applied to every preset.
+    def even(expression):
+        return f"max(2,trunc(({expression})/2)*2)"
+
+    # Use display aspect (dar), including anamorphic sample aspect, then emit
+    # square pixels. scale's default SAR adjustment alone would undo Stretch,
+    # and pixel-width/height ratios alone distort anamorphic sources.
     if scaling_mode == "Stretch":
-        filters.append(f"scale={target_w}:{target_h}")
-    elif scaling_mode == "Fit inside dimensions":
-        filters.append(f"scale='min({target_w},iw)':'min({target_h},ih)':force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
-        # Ensure dimensions in scale output are even
-        filters.append("scale=trunc(iw/2)*2:trunc(ih/2)*2")
-    elif scaling_mode == "Letterbox to exact dimensions":
-        filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=decrease,pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
+        width, height = str(target_w), str(target_h)
+        if not allow_upscale:
+            factor = f"min(1,min(iw/{target_w},ih/{target_h}))"
+            width, height = even(f"{target_w}*{factor}"), even(f"{target_h}*{factor}")
+        filters.extend([f"scale=w='{width}':h='{height}'", "setsar=1"])
+    elif scaling_mode in ("Fit inside dimensions", DEFAULT_SCALING_MODE):
+        width = f"min({target_w},{target_h}*dar)"
+        height = f"min({target_h},{target_w}/dar)"
+        if not allow_upscale:
+            width = f"min({width},min(iw,ih*dar))"
+            height = f"min({height},min(ih,iw/dar))"
+        filters.extend([f"scale=w='{even(width)}':h='{even(height)}'", "setsar=1"])
+        if scaling_mode == DEFAULT_SCALING_MODE:
+            filters.append(f"pad={target_w}:{target_h}:(ow-iw)/2:(oh-ih)/2:black")
     elif scaling_mode == "Crop to fill":
-        filters.append(f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase,crop={target_w}:{target_h}")
+        # Crop first to avoid huge intermediate images for very wide/tall input.
+        # SAR belongs in the crop ratio too; the final canvas uses square pixels.
+        width = even(f"min(iw,ih*{target_w}/{target_h}/sar)")
+        height = even(f"min(ih,iw*{target_h}/{target_w}*sar)")
+        filters.append(f"crop=w='{width}':h='{height}'")
+        width, height = str(target_w), str(target_h)
+        if not allow_upscale:
+            factor = f"min(1,min(iw/{target_w},ih/{target_h}))"
+            width, height = even(f"{target_w}*{factor}"), even(f"{target_h}*{factor}")
+        filters.extend([f"scale=w='{width}':h='{height}'", "setsar=1"])
+    else:
+        raise ValueError(f"Unknown scaling mode: {scaling_mode}")
 
     return filters
 
@@ -367,16 +387,18 @@ def build_ffmpeg_cmd(
             src_w, src_h = int(video.get("width", 0)), int(video.get("height", 0))
         target_w = settings.get("width", 640)
         target_h = settings.get("height", 480)
-        scaling_mode = settings.get("scaling_mode", "Letterbox to exact dimensions")
+        scaling_mode = settings.get("scaling_mode", DEFAULT_SCALING_MODE)
         allow_upscale = settings.get("allow_upscale", False)
         deinterlace = settings.get("deinterlace", False)
         if settings.get("keep_sd_resolution") and 0 < src_w <= 720 and 0 < src_h <= 576:
-            target_w, target_h = src_w, src_h
-            allow_upscale = False
-
-        vf_chain = build_scale_filter(
-            src_w, src_h, target_w, target_h, scaling_mode, allow_upscale, deinterlace
-        )
+            # Preserve coded SD dimensions AND sample aspect (e.g. 720x576 PAL
+            # widescreen). The selected scaling mode applies to larger sources.
+            vf_chain = ["yadif"] if deinterlace else []
+            vf_chain.append(f"scale={make_even(src_w)}:{make_even(src_h)}")
+        else:
+            vf_chain = build_scale_filter(
+                src_w, src_h, target_w, target_h, scaling_mode, allow_upscale, deinterlace
+            )
 
         # Optional permanent subtitle burn-in; SMS also reads external SRT/SUB.
         subtitle_file = (settings.get("subtitle_file") or "").strip()

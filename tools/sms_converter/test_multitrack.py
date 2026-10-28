@@ -135,8 +135,9 @@ class TestTrackConversion(unittest.TestCase):
         out = self.convert("sd.mp4", self.settings())
         video = next(s for s in get_media_info(self.fp, str(out))["streams"] if s["codec_type"] == "video")
         self.assertEqual((video["width"], video["height"]), (720, 480))
-        cmd = build_ffmpeg_cmd(self.ff, "in.mkv", "out.mp4", self.settings(src_width=1920, src_height=1080), source_info=self.info)
-        self.assertIn("scale=640:480", cmd[cmd.index("-vf") + 1])
+        scaled = self.convert("scaled.mp4", self.settings(keep_sd_resolution=False))
+        video = next(s for s in get_media_info(self.fp, str(scaled))["streams"] if s["codec_type"] == "video")
+        self.assertEqual((video["width"], video["height"]), (640, 480))
 
     def test_worker_reports_bad_track_selection_without_encoding_or_crash(self):
         from worker import ConversionWorker

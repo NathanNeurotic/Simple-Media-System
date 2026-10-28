@@ -15,6 +15,7 @@ from typing import Optional, List, Dict
 # Settings, because that is the only way to land on values the presets would not have chosen.
 LABEL_PRESET_DEFAULTS = "✓ Using the recommended settings for this format"
 LABEL_CUSTOM_SETTINGS = "✎ Custom settings — edited from the recommended preset"
+DEFAULT_SCALING_MODE = "Letterbox to exact dimensions"
 
 # Resolution Limits for SMS
 MAX_WIDTH = 1024
@@ -74,6 +75,7 @@ class Preset:
     description: str = ""
     gop: int = 50
     keep_sd_resolution: bool = False
+    scaling_mode: str = DEFAULT_SCALING_MODE
 
 PRESETS: Dict[str, Preset] = {
     "Xvid-Compatible AVI [RECOMMENDED - Best PS2 Performance]": Preset(
