@@ -1,53 +1,26 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Internal HDD · SMS Docs</title>
-<meta name="description" content="Use the PS2's internal hard drive with SMS two ways — the classic APA/PFS partitions, or a plain exFAT drive read over ATA as a massN: BDM device — and how to choose between them.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Internal HDD · SMS Docs</title><meta name="description" content="SMS internal HDD access through APA/PFS or ATA/exFAT, driver exclusions, preparation and source limits.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/hdd.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Internal HDD · SMS Docs"><meta property="og:description" content="SMS internal HDD access through APA/PFS or ATA/exFAT, driver exclusions, preparation and source limits.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html" class="active"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html" class="active" aria-current="page"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Internal HDD</h1>
 <p class="lead">SMS can read media straight off the PlayStation 2's internal hard drive — in <b>two completely
 different ways</b>. There's the classic <b>APA / PFS</b> scheme (the same format HDD-OSD and the OPL-era tools use),
@@ -55,7 +28,7 @@ where SMS lists the drive's PFS partitions and browses whichever one you pick; a
 drive read through the <b>ATA block driver</b>, which shows up as an ordinary <code>massN:</code> device you can fill
 with files from any PC. Both live on the same physical disk, so you pick one per boot.</p>
 
-<div class="callout amber"><div class="h">⚠ You need the hardware first</div>
+<div class="callout amber"><div class="h">You need the hardware first</div>
 The internal HDD is optional PS2 hardware. A fat PS2 needs the <b>Network Adapter</b> (the expansion-bay module that
 carries the internal IDE connector); the drive itself sits in the HDD bay behind it. Slim consoles have no internal
 HDD bay at all. If your console has no drive fitted, skip this page and use <a href="usb.html">USB</a>,
@@ -66,8 +39,8 @@ HDD bay at all. If your console has no drive fitted, skip this page and use <a h
 The catch is that the internal drive can be formatted in one of two schemes, and SMS reaches each one through a
 different driver stack:</p>
 <div class="grid">
-<a class="tile" href="#apa"><span class="em">💽</span><b>APA / PFS</b><span>The PS2's own partition scheme</span></a>
-<a class="tile" href="#exfat"><span class="em">🗂️</span><b>exFAT via ATA</b><span>A plain drive as <code>massN:</code></span></a>
+<a class="tile" href="#apa"><span class="icon icon-book" aria-hidden="true"></span><b>APA / PFS</b><span>The PS2's own partition scheme</span></a>
+<a class="tile" href="#exfat"><span class="icon icon-book" aria-hidden="true"></span><b>exFAT via ATA</b><span>A plain drive as <code>massN:</code></span></a>
 </div>
 <p>They are <b>mutually exclusive</b>: both paths want to own the internal ATA bus, so whichever one starts first
 takes it and the other quietly steps aside. You choose which by picking the matching <b>Autostart</b> toggle — see
@@ -98,23 +71,23 @@ Any partition made with a standard APA/PFS tool works, whatever it is called. If
 <p>SMS doesn't format drives or create partitions itself — you do that ahead of time with the usual PS2 HDD tools
 (HDD-OSD, or a homebrew APA/PFS partition manager such as uLaunchELF). The short version:</p>
 <div class="steps">
-<div class="step"><h3>Format the drive as APA</h3>
+<div class="step"><h3 id="format-the-drive-as-apa">Format the drive as APA</h3>
 <p>Initialise the internal drive with the standard PS2 APA scheme, the same way you would for any HDD-OSD / OPL-era
 setup. This is a one-time step done from a HDD tool, not from SMS.</p></div>
-<div class="step"><h3>Create a PFS media partition</h3>
+<div class="step"><h3 id="create-a-pfs-media-partition">Create a PFS media partition</h3>
 <p>Make a PFS partition to hold your media — call it whatever you like. Copy your video, audio and picture
 files into it (folders inside are fine — SMS browses the raw tree).</p></div>
-<div class="step"><h3>Enable the APA path in SMS</h3>
+<div class="step"><h3 id="enable-the-apa-path-in-sms">Enable the APA path in SMS</h3>
 <p>Turn on <b>Autostart HDD APA</b> in the settings (or use <b>Start HDD APA now</b> — see
 <a href="#enabling">Enabling &amp; tips</a>). SMS starts the HDD driver stack and lists the drive's PFS
 partitions.</p></div>
-<div class="step"><h3>Browse and play</h3>
+<div class="step"><h3 id="browse-and-play">Browse and play</h3>
 <p>Pick the internal-HDD icon in the device menu and press <kbd>Down</kbd> into the list. Choose your partition
 with <kbd>Cross</kbd> to mount it, then open any file with <kbd>Cross</kbd> as usual — SMS remembers the partition and
 re-enters it on the next boot. It behaves exactly like every other SMS source — the raw filesystem, no mandatory folder layout.</p></div>
 </div>
 
-<div class="callout amber"><div class="h">⚠ APA drives are ~2 TB and older-drive friendly</div>
+<div class="callout amber"><div class="h">APA drives are ~2 TB and older-drive friendly</div>
 The APA scheme addresses drives up to about <b>2 TB</b>. If you have a larger drive — or you'd simply rather copy files
 from a PC without any PS2-side tools — use the exFAT route below instead.</div>
 
@@ -132,20 +105,20 @@ top row, not by memorising the number.</div>
 
 <h3 id="exfat-prepare">Preparing an exFAT drive</h3>
 <div class="steps">
-<div class="step"><h3>Format exFAT on your PC</h3>
+<div class="step"><h3 id="format-exfat-on-your-pc">Format exFAT on your PC</h3>
 <p>Connect the drive to a computer (or format it in-bay with a PC-side tool) and format it as <b>exFAT</b>. Leave the
 allocation-unit / cluster size at the default for the drive's capacity rather than choosing a custom value.</p></div>
-<div class="step"><h3>Copy your media</h3>
+<div class="step"><h3 id="copy-your-media">Copy your media</h3>
 <p>Drag your video, audio and picture files onto the drive — into any folders you like. SMS browses the raw
 filesystem, so there is no required folder tree (no OPL-style <code>DVD/</code>/<code>CD/</code> layout).</p></div>
-<div class="step"><h3>Fit the drive and enable the BDM path</h3>
+<div class="step"><h3 id="fit-the-drive-and-enable-the-bdm-path">Fit the drive and enable the BDM path</h3>
 <p>Install the drive in the console's HDD bay, then turn on <b>Autostart HDD BDM</b> in SMS (or <b>Start HDD BDM
 now</b>). SMS brings up the ATA driver and the exFAT volume mounts as <code>massN:</code>.</p></div>
-<div class="step"><h3>Browse and play</h3>
+<div class="step"><h3 id="browse-and-play-x">Browse and play</h3>
 <p>Select the internal-HDD icon in the device menu and open files just like any other <code>massN:</code> device.</p></div>
 </div>
 
-<div class="callout amber"><div class="h">⚠ Copy large files one at a time</div>
+<div class="callout amber"><div class="h">Copy large files one at a time</div>
 The PS2 reads far better from files that aren't fragmented. When you copy a batch to an exFAT drive, add big video
 files <b>individually</b> rather than dumping the whole folder in one go — many PC copy operations interleave a large
 batch, fragmenting every file. Sequential copies keep playback smooth.</div>
@@ -172,7 +145,7 @@ autostart:</p>
 <p><b>Autostart HDD BDM</b> is the ATA/exFAT path — "BDM" because the exFAT drive is read through the same Block
 Device Manager as your other mass devices. <b>Autostart HDD APA</b> is the classic native-partition path.</p>
 
-<div class="callout amber"><div class="h">⚠ Don't enable both</div>
+<div class="callout amber"><div class="h">Don't enable both</div>
 Turning on both autostarts doesn't get you both drives — it just means whichever one happens to initialise first wins
 the bus, and the result depends on start order. Pick the one that matches how your drive is formatted and leave the
 other off.</div>
@@ -185,7 +158,7 @@ MMCE</b> share the memory-card (SIO2) bus, so only one of those two runs at once
 </details>
 
 <h2 id="enabling">Enabling &amp; tips</h2>
-<p>On a clean install nothing auto-starts — you turn on exactly what you need. The relevant controls live in the
+<p>On a clean install optional Autostart choices are off — you turn on exactly what you need. The relevant controls live in the
 settings menu:</p>
 <ul class="checklist">
 <li><b>Autostart HDD APA</b> — brings up the classic APA/PFS path at boot and lists the drive's PFS partitions.</li>
@@ -216,21 +189,15 @@ fitted. Without them, SMS is perfectly happy on <a href="usb.html">USB</a>, <a h
 
 <h2 id="related">Related pages</h2>
 <div class="grid">
-<a class="tile" href="devices.html"><span class="em">🗂️</span><b>Devices Overview</b><span>How every source fits together</span></a>
-<a class="tile" href="usb.html"><span class="em">🔌</span><b>USB</b><span>The other big <code>massN:</code> device</span></a>
-<a class="tile" href="ilink.html"><span class="em">🔗</span><b>i.LINK</b><span>FireWire storage, also BDM mass</span></a>
-<a class="tile" href="settings.html"><span class="em">🔧</span><b>Settings Reference</b><span>Every autostart toggle</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>How every source fits together</span></a>
+<a class="tile" href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span><b>USB</b><span>The other big <code>massN:</code> device</span></a>
+<a class="tile" href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span><b>i.LINK</b><span>FireWire storage, also BDM mass</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Every autostart toggle</span></a>
 </div>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

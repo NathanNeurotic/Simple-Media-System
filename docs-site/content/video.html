@@ -1,0 +1,236 @@
+<h1>Video Playback</h1>
+<p class="lead">SMS turns a bone-stock PlayStation 2 into a video player. Point it at a movie file on any storage
+device — a burned disc, a USB stick, an MX4SIO microSD card, the internal HDD, SMB or UDPFS — press one
+button, and it plays. This page covers every video format SMS understands, how to open a file, the on-screen
+player controls, how the decoding works under the hood, and how to get the smoothest playback out of the console.</p>
+
+<div class="callout info"><div class="h">ℹ SMS browses raw files — there is no special folder tree</div>
+SMS reads the <b>ordinary filesystem</b> of whatever device you give it and plays media <i>wherever the files sit</i>.
+Put your movies in any folder you like; SMS shows them in the file browser and plays them in place. There is no
+ISO, no rip step, and no mandatory folder layout — just files. Browse to a video, press <kbd>✕</kbd>, and watch.</div>
+
+<h2 id="formats">Supported video formats</h2>
+<p>SMS recognises a video by its container and codec, not merely its extension. The heavy lifting is done by a set
+of FFmpeg-derived decoders that have been hand-optimised for the PS2's Emotion Engine. The table below lists what
+plays and the file extensions SMS looks for.</p>
+
+<table data-sortable>
+<thead><tr><th>Container</th><th>Supported video codec</th><th>Extensions</th></tr></thead>
+<tbody>
+<tr><td><b>AVI</b></td><td>MPEG-4 Part 2 / ASP (DivX, Xvid and Microsoft MPEG-4 v3 tags)</td><td><code>.avi</code> <code>.divx</code> <code>.xvid</code></td></tr>
+<tr><td><b>MP4 / ISO-BMFF</b></td><td>MPEG-4 Part 2 (<code>mp4v</code>)</td><td><code>.mp4</code></td></tr>
+<tr><td><b>MPEG program stream</b></td><td>MPEG-1 / MPEG-2</td><td><code>.mpg</code> <code>.mpeg</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout red"><div class="h">Modern video codecs are not supported</div>
+<b>H.264/AVC, H.265/HEVC, VP9 and AV1 are not decoded.</b> An MP4 carrying one of those video codecs may still play
+its AAC soundtrack, which looks like successful audio-only playback, but that does not mean the video codec is
+supported. WMV video is also not registered; <code>.wma</code> is a standalone Windows Media <i>audio</i> route.</div>
+
+<p>Audio inside a video (the soundtrack) is decoded by the same engine that plays standalone music files, so a
+movie can carry an MP3, AAC, AC3, or other supported audio track. For the full audio picture — including playlists
+and standalone music — see <a href="audio.html">Audio &amp; Playlists</a>.</p>
+
+<h2 id="implementation-limits">Exact implementation limits</h2>
+<p>These are hard limits visible in the current source, not estimates:</p>
+
+<table>
+<thead><tr><th>Property</th><th>Limit</th><th>What it means</th></tr></thead>
+<tbody>
+<tr><td>Frame dimensions</td><td><b>Width ≤ 1024 and height ≤ 1024</b></td><td>SMS rejects the file if either
+dimension is greater than 1024.</td></tr>
+<tr><td>MPEG-1/2 frame rate</td><td>23.976, 24, 25, 29.97, 30, 50, 59.94 or 60 fps</td><td>The MPEG sequence-header
+rate table, including MPEG-2 extensions.</td></tr>
+<tr><td>Compressed video packet/sample</td><td><b>2,097,088 bytes</b></td><td>The 2 MiB packet ring minus its
+mandatory 64-byte allocation overhead.</td></tr>
+<tr><td>Streams/tracks</td><td><b>Eight table slots; MP4/MPEG-PS retain at most seven usable streams</b></td><td>The container-wide stream table includes video, audio and
+subtitle tracks.</td></tr>
+<tr><td>Individual file size</td><td><b>smaller than 4 GiB</b></td><td>File sizes, positions and seeks use 32-bit
+addressing.</td></tr>
+</tbody>
+</table>
+
+<div class="callout amber"><div class="h">1024×1024 is an acceptance ceiling, not a speed guarantee</div>
+The player has no universal maximum bitrate or generic MPEG-4 frame-rate rejection. A file that passes the
+dimension check can still be too demanding for real-time playback. Work varies with frame rate, B-frames,
+QPel/GMC, interlacing, motion complexity, audio decoding, device throughput and fragmentation. Large frames may
+also switch automatically from 32/24-bit to dithered 16-bit GS textures to fit video memory.</div>
+
+<h2 id="hardware-tested">Previously reported console profiles</h2>
+<p>Earlier project documentation records these fixtures as having played on a real PS2, including transport checks. This audit did not rerun that hardware matrix or qualify the October changes on the affected consoles. The generation script defines the inputs; CI generation alone is not a playback result.</p>
+
+<table data-sortable>
+<thead><tr><th>Container / codec</th><th>Resolution / rate</th><th>Encoded profile</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>AVI / Xvid + MP3</td><td>640×480, 30 fps</td><td>1.5 Mbit/s video; no B-frames; GOP 30; 128 kbit/s MP3</td><td>Passed</td></tr>
+<tr><td>MPEG-2 PS + MP2</td><td>640×480, 30 fps</td><td>2.5 Mbit/s video; GOP 15; 192 kbit/s MP2</td><td>Passed</td></tr>
+<tr><td>MPEG-1 PS + MP2</td><td>640×480, 30 fps</td><td>1.15 Mbit/s video; GOP 15; 192 kbit/s MP2</td><td>Passed</td></tr>
+<tr><td>MP4 / <code>mp4v</code> + AAC</td><td>640×480, 30 fps</td><td>1.5 Mbit/s video; no B-frames; GOP 30;
+48 kHz stereo AAC at 128 kbit/s</td><td>Passed</td></tr>
+<tr><td>MP4 / <code>mp4v</code> + AAC</td><td>320×240, 30 fps</td><td>600 kbit/s video; no B-frames; GOP 30;
+48 kHz stereo AAC at 128 kbit/s</td><td>Passed</td></tr>
+<tr><td>MP4 / H.264 or H.265 + supported audio</td><td>Tested negative cases</td><td>Unsupported video codec</td><td>No
+video, as expected; supported audio can still play</td></tr>
+</tbody>
+</table>
+
+<p>This table is the real-time <b>confirmed baseline</b>, not the full accepted range. Higher dimensions up to the
+1024-pixel-per-axis source limit remain valid inputs but have not been qualified as universally smooth.</p>
+
+<h2 id="playing">Playing a video</h2>
+<p>Opening a movie is a three-key affair: pick the device, walk into the folder, press play.</p>
+
+<div class="steps">
+<div class="step"><h3>Pick the device</h3>
+<p>SMS opens on the <b>device menu</b> — the top row of device icons. Use <b>Left</b> / <b>Right</b> to highlight the
+device your movie lives on (a <code>massN:</code> device for USB / MX4SIO / HDD-exFAT / i.LINK, an
+<code>mmce0:</code> card, the internal <code>hdd0:</code>, a CD/DVD, <code>smb:</code> or <code>udpfs:</code>). If the device you want
+is not listed, it may not be started yet — see <a href="devices.html">Devices Overview</a> for the Autostart
+toggles and the "Start &lt;device&gt; now" option.</p></div>
+
+<div class="step"><h3>Enter the file list</h3>
+<p>Press <b>Down</b> to drop into the <b>file menu</b> (the middle browser). Move with <b>Up</b> / <b>Down</b>,
+page through long folders with <b>L1</b> / <b>L2</b>, open a folder with <kbd>✕</kbd>, and step back up one level
+with <kbd>△</kbd> (folder → parent → device menu). The status line at the bottom shows the current path on the left
+and a clock on the right.</p></div>
+
+<div class="step"><h3>Press play</h3>
+<p>Highlight the video file and press <kbd>✕</kbd>. SMS reads the file straight from the device and starts
+playback. When the movie ends — or when you stop it — you land back in the browser exactly where you were.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ Playing from MX4SIO</div>
+This fork's headline feature is smooth video playback from an <b>MX4SIO</b> microSD adapter, which earlier SMS
+builds could not do reliably. It works exactly like any other device: pick the MX4SIO device, browse to your
+movie, press <kbd>✕</kbd>. See the <a href="mx4sio.html">MX4SIO</a> page for setup.</div>
+
+<h2 id="controls">Player controls</h2>
+<p>While a video is playing, the pad drives the player directly:</p>
+
+<table data-sortable>
+<thead><tr><th>Button</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><b>Select</b></td><td>Pause. Press it again — or <b>Start</b> — to resume.</td></tr>
+<tr><td><b>Start</b></td><td>Resume from pause; during normal playback it opens the in-player menu.</td></tr>
+<tr><td><kbd>△</kbd> Triangle</td><td>Stop playback and return to the file browser</td></tr>
+<tr><td><b>Left</b> / <b>Right</b></td><td>Seek backward / forward</td></tr>
+<tr><td><b>Up</b> / <b>Down</b></td><td>Volume up / down</td></tr>
+<tr><td><kbd>✕</kbd> Cross</td><td>Show or hide the on-screen time display</td></tr>
+<tr><td><kbd>□</kbd> Square</td><td>Cycle the aspect / pan&amp;scan mode — eight in all. The chosen mode is remembered
+in your settings.</td></tr>
+<tr><td><b>L1</b> / <b>R1</b></td><td>Pan the picture left / right (useful once you have zoomed with Square)</td></tr>
+<tr><td><b>L1 + R1</b></td><td>Reset pan and zoom back to default</td></tr>
+<tr><td><kbd>○</kbd> Circle</td><td>Cycle the sync adjusters: <b>A/V sync</b> → <b>subtitle sync</b> (only when a
+subtitle is loaded) → off.</td></tr>
+<tr><td><b>L2</b> / <b>R2</b></td><td>With an adjuster selected by Circle, shift it by &minus;10 / +10&nbsp;ms — the
+fix for audio or subtitles that drift out of step.</td></tr>
+<tr><td><b>L2 + R2</b></td><td>Reset the selected sync adjuster to zero</td></tr>
+</tbody>
+</table>
+<div class="note"><p>Cross, Circle, L2 and R2 are video-only. During audio-only playback those buttons do nothing,
+and Left/Right seek within an ordinary track; M3U transport can move between playlist entries.</p></div>
+
+<p>If the movie has an external subtitle file alongside it, SMS displays it over the picture — see
+<a href="subtitles.html">Subtitles</a> for how subtitle files are matched and styled.</p>
+
+<div class="callout info"><div class="h">ℹ Videos do not chain</div>
+When a video ends you go back to the file browser. This is deliberate: the file after a video is usually unrelated,
+so auto-advancing would be a surprise. Only <b>audio</b> continues into the next track of the folder — see
+<a href="audio.html">Audio &amp; Playlists</a>. To watch several videos back to back, highlight the folder and choose
+<b>Play all → Video</b>.</div>
+
+<h3 id="folder-playback">Play a video folder in order or shuffled</h3>
+<p>Highlight a folder and press <kbd>○</kbd> Circle to open <b>Play all</b>, then choose <b>Video</b> to play its
+videos back to back.
+For shuffled playback, first enable <b>Randomize playlist</b> under
+<a href="settings.html#mp3-settings">Player settings → MP3 settings</a>. This setting also controls video folders,
+despite living in the MP3 sub-menu. Turn it off to keep the folder's normal play order.</p>
+
+<h2 id="decoding">How SMS decodes video</h2>
+<p>SMS earns its "good video on a stock PS2" reputation by splitting the work between the Emotion Engine and a
+dedicated piece of PS2 hardware — the <b>IPU</b> (Image Processing Unit).</p>
+
+<ul class="checklist">
+<li><b>Decoders derived from FFmpeg.</b> SMS's video and audio decoders started life as parts of the FFmpeg project
+and were then heavily reworked for the PS2 — moving to a packed image format so the decoder produces macroblocks in
+the IPU's native layout, and making aggressive use of the scratchpad and DMA. The original author measured roughly
+a 300% speed-up in video decoding versus stock FFmpeg from these changes.</li>
+<li><b>The IPU does the colour conversion.</b> Turning decoded frames into a displayable picture (the colour-space
+conversion, YUV → RGB) is handed to the IPU, which runs it as an interrupt-driven process <i>in parallel</i> with
+the main CPU still decoding the next frames. Because that step is offloaded, the Emotion Engine is free to spend its
+cycles decoding — which is exactly why a plain, unmodified PS2 can play good-resolution movies at a good frame rate
+with no HDD and no extra hardware.</li>
+</ul>
+
+<div class="callout amber"><div class="h">Performance depends on the file</div>
+The PS2 is a fixed console, so how smoothly a movie plays comes down to how demanding the file is. Resolution,
+frame rate and coding tools affect decoder work; bitrate also affects storage demand but is not a complete measure
+of decode complexity. A demanding encode can push the console past real-time, especially from a slower or
+fragmented device. Start from a hardware-confirmed profile when making a new encode.</div>
+
+<h2 id="encoding">Encoding tips</h2>
+<p>If you are making files for SMS rather than playing existing ones, a few choices make the difference between
+flawless playback and a slideshow.</p>
+
+<div class="note"><p>You do not have to do any of this by hand. The <a href="converter.html">Media Converter</a> is a
+desktop app that applies these settings for you and only offers formats SMS can play — the presets below are what it
+produces. Use it unless you specifically want to drive FFmpeg yourself.</p></div>
+
+<ul class="checklist">
+<li><b>Start from a tested profile.</b> 640×480 at 30 fps with 1.5 Mbit/s MPEG-4 Part 2 video is confirmed in both
+AVI/Xvid + MP3 and MP4/<code>mp4v</code> + AAC. Lower dimensions or bitrate provide more headroom.</li>
+<li><b>Use a supported codec, not just a familiar extension.</b> For MP4, select MPEG-4 Part 2
+(<code>mp4v</code>), not the much more common H.264 or H.265 encoders.</li>
+<li><b>Avoid expensive tools when compatibility matters most.</b> B-frames, QPel and GMC are implemented but add
+work. The hardware-confirmed fixtures use no B-frames.</li>
+<li><b>Defragment on slower devices.</b> On a device with limited read throughput, a heavily fragmented file forces
+the console to seek constantly, which can starve the decoder. Copying the file back onto a freshly-formatted card or
+drive so it lands contiguously gives the smoothest reads, which helps most on the slowest media.</li>
+<li><b>Add subtitles as a separate file.</b> Use external text subtitles when you want to switch or restyle them; put a matching <code>.srt</code> / <code>.sub</code> next to the movie. Converter burn-in is available when permanent text is preferred — details on
+the <a href="subtitles.html">Subtitles</a> page.</li>
+</ul>
+
+<p>The exact command used for the confirmed 640×480 MP4 profile is:</p>
+<pre>ffmpeg -i INPUT.mp4 -c:v mpeg4 -vtag mp4v -b:v 1500k -bf 0 -g 30 \
+  -s 640x480 -c:a aac -b:a 128k -ar 48000 -ac 2 \
+  -movflags +faststart OUTPUT.mp4</pre>
+
+<h3 id="community-mpeg2">Community 960×544 MPEG-2 profile</h3>
+<p>tktagmedia reported a successful 44-minute MX4SIO playback using the higher-resolution MPEG-2/MP2 approach. The <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/tktagmedia-recommended-dragndrop-converter.bat">preserved Windows drag-and-drop script</a> scales to 960×540, pads to 960×544, forces a 16:9 display aspect, uses two passes at 3 Mbps (3.4 Mbps maxrate), GOP 15, two B-frames and 224 kbps/48 kHz stereo MP2.</p>
+<p>This is a reported profile, not a universal default or a confirmed fix for the open USB/color reports. The script does not cap the source frame rate at 30 fps, and its forced aspect is unsuitable for every source. Start with a short sample and compare the same file/settings on your console. A 60 ms <code>V/A -00:060</code> workaround is not a universal six-frame NTSC correction; use <a href="controls.html#playback">the sync controls</a> only as needed.</p>
+<h2 id="limitations">Limitations</h2>
+<p>SMS is a stock-console player, and a few historic limits come with that. Knowing them up front saves a lot of
+"why won't this play" head-scratching.</p>
+
+<ul>
+<li><b>Codec support is deliberately narrow.</b> There are no H.264, H.265, VP9, AV1 or WMV video decoders.</li>
+<li><b>Interlaced is supported, but not part of the current fixture baseline.</b> The MPEG-4 decoder contains
+interlaced field/DCT paths, and MPEG-2 supports frame- and field-encoded interlaced video. The published test
+profiles above are progressive.</li>
+<li><b>The source ceiling and the real-time ceiling are different.</b> SMS accepts each dimension through 1024,
+but no single bitrate or resolution below that is guaranteed for every codec-tool and storage combination.</li>
+<li><b>Large files remain 32-bit addressed.</b> exFAT removes FAT32's filesystem limit, but the SMS file context
+still limits an individual file to less than 4 GiB.</li>
+</ul>
+
+<details class="deep"><summary>Why can a stock PS2 play "good-resolution movies" at all?</summary>
+<p>Because SMS never asks the Emotion Engine to do the whole job. It offloads colour-space conversion to the PS2's
+IPU as an interrupt-driven, parallel process, and it re-shaped the FFmpeg decoder so its output lands in exactly the
+format the IPU wants — cutting the traffic between CPU and memory and freeing the main processor to keep decoding.
+That parallelism, plus scratchpad-and-DMA optimisation, is what let the original author benchmark peak frame rates
+well above real-time on standard-definition DivX. It is the same architecture this fork still relies on — the fork's
+work includes parser, streaming and frame-lifetime changes as well as access to more devices. See
+<a href="known-issues.html">the current issue map</a> for the limits of validation.</p></details>
+
+<h2 id="next">Where to next</h2>
+<div class="grid">
+<a class="tile" href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span><b>Subtitles</b><span>SRT / SUB over your video</span></a>
+<a class="tile" href="audio.html"><span class="icon icon-play" aria-hidden="true"></span><b>Audio &amp; Playlists</b><span>Soundtracks, music, M3U</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>Play movies from microSD</span></a>
+<a class="tile" href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span><b>USB</b><span>The easiest source</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>Start the device you need</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When a file won't play</span></a>
+</div>
+
+<p class="audit-source">Code/fixture references: <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/SMS_Codec.c">decoder registration</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/include/SMS_Container.h">stream table</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/gen-test-media.sh">fixture definitions</a>. See <a href="known-issues.html">current acceptance gaps</a>.</p>

@@ -1,0 +1,228 @@
+<h1>Troubleshooting</h1>
+<p class="lead">A problem-and-solution reference for the things that most commonly trip people up: video
+that stutters or won't start, a storage device that refuses to appear, an SMB share that won't connect,
+settings that don't stick, and a garbled screen in HD video modes. Start with the matching checks, then compare the <a href="known-issues.html">open issue map</a>; some reported regressions are still under investigation.</p>
+
+<div class="callout info"><div class="h">ℹ Start with the obvious</div>
+Before diving in, sanity-check the basics: the file is actually on the device you're browsing; the device is
+formatted correctly (see below); the device's <b>Autostart</b> is on (or you started it from the menu); and the
+media is a format SMS actually supports. Most "it won't work" reports come down to one of these four.</div>
+
+<h2 id="video-wont-play">A video stutters, drops frames, or won't play</h2>
+<p>SMS decodes video in software on the Emotion Engine and uses the PS2's <b>IPU</b> for colour conversion. That is
+a fixed budget — a file that is too demanding for the console will stutter no matter how fast your storage is. Work
+through these in order.</p>
+
+<div class="steps">
+  <div class="step"><h3>Confirm the format is supported</h3>
+  <p>SMS plays a specific set of containers and codecs. If a file uses anything outside this list, it will fail to
+  open or may play only its supported audio track. Supported video is <b>AVI</b> (DivX / Xvid / MPEG-4 Part 2),
+  <b>MP4</b> (<code>mp4v</code>, MPEG-4 Part 2), and <b>MPEG program streams</b> (MPEG-1/2,
+  <code>.mpg</code>/<code>.mpeg</code>). H.264/AVC, H.265/HEVC, VP9, AV1 and WMV video are <b>not</b> supported —
+  re-encode those to MPEG-4 Part 2 first. See
+  <a href="video.html">Video Playback</a> for the full format table.</p></div>
+
+  <div class="step"><h3>Lower the bitrate and resolution</h3>
+  <p>SMS rejects either video dimension above <b>1024 pixels</b>, but passing that check does not guarantee real-time
+  playback. Resolution, frame rate, B-frames, QPel/GMC, motion complexity, audio work, bitrate and storage speed all
+  matter. Start from the previously reported 640×480, 30 fps, 1.5 Mbit/s MPEG-4 Part 2 profile and reduce resolution, frame
+  rate or bitrate if needed. If the same file plays from USB but stutters over the network or from MX4SIO, storage
+  throughput or fragmentation is the likely difference.</p></div>
+
+  <div class="step"><h3>Rule out a damaged or fragmented file</h3>
+  <p>A partial download, a bad burn, or a heavily fragmented file can cause hitching or a mid-file stop. Re-copy the
+  file to the device (ideally to a freshly formatted or defragmented card/drive), or re-download it, and try again.
+  A PC passing the file does not distinguish a PS2 parser/decoder regression from a demanding encode or storage problem. Keep an unchanged copy and its hash before converting or reorganizing it.</p></div>
+
+  <div class="step"><h3>Check the encode features</h3>
+  <p>Interlaced MPEG-4 and MPEG-2 decode paths exist, but the current hardware fixture baseline is progressive.
+  B-frames, QPel, GMC and interlacing can add work or expose compatibility differences. If a supported file is
+  marginal, re-encode it progressive with no B-frames using the known-good command on the
+  <a href="video.html#encoding">Video Playback</a> page.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">Audio-only files that won't play</div>
+The same "is it a supported format" rule applies to audio. SMS handles <b>MP3, AAC, AC3, FLAC, OGG&nbsp;Vorbis</b>
+and <b>WMA</b>. A file with an unusual codec inside a familiar-looking container (for example a lossless track the
+decoder doesn't recognise) can fail to open — re-encode to plain MP3 to confirm the file, then work back from there.</div>
+
+<h2 id="device-missing">A storage device doesn't appear</h2>
+<p>If a device you plugged in isn't showing in the top-row device menu, it's almost always one of three things:
+it isn't started, it isn't formatted the way SMS expects, or it's blocked by a mutual exclusion.</p>
+
+<div class="steps">
+  <div class="step"><h3>Start the device (or turn on its Autostart)</h3>
+  <p>On a clean install <b>optional Autostart choices are off</b> — this is by design (see below). Open the settings menu and either
+  flip on that device's <b>Autostart</b> toggle (Autostart USB, Autostart MX4SIO, Autostart HDD APA, Autostart HDD
+  flip on that device's <b>Autostart</b> toggle (Autostart USB, Autostart i.LINK, Autostart MX4SIO, Autostart MMCE, Autostart HDD APA, Autostart HDD BDM for ATA/exFAT, then the three mutually exclusive network rows — <b>Autostart HOST ( ps2dev )</b>, <b>Autostart SMB</b> and <b>Autostart UDPFS</b>, where picking one clears the other two), or use the matching <b>Start …</b>
+  item that appears when a device isn't running yet. Starting it on demand does not need a reboot.</p></div>
+
+  <div class="step"><h3>Check the filesystem format</h3>
+  <p>BDM mass devices (USB, MX4SIO, ATA/exFAT) expect a <b>FAT32</b> or <b>exFAT</b> filesystem. A drive formatted
+  NTFS, HFS+ or ext4 will not mount. Re-format the card or drive as FAT32 (or exFAT for large volumes) and copy your
+  media back. The internal-HDD APA/PFS path is different — that uses a PlayStation&nbsp;2 PFS
+  partition rather than a PC filesystem; see <a href="hdd.html">Internal HDD</a>.</p></div>
+
+  <div class="step"><h3>Rule out a mutual exclusion</h3>
+  <p>Three resource pairs cannot both be active in one boot:</p>
+  <ul class="checklist">
+    <li><b>MX4SIO and MMCE</b> both use the SIO2 / memory-card-slot bus. If one is running, the other won't appear —
+    turn off the one you don't need.</li>
+    <li><b>The internal HDD APA/PFS path and the ATA/exFAT (BDM) path</b> both own the internal ATA bus. Whichever
+    starts first owns it; pick one.</li>
+    <li><b>SMB/host and UDPFS</b> load different stacks for the single Ethernet controller. Reboot, then start only
+    the network path you intend to use.</li>
+  </ul></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ How devices are named</div>
+BDM mass devices (USB, MX4SIO, ATA/exFAT, i.LINK) all share the <code>massN:</code> namespace, with <code>N</code>
+counting up from 0. MMCE devices are <code>mmce0:</code> / <code>mmce1:</code>. The internal APA/PFS HDD is
+<code>hdd0:</code>, and the UDPFS folder is <code>udpfs:</code>. If a device is present but numbered differently than you expect, that's usually just the mount
+order — check the path shown on the status line at the bottom of the screen.</div>
+
+<h2 id="smb-wont-connect">An SMB share won't connect</h2>
+<p>SMS speaks the older <b>SMB1 / CIFS</b> network-share protocol. By far the most common reason a share won't
+connect is that the server no longer accepts SMB1.</p>
+
+<div class="callout red"><div class="h">Top cause: SMB1 is disabled on the server</div>
+Modern Windows and Samba ship with <b>SMB1 turned off by default</b> for security. SMS needs it enabled to connect.
+This is a server-side setting, not something SMS can work around from the PS2.</div>
+
+<details class="deep"><summary>How do I re-enable SMB1 on the server?</summary>
+<p><b>On Windows:</b> open <i>Turn Windows features on or off</i> and enable <b>SMB 1.0/CIFS File Sharing Support</b>
+(specifically the client/server sub-features), then reboot. Be aware SMB1 is legacy and considered insecure — only
+enable it on a trusted local network, and consider a dedicated share for the PS2.</p>
+<p><b>On a Samba (Linux/NAS) server:</b> allow the older protocol in the server config (for example by setting the
+minimum protocol to <code>NT1</code>) and restart the service. Consult your NAS or Samba documentation for the exact
+option, as it varies by version.</p></details>
+
+<div class="steps">
+  <div class="step"><h3>Verify the address, share name and credentials</h3>
+  <p>Once SMB1 is on, re-check the server's IP address, the exact share name, and the username/password — all entered
+  on-screen with the built-in keyboard (see <a href="network.html">Network Setup</a>). A typo in any of these looks
+  identical to "server refused". Case can matter for share names and usernames.</p></div>
+
+  <div class="step"><h3>Check the PS2's own network settings</h3>
+  <p>Make sure the PS2 has a valid static IP on the same subnet as the server, saved through
+  <b>Device settings → Network settings → Edit IPCONFIG.DAT</b>, and that the network device is started. If the console can't reach the network at all, no share
+  will connect.</p></div>
+
+  <div class="step"><h3>Check firewalls and the server's file sharing</h3>
+  <p>A firewall on the server (or router) can block the PS2's connection even with everything else correct. Confirm
+  file sharing is enabled on the server and that its firewall allows connections from the PS2's IP on your local
+  network.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">SMB1 is a legacy protocol</div>
+The SMB client in SMS is the legacy SMB1 stack, and modernising it to SMB2 is separate work beyond this build. If
+you can't or won't enable SMB1 on your server, use the <a href="network.html#udpfs">UDPFS network drive</a> or a
+directly-attached device instead.</div>
+
+<h2 id="udpfs-wont-connect">The UDPFS network drive won't appear</h2>
+<ul class="checklist">
+<li>Save the PS2's own static IP through <b>Edit IPCONFIG.DAT</b>; a <code>NOIP</code> error means this step is missing.</li>
+<li>Run PS2-Servers UDPFSD on a PC on the same LAN, select the folder to serve, and keep <b>Modulo mode off</b>.</li>
+<li>Allow UDP port <code>0xF5F6</code> (62966) through the PC firewall on the trusted LAN.</li>
+<li>If SMB/host was already started, reboot before choosing <b>Start UDPFS network drive</b>. The two stacks cannot
+share the NIC in one boot.</li>
+</ul>
+
+<h2 id="settings-dont-save">Settings don't persist across reboots</h2>
+<p>If your Autostart toggles, network details or playback preferences reset every time you power on, the config isn't
+being saved — or isn't being found on the next boot.</p>
+
+<div class="steps">
+  <div class="step"><h3>Find the active configuration</h3>
+  <p>Use <b>Save settings</b> after changes. On a remountable launch source, <code>SMS.cfg</code> normally lives beside the ELF even when a memory card is fitted; <code>SMS.smb</code> follows its resolved directory. See <a href="configuration.html">Config Files &amp; Paths</a> for card-slot, network-file and fallback rules.</p></div>
+
+  <div class="step"><h3>This fork can save to the boot device instead</h3>
+  <p>When SMS remounts its boot device, this fork saves the config
+  <b>next to the SMS ELF on that boot device</b> instead. So a memory-card-less setup can still keep its settings —
+  as long as the boot device is writable and present at each boot.</p></div>
+
+  <div class="step"><h3>Save after changing settings</h3>
+  <p>Make your changes, then save through the settings menu so they're written out. If a setting only ever holds for
+  the current session, it wasn't committed to storage.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ Resetting to a clean state</div>
+Deleting the config file returns SMS to <b>clean defaults</b> — which means <b>optional Autostart choices are off</b> and every
+Autostart toggle is off. If SMS is misbehaving after a lot of tweaking, clearing the config is a reliable way to get
+back to a known-good baseline; you then turn back on only the devices you use.</div>
+
+<h2 id="nothing-autostarts">Nothing starts up on the first boot</h2>
+<div class="callout info"><div class="h">ℹ This is by design</div>
+On a clean install, <b>optional Autostart flags start off</b>. SMS boots to the desktop with the device menu waiting, and you
+enable what you need. This is deliberate — it avoids forcing a device (such as an internal HDD) that you may not
+have, and it keeps the first boot fast and predictable.</div>
+<p>To bring a device online, either turn on its <b>Autostart</b> toggle in settings (so it comes up automatically on
+future boots) or use the matching <b>Start &lt;device&gt; now</b> item to start it immediately without rebooting.
+Once you save your settings, your chosen devices will auto-start from then on. This is expected behaviour, not a
+fault.</p>
+
+<h2 id="hd-corruption">The screen looks corrupted in HD video modes</h2>
+<div class="callout amber"><div class="h">Known issue in HD output modes</div>
+In the two high-definition modes (720p and 1080i) SMS does not draw the desktop wallpaper at all — it paints a plain gradient background instead. This is deliberate: the HD framebuffer leaves no room in VRAM for the full-screen artwork, and forcing it there used to comb the text and leave black bars. Everything else works normally; if you want the artwork, use a standard-definition mode (480i/480p/576p), all of which are unaffected.</div>
+<p>HD modes use a much larger framebuffer than standard definition, which leaves little room for the full-screen
+desktop artwork; the result can be a corrupted or garbled background on the desktop. This is a known, open issue in
+the current theme at HD resolutions. Standard-definition output (480i) is not affected and is the recommended mode
+until this is resolved. If you do use an HD mode and the desktop looks wrong, switch the video/output mode back to
+480i.</p>
+
+<div class="callout info"><div class="h">ℹ Still stuck?</div>
+If none of the above matches your symptom, note exactly what you did, which device and file were involved, and what
+you saw on screen (a photo of the TV helps). That detail is what makes a problem fixable — vague "it doesn't work"
+reports are the hardest to act on.</div>
+
+<h2 id="reporting">Reporting a freeze</h2>
+<p>If SMS stops responding during startup and a power cycle is the only way out, there is a build that can
+tell us exactly where it stopped.</p>
+
+<p><b><code>Simple-Media-System-DIAG.elf</code></b>, published alongside every release, is the same code with
+one addition: before each step of startup it prints a short code such as <code>E44</code> in the status bar,
+naming the step it is <em>about</em> to perform. If that step never finishes, <b>the code stays on screen</b>.
+So the last code visible is the thing that hung.</p>
+
+<div class="note"><p>It needs no network and no memory card — the codes are drawn directly by the console's
+graphics hardware, so they still appear when almost nothing else is working. That is the whole point: it
+reports faults that a log file could not, because nothing was left running to write one.</p></div>
+
+<h3>How to use it</h3>
+<div class="steps">
+<div class="step"><h3>Run it</h3><p>Boot <code>Simple-Media-System-DIAG.elf</code> the same way you boot the
+normal ELF.</p></div>
+<div class="step"><h3>Watch the status bar</h3><p>Codes appear at the bottom of the screen as startup
+progresses. On a healthy console they flick past quickly and you end up at the file browser.</p></div>
+<div class="step"><h3>Note where it stops</h3><p>If it freezes, write down or photograph the last code <b>and its text label</b> shown.
+A recording is even better — it captures the order they appeared in.</p></div>
+<div class="step"><h3>Report it</h3><p>Open an issue with that code, your console model, and what was
+connected. Include the label as well as the number; numeric phase values can overlap.</p></div>
+</div>
+
+<p>Use the standard ELF for normal playback — the diagnostic build is not faster or better, it simply talks
+more.</p>
+
+<h3 id="reproduction-details">Include a reproducible comparison</h3>
+<ul><li>The bundle's <code>build-info.json</code>, standard/packed/DIAG choice and exact release/run.</li>
+<li>Console model, boot method, storage device/format, video mode, cable/display and relevant settings.</li>
+<li>The unchanged original and converted file, or a short failing sample where you can share one; include a SHA-256, codecs, dimensions, frame rate, bitrate, audio tracks and timestamps.</li>
+<li>The exact trigger and time of failure. Record pause/seek/stop separately. Compare with 2.9rev4 where the issue reports that version working.</li>
+<li>Converter settings and logs when applicable. Successful encoding is a host result, not proof of console output. Remove SMB credentials from shared configuration/logs.</li></ul>
+<p>For a color fault, compare the same bytes and fixed display settings before applying any matrix/range transform. For stutter, compare sources and record timing before assuming fragmentation or bitrate is the cause. <a href="known-issues.html">Current fixes and unconfirmed reports</a> show which evidence is still missing.</p>
+<h2 id="quick-reference">Quick reference</h2>
+<table data-sortable>
+<thead><tr><th>Symptom</th><th>Most likely cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Video stutters / drops frames</td><td>Bitrate or resolution too high for the console (worse on slow devices)</td><td>Re-encode lower; use a faster device</td></tr>
+<tr><td>Video won't open at all</td><td>Unsupported codec, or damaged / fragmented file</td><td>Re-encode to MPEG-4/XviD; re-copy the file</td></tr>
+<tr><td>Device not in the menu</td><td>Not started, wrong format, or mutual exclusion</td><td>Autostart / Start-now; format FAT32/exFAT; free the shared bus</td></tr>
+<tr><td>MX4SIO and MMCE clash</td><td>Both use the SIO2 slot bus</td><td>Run only one at a time</td></tr>
+<tr><td>HDD APA and ATA/exFAT clash</td><td>Both own the internal ATA bus</td><td>Pick one; first to start owns the bus</td></tr>
+<tr><td>SMB share won't connect</td><td>SMB1 disabled on the server</td><td>Re-enable SMB1; then check IP / credentials / firewall</td></tr>
+<tr><td>UDPFS drive won't appear</td><td>No static PS2 IP, no server response, firewall, or SMB already owns the NIC</td><td>Save IPCONFIG; run UDPFSD with Modulo off; allow UDP 62966; reboot to switch stacks</td></tr>
+<tr><td>Settings reset each boot</td><td>Wrong active config, failed write/remount, or unsaved changes</td><td>Check <a href="configuration.html">the actual boot-folder/fallback path</a>, save and compare timestamps</td></tr>
+<tr><td>Nothing auto-starts</td><td>Clean-install default</td><td>Enable Autostart for the devices you use</td></tr>
+<tr><td>No wallpaper in 720p/1080i</td><td>Deliberate VRAM-saving gradient</td><td>Use an SD mode for skin checks; report actual corruption separately</td></tr>
+</tbody>
+</table>

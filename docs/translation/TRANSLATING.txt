@@ -8,14 +8,16 @@ WHAT THIS IS
   translator, they replace each English line with their language, done.
 
 HOW SMS USES IT
-  * On a memory-card boot SMS reads  mc0:/SMS/SMS.lng
-  * On a USB/HDD/network/UDPFS boot it reads  SMS.lng  next to the SMS.ELF (CWD)
+  * SMS tries SMS.lng beside the launched ELF first, including an MC boot.
+    The fallback is mc?:/SMS/SMS.lng on the configured card slot.
+  * Filesystem boot assets are re-read after the boot device is mounted.
   * Or import it in-app: SMS menu -> Device settings -> "Update SMS.lng file"
   * Then set  SMS menu -> Browser settings -> Language  to anything other than
     "English" for the file to take effect.
 
-THE FIVE RULES (break any one and SMS silently ignores the WHOLE file and
-falls back to English -- there is no error message):
+THE FIVE RULES (the fixed string count is checked by the loader; the other
+rules prevent bad rendering, paths or printf behavior and are not all checked
+automatically):
   1. EXACTLY 311 lines. Do not add or remove a line. One English line in ->
      one translated line out, same position.
   2. NEVER leave a line blank. An empty line makes the parser stop early, the
@@ -48,7 +50,7 @@ INSTALLING A FINISHED TRANSLATION (from the legacy pack's own readme)
   2. Copy it to  mc0:/SMS   (or next to SMS.ELF on USB/HDD/UDPFS)
   3. Select / enable it in the SMS menu
 
-The 19 community translations in docs/translation/ (BG CA CZ DE EN ES FR HU ID IT
+The 19 named language variants (including an English variant) in docs/translation/ (BG CA CZ DE EN ES FR HU ID IT
 NL PL PT PT-BR RU SE SK TR UA) were extended to 311 lines to match THIS build, so
 they load as-is (new-feature lines show English until translated). They are the
 best reference for tone/length. (TR had a pre-existing duplicate line that was

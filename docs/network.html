@@ -1,60 +1,33 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Network Setup · SMS Docs</title>
-<meta name="description" content="Set up SMS networking for SMB shares or the UDPFS network drive: wired Ethernet, on-screen static IP configuration, server setup, protocol differences and the one-network-stack-per-boot rule.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Network &amp; UDPFS · SMS Docs</title><meta name="description" content="SMS static IP, HOST/SMB/UDPFS choices, explicit restart boundaries and folder-served UDPFS setup.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/network.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Network &amp; UDPFS · SMS Docs"><meta property="og:description" content="SMS static IP, HOST/SMB/UDPFS choices, explicit restart boundaries and folder-served UDPFS setup.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html" class="active"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html" class="active" aria-current="page"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Network Setup</h1>
 <p class="lead">SMS has two ways to browse media over wired Ethernet: the established <b>SMB1/CIFS share</b>
 client and this fork's <b>UDPFS network drive</b>. SMB connects to a configured Windows or Samba share.
 UDPFS discovers a PC folder served by PS2-Servers UDPFSD and mounts it as <code>udpfs:</code>. Both use settings
 entered from the pad; no hand-edited network file is required.</p>
 
-<div class="callout amber"><div class="h">⚠ Choose SMB/host or UDPFS for each boot</div>
+<div class="callout amber"><div class="h">Choose SMB/host or UDPFS for each boot</div>
 The two paths load different network stacks for the PS2's one EMAC3 Ethernet controller. Whichever starts first owns
 the NIC until reboot. The menu now enforces this: <b>Autostart HOST</b>, <b>Autostart SMB</b> and <b>Autostart UDPFS</b> are a single choice — turning one on turns the other two off, and selecting the one already lit switches networking off entirely.
 This does not conflict with MX4SIO or MMCE because those use SIO2, not Ethernet.</div>
@@ -73,11 +46,11 @@ This does not conflict with MX4SIO or MMCE because those use SIO2, not Ethernet.
 network mask and gateway one octet at a time, then choose <b>Save/Update IPCONFIG.DAT</b>. With a memory card present SMS writes <code>mc0:/SYS-CONF/IPCONFIG.DAT</code>, the same place the PS2 browser and other software expect it. <b>With no memory card fitted</b> it writes <code>IPCONFIG.DAT</code> beside <code>SMS.ELF</code> instead, and reads it back from there on the next boot — so a console with no card can still be given an address. UDPFS requires a valid static PS2 IP; SMB uses the same network
 configuration.</p>
 <div class="steps">
-<div class="step"><h3>Choose an address</h3><p>Give the PS2 an unused static address on the same subnet as the
+<div class="step"><h3 id="choose-an-address">Choose an address</h3><p>Give the PS2 an unused static address on the same subnet as the
 server, such as <code>192.168.1.20</code> when the PC is <code>192.168.1.10</code>.</p></div>
-<div class="step"><h3>Enter mask and gateway</h3><p>For a typical home LAN the mask is
+<div class="step"><h3 id="enter-mask-and-gateway">Enter mask and gateway</h3><p>For a typical home LAN the mask is
 <code>255.255.255.0</code>; use your router's address as the gateway. Match your actual network.</p></div>
-<div class="step"><h3>Save</h3><p>Choose <b>Save/Update IPCONFIG.DAT</b>. With a memory card fitted the file goes
+<div class="step"><h3 id="save">Save</h3><p>Choose <b>Save/Update IPCONFIG.DAT</b>. With a memory card fitted the file goes
 to the card, where the PS2 browser and other titles expect it; with no card fitted SMS writes it beside the ELF
 instead, and reads it back from there next boot — so a card-less console can still be networked.</p></div>
 </div>
@@ -110,7 +83,7 @@ and leaves SMS running; declining is safe — the choice is saved either way and
 <p>The SMB browser stores a server address, share, user, password, client name and port. Add or edit the server
 under <b>Device settings → Network settings → SMB server…</b> using the on-screen keyboard; see <a href="smb.html">SMB Network</a> for the complete field
 reference. Start it with <b>Start SMB support</b>, or set <b>Autostart SMB</b> to have it come up on every boot.</p>
-<div class="callout amber"><div class="h">⚠ SMB1 is required</div>
+<div class="callout amber"><div class="h">SMB1 is required</div>
 SMS speaks SMB1/CIFS. Modern Windows disables SMB1 by default, so a Samba/NAS configuration that permits SMB1 is
 usually safer than enabling an obsolete protocol broadly on a general-purpose PC. Keep this service on a trusted
 LAN.</div>
@@ -120,19 +93,18 @@ LAN.</div>
 the folder mounts directly as <code>udpfs:</code>. It is not UDPBD, does not require a disk image, and does not
 appear as <code>massN:</code>.</p>
 <div class="steps">
-<div class="step"><h3>Configure the PS2 IP</h3><p>Complete the static-IP steps above and save
+<div class="step"><h3 id="configure-the-ps2-ip">Configure the PS2 IP</h3><p>Complete the static-IP steps above and save
 <code>IPCONFIG.DAT</code>.</p></div>
-<div class="step"><h3>Serve the folder</h3><p>Run the UDPFSD server from
+<div class="step"><h3 id="serve-the-folder">Serve the folder</h3><p>Run the UDPFSD server from
 <a href="https://github.com/NathanNeurotic/PS2-Servers">PS2-Servers</a>, select the folder to expose, and keep
 <b>Modulo mode off</b>. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is
 no server IP to enter in SMS.</p></div>
-<div class="step"><h3>Start the drive</h3><p>Choose <b>Start UDPFS network drive</b>, or enable
+<div class="step"><h3 id="start-the-drive">Start the drive</h3><p>Choose <b>Start UDPFS network drive</b>, or enable
 <b>Autostart UDPFS</b> and save settings. When discovery succeeds, browse the <code>udpfs:</code> device like any
 other source.</p></div>
 </div>
-<div class="callout info"><div class="h">✓ Hardware-confirmed in this fork</div>
-Booting SMS from UDPFS, browsing and playing media from the served folder, and exiting playback cleanly have all
-been confirmed on real PS2 hardware.</div>
+<div class="callout info"><div class="h">Earlier project hardware report</div>
+Earlier project documentation reports UDPFS boot, browsing, playback and clean exit on real PS2 hardware. The current documentation audit checked the source/configuration and did not repeat those console runs.</div>
 
 <h2 id="troubleshooting">Troubleshooting</h2>
 <ul class="checklist">
@@ -147,20 +119,12 @@ credentials. Administrative shares ending in <code>$</code> are intentionally hi
 </ul>
 
 <div class="grid">
-<a class="tile" href="smb.html"><span class="em">🌐</span><b>SMB Network</b><span>Share fields and login</span></a>
-<a class="tile" href="settings.html"><span class="em">🔧</span><b>Settings Reference</b><span>Autostart and Start-now controls</span></a>
-<a class="tile" href="devices.html"><span class="em">🗂️</span><b>Devices Overview</b><span>All sources and exclusion rules</span></a>
+<a class="tile" href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span><b>SMB Network</b><span>Share fields and login</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Autostart and Start-now controls</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>All sources and exclusion rules</span></a>
 </div>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

@@ -1,62 +1,35 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Devices Overview · SMS Docs</title>
-<meta name="description" content="How storage works in SMS: massN:, MMCE, HDD, optical, SMB and UDPFS sources; Autostart and Start-now controls; and the hardware and network-stack exclusions.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Devices Overview · SMS Docs</title><meta name="description" content="SMS storage namespaces, startup choices, driver exclusions and links to USB, MX4SIO, HDD, MMCE, i.LINK and network setup.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/devices.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Devices Overview · SMS Docs"><meta property="og:description" content="SMS storage namespaces, startup choices, driver exclusions and links to USB, MX4SIO, HDD, MMCE, i.LINK and network setup.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html" class="active"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html" class="active" aria-current="page"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Devices Overview</h1>
 <p class="lead">SMS is a media player that browses the <b>raw filesystem</b> of whatever storage you attach and plays
 files wherever they sit — there is no mandatory folder layout to obey. This page is the hub for how storage works:
 the <b>device bar</b> along the top of the screen, how each source is <b>named</b>, how you turn devices on with
 <b>Autostart</b> or <b>Start&nbsp;now</b>, the resource exclusions to keep in mind, and a side-by-side table
-of all ten playback sources.</p>
+of the playback sources.</p>
 
 <div class="callout info"><div class="h">ℹ The short version</div>
-A clean install <b>starts nothing</b> — you switch on the sources you actually use, either permanently
+A fresh config has <b>optional Autostart choices off</b> — you switch on the sources you actually use, either permanently
 (<b>Autostart</b>) or once (<b>Start&nbsp;now</b>). USB, MX4SIO, ATA/exFAT and i.LINK are all "BDM mass" devices and
 share the <code>massN:</code> naming (<code>mass0:</code>, <code>mass1:</code>, …). MMCE cards get their own
 <code>mmce0:</code>/<code>mmce1:</code>, while the folder-served network drive mounts as <code>udpfs:</code>.
@@ -74,7 +47,7 @@ device bar.</li>
 <p>Only the active area is highlighted. You move around the device bar with <b>Left/Right</b>, and press
 <b>Down</b> to drop into the file list for the highlighted device; <b>Left/Right</b> from the top of the file list
 takes you back up to the bar. A device only earns an icon on the bar once it has been <i>started</i> and something is
-present — so on a fresh boot with nothing enabled, the bar is empty until you turn a source on (see
+present. Startup may already remount the launch source to read its settings; otherwise start the source you need (see
 <a href="#autostart">Autostart vs Start&nbsp;now</a> below).</p>
 <p><img src="images/usage-sms-maingui.png" alt="The SMS main screen: a row of device icons across the top (the device bar), the file browser in the middle, and the status line with path and clock at the bottom." style="max-width:100%;border-radius:10px"></p>
 
@@ -101,7 +74,7 @@ name helps you read the status line and understand which device you're on.</p>
 </tbody>
 </table>
 
-<div class="callout amber"><div class="h">⚠ The <code>massN:</code> number can move</div>
+<div class="callout amber"><div class="h">The <code>massN:</code> number can move</div>
 Because BDM volumes are numbered in discovery order, a device's number is not fixed forever. If you rely on the icons
 on the device bar you'll never have to think about it — each running BDM device shows its own icon (USB, MX4SIO,
 ATA/HDD, i.LINK) so you pick the source visually, and SMS browses the volume behind that icon regardless of its
@@ -112,9 +85,9 @@ ATA/HDD, i.LINK) so you pick the source visually, and SMS browses the volume beh
 menu, and — for anything not currently running — a <b>Start&nbsp;&lt;device&gt;&nbsp;now</b> item that brings it up on
 demand without a reboot.</p>
 <div class="steps">
-<div class="step"><h3>Autostart &lt;device&gt;</h3><p>A per-device on/off toggle. When on, SMS brings that source up automatically every time it boots. There is one toggle for each optional source: <b>Autostart USB</b>, <b>Autostart i.LINK</b>, <b>Autostart MX4SIO</b>, <b>Autostart MMCE</b>, <b>Autostart HDD</b> (the classic APA/PFS path) and <b>Autostart HDD&nbsp;BDM</b> (the ATA/exFAT path). Networking is a single choice presented as three rows — <b>Autostart HOST&nbsp;(ps2dev)</b>, <b>Autostart SMB</b> and <b>Autostart UDPFS</b> — and picking one clears the other two.</p></div>
-<div class="step"><h3>Start &lt;device&gt; now</h3><p>When a device is <i>not</i> already running, a matching "Start&nbsp;&lt;device&gt;&nbsp;now" item appears so you can spin it up for this session without turning on Autostart or rebooting — handy for a one-off (plug in a drive, start it, browse it).</p></div>
-<div class="step"><h3>Clean install = nothing runs</h3><p>Out of the box, <b>no source auto-starts</b>. You decide what to enable. This keeps boot fast and avoids probing hardware you don't have. Clearing the config returns you to this state (see <a href="#config">Where settings live</a>).</p></div>
+<div class="step"><h3 id="autostart-device">Autostart &lt;device&gt;</h3><p>A per-device on/off toggle. When on, SMS brings that source up automatically every time it boots. There is one toggle for each optional source: <b>Autostart USB</b>, <b>Autostart i.LINK</b>, <b>Autostart MX4SIO</b>, <b>Autostart MMCE</b>, <b>Autostart HDD</b> (the classic APA/PFS path) and <b>Autostart HDD&nbsp;BDM</b> (the ATA/exFAT path). Networking is a single choice presented as three rows — <b>Autostart HOST&nbsp;(ps2dev)</b>, <b>Autostart SMB</b> and <b>Autostart UDPFS</b> — and picking one clears the other two.</p></div>
+<div class="step"><h3 id="start-device-now">Start &lt;device&gt; now</h3><p>When a device is <i>not</i> already running, a matching "Start&nbsp;&lt;device&gt;&nbsp;now" item appears so you can spin it up for this session without turning on Autostart or rebooting — handy for a one-off (plug in a drive, start it, browse it).</p></div>
+<div class="step"><h3 id="clean-config-optional-autostart-off">Clean config = optional Autostart off</h3><p>Out of the box, <b>no optional Autostart flag is enabled</b>. You decide what to enable. This keeps boot fast and avoids probing hardware you don't have. Clearing the config returns you to this state (see <a href="#config">Where settings live</a>).</p></div>
 </div>
 <p><img src="images/usage-sms-devicesettings.png" alt="The SMS device settings screen, with the per-device Autostart toggles." style="max-width:100%;border-radius:10px"></p>
 <div class="callout info"><div class="h">ℹ Just want to try a device?</div>
@@ -125,23 +98,23 @@ Autostart for it. Full details of every toggle live on the <a href="settings.htm
 <h2 id="exclusions">Mutual exclusions</h2>
 <p>Two storage pairs share a physical bus, and the two network implementations share the console's single Ethernet
 controller. Only one member of each pair can own its resource in a boot.</p>
-<div class="callout amber"><div class="h">⚠ MX4SIO &nbsp;⇄&nbsp; MMCE — the memory-card / SIO2 bus</div>
+<div class="callout amber"><div class="h">MX4SIO &nbsp;⇄&nbsp; MMCE — the memory-card / SIO2 bus</div>
 An <a href="mx4sio.html">MX4SIO</a> microSD adapter and an <a href="mmce.html">MMCE</a> device (SD2PSX / MemCard PRO2)
 both plug into the memory-card slot and talk over the console's <b>SIO2</b> bus. Only one can be active at a time —
 if MX4SIO is running, starting MMCE will decline, and vice versa. To use one, make sure the other isn't autostarted;
 turn off the other's Autostart (or reboot) and start the one you want.</div>
-<div class="callout amber"><div class="h">⚠ APA HDD &nbsp;⇄&nbsp; ATA/exFAT HDD — the internal ATA bus</div>
+<div class="callout amber"><div class="h">APA HDD &nbsp;⇄&nbsp; ATA/exFAT HDD — the internal ATA bus</div>
 The classic <a href="hdd.html">internal HDD</a> path (APA/PFS, <code>hdd0:</code>) and the modern
 <b>ATA/exFAT</b> path (which appears as a BDM <code>massN:</code> device) both drive the console's internal
 <b>ATA</b> bus. They can't run together — <b>whichever starts first owns the bus</b>, and the other backs off. Pick
 the one that matches how your internal drive is formatted: APA/PFS for a classic Sony-partitioned drive, ATA/exFAT
 for a drive formatted exFAT.</div>
-<div class="callout amber"><div class="h">⚠ SMB / host &nbsp;⇄&nbsp; UDPFS — one Ethernet stack per boot</div>
+<div class="callout amber"><div class="h">SMB / host &nbsp;⇄&nbsp; UDPFS — one Ethernet stack per boot</div>
 The ordinary SMS network path (SMB or developer <code>host:</code>) and <a href="network.html#udpfs">UDPFS</a>
 load different drivers for the same EMAC3 Ethernet controller. Whichever network personality starts first owns the
 NIC until the next boot. Pick one of <b>Autostart HOST&nbsp;(ps2dev)</b>, <b>Autostart SMB</b> or <b>Autostart UDPFS</b> — selecting one automatically clears the other two. If a different network mode is already running when you switch, SMS offers to restart the network in place ("Network is already running. Restart it now to apply?"); accepting resets the IOP and rebuilds the chosen stack without relaunching SMS, declining saves the choice for the next boot. Note that an in-place restart also drops any mounted storage drivers, so they need starting again.</div>
 
-<h2 id="all-sources">All ten sources at a glance</h2>
+<h2 id="all-sources">Playback sources at a glance</h2>
 <p>Every storage backend SMS can read, side by side. Click a device to open its full page.</p>
 <table data-sortable>
 <thead><tr><th>Device</th><th>Bus / how it connects</th><th>Filesystem</th><th>Mount name</th><th>Notes</th></tr></thead>
@@ -223,25 +196,21 @@ serving files from a PC over ps2link — it's a developer/testing path, not an e
 
 <h2 id="which">Which source should I use?</h2>
 <div class="grid">
-<a class="tile" href="usb.html"><span class="em">🔌</span><b>Just get going</b><span>USB — any PS2, no extras</span></a>
-<a class="tile" href="mx4sio.html"><span class="em">💠</span><b>Tiny &amp; cheap</b><span>MX4SIO microSD adapter</span></a>
-<a class="tile" href="hdd.html"><span class="em">💽</span><b>Big library, internal</b><span>Internal HDD (APA or exFAT)</span></a>
-<a class="tile" href="smb.html"><span class="em">🌐</span><b>Stream from a PC</b><span>SMB network share</span></a>
-<a class="tile" href="network.html#udpfs"><span class="em">📡</span><b>Fast PC folder</b><span>UDPFS network drive</span></a>
-<a class="tile" href="ilink.html"><span class="em">🔗</span><b>FireWire drive</b><span>i.LINK storage</span></a>
-<a class="tile" href="mmce.html"><span class="em">🧩</span><b>SD2PSX / PRO2</b><span>MMCE memory-card device</span></a>
-<a class="tile" href="cd-dvd.html"><span class="em">💿</span><b>Off a disc</b><span>CD / DVD / audio CD</span></a>
-<a class="tile" href="settings.html"><span class="em">🔧</span><b>Turn devices on</b><span>Autostart &amp; Start-now</span></a>
+<a class="tile" href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span><b>Just get going</b><span>USB — any PS2, no extras</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>Tiny &amp; cheap</b><span>MX4SIO microSD adapter</span></a>
+<a class="tile" href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span><b>Big library, internal</b><span>Internal HDD (APA or exFAT)</span></a>
+<a class="tile" href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span><b>Stream from a PC</b><span>SMB network share</span></a>
+<a class="tile" href="network.html#udpfs"><span class="icon icon-smb" aria-hidden="true"></span><b>Fast PC folder</b><span>UDPFS network drive</span></a>
+<a class="tile" href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span><b>FireWire drive</b><span>i.LINK storage</span></a>
+<a class="tile" href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span><b>SD2PSX / PRO2</b><span>MMCE memory-card device</span></a>
+<a class="tile" href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span><b>Off a disc</b><span>CD / DVD / audio CD</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Turn devices on</b><span>Autostart &amp; Start-now</span></a>
 </div>
 
 <h2 id="config">Where settings live</h2>
-<p>Your Autostart choices and other options are saved in an SMS config file. By default that's on the memory card at
-<code>mc0:/SMS/SMS.cfg</code>. In this fork, if SMS was booted from another device (USB, HDD…) with no memory card
-present, it saves the config <b>next to the SMS ELF on that boot device</b> instead — so a memory-card-less setup
-still keeps its settings between boots.</p>
+<p>Use <b>Save settings</b> after changes. On a remountable launch source, <code>SMS.cfg</code> normally lives beside the ELF even when a memory card is fitted; <code>SMS.smb</code> follows its resolved directory. See <a href="configuration.html">Config Files &amp; Paths</a> for card-slot, network-file and fallback rules.</p>
 <div class="callout info"><div class="h">ℹ Back to a clean slate</div>
-Clearing the config resets SMS to defaults — meaning <b>nothing auto-starts</b> and you start again from an empty
-device bar. See the <a href="settings.html">Settings Reference</a> for exactly what's stored and how to reset it.</div>
+Clearing the config resets SMS to defaults — meaning <b>optional Autostart choices are off</b> ; a remounted boot source may still appear in the device bar. See the <a href="settings.html">Settings Reference</a> for exactly what's stored and how to reset it.</div>
 
 <details class="deep"><summary>Why do USB, MX4SIO, ATA and i.LINK all share <code>massN:</code>?</summary>
 <p>Under the hood, those four are handled by the PS2 homebrew <b>BDM</b> (Block Device Manager) layer: each provides a
@@ -255,16 +224,10 @@ though they share a naming scheme.</p>
 <p>No. SMS runs on a bone-stock PS2 and can play straight from USB, MX4SIO, MMCE or a burned disc. The internal-HDD,
 SMB and UDPFS sources are there <i>if</i> you have the relevant hardware — they're optional extras, not requirements.</p>
 </details>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<div class="note"><p><b>Boot-source exception:</b> optional Autostart flags default off, but SMS may start/remount the device holding its ELF/config during startup. A source already visible after first boot does not mean another Autostart choice was saved. See <a href="configuration.html">configuration discovery</a>.</p></div>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

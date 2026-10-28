@@ -1,0 +1,249 @@
+{
+  "site": {
+    "title": "SMS Docs",
+    "brand": "Simple Media System",
+    "repo": "https://github.com/NathanNeurotic/Simple-Media-System",
+    "pages_url": "https://nathanneurotic.github.io/Simple-Media-System/",
+    "audited_source": "4a6959a709b9679352f964fd412a69e539ef49ae",
+    "reviewed": "2026-10-27"
+  },
+  "sections": [
+    {
+      "name": "Start",
+      "pages": [
+        "index",
+        "getting-started",
+        "install",
+        "releases"
+      ]
+    },
+    {
+      "name": "Playing media",
+      "pages": [
+        "video",
+        "audio",
+        "pictures",
+        "subtitles",
+        "converter",
+        "controls"
+      ]
+    },
+    {
+      "name": "Storage & network",
+      "pages": [
+        "devices",
+        "usb",
+        "mx4sio",
+        "hdd",
+        "ilink",
+        "mmce",
+        "cd-dvd",
+        "network",
+        "smb"
+      ]
+    },
+    {
+      "name": "Customize",
+      "pages": [
+        "settings",
+        "configuration",
+        "themes",
+        "languages"
+      ]
+    },
+    {
+      "name": "Reference",
+      "pages": [
+        "wiki",
+        "known-issues",
+        "troubleshooting",
+        "building",
+        "developers",
+        "credits",
+        "legacy-manual"
+      ]
+    }
+  ],
+  "pages": {
+    "index": {
+      "title": "Home",
+      "description": "Simple Media System for PlayStation 2: current downloads, supported media, storage, converter and open playback issues.",
+      "icon": "home",
+      "section": "Start"
+    },
+    "getting-started": {
+      "title": "Getting Started",
+      "description": "Play your first SMS file: install, enable storage, navigate the device browser and open supported media.",
+      "icon": "play",
+      "section": "Start"
+    },
+    "install": {
+      "title": "Install & Update",
+      "description": "Install and update SMS using standard, packed or diagnostic ELFs, with the correct build identity and settings location.",
+      "icon": "install",
+      "section": "Start"
+    },
+    "releases": {
+      "title": "Downloads & Releases",
+      "description": "SMS rolling versus stable downloads, player and converter packages, build manifests, hashes and synthetic test media.",
+      "icon": "releases",
+      "section": "Start"
+    },
+    "video": {
+      "title": "Video Playback",
+      "description": "SMS video containers, codecs, source limits, previously reported profiles, controls, conversion guidance and open regressions.",
+      "icon": "play",
+      "section": "Playing media"
+    },
+    "audio": {
+      "title": "Audio & Playlists",
+      "description": "SMS audio formats, sample/channel constraints, M3U playlists, folder playback, shuffle and repeat behavior.",
+      "icon": "play",
+      "section": "Playing media"
+    },
+    "pictures": {
+      "title": "Pictures",
+      "description": "Baseline JPEG viewing in SMS, image-folder playback, rotation, sizing and current viewer limits.",
+      "icon": "coverflow",
+      "section": "Playing media"
+    },
+    "subtitles": {
+      "title": "Subtitles",
+      "description": "External SRT/SUB/TXT text, AVI DXSB bitmap subtitles, font/encoding settings and converter burn-in distinctions.",
+      "icon": "book",
+      "section": "Playing media"
+    },
+    "converter": {
+      "title": "Media Converter",
+      "description": "SMS Media Converter presets, multi-audio output, text-subtitle burn-in, source SD sizing and PASS/WARN/FAIL limits.",
+      "icon": "settings",
+      "section": "Playing media"
+    },
+    "controls": {
+      "title": "Controls",
+      "description": "SMS browser, video, audio and picture controls; sync adjustment and documentation keyboard shortcuts.",
+      "icon": "controls",
+      "section": "Playing media"
+    },
+    "devices": {
+      "title": "Devices Overview",
+      "description": "SMS storage namespaces, startup choices, driver exclusions and links to USB, MX4SIO, HDD, MMCE, i.LINK and network setup.",
+      "icon": "folder",
+      "section": "Storage & network"
+    },
+    "usb": {
+      "title": "USB Mass Storage",
+      "description": "USB mass storage in SMS: FAT32/exFAT, device startup, file-size limits and the open USB stutter report.",
+      "icon": "usb",
+      "section": "Storage & network"
+    },
+    "mx4sio": {
+      "title": "MX4SIO microSD",
+      "description": "MX4SIO microSD playback in SMS: setup, mass device naming, driver constraints and file-size/performance limits.",
+      "icon": "usb",
+      "section": "Storage & network"
+    },
+    "hdd": {
+      "title": "Internal HDD",
+      "description": "SMS internal HDD access through APA/PFS or ATA/exFAT, driver exclusions, preparation and source limits.",
+      "icon": "hdd",
+      "section": "Storage & network"
+    },
+    "ilink": {
+      "title": "i.LINK / FireWire",
+      "description": "SMS i.LINK/FireWire SBP-2 storage, required physical connector, setup, mass naming and device test limits.",
+      "icon": "http",
+      "section": "Storage & network"
+    },
+    "mmce": {
+      "title": "MMCE",
+      "description": "SMS MMCE support for SD2PSX and MemCard PRO2: firmware/card setup, slot names and SIO2 driver exclusions.",
+      "icon": "mmce",
+      "section": "Storage & network"
+    },
+    "cd-dvd": {
+      "title": "CD / DVD / CDDA",
+      "description": "SMS optical media: CDDAFS, DVD-Video, data discs and audio CD paths, with preserved historical guidance.",
+      "icon": "ps1",
+      "section": "Storage & network"
+    },
+    "network": {
+      "title": "Network & UDPFS",
+      "description": "SMS static IP, HOST/SMB/UDPFS choices, explicit restart boundaries and folder-served UDPFS setup.",
+      "icon": "smb",
+      "section": "Storage & network"
+    },
+    "smb": {
+      "title": "SMB Shares",
+      "description": "SMS SMB1/CIFS shares: on-screen configuration, server compatibility, credentials, networking and troubleshooting.",
+      "icon": "smb",
+      "section": "Storage & network"
+    },
+    "settings": {
+      "title": "Settings Reference",
+      "description": "SMS display, device, browser and player settings, language toggle, saved configuration and driver restart behavior.",
+      "icon": "settings",
+      "section": "Customize"
+    },
+    "configuration": {
+      "title": "Config Files & Paths",
+      "description": "Where SMS.cfg, SMS.smb, IPCONFIG.DAT, language, skin, palette and font files live for each launch/fallback path.",
+      "icon": "book",
+      "section": "Customize"
+    },
+    "themes": {
+      "title": "Themes & Skins",
+      "description": "SMS SMI skins and artwork, boot-folder/card lookup, saved-skin testing and deliberate HD gradient behavior.",
+      "icon": "themes",
+      "section": "Customize"
+    },
+    "languages": {
+      "title": "Languages & Fonts",
+      "description": "Install and translate SMS language packs: 311 strings, matching downloads, code pages, Spanish and font limits.",
+      "icon": "languages",
+      "section": "Customize"
+    },
+    "wiki": {
+      "title": "Wiki & Guide Index",
+      "description": "Complete SMS guide index with the searchable manual, native GitHub wiki and versioned Markdown mirror.",
+      "icon": "book",
+      "section": "Reference"
+    },
+    "known-issues": {
+      "title": "Known Issues & Testing",
+      "description": "Dated SMS issue status: reproduced fixes, unconfirmed console regressions, converter acceptance and the poster-grid request.",
+      "icon": "troubleshoot",
+      "section": "Reference"
+    },
+    "troubleshooting": {
+      "title": "Troubleshooting",
+      "description": "SMS playback, storage, network and config troubleshooting, diagnostic labels and reproducible bug reports.",
+      "icon": "troubleshoot",
+      "section": "Reference"
+    },
+    "building": {
+      "title": "Building from Source",
+      "description": "Build SMS with its existing GCC/Docker toolchain, separate target variants and embedded IOP module requirements.",
+      "icon": "troubleshoot",
+      "section": "Reference"
+    },
+    "developers": {
+      "title": "Contributing & Architecture",
+      "description": "SMS repository architecture, host tests, IOP ABI constraints, converter development, docs generation and wiki maintenance.",
+      "icon": "fork-gaps",
+      "section": "Reference"
+    },
+    "credits": {
+      "title": "Credits & Sources",
+      "description": "SMS authors, fork contributors, component provenance, documentation theme sources and evidence references.",
+      "icon": "credits",
+      "section": "Reference"
+    },
+    "legacy-manual": {
+      "title": "Historical Manual",
+      "description": "Preserved SMS DocBook and MPEG-2 encoding material, clearly distinguished from the maintained manual.",
+      "icon": "book",
+      "section": "Reference"
+    }
+  }
+}

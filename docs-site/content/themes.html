@@ -1,0 +1,133 @@
+<h1>Themes &amp; Skins</h1>
+<p class="lead">SMS ships with a finished look out of the box — a full-screen desktop background, a set of device
+and file icons, and a boot splash — but the desktop background is skinnable. This page explains the
+<b>desktop skin</b> (a <code>.smi</code> background image), where SMS looks for it, and what this fork's
+refreshed artwork adds.</p>
+
+<div class="callout info"><div class="h">ℹ You don't need a skin to use SMS</div>
+Skinning is optional. A fresh install uses the built-in desktop and icons.
+A skin only replaces the <b>appearance</b> — it never changes which devices or formats SMS supports. If you never
+touch the skin settings, you simply keep the default look.</div>
+
+<h2 id="skin-engine">The skin engine</h2>
+<p>SMS has always had a lightweight skin engine. The one thing it lets you replace is the <b>desktop background</b>,
+by pointing SMS at a <code>.smi</code> skin file:</p>
+
+<table>
+<thead><tr><th>File</th><th>Extension</th><th>What it changes</th></tr></thead>
+<tbody>
+<tr><td>Desktop skin</td><td><code>.smi</code></td><td>The full-screen background behind the device menu, file browser and status line — the "wallpaper".</td></tr>
+</tbody>
+</table>
+
+<p>A <code>.smi</code> is an <b>IPU-encoded image</b> — a compact picture format the PlayStation 2's IPU hardware
+decodes directly, the same colour pipeline SMS uses to draw video. When a desktop skin is set and loads successfully,
+its picture is stretched to fill the screen and <b>replaces the default background</b>; if no skin is set (or a skin
+file fails to load), SMS falls back to its built-in desktop.</p>
+
+<div class="callout info"><div class="h">ℹ A note on <code>.mbf</code> files</div>
+Alongside the skin setting you may see a separate <code>.mbf</code> option. Despite living near the skin settings,
+<code>.mbf</code> is <b>not</b> a background image — it is an optional custom <b>font</b> used to draw text, most useful
+for subtitle scripts that need characters the built-in font doesn't cover. It changes how <i>text</i> looks, not the
+wallpaper. Subtitle rendering is covered on the <a href="subtitles.html">Subtitles</a> page.</div>
+
+<div class="callout info"><div class="h">ℹ Where skins are chosen</div>
+The desktop skin name is an ordinary SMS setting. You pick it from the on-screen menus
+alongside the other player options, and — like every other setting — it is written to your saved configuration so
+it persists across reboots. See <a href="settings.html">Settings Reference</a> for how the settings menu is laid out
+and how configuration is saved.</div>
+
+<h2 id="this-fork">This fork's look</h2>
+<p>This build ships with a <b>refreshed desktop</b> and a <b>full set of device icons</b> on top of the classic
+skin engine. The default artwork is separate from skin loading; the October work also adds skin-input validation and a late-config repaint fix. Compared with older SMS builds you get:</p>
+
+<ul class="checklist">
+<li>A redrawn full-screen <b>desktop background</b> and a matching <b>boot splash</b> shown while SMS starts up.</li>
+<li>A complete, consistent set of <b>device icons</b> — including a dedicated <b>MX4SIO</b> microSD icon (older builds
+reused another device's icon for it), plus icons for the internal HDD, MMCE, i.LINK and SMB.</li>
+<li>Redrawn <b>file and status icons</b> used throughout the browser and menus.</li>
+</ul>
+
+<p>These are baked into the program itself, so they are the same on every device you boot from. Applying a custom
+<code>.smi</code> skin overrides the desktop background on top of them; the icons stay as the built-in set.</p>
+
+<h2 id="applying">Applying a skin</h2>
+<p>SMS looks for skin files in a <code>Skins</code> folder, and the location depends on how SMS was started:</p>
+
+<div class="steps">
+<div class="step"><h3>Use the launch folder first</h3>
+<p>On a remountable launch source, including a memory-card boot, SMS first tries
+<code>Skins/MyTheme.smi</code> beside the ELF. For <code>mc1:/APPS/SMS.elf</code>, that is
+<code>mc1:/APPS/Skins/MyTheme.smi</code>.</p></div>
+<div class="step"><h3>Check the card fallback</h3>
+<p>If the launch-folder skin cannot be read, SMS tries <code>mc?:/SMS/Skins/MyTheme.smi</code> on
+the configured card slot. See <a href="configuration.html#assets">asset lookup order</a> rather than assuming
+the presence of a memory card changes the primary path.</p></div>
+<div class="step"><h3>Select the skin, then save</h3>
+<p>Put the <code>.smi</code> file in the appropriate <code>Skins</code> folder, choose it
+from the on-screen menu, and save your settings so it is remembered. On the next redraw the desktop background changes
+to your skin.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">If a skin doesn't appear</div>
+Make sure the file has the exact <code>.smi</code> extension and sits directly in the <code>Skins</code> folder SMS is
+looking in (memory card <i>or</i> boot device, per above), and that the name you selected matches the file name. If a
+skin file can't be read or isn't a valid IPU image, SMS quietly falls back to its built-in desktop rather than showing
+an error — so a missing background usually means a wrong path, name or file format.</div>
+
+<h2 id="making-a-skin">Making a skin</h2>
+<p>Because <code>.smi</code> is an IPU-encoded image and not a plain PNG or JPEG, you don't just rename a picture — the
+image has to be <b>converted into the IPU format</b> with a converter tool first. The workflow, conceptually, is:</p>
+
+<div class="steps">
+<div class="step"><h3>Start from a full-screen image</h3>
+<p>Design your wallpaper at a normal screen resolution. SMS stretches the skin to fill the display, so a 4:3 image sized
+for standard-definition output gives the most predictable result.</p></div>
+<div class="step"><h3>Convert it to <code>.smi</code></h3>
+<p>Run the image through an IPU converter to produce the <code>.smi</code> file. This is the step that turns an
+ordinary picture into something SMS's IPU decoder can load.</p></div>
+<div class="step"><h3>Drop it in <code>Skins</code> and select it</h3>
+<p>Copy the finished <code>.smi</code> into the <code>Skins</code> folder as in <a href="#applying">Applying a skin</a>,
+pick it on-screen, and save.</p></div>
+</div>
+
+<details class="deep"><summary>Why isn't a skin just a PNG or JPEG?</summary>
+<p>The desktop skin loads through the PS2's IPU hardware, which decodes a specific image format rather than PNG/JPEG.
+Converting your picture to <code>.smi</code> up front means SMS can load and display the background quickly using the
+same hardware path it uses for video, without doing a general-purpose image decode every time it draws the desktop.
+The device and file icons in this fork are handled by a separate artwork pipeline and are built into the program, so
+they aren't part of the <code>.smi</code> skin.</p></details>
+
+<h2 id="device-icons">Device icons</h2>
+<p>Every storage source in SMS has its own icon in the top device menu, so you can tell at a glance which device is
+selected. This fork ships a distinct icon for each:</p>
+
+<table data-sortable>
+<thead><tr><th>Device</th><th>Icon shows</th></tr></thead>
+<tbody>
+<tr><td>USB</td><td>USB mass-storage drive</td></tr>
+<tr><td>MX4SIO (microSD)</td><td>A dedicated microSD icon — new in this fork; older builds reused another device's icon</td></tr>
+<tr><td>Internal HDD</td><td>Hard-disk drive</td></tr>
+<tr><td>i.LINK</td><td>i.LINK / IEEE&nbsp;1394 storage</td></tr>
+<tr><td>MMCE (SD2PSX / MemCard PRO2)</td><td>Memory-card-slot storage device</td></tr>
+<tr><td>SMB network share</td><td>Network share</td></tr>
+<tr><td>CD / DVD</td><td>Optical disc — data CD or DVD</td></tr>
+<tr><td>Audio CD (CDDA)</td><td>Audio disc</td></tr>
+</tbody>
+</table>
+
+<p>The disc icon reflects the kind of disc in the drive — a data CD, a DVD and an audio CD are shown differently — so
+the device menu stays informative even when the same optical drive holds different media. See
+<a href="devices.html">Devices Overview</a> for how the device menu itself works.</p>
+
+<h2 id="hd-known-issue">HD output deliberately uses a gradient</h2>
+<div class="callout info"><div class="h">720p / 1080i background behavior</div>
+<p>In 720p and 1080i modes SMS uses a plain gradient instead of loading full-screen desktop artwork, because the HD framebuffer consumes the VRAM needed by that texture. Use an SD mode when checking a wallpaper. This deliberate fallback is separate from <a href="known-issues.html#skin">#27's skin-after-restart report</a>.</p></div>
+<p>On a remountable launch path, skins are tried in <code>Skins/</code> beside the ELF first, even on memory-card boots; the configured card's <code>SMS/Skins/</code> is a fallback. See <a href="configuration.html#assets">asset lookup order</a>. Test skin persistence after saving and relaunching.</p>
+<h2 id="see-also">See also</h2>
+<div class="grid">
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Where skin names live &amp; how config saves</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>The device menu &amp; icons in context</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When something looks wrong</span></a>
+<a class="tile" href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span><b>Credits &amp; Sources</b><span>Artwork &amp; contributors</span></a>
+</div>

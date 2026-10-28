@@ -1,53 +1,27 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Settings Reference · SMS Docs</title>
-<meta name="description" content="The complete SMS settings reference — every option in the Display, Device, Browser and Player menus, with what each does, its values, and where your configuration is saved.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Settings Reference · SMS Docs</title><meta name="description" content="SMS display, device, browser and player settings, language toggle, saved configuration and driver restart behavior.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/settings.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Settings Reference · SMS Docs"><meta property="og:description" content="SMS display, device, browser and player settings, language toggle, saved configuration and driver restart behavior.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html" class="active"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content"><h1>Settings Reference</h1>
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html" class="active" aria-current="page"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
+<h1>Settings Reference</h1>
 <p class="lead">This is the full reference for the SMS settings menu — every option, grouped exactly the way SMS groups
 them, with what each one does and the values it accepts. If you only want to turn a storage device on, jump to
 <a href="#device-settings">Device settings</a>; if you're tuning subtitles or the picture, see
@@ -77,7 +51,7 @@ the last four are actions.</p>
 </tbody>
 </table>
 
-<div class="callout amber"><div class="h">⚠ Labels come straight from the app</div>
+<div class="callout amber"><div class="h">Labels come straight from the app</div>
 Every option name and value on this page is taken from the SMS build's own on-screen strings, so it should match what
 you see on the TV. Wording can differ slightly if you load a translated language file, but the layout and behaviour are
 the same.</div>
@@ -107,7 +81,7 @@ without rebooting.</p>
 </tbody>
 </table>
 
-<div class="callout red"><div class="h">⚠ Shared resources — choose one member of each pair</div>
+<div class="callout red"><div class="h">Shared resources — choose one member of each pair</div>
 <ul>
 <li><b>MX4SIO and MMCE</b> both use the SIO2 / memory-card-slot bus. Only one can be active at a time — enable the one
 you're using, not both.</li>
@@ -165,7 +139,7 @@ system once and never touch the rest.</p>
 <tbody>
 <tr><td><b>TV system</b></td><td>Chooses the video standard SMS outputs.</td><td>NTSC / PAL</td></tr>
 <tr><td><b>Character set</b></td><td>The code page used when drawing text (menus, file names, subtitles) — pick the one that matches your language/filenames.</td><td>cycles through the built-in character sets</td></tr>
-<tr><td><b>Language</b></td><td>The interface language. The default is <b>English</b>; other languages appear if their language file is present.</td><td>cycles available languages</td></tr>
+<tr><td><b>Language</b></td><td>English or the installed external <code>SMS.lng</code> pack; this row does not list every translation in the download ZIP. See <a href="languages.html">Languages &amp; Fonts</a>.</td><td>English / installed external pack</td></tr>
 <tr><td><b>Adjust image left / right / up / down</b></td><td>Nudge the whole picture to centre it on your TV. Four separate items, one per direction.</td><td>press to nudge</td></tr>
 <tr><td><b>Advanced settings…</b></td><td>Opens the advanced display sub-menu below (resolution, colour depth, sync parameters). Only needed for HD/VESA modes or fine tuning.</td><td>opens sub-menu</td></tr>
 </tbody>
@@ -188,10 +162,8 @@ picture that doesn't sync — the defaults are fine for standard NTSC/PAL. Chang
 </tbody>
 </table>
 
-<div class="callout amber"><div class="h">⚠ HD modes and the background</div>
-SMS supports higher-resolution modes (including a 720p framebuffer) via these advanced settings, but on this fork a
-full-screen wallpaper at 720p is still being tuned. If you switch to an HD mode and the desktop background looks wrong,
-drop back to a standard mode. Standard NTSC/PAL is the tested, reliable path for now.</div>
+<div class="callout amber"><div class="h">HD modes and the background</div>
+The 720p/1080i modes deliberately use a gradient instead of the desktop wallpaper because of VRAM use. A gradient in those modes is not the saved-skin restart report. See <a href="themes.html#hd-known-issue">HD background behavior</a> and <a href="known-issues.html#skin">the open skin report</a>.</div>
 
 <h2 id="browser-settings">Browser settings — the file browser's look</h2>
 <p>These change how the file browser looks and behaves, and what SMS does on the reset button / on exit. Colour items
@@ -293,33 +265,23 @@ Until then you can change anything and simply not save. There is also a button s
 (<kbd>Select</kbd>+<kbd>Square</kbd>) that saves settings from the browser.</p>
 
 <div class="steps">
-<div class="step"><h3>Make your changes</h3><p>Set your Autostart toggles, colours, subtitle look, and so on in the sub-menus. Try devices with <b>Start … support</b> first if you like.</p></div>
-<div class="step"><h3>Run Save settings</h3><p>Back out to the top of the SMS menu (Triangle), select <b>Save settings</b>, and confirm.</p></div>
-<div class="step"><h3>Reboot to confirm</h3><p>Your Autostart choices and preferences come back on the next boot.</p></div>
+<div class="step"><h3 id="make-your-changes">Make your changes</h3><p>Set your Autostart toggles, colours, subtitle look, and so on in the sub-menus. Try devices with <b>Start … support</b> first if you like.</p></div>
+<div class="step"><h3 id="run-save-settings">Run Save settings</h3><p>Back out to the top of the SMS menu (Triangle), select <b>Save settings</b>, and confirm.</p></div>
+<div class="step"><h3 id="reboot-to-confirm">Reboot to confirm</h3><p>Your Autostart choices and preferences come back on the next boot.</p></div>
 </div>
 
-<div class="callout info"><div class="h">ℹ Where the config is stored (and the fork's twist)</div>
-Stock SMS saves its configuration to the memory card at <code>mc0:/SMS/SMS.cfg</code>. On this fork the config simply
-<b>follows the boot device</b>, card or no card: launched from USB, HDD, MX4SIO, MMCE, i.LINK or writable UDPFS, SMS
-writes <code>SMS.cfg</code> next to the ELF on that same device, so the settings travel with the drive you booted from.
-Either way, one <b>Save settings</b> is all it takes. Deleting the config file gives you clean defaults again — where
-nothing auto-starts. The separate <code>SMS.smb</code> server list follows the same directory.
-<code>IPCONFIG.DAT</code> is the one exception: it goes to <code>mc0:/SYS-CONF/</code> when a card is fitted, because
-that is where the PS2 browser and other titles look for it, and falls back to the ELF's folder when there is no card.</div>
-
-<div class="callout amber"><div class="h">⚠ Clean defaults auto-start nothing</div>
-On a first boot or after clearing the config, <b>no storage device is started automatically</b>. This is deliberate on
-this fork: you turn on exactly what you need. If SMS boots and you don't see your device, that's expected — enable its
-<b>Autostart</b> (or use <b>Start … support</b>), then <b>Save settings</b>.</div>
+<div class="callout info"><div class="h">Configuration location</div>
+<p>Use <b>Save settings</b> after changes. On a remountable launch source, <code>SMS.cfg</code> normally lives beside the ELF even when a memory card is fitted; <code>SMS.smb</code> follows its resolved directory. See <a href="configuration.html">Config Files &amp; Paths</a> for card-slot, network-file and fallback rules.</p><p><code>IPCONFIG.DAT</code> has separate card/boot-folder rules. Back up the active config before renaming it to test clean defaults.</p>
+</div>
 
 <h2 id="see-also">See also</h2>
 <div class="grid">
-<a class="tile" href="devices.html"><span class="em">🗂️</span><b>Devices Overview</b><span>Which device is which, and the bus rules</span></a>
-<a class="tile" href="network.html"><span class="em">📡</span><b>Network Setup</b><span>On-screen IP, SMB &amp; UDPFS</span></a>
-<a class="tile" href="subtitles.html"><span class="em">💬</span><b>Subtitles</b><span>Loading, styling &amp; placement</span></a>
-<a class="tile" href="themes.html"><span class="em">🎨</span><b>Themes &amp; Skins</b><span>Skins, palette &amp; artwork</span></a>
-<a class="tile" href="mx4sio.html"><span class="em">💠</span><b>MX4SIO</b><span>Enable &amp; play from microSD</span></a>
-<a class="tile" href="troubleshooting.html"><span class="em">🛠️</span><b>Troubleshooting</b><span>When a device or file won't behave</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>Which device is which, and the bus rules</span></a>
+<a class="tile" href="network.html"><span class="icon icon-smb" aria-hidden="true"></span><b>Network Setup</b><span>On-screen IP, SMB &amp; UDPFS</span></a>
+<a class="tile" href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span><b>Subtitles</b><span>Loading, styling &amp; placement</span></a>
+<a class="tile" href="themes.html"><span class="icon icon-themes" aria-hidden="true"></span><b>Themes &amp; Skins</b><span>Skins, palette &amp; artwork</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>Enable &amp; play from microSD</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When a device or file won't behave</span></a>
 </div>
 
 <details class="deep"><summary>Why is there both "HDD APA" and "HDD BDM" — aren't they the same drive?</summary>
@@ -334,19 +296,13 @@ formatted. See <a href="hdd.html">Internal HDD</a>.</p>
 <details class="deep"><summary>I enabled Autostart MX4SIO but MMCE stopped working (or vice-versa)</summary>
 <p>That's expected. MX4SIO and MMCE both drive the SIO2 / memory-card-slot bus, so SMS can only run one of them at a
 time. Turn off the Autostart for the one you're not using, enable the one you are, and <a href="#saving">save</a>. If you
-need to switch during a session, you can turn one off and use <b>Start … support</b> for the other. See
+need to switch after one has claimed SIO2, save the intended choice and relaunch SMS. Disabling Autostart does not unload an already running driver. See
 <a href="devices.html">Devices Overview</a>.</p>
 </details>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+
+<div class="note"><p><b>Boot-source exception:</b> optional Autostart flags default off, but SMS may start/remount the device holding its ELF/config during startup. A source already visible after first boot does not mean another Autostart choice was saved. See <a href="configuration.html">configuration discovery</a>.</p></div>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

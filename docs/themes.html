@@ -1,53 +1,26 @@
-<!doctype html><html lang="en"><head>
+<!doctype html>
+<html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Themes &amp; Skins · SMS Docs</title>
-<meta name="description" content="Customise how SMS looks — the .smi desktop skin engine, this fork's refreshed desktop artwork and device icons, where SMS looks for skins, and how skins are made.">
-<link rel="stylesheet" href="assets/style.css">
+<title>Themes &amp; Skins · SMS Docs</title><meta name="description" content="SMS SMI skins and artwork, boot-folder/card lookup, saved-skin testing and deliberate HD gradient behavior.">
+<link rel="canonical" href="https://nathanneurotic.github.io/Simple-Media-System/themes.html"><link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<meta property="og:type" content="website"><meta property="og:site_name" content="SMS Docs">
+<meta property="og:title" content="Themes &amp; Skins · SMS Docs"><meta property="og:description" content="SMS SMI skins and artwork, boot-folder/card lookup, saved-skin testing and deliberate HD gradient behavior.">
+<meta property="og:image" content="https://nathanneurotic.github.io/Simple-Media-System/assets/sms-icon.png"><meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/style.css"><link rel="stylesheet" href="assets/sms.css">
 </head><body data-base="">
+<a class="skip-link" href="#main">Skip to content</a>
 <header class="topbar">
-  <button class="menu-btn" aria-label="Menu">☰</button>
-  <a class="brand" href="index.html">
-    <span class="psbtns"><i class="tri">&#9651;</i><i class="cir">&#9711;</i><i class="cro">&#10005;</i><i class="squ">&#9633;</i></span>
-    SMS <small>DOCS</small></a>
-  <div class="search">
-    <span class="ico">🔎</span>
-    <input id="q" type="search" placeholder="Search devices, formats, settings, subtitles…  ( / )" autocomplete="off">
-    <kbd>/</kbd>
-    <div id="results"></div>
-  </div>
+ <button class="menu-btn" type="button" aria-label="Open navigation" aria-controls="site-nav" aria-expanded="false">☰</button>
+ <a class="brand sms-brand" href="index.html"><img src="assets/sms-icon.png" alt="" width="38" height="38"><span>SMS <small>DOCS</small></span></a>
+ <div class="topbar-actions"><button id="orb-toggle" class="topbar-btn orb-toggle" type="button" aria-pressed="false" aria-label="Enable cursor orbs"><span class="orb-toggle-symbol" aria-hidden="true">✧</span><span class="orb-toggle-label">Orbs off</span></button>
+ <a class="topbar-btn primary" href="releases.html" aria-label="Downloads"><span class="icon icon-releases" aria-hidden="true"></span><span>Downloads</span></a>
+ <a class="topbar-btn" href="https://github.com/NathanNeurotic/Simple-Media-System" aria-label="GitHub"><span class="icon icon-github" aria-hidden="true"></span><span>GitHub</span></a></div>
+ <div class="search" role="search"><span class="ico" aria-hidden="true"></span><label class="sr-only" for="q">Search SMS documentation</label>
+ <input id="q" type="search" placeholder="Search playback, devices, settings…" autocomplete="off" aria-controls="results" aria-expanded="false"><kbd aria-hidden="true">/</kbd>
+ <div id="results" aria-label="Search results"></div><span id="search-status" class="sr-only" role="status" aria-live="polite"></span></div>
 </header>
-<div class="layout">
-  <nav class="sidebar">
-    <a href="index.html"><span class="em">🏠</span>Home</a>
-    <h4>Start</h4>
-    <a href="getting-started.html"><span class="em">🚀</span>Getting Started</a>
-    <a href="install.html"><span class="em">📥</span>Install &amp; First Boot</a>
-    <h4>Playing media</h4>
-    <a href="video.html"><span class="em">🎬</span>Video Playback</a>
-    <a href="audio.html"><span class="em">🎵</span>Audio &amp; Playlists</a>
-    <a href="pictures.html"><span class="em">🖼️</span>Pictures</a>
-    <a href="subtitles.html"><span class="em">💬</span>Subtitles</a>
-    <h4>Storage &amp; devices</h4>
-    <a href="devices.html"><span class="em">🗂️</span>Devices Overview</a>
-    <a href="usb.html"><span class="em">🔌</span>USB</a>
-    <a href="mx4sio.html"><span class="em">💠</span>MX4SIO (microSD)</a>
-    <a href="hdd.html"><span class="em">💽</span>Internal HDD</a>
-    <a href="ilink.html"><span class="em">🔗</span>i.LINK</a>
-    <a href="mmce.html"><span class="em">🧩</span>MMCE (SD2PSX)</a>
-    <a href="smb.html"><span class="em">🌐</span>SMB Network</a>
-    <a href="cd-dvd.html"><span class="em">💿</span>CD / DVD / CDDA</a>
-    <h4>Setup &amp; theming</h4>
-    <a href="settings.html"><span class="em">🔧</span>Settings Reference</a>
-    <a href="network.html"><span class="em">📡</span>Network Setup</a>
-    <a href="themes.html" class="active"><span class="em">🎨</span>Themes &amp; Skins</a>
-    <a href="converter.html"><span class="em">🎛️</span>Media Converter</a>
-    <h4>Reference</h4>
-    <a href="troubleshooting.html"><span class="em">🛠️</span>Troubleshooting</a>
-    <a href="building.html"><span class="em">🧰</span>Building from Source</a>
-    <a href="releases.html"><span class="em">📦</span>Releases &amp; Changelog</a>
-    <a href="credits.html"><span class="em">🙏</span>Credits &amp; Sources</a>
-  </nav>
-  <main class="content">
+<div class="layout"><nav class="sidebar" id="site-nav" aria-label="Documentation"><div class="sidebar-brand-sub">PLAYSTATION 2 // SIMPLE MEDIA SYSTEM</div><h4>Start</h4><a href="index.html"><span class="icon icon-home" aria-hidden="true"></span>Home</a><a href="getting-started.html"><span class="icon icon-play" aria-hidden="true"></span>Getting Started</a><a href="install.html"><span class="icon icon-install" aria-hidden="true"></span>Install &amp; Update</a><a href="releases.html"><span class="icon icon-releases" aria-hidden="true"></span>Downloads &amp; Releases</a><h4>Playing media</h4><a href="video.html"><span class="icon icon-play" aria-hidden="true"></span>Video Playback</a><a href="audio.html"><span class="icon icon-play" aria-hidden="true"></span>Audio &amp; Playlists</a><a href="pictures.html"><span class="icon icon-coverflow" aria-hidden="true"></span>Pictures</a><a href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span>Subtitles</a><a href="converter.html"><span class="icon icon-settings" aria-hidden="true"></span>Media Converter</a><a href="controls.html"><span class="icon icon-controls" aria-hidden="true"></span>Controls</a><h4>Storage &amp; network</h4><a href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span>Devices Overview</a><a href="usb.html"><span class="icon icon-usb" aria-hidden="true"></span>USB Mass Storage</a><a href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span>MX4SIO microSD</a><a href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span>Internal HDD</a><a href="ilink.html"><span class="icon icon-http" aria-hidden="true"></span>i.LINK / FireWire</a><a href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span>MMCE</a><a href="cd-dvd.html"><span class="icon icon-ps1" aria-hidden="true"></span>CD / DVD / CDDA</a><a href="network.html"><span class="icon icon-smb" aria-hidden="true"></span>Network &amp; UDPFS</a><a href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span>SMB Shares</a><h4>Customize</h4><a href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span>Settings Reference</a><a href="configuration.html"><span class="icon icon-book" aria-hidden="true"></span>Config Files &amp; Paths</a><a href="themes.html" class="active" aria-current="page"><span class="icon icon-themes" aria-hidden="true"></span>Themes &amp; Skins</a><a href="languages.html"><span class="icon icon-languages" aria-hidden="true"></span>Languages &amp; Fonts</a><h4>Reference</h4><a href="wiki.html"><span class="icon icon-book" aria-hidden="true"></span>Wiki &amp; Guide Index</a><a href="known-issues.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Known Issues &amp; Testing</a><a href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Troubleshooting</a><a href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span>Building from Source</a><a href="developers.html"><span class="icon icon-fork-gaps" aria-hidden="true"></span>Contributing &amp; Architecture</a><a href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span>Credits &amp; Sources</a><a href="legacy-manual.html"><span class="icon icon-book" aria-hidden="true"></span>Historical Manual</a></nav>
+<main class="content" id="main" tabindex="-1">
 <h1>Themes &amp; Skins</h1>
 <p class="lead">SMS ships with a finished look out of the box — a full-screen desktop background, a set of device
 and file icons, and a boot splash — but the desktop background is skinnable. This page explains the
@@ -55,7 +28,7 @@ and file icons, and a boot splash — but the desktop background is skinnable. T
 refreshed artwork adds.</p>
 
 <div class="callout info"><div class="h">ℹ You don't need a skin to use SMS</div>
-Skinning is entirely optional. On a fresh install SMS shows its built-in desktop and icons, and everything works.
+Skinning is optional. A fresh install uses the built-in desktop and icons.
 A skin only replaces the <b>appearance</b> — it never changes which devices or formats SMS supports. If you never
 touch the skin settings, you simply keep the default look.</div>
 
@@ -89,8 +62,7 @@ and how configuration is saved.</div>
 
 <h2 id="this-fork">This fork's look</h2>
 <p>This build ships with a <b>refreshed desktop</b> and a <b>full set of device icons</b> on top of the classic
-skin engine. Nothing about the engine changed — the new artwork is simply the default look you see before you apply
-any custom skin. Compared with older SMS builds you get:</p>
+skin engine. The default artwork is separate from skin loading; the October work also adds skin-input validation and a late-config repaint fix. Compared with older SMS builds you get:</p>
 
 <ul class="checklist">
 <li>A redrawn full-screen <b>desktop background</b> and a matching <b>boot splash</b> shown while SMS starts up.</li>
@@ -106,21 +78,21 @@ reused another device's icon for it), plus icons for the internal HDD, MMCE, i.L
 <p>SMS looks for skin files in a <code>Skins</code> folder, and the location depends on how SMS was started:</p>
 
 <div class="steps">
-<div class="step"><h3>Booted with a memory card</h3>
-<p>SMS looks on the memory card, under <code>mc0:/SMS/Skins/</code>. A desktop skin named <code>MyTheme</code> is loaded
-from <code>mc0:/SMS/Skins/MyTheme.smi</code>.</p></div>
-<div class="step"><h3>Booted from another device (this fork)</h3>
-<p>If SMS was launched from USB, HDD or another device and reads its settings there, it also looks for skins in a
-<code>Skins</code> folder <b>next to the SMS program</b> on that boot device — so a memory-card-less setup can still carry
-its own skins. This matches the way this fork saves configuration to the boot device. See
-<a href="settings.html">Settings Reference</a>.</p></div>
-<div class="step"><h3>Select the skin, then save</h3>
+<div class="step"><h3 id="use-the-launch-folder-first">Use the launch folder first</h3>
+<p>On a remountable launch source, including a memory-card boot, SMS first tries
+<code>Skins/MyTheme.smi</code> beside the ELF. For <code>mc1:/APPS/SMS.elf</code>, that is
+<code>mc1:/APPS/Skins/MyTheme.smi</code>.</p></div>
+<div class="step"><h3 id="check-the-card-fallback">Check the card fallback</h3>
+<p>If the launch-folder skin cannot be read, SMS tries <code>mc?:/SMS/Skins/MyTheme.smi</code> on
+the configured card slot. See <a href="configuration.html#assets">asset lookup order</a> rather than assuming
+the presence of a memory card changes the primary path.</p></div>
+<div class="step"><h3 id="select-the-skin-then-save">Select the skin, then save</h3>
 <p>Put the <code>.smi</code> file in the appropriate <code>Skins</code> folder, choose it
 from the on-screen menu, and save your settings so it is remembered. On the next redraw the desktop background changes
 to your skin.</p></div>
 </div>
 
-<div class="callout amber"><div class="h">⚠ If a skin doesn't appear</div>
+<div class="callout amber"><div class="h">If a skin doesn't appear</div>
 Make sure the file has the exact <code>.smi</code> extension and sits directly in the <code>Skins</code> folder SMS is
 looking in (memory card <i>or</i> boot device, per above), and that the name you selected matches the file name. If a
 skin file can't be read or isn't a valid IPU image, SMS quietly falls back to its built-in desktop rather than showing
@@ -131,13 +103,13 @@ an error — so a missing background usually means a wrong path, name or file fo
 image has to be <b>converted into the IPU format</b> with a converter tool first. The workflow, conceptually, is:</p>
 
 <div class="steps">
-<div class="step"><h3>Start from a full-screen image</h3>
+<div class="step"><h3 id="start-from-a-full-screen-image">Start from a full-screen image</h3>
 <p>Design your wallpaper at a normal screen resolution. SMS stretches the skin to fill the display, so a 4:3 image sized
 for standard-definition output gives the most predictable result.</p></div>
-<div class="step"><h3>Convert it to <code>.smi</code></h3>
+<div class="step"><h3 id="convert-it-to-smi">Convert it to <code>.smi</code></h3>
 <p>Run the image through an IPU converter to produce the <code>.smi</code> file. This is the step that turns an
 ordinary picture into something SMS's IPU decoder can load.</p></div>
-<div class="step"><h3>Drop it in <code>Skins</code> and select it</h3>
+<div class="step"><h3 id="drop-it-in-skins-and-select-it">Drop it in <code>Skins</code> and select it</h3>
 <p>Copy the finished <code>.smi</code> into the <code>Skins</code> folder as in <a href="#applying">Applying a skin</a>,
 pick it on-screen, and save.</p></div>
 </div>
@@ -171,31 +143,19 @@ selected. This fork ships a distinct icon for each:</p>
 the device menu stays informative even when the same optical drive holds different media. See
 <a href="devices.html">Devices Overview</a> for how the device menu itself works.</p>
 
-<h2 id="hd-known-issue">Known issue: HD video modes and the background</h2>
-<div class="callout amber"><div class="h">⚠ High-definition output can currently corrupt the desktop background</div>
-In the two high-definition modes — <b>720p and 1080i</b> — SMS does not draw the full-screen desktop artwork at all. The HD framebuffer occupies almost all of the PS2's video RAM, leaving nowhere safe for a full-screen background texture, so SMS paints a plain gradient backdrop there instead. Every standard-definition mode (480i, 480p, 576p and the VESA modes) is 640 pixels wide, fits comfortably, and shows the full artwork. Standard-definition <b>480i</b> output is unaffected — if you see a corrupted background at an HD
-mode, switch the display mode back to 480i as a workaround while a fix is in progress.</div>
-
-<p>This only affects how the background <i>looks</i> at HD modes — playback, browsing and all device access continue to
-work normally. If you don't run SMS at 720p/1080i you will never see it.</p>
-
+<h2 id="hd-known-issue">HD output deliberately uses a gradient</h2>
+<div class="callout info"><div class="h">720p / 1080i background behavior</div>
+<p>In 720p and 1080i modes SMS uses a plain gradient instead of loading full-screen desktop artwork, because the HD framebuffer consumes the VRAM needed by that texture. Use an SD mode when checking a wallpaper. This deliberate fallback is separate from <a href="known-issues.html#skin">#27's skin-after-restart report</a>.</p></div>
+<p>On a remountable launch path, skins are tried in <code>Skins/</code> beside the ELF first, even on memory-card boots; the configured card's <code>SMS/Skins/</code> is a fallback. See <a href="configuration.html#assets">asset lookup order</a>. Test skin persistence after saving and relaunching.</p>
 <h2 id="see-also">See also</h2>
 <div class="grid">
-<a class="tile" href="settings.html"><span class="em">🔧</span><b>Settings Reference</b><span>Where skin names live &amp; how config saves</span></a>
-<a class="tile" href="devices.html"><span class="em">🗂️</span><b>Devices Overview</b><span>The device menu &amp; icons in context</span></a>
-<a class="tile" href="troubleshooting.html"><span class="em">🛠️</span><b>Troubleshooting</b><span>When something looks wrong</span></a>
-<a class="tile" href="credits.html"><span class="em">🙏</span><b>Credits &amp; Sources</b><span>Artwork &amp; contributors</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Where skin names live &amp; how config saves</span></a>
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>The device menu &amp; icons in context</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When something looks wrong</span></a>
+<a class="tile" href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span><b>Credits &amp; Sources</b><span>Artwork &amp; contributors</span></a>
 </div>
-</main>
-  <aside class="toc"><div class="toc-h">On this page</div><nav id="toc-nav"></nav></aside>
-</div>
-<footer>
-  <p><b>SMS — Simple Media System</b> documentation. SMS was created by <b>Eugene Plotnikov</b> and is maintained by
-  the <a href="https://github.com/ps2homebrew">ps2homebrew</a> community; this site documents an enhanced,
-  storage-focused fork. Built on the work of many contributors — see <a href="credits.html">Credits &amp; Sources</a>.</p>
-  <p class="prov-inline">A community fork, not an official release. PlayStation 2 is a trademark of Sony Interactive
-  Entertainment; this project is unaffiliated. Sister documentation: the
-  <a href="https://nathanneurotic.github.io/POPSLoader/">POPStarter docs</a> and the RiptOPL docs.</p>
-</footer>
-<script src="assets/app.js"></script>
+</main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
+<footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
+<p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>
+<script src="data/search-index.js"></script><script src="assets/app.js"></script><script src="assets/orbs.js"></script>
 </body></html>

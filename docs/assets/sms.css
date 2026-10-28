@@ -1,0 +1,69 @@
+/* SMS-specific additions to the shared PS2 documentation theme.
+ * Base design: NathanNeurotic/Launchstation docs-site/static/assets/style.css. */
+:root { --ink3:#7e9dbd; --sms-header-height:64px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+.skip-link { position:fixed; left:12px; top:-100px; z-index:200; padding:12px 20px; background:#001b38; color:#e4f2ff; border:2px solid #00d2ff; }
+.skip-link:focus { top:8px; }
+:focus-visible { outline:2px solid #00d2ff; outline-offset:4px; }
+.sms-brand { gap:10px; font-size:22px; letter-spacing:2px; }
+.sms-brand img { border:1px solid var(--line2); border-radius:0; object-fit:cover; box-shadow:0 0 16px rgba(0,100,255,.35); }
+.sms-brand small { display:inline; font-size:10px; letter-spacing:2px; color:var(--ink2); }
+.sidebar-brand-sub { font-size:9px; }
+.sidebar a { min-height:38px; }
+.topbar-actions { flex-shrink:0; }
+.hero-sms { position:relative; overflow:hidden; border:1px solid var(--line2); background:linear-gradient(90deg,#000812 5%,rgba(0,8,18,.8) 60%,rgba(0,8,18,.35)), url("sms-wallpaper.png") center right/cover; padding:38px 32px; margin:0 0 30px; }
+.hero-sms h1 { max-width:12ch; font-size:clamp(36px,5vw,62px); line-height:1.02; margin:14px 0 24px; }
+.hero-sms .lead { max-width:52ch; color:#d3e9ff; }
+.eyebrow { font-family:var(--mono); color:var(--ps-cyan); text-transform:uppercase; letter-spacing:2px; font-size:11px; }
+.hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
+.hero-actions .btn { margin:0; }
+.hero-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:24px; }
+.hero-tags span { color:#9bdfff; border:1px solid var(--line2); background:rgba(0,10,28,.8); padding:4px 9px; font:10px var(--mono); letter-spacing:1px; }
+.release-strip { border-left:3px solid #00d2ff; background:#000c1e; padding:16px 20px; margin:20px 0; }
+.content p,.content li { overflow-wrap:anywhere; }
+.content h2,.content h3 { scroll-margin-top:calc(var(--sms-header-height) + 20px); }
+.content pre { max-width:100%; overflow:auto; }
+.content code { overflow-wrap:anywhere; }
+.table-scroll { overflow:auto; width:100%; margin:16px 0 24px; }
+.table-scroll table { margin:0; min-width:100%; }
+.content td,.content th { min-width:100px; }
+.content th { text-align:left; }
+.toc a { color:#8aa9ca; }
+.toc a:hover,.toc a.active { color:#8edcff; }
+.callout .h,.note .h { color:var(--ink-bright); }
+.audit-source { color:var(--ink2); font-size:13px; border-top:1px solid var(--line); padding-top:16px; margin-top:28px; }
+.ps2-orbs-canvas { position:fixed; inset:0; z-index:100; pointer-events:none; }
+footer .prov-inline { color:#89a6c5; }
+@media (max-width:980px) {
+ .topbar { gap:10px; padding-inline:12px; }
+ .topbar-btn { padding:8px; }
+ .topbar-actions > a:last-child { display:none; }
+ .hero-sms { padding:28px 22px; }
+}
+@media (max-width:768px) {
+ .topbar { flex-wrap:wrap; height:auto; min-height:62px; padding-block:10px; }
+ .sms-brand { font-size:19px; }
+ .sms-brand img { width:30px; height:30px; }
+ .topbar-actions { margin-left:auto; }
+ .search { order:4; width:100%; margin:0; }
+ .layout { display:block; }
+ .content { padding:25px 18px 60px; }
+ .sidebar { position:static; display:block; width:auto; height:auto; max-height:none; padding:16px; border-bottom:1px solid var(--line2); }
+ .menu-btn { display:none; }
+ .js .menu-btn { display:block; }
+ .js .sidebar { display:none; position:fixed; z-index:40; top:var(--sms-header-height); left:0; bottom:auto; width:min(320px,90vw); height:calc(100vh - var(--sms-header-height)); max-height:calc(100vh - var(--sms-header-height)); align-self:auto; overflow:auto; background:#000914; transform:none; }
+ .js .sidebar.open { display:block; }
+ .toc { display:none; }
+ .hero-sms h1 { font-size:42px; }
+}
+@media (prefers-reduced-motion:reduce) {
+ html { scroll-behavior:auto; }
+ *,*::before,*::after { animation:none !important; transition:none !important; }
+}
+@media print {
+ .topbar,.sidebar,.toc,.ps2-orbs-canvas,.skip-link { display:none !important; }
+ .layout { display:block; }
+ .content { padding:0; }
+ body,body::before,body::after,.hero-sms { color:#000 !important; background:#fff !important; }
+ .content a,.content p,.content li,.content h1,.content h2,.content h3 { color:#000 !important; text-shadow:none !important; }
+}

@@ -1,0 +1,156 @@
+<h1>Getting Started</h1>
+<p class="lead">This guide gets a video or song playing on your PlayStation 2 from start to finish, and
+teaches you the SMS interface along the way. If you can copy a file onto a USB stick, you can be watching
+it on your TV in a few minutes — no hard drive, no network adapter, no modchip required. We'll use a USB
+stick as the easy default; every other device works the same way once you know the layout.</p>
+
+<div class="callout info"><div class="h">ℹ Already installed?</div>
+This page assumes SMS is already on your console and you can launch it. If you still need to put SMS on
+your PS2, start with <a href="install.html">Install &amp; First Boot</a> and come back here once SMS is
+running.</div>
+
+<h2 id="the-screen">The SMS screen</h2>
+<p>The SMS browser is split into three stacked areas, each drawn inside its own rounded rectangle. Whichever
+area you are currently working in is highlighted. Learn these three and the whole interface makes sense.</p>
+
+<p><img src="images/usage-sms-maingui.png" alt="The SMS main browser, showing the device menu at the top, the file list in the middle, and the status line at the bottom" style="max-width:100%;border-radius:10px"></p>
+
+<div class="steps">
+<div class="step"><h3>1 · Device menu — top row</h3>
+<p>A horizontal row of <b>device icons</b> across the top: one icon for each storage source SMS has
+detected (USB, MX4SIO, the internal HDD, MMCE, a network share, a CD/DVD, and so on). This is where you
+choose <i>which device</i> to browse.</p></div>
+<div class="step"><h3>2 · File list — middle</h3>
+<p>The <b>file browser</b> for the device you picked: the folders and playable files on it. Directories,
+files and device roots use different icons so you can tell them apart at a glance. This is where you find
+and open your media.</p></div>
+<div class="step"><h3>3 · Status line — bottom</h3>
+<p>A thin bar at the bottom. The <b>current path</b> (where you are in the filesystem) is shown on the
+left, and a <b>clock</b> sits on the right. Watch the path here to keep track of how deep into a folder
+tree you have gone.</p></div>
+</div>
+
+<div class="callout info"><div class="h">ℹ How SMS browses</div>
+SMS reads the <b>raw filesystem</b> of a device and plays media wherever it happens to sit. There is no
+mandatory folder layout to follow and nothing special to name your files — drop a <code>.avi</code> or
+<code>.mp3</code> anywhere on the stick and SMS will list it. Only supported media files (and folders) are
+shown in the browser.</div>
+
+<h2 id="navigating">Navigating with the pad</h2>
+<p>Everything in the browser is done with the controller. The table below covers the buttons you need.
+The <b>device menu</b> and the <b>file list</b> each respond a little differently, so both are noted.</p>
+
+<table data-sortable>
+<thead><tr><th>Button</th><th>In the device menu</th><th>In the file list</th></tr></thead>
+<tbody>
+<tr><td><b>Left / Right</b></td><td>Move between device icons</td><td>Jump back up to the device menu</td></tr>
+<tr><td><b>Down</b></td><td>Enter the file list of the selected device</td><td>Move down one item</td></tr>
+<tr><td><b>Up</b></td><td>—</td><td>Move up one item</td></tr>
+<tr><td><b>Cross&nbsp;✕</b></td><td>Select the highlighted device and load its file list</td><td>Open the selected folder, or play the selected file</td></tr>
+<tr><td><b>Triangle&nbsp;△</b></td><td>—</td><td>Go up one level (folder → parent → back to the device list)</td></tr>
+<tr><td><b>L1 / L2</b></td><td>—</td><td>Page-scroll a long list up / down</td></tr>
+<tr><td><b>Select + Circle&nbsp;○</b></td><td colspan="2">Power the PS2 off from the browser</td></tr>
+</tbody>
+</table>
+
+<p>In short: <b>Left/Right</b> picks a device, <b>Down</b> drops into its files, <b>Up/Down</b> (and
+<b>L1/L2</b> for whole pages) moves through the list, <b>Cross</b> opens or plays, and <b>Triangle</b>
+backs out one level at a time.</p>
+
+<h2 id="first-file">Play your first file</h2>
+<p>The quickest path to a working playback is a USB stick, because almost every PS2 has a front USB port
+and nothing needs configuring first. Here it is end to end.</p>
+
+<div class="steps">
+<div class="step"><h3>1 · Format the stick</h3>
+<p>Format a USB flash drive as <b>FAT32</b> or <b>exFAT</b> on your computer. Either works.</p></div>
+
+<div class="step"><h3>2 · Copy media onto it</h3>
+<p>Copy a supported file to the stick — a <code>.avi</code> (DivX / Xvid / MPEG-4 Part 2),
+<code>.mp4</code> (<code>mp4v</code>, not H.264/H.265), <code>.mpg</code> video, or an <code>.mp3</code>
+song is a safe first test. You can put it in any folder, or just at the top
+level. See <a href="video.html">Video Playback</a> and <a href="audio.html">Audio &amp; Playlists</a> for
+the full format lists.</p></div>
+
+<div class="step"><h3>3 · Plug in and boot SMS</h3>
+<p>Insert the stick into the PS2's USB port and launch SMS.</p></div>
+
+<div class="step"><h3>4 · Enable USB</h3>
+<p>On a clean install SMS defaults optional Autostart flags to off — you turn on what you need. Open the settings
+menu and either turn on <b>Autostart USB</b> (so USB starts every boot from now on) or use the
+<b>Start USB now</b> item to bring it up immediately without rebooting. A USB device icon then appears in
+the device menu. See <a href="usb.html">USB</a> and the <a href="settings.html">Settings Reference</a> for
+more.</p></div>
+
+<div class="step"><h3>5 · Pick USB in the device menu</h3>
+<p>Use <b>Left/Right</b> along the top row to highlight the USB device (it appears as a <code>massN:</code>
+device — <code>mass0:</code> if it's the only mass-storage device connected), press <b>Cross</b> to select it,
+then <b>Down</b> to enter its file list.</p></div>
+
+<div class="step"><h3>6 · Browse to your file</h3>
+<p>Use <b>Up/Down</b> (and <b>L1/L2</b> to page through a long list) to move through the files and folders.
+Press <b>Cross</b> to open a folder; press <b>Triangle</b> to go back up if you take a wrong turn. The
+status line at the bottom shows where you are.</p></div>
+
+<div class="step"><h3>7 · Press Cross to play</h3>
+<p>Highlight your file and press <b>Cross</b>. SMS loads it and playback begins. That's it — you're
+watching a movie (or listening to music) on a stock PS2.</p></div>
+</div>
+
+<div class="callout amber"><div class="h">Nothing shows up in the list?</div>
+If the file list is empty after entering the device, the file may not be in a format SMS recognises, or
+USB may not have started. Double-check the device icon is present in the top row, and confirm the file's
+extension is one SMS supports. The <a href="troubleshooting.html">Troubleshooting</a> page walks through
+the common causes.</div>
+
+<h2 id="playback-controls">Playback controls</h2>
+<p>Once a file is playing, a small set of buttons controls it. These are the essentials to remember:</p>
+
+<table>
+<thead><tr><th>Button</th><th>During playback</th></tr></thead>
+<tbody>
+<tr><td><b>Select</b></td><td>Pause</td></tr>
+<tr><td><b>Start</b></td><td>Resume</td></tr>
+<tr><td><b>Triangle&nbsp;△</b></td><td>Stop and return to the file browser</td></tr>
+</tbody>
+</table>
+
+<p>So: <b>Select</b> to pause, <b>Start</b> to carry on, and <b>Triangle</b> to stop and go back to
+browsing. Video playback has more on offer — seeking, subtitles, aspect-ratio modes and an in-player menu —
+which are covered on the <a href="video.html">Video Playback</a> and <a href="subtitles.html">Subtitles</a>
+pages.</p>
+
+<h2 id="power-off">Powering off</h2>
+<p>When you're done, you can turn the console off straight from SMS. In the file browser, press
+<b>Select + Circle</b> together and the PS2 powers down. You don't need to exit to the PS2 browser first.</p>
+
+<h2 id="next">Where to go next</h2>
+<p>You've got the interface and a first file playing. From here, pick the path that matches your setup.</p>
+<div class="grid">
+<a class="tile" href="devices.html"><span class="icon icon-folder" aria-hidden="true"></span><b>Devices Overview</b><span>Every storage source SMS reads</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>Play from a microSD card</span></a>
+<a class="tile" href="hdd.html"><span class="icon icon-hdd" aria-hidden="true"></span><b>Internal HDD</b><span>APA &amp; exFAT drives</span></a>
+<a class="tile" href="mmce.html"><span class="icon icon-mmce" aria-hidden="true"></span><b>MMCE</b><span>SD2PSX / MemCard PRO2</span></a>
+<a class="tile" href="smb.html"><span class="icon icon-smb" aria-hidden="true"></span><b>SMB Network</b><span>Stream from a PC share</span></a>
+<a class="tile" href="network.html#udpfs"><span class="icon icon-smb" aria-hidden="true"></span><b>UDPFS</b><span>Browse a PC folder</span></a>
+<a class="tile" href="settings.html"><span class="icon icon-settings" aria-hidden="true"></span><b>Settings Reference</b><span>Autostart toggles &amp; options</span></a>
+<a class="tile" href="video.html"><span class="icon icon-play" aria-hidden="true"></span><b>Video Playback</b><span>Formats &amp; player controls</span></a>
+<a class="tile" href="subtitles.html"><span class="icon icon-book" aria-hidden="true"></span><b>Subtitles</b><span>SRT / SUB over video</span></a>
+<a class="tile" href="troubleshooting.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Troubleshooting</b><span>When something won't play</span></a>
+</div>
+
+<details class="deep"><summary>Why is nothing enabled when I first boot SMS?</summary>
+<p>By design. On a clean install SMS defaults optional Autostart choices to off — you switch on only the devices you actually use,
+either permanently with the per-device <b>Autostart</b> toggles in settings, or on demand with the
+<b>Start &lt;device&gt; now</b> items. This keeps startup fast and avoids probing hardware you don't have.
+Your choices are saved with the rest of your settings, so once you've turned USB (or any device) on, it
+comes back the next time you boot. See the <a href="settings.html">Settings Reference</a> for the full
+list of toggles.</p></details>
+
+<details class="deep"><summary>Do my files need to be in a special folder?</summary>
+<p>No. SMS is a media player, not a game loader — it browses the raw filesystem of the device and plays
+media files wherever they sit. There is no required folder tree, no cover-art directory and no special
+naming scheme. Put your videos, music and pictures wherever is convenient and browse to them with the
+pad.</p></details>
+
+<div class="note"><p><b>Boot-source exception:</b> optional Autostart flags default off, but SMS may start/remount the device holding its ELF/config during startup. A source already visible after first boot does not mean another Autostart choice was saved. See <a href="configuration.html">configuration discovery</a>.</p></div>

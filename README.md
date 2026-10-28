@@ -1,133 +1,125 @@
 <img width="400" height="92" alt="ANII-AI? This Software is NOT For You. Please Do NOT Use It." src="https://github.com/user-attachments/assets/55d2e5b6-77ca-434d-bc77-e45cf2755534" />
 
+# Simple Media System for PlayStation 2
 
-# UPDATED INFORMATION FOR TOP TIER PERFORMANCE:
+A maintained, storage-focused fork of Eugene Plotnikov's **SMS**: video, music,
+JPEG pictures, subtitles and playlists on a PS2 that can run homebrew. The fork
+adds MX4SIO, ATA/exFAT HDD, i.LINK, MMCE, folder-served UDPFS, on-screen network
+configuration, USB/Bluetooth DS3/DS4 support and a desktop media converter.
 
-> [!IMPORTANT]
-> ## Video Playback Recommendation — MPEG-2 Preset by [tktagmedia](https://www.psx-place.com/members/tktagmedia.40052/)
->
-> For the best video compatibility and streaming performance in **Simple Media System**, use **MPEG-2 video with MP2 audio** encoded at **960×544** (mod-16 safe), with a target frame rate of **30 FPS or below**.
->
-> This format takes advantage of the PS2's hardware-assisted DVD/MPEG decoding path, making it substantially more reliable than Xvid or MPEG-4, which rely on CPU-based software decoding and may stutter at higher resolutions or bitrates.
->
-> The recommended preset has been tested with **MX4SIO streaming**, including a 44-minute video at full speed with no hangs.
->
-> ### NTSC audio/video sync correction
->
-> Some NTSC playback setups may exhibit an approximately six-frame audio/video sync offset, regardless of the video resolution, container, or supported codec. If audio and video are noticeably out of sync, press `O` during playback and set **V/A** to **`-00:060`**. This correction has been reported to restore NTSC synchronization for MP4, AVI, MPG, and other supported video formats.
->
-> ### Quick conversion
->
-> Download the [recommended FFmpeg drag-and-drop converter](https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat), make sure FFmpeg is available in your system `PATH`, then drag video files onto the `.bat` file to produce PS2-compatible output.
->
-> **Recommended encoding settings:**  
-> <https://raw.githubusercontent.com/NathanNeurotic/Simple-Media-System/8cb28c22af6d20f2db436cf24264500701991f44/tools/tktagmedia-recommended-dragndrop-converter.bat>
->
-> <details>
-> <summary><b>Recommended encoding settings</b></summary>
->
-> | Setting | Recommended value |
-> | --- | --- |
-> | Video codec | MPEG-2 |
-> | Audio codec | MP2 |
-> | Resolution | 960×544 |
-> | Frame rate | Up to 30 FPS |
-> | Encoding mode | Two-pass |
-> | Best for | MX4SIO, USB, SMB, HDD, and other supported sources |
->
-> </details>
+**[Read the manual](https://nathanneurotic.github.io/Simple-Media-System/)** ·
+**[Download rolling](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/rolling)** ·
+**[Native wiki](https://github.com/NathanNeurotic/Simple-Media-System/wiki)** ·
+**[Known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html)**
 
-# Simple Media System — MX4SIO / Network Edition
+## Pick the right build
 
-> A modernized fork of Eugene Plotnikov's **Simple Media System (SMS)** for the PlayStation 2 — adding first-class **MX4SIO (SD-over-SIO2)** playback, a real **UDPFS network drive**, DualShock 3/4 support, and a broad sweep of device, stability and quality-of-life work — while keeping the original player's speed and elegance intact.
+| Channel | What it contains |
+|---|---|
+| **Rolling development** | Current master fixes/features, player tester bundle, matching language pack, and Windows/Win7/Linux converter packages. Keep `build-info.json` with a test report. |
+| **[v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1)** | The fixed July 2026 release. It predates October's parser, streaming, frame-ownership, shuffle and converter changes. |
+| **Actions / PR artifact** | A specific candidate that may not yet be in rolling. Record the run, artifact and source/head SHA. |
 
-📖 **User manual & documentation:** https://nathanneurotic.github.io/Simple-Media-System/
+[PR #30](https://github.com/NathanNeurotic/Simple-Media-System/pull/30) merged on
+2026-10-27 as `4a6959a`, retaining eggcatroll's continuation and adding MPEG RGB
+ownership and shutdown cleanup. Host regressions, PS2 builds and controlled
+emulator probes passed. **Affected-console reports remain open**: this is not a
+claim that the exact color, USB-stutter, MP4-stall or skin-restart cases are resolved.
 
-📦 **Current stable release:** [v3.0.0-rev1](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1)
+## First playback
+
+1. Download `Simple-Media-System.zip` from rolling. Use the standard
+   `Simple-Media-System.elf` first; the bundle also includes packed and DIAG builds.
+2. Launch it from your existing homebrew loader, such as Launchstation/wLaunchELF
+   or your configured boot menu. SMS does not install the exploit/loader for you.
+3. Put a small supported file on an existing compatible FAT32/exFAT device. In
+   **Device settings**, start that source or enable its Autostart and save settings.
+4. Select the device, press Down to enter the file list and Cross to open a file.
+   Triangle stops playback. [Full walkthrough](https://nathanneurotic.github.io/Simple-Media-System/getting-started.html).
+
+The player embeds its IOP modules; ordinary installation needs no loose IRX files.
+`SMS.cfg` normally follows a remountable launch directory, even on a memory-card
+boot. `SMS.smb` follows the resolved config directory; `IPCONFIG.DAT` has separate
+card/boot-folder rules. [Config paths](https://nathanneurotic.github.io/Simple-Media-System/configuration.html).
 
 ## Playback compatibility
 
-SMS supports the following current file and codec paths:
-
-- **Video:** MPEG-4 Part 2 / ASP (DivX, Xvid and Microsoft MPEG-4 v3) in
-  `.avi`, `.divx` or `.xvid`; MPEG-4 Part 2 `mp4v` in `.mp4`; MPEG-1
-  and MPEG-2 video in `.mpg` / `.mpeg` program streams.
-- **Standalone audio:** MPEG Layer II/III (`.mp2`, `.mp3`, `.mpa`), Ogg
-  Vorbis (`.ogg`), WMA v1/v2 (`.wma`), AAC Main/LC and HE-AAC/SBR
-  (`.aac`, `.m4a`, or audio-only `.mp4`), AC-3 (`.ac3`) and mono/stereo
-  FLAC (`.flac`). Supported containers can also carry DTS and 16-bit PCM.
-- **Pictures, playlists and subtitles:** baseline JPEG (`.jpg`, `.jpeg`),
-  M3U playlists, and external SRT / SUB / TXT subtitles.
-- **Not supported:** H.264/AVC, H.265/HEVC, VP9 and AV1 video. A file with
-  one of these video codecs can produce audio only when its audio track is
-  independently supported.
-
-### Source-enforced limits
-
-| Property | Exact implementation limit |
-|---|---:|
-| Video dimensions | Width <= 1024 and height <= 1024 |
-| MPEG-1/2 frame rates | 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60 fps |
-| Container streams/tracks | 8 maximum |
-| Compressed video packet/sample | 2,097,088 bytes maximum |
-| Compressed audio packet/sample | 524,224 bytes maximum |
-| File addressing | 32-bit; individual files must be smaller than 4 GiB |
-
-AAC accepts 8, 11.025, 12, 16, 22.05, 24, 32, 44.1, 48, 64, 88.2
-and 96 kHz core sample rates
-and converts multichannel input to stereo. Ogg Vorbis and FLAC standalone
-files are limited to mono or stereo; decoded output is 16-bit PCM. Large
-video frames automatically fall back to dithered 16-bit GS textures when a
-32/24-bit texture would overlap video memory used by the UI.
-
-The 1024-pixel-per-axis check is an **acceptance ceiling**, not a promise
-that every file at that size will decode in real time. SMS has no fixed
-maximum stream bitrate or general MPEG-4 frame-rate rejection. Smoothness
-also depends on frame rate, B-frames, QPel/GMC, interlacing, motion
-complexity, audio workload, storage throughput and fragmentation.
-
-### Hardware-confirmed baseline
-
-The repository's generated test pack has been exercised on real PS2
-hardware. All positive cases played as intended, and the negative modern
-codec cases failed as intended:
-
-| Container / codec | Confirmed test profile |
+| Media | Supported routes |
 |---|---|
-| AVI / Xvid + MP3 | 640x480, 30 fps, 1.5 Mbit/s video, 128 kbit/s audio |
-| MPEG-2 PS + MP2 | 640x480, 30 fps, 2.5 Mbit/s video, 192 kbit/s audio |
-| MPEG-1 PS + MP2 | 640x480, 30 fps, 1.15 Mbit/s video, 192 kbit/s audio |
-| MP4 / `mp4v` + AAC | 640x480, 30 fps, 1.5 Mbit/s video, 48 kHz stereo AAC at 128 kbit/s |
-| MP4 / `mp4v` + AAC | 320x240, 30 fps, 600 kbit/s video, 48 kHz stereo AAC at 128 kbit/s |
-| Standalone audio matrix | MP3, Ogg Vorbis, WMA v2, FLAC, AC-3, M4A/AAC, ADTS AAC and MP2 |
-| Negative cases | H.264 and H.265 video are not decoded |
+| Video | MPEG-4 Part 2 / DivX / Xvid / MS MPEG-4 v3 in AVI; `mp4v` in MP4; MPEG-1/2 in MPEG program streams. |
+| Standalone audio | MP2/MP3/MPA, AAC/ADTS/M4A, AC-3, mono/stereo FLAC, Ogg Vorbis and WMA v1/v2. Container mappings and channel/sample limits still apply. |
+| Pictures / playlists | Baseline JPEG and M3U. |
+| Subtitles | External SRT/SUB/TXT text; existing AVI DXSB bitmap subtitles. Converter text burn-in is a separate feature. |
 
-The exact fixtures and encoder settings live in
-[`tools/gen-test-media.sh`](tools/gen-test-media.sh). See the
-[Video](https://nathanneurotic.github.io/Simple-Media-System/video.html)
-and
-[Audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html)
-pages for the detailed compatibility notes.
+H.264/AVC, H.265/HEVC, VP9, AV1 and WMV video are not decoded. A familiar
+extension is not enough: inspect the actual codec.
 
-## What's new in this edition
+| Constraint | Current implementation |
+|---|---|
+| Video dimensions | At most 1024 pixels on either axis; this is an acceptance check, not a speed guarantee. |
+| MPEG-1/2 rate table | 23.976, 24, 25, 29.97, 30, 50, 59.94 and 60 fps. |
+| Streams | Eight table slots. MP4/MPEG-PS reserve a terminator and retain at most seven streams; the converter allows video plus six audio tracks. |
+| Compressed packets | Video: 2,097,088 bytes; audio: 524,224 bytes. |
+| Individual files | **Below 4 GiB on every source, including exFAT**, because the player uses 32-bit file addressing. |
 
-**Storage & playback**
-- **MX4SIO support** — play media straight off an SD card in the memory-card slot (MX4SIO / SIO2 adapter). This is the headline feature this fork was built for, and it's hardware-confirmed.
-- **UDPFS network drive** — stream from a PC over the LAN using the PS2-Servers UDPFSD protocol (the real folder-served UDPFS, not UDPBD). Booting from, playing over, and **cleanly exiting** a UDPFS session all work on hardware.
-- **More storage devices** — internal HDD (both PFS/APA and exFAT/BDM via `ata_bd`), i.LINK mass storage, and MMCE (SD2PSX / MemCard PRO), alongside classic USB and the memory card.
+Earlier project documentation records standard-definition playback profiles, including
+640×480 / 30 fps Xvid+MP3 and MPEG-2+MP2. These are historical reported baselines,
+not a fresh qualification of every file or the current merge. The generated
+[test-media pack](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/test-media)
+defines repeatable inputs; its CI generation does not run a console.
 
-**Controllers**
-- **DualShock 3 & DualShock 4** over USB and Bluetooth (with in-app pairing), driven off the USB bus so they never contend with MX4SIO on SIO2.
+See [video](https://nathanneurotic.github.io/Simple-Media-System/video.html),
+[audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html) and
+[current issue status](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html).
+tktagmedia's reported 960×544 MPEG-2/MX4SIO profile is preserved with its actual
+[settings and limitations](https://nathanneurotic.github.io/Simple-Media-System/video.html#community-mpeg2),
+including the script's aspect/frame-rate behavior. It is not a universal default.
 
-**Interface & polish**
-- A built-in **on-screen keyboard** and full **SMB server editor** — no hand-made config files required.
-- UI **sound effects on by default** (opt-out preserved), a refreshed jellyfish theme, and HD display modes (480p / 576p / 720p / 1080i).
-- **Fully translatable UI** — every new feature's text now lives in the language table; **19 community translations** ship in [`docs/translation/`](docs/translation/), plus an English template and translator guide.
-- Settings that **follow the boot device** (config saved next to the ELF, memory card included), with a memory-card migration fallback.
+## Storage, settings and conversion
 
-**Under the hood**
-- A hardened MX4SIO driver path, extensive memory-card save/load coherence fixes, container-parser bounds hardening, and a smaller ELF via XZ-compressed embedded assets.
-- Reproducible CI builds with rolling and tagged releases; a packed (ps2-packer) ELF alongside the standard one.
+USB, MX4SIO, ATA/exFAT and i.LINK share BDM `massN:` naming; MMCE uses
+`mmce0:`/`mmce1:`; APA/PFS, discs, SMB, UDPFS and developer `host:` are separate
+paths. Mass numbering can change with discovery order.
+
+SMS's current drivers enforce **MX4SIO versus MMCE** and **APA HDD versus ATA/BDM
+HDD** exclusions. SMB/HOST versus UDPFS requires an explicit IOP restart or
+relaunch; changing Autostart alone does not unload the running stack. An IOP
+restart also invalidates storage mounts. [Devices](https://nathanneurotic.github.io/Simple-Media-System/devices.html)
+· [Network setup](https://nathanneurotic.github.io/Simple-Media-System/network.html).
+
+For folder shuffle, enable **Player settings → MP3 settings → Randomize playlist**,
+then use **Play all → Video** or Audio. The preference also affects video folders.
+
+Install language packs from the same build as the ELF. Current packs have 311
+strings; Spanish was updated in the October continuation. The UI uses single-byte
+code pages, while subtitles have separate UTF-8/MBCS handling.
+[Language guide](https://nathanneurotic.github.io/Simple-Media-System/languages.html).
+
+Rolling converter packages target Windows 10/11, Windows 7 and Linux, with
+FFmpeg/FFprobe required. Features include two-pass encoding, multi-audio output,
+text-subtitle burn-in, source-SD sizing and a high-quality Xvid/GOP6/PCM16 preset.
+**PASS is not a console result**; WARN can mean incomplete bounded packet
+inspection. Test a short output before converting a library.
+[Converter guide](https://nathanneurotic.github.io/Simple-Media-System/converter.html).
+
+## Development and documentation
+
+The EE application retains `ps2dev/ps2dev:v1.0` / EE GCC 3.2.3. Normal builds use
+committed compressed IOP modules; rebuilding drivers is a separate workflow.
+See [building](https://nathanneurotic.github.io/Simple-Media-System/building.html)
+and [architecture/testing](https://nathanneurotic.github.io/Simple-Media-System/developers.html).
+
+The maintained site source is `docs-site/content/`, with shared navigation/assets.
+Generate and check the published `/docs` site and versioned `wiki/` mirror with:
+
+```sh
+python docs-site/build.py
+python docs-site/build.py --check
+python -m http.server 8000 --directory docs
+```
+
+[Maintainer workflow](docs-site/README.md). Historical DocBook XML and the original
+README/changelog are preserved separately from current user guidance.
 
 ## Credits & lineage
 
@@ -141,6 +133,13 @@ Homebrew runs on hardware no single person owns, and a fault nobody can reproduc
 - **GhostTownUS** — systematic hardware testing on PS2 and PSX (DESR), with recorded sessions rather than descriptions. Traced the memory-card-less IP problem, and captured the screen that localised the PSX boot hang to a single step.
 - **israpps** — root-caused the PSX boot failure from a DESR-5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That one observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver.
 - **TnA** — encoder expertise behind the Media Converter: multi-pass encoding, the B-frames / keyframe-interval distinction, and the push that got real Xvid used where the preset claimed it.
+
+---
+
+Additional October contributors include **eggcatroll** (parser/stream/skin/playlist
+continuation and regressions), **Nacheras** (Spanish strings and feedback), and the
+reporters supplying exact-file, log and console comparisons. See the
+[complete credits](https://nathanneurotic.github.io/Simple-Media-System/credits.html).
 
 ---
 

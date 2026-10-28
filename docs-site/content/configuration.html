@@ -1,0 +1,26 @@
+<h1>Config Files &amp; Paths</h1>
+<p class="lead">The active configuration follows the launch path when SMS can remount it. A memory card being present does not automatically move a USB-launched player's settings onto that card.</p>
+<h2 id="boot-folder">Where SMS.cfg and SMS.smb live</h2>
+<table><thead><tr><th>Launch source</th><th>Normal configuration location</th></tr></thead><tbody>
+<tr><td>Memory card, USB/MX4SIO/i.LINK/ATA mass volume, MMCE, PFS/HDD, writable UDPFS</td><td><code>SMS.cfg</code> beside the launched ELF. <code>SMS.smb</code> follows the same resolved config directory.</td></tr>
+<tr><td>SMB, developer <code>host:</code>, optical launch, or a boot mass device that SMS cannot remount after IOP reset</td><td>Fallback resolution: an available memory card can retain the card config; otherwise SMS searches writable USB/MMCE roots for an existing <code>SMS.cfg</code>, then prefers a USB target, then MMCE. The card path is the final fallback.</td></tr>
+<tr><td>No usable launch directory</td><td>The configured memory-card default, normally <code>mc0:/SMS/SMS.cfg</code> (the selected card slot can differ).</td></tr>
+</tbody></table>
+<p>Examples: <code>mass0:/APPS/SMS/SMS.elf</code> normally uses <code>mass0:/APPS/SMS/SMS.cfg</code>; <code>mc1:/APPS/SMS.elf</code> normally uses <code>mc1:/APPS/SMS.cfg</code>. BDM mass numbering can change across boots. A UDPFS server must permit writes for config saved there; an unreachable/read-only boot source can cause fallback.</p>
+<p>SMS remounts filesystem boot devices before its second settings load. That is why a saved skin or display setting may load later than the first boot screen. The October repaint fix addresses that sequence; <a href="known-issues.html#skin">the reported restart case still needs acceptance</a>.</p>
+<h2 id="network-files">IPCONFIG.DAT is separate</h2>
+<p>The network editor saves the PS2's static address/mask/gateway to <code>mc?:/SYS-CONF/IPCONFIG.DAT</code> when the configured memory card is usable. Without a card it uses the ELF's folder. Startup probes the boot-folder copy and the card fallback; a stale boot-folder copy can therefore matter. This file does not simply follow <code>SMS.cfg</code> into every fallback directory.</p>
+<p><code>SMS.smb</code> stores SMB server settings, including credentials, beside the resolved <code>SMS.cfg</code>. Keep your personal configuration out of public bug-report attachments or remove credentials before sharing it.</p>
+<h2 id="assets">Language, skin, font and palette assets</h2>
+<table><thead><tr><th>Asset</th><th>Lookup</th></tr></thead><tbody>
+<tr><td><code>SMS.lng</code></td><td>Boot-folder copy first, then <code>mc?:/SMS/SMS.lng</code>. Enable the external language after installing a pack matching the build.</td></tr>
+<tr><td><code>Skins/Name.smi</code></td><td>Boot-folder <code>Skins/</code> first, then <code>mc?:/SMS/Skins/</code>. Names are selected and saved in config.</td></tr>
+<tr><td><code>SMS.pal</code></td><td>Boot-folder copy first, then the configured memory-card SMS directory.</td></tr>
+<tr><td><code>.mbf</code> fonts</td><td>Scanned in the SMS card/boot locations; select the desired font in the relevant menu. See <a href="languages.html">languages</a> and <a href="subtitles.html">subtitles</a>.</td></tr>
+</tbody></table>
+<h2 id="save-reset">Save, compare and reset</h2>
+<ol><li>Use <b>Save settings</b> after changing autostart, language, skin or playback preferences.</li>
+<li>If a setting reverts, check the exact launch directory and file timestamp; do not assume another copy on <code>mc0:</code> is active.</li>
+<li>Before resetting, back up the active <code>SMS.cfg</code> and <code>SMS.smb</code>. Rename the config and relaunch to test defaults. A fresh config disables optional device autostart.</li>
+<li>When comparing builds, keep a separate config copy for each and record which file each used.</li></ol>
+<p class="audit-source">Source: <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/main.c">main.c</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/SMS_Config.c">SMS_Config.c</a>, <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/SMS_IOP.c">SMS_IOP.c</a> and <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/src/SMS_GUIDesktop.c">SMS_GUIDesktop.c</a>. The active target depends on successful remount/probe results.</p>

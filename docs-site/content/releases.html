@@ -1,0 +1,139 @@
+<h1>Downloads &amp; Releases</h1>
+<p class="lead">Choose a build deliberately. Rolling follows development; version tags preserve an earlier release. The filename and in-app version are not enough to identify an October test build.</p>
+<h2 id="getting-a-build">Choose your build</h2>
+<table><thead><tr><th>Channel</th><th>Use it for</th><th>Identity</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/rolling">Rolling development</a></td><td>Current fixes, features and issue retests. Updated by successful master publication.</td><td>The release notes' commit and the tester bundle's <code>build-info.json</code>.</td></tr>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1">v3.0.0-rev1 stable tag</a></td><td>The fixed July 2026 release. It predates the October fixes and converter additions.</td><td>Tag/source <code>95b803ba07d1c55aa644acbd633936eb0a1e6ad6</code>; published 2026-07-26 UTC.</td></tr>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/actions">Actions / PR artifacts</a></td><td>Testing a particular unmerged candidate.</td><td>Exact run, artifact and manifest head/source SHA. A rolling download cannot test an unmerged PR.</td></tr>
+</tbody></table>
+<p>The <a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/latest">latest stable release link</a> excludes prereleases, so it can still lead to July while rolling contains much newer work.</p>
+<h2 id="whats-in-a-release">Rolling download contents</h2>
+<table><thead><tr><th>File</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/Simple-Media-System.zip">Simple-Media-System.zip</a></td><td>Standard, packed and DIAG ELFs, build manifest and SMB component notices.</td></tr>
+<tr><td><code>Simple-Media-System.elf</code></td><td>Standard player; use this for ordinary playback and first comparisons.</td></tr>
+<tr><td><code>Simple-Media-System-packed.elf</code></td><td>The same player in a self-extracting executable. Use the standard ELF if your loader has trouble with packed files.</td></tr>
+<tr><td><code>Simple-Media-System-DIAG.elf</code></td><td>On-screen startup/probe labels for reporting freezes. Record the number <em>and</em> label.</td></tr>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/Simple-Media-System-languages.zip">Simple-Media-System-languages.zip</a></td><td>Language variants matching this build's string table, including Spanish. See <a href="languages.html">installation</a>.</td></tr>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter.exe">SMS-Media-Converter.exe</a></td><td>Windows 10/11 converter.</td></tr>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter-Win7.exe">SMS-Media-Converter-Win7.exe</a></td><td>Python 3.8 / Qt5 build for Windows 7. Packaging CI runs on a current Windows runner; it is not live Win7 acceptance.</td></tr>
+<tr><td><a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter-Linux.zip">SMS-Media-Converter-Linux.zip</a></td><td>Linux source/application package; follow the included Python/PySide instructions. FFmpeg/FFprobe are separate tools.</td></tr>
+</tbody></table>
+<p>Embedded IOP modules are carried inside the player ELF; normal installation does not require copying loose IRX files. Keep matching translations with each build you compare.</p>
+<h2 id="this-build">What the current development line contains</h2>
+<p><a href="https://github.com/NathanNeurotic/Simple-Media-System/pull/30">PR #30</a> merged on 2026-10-27 as <a href="https://github.com/NathanNeurotic/Simple-Media-System/commit/4a6959a709b9679352f964fd412a69e539ef49ae"><code>4a6959a</code></a>. It includes MPEG-PS/MOV probing and progress fixes, stream failure recovery, MPEG RGB-frame ownership and shutdown cleanup, folder shuffle, Spanish integration and converter controls. See the <a href="known-issues.html">open acceptance work</a> before treating a reported issue as resolved.</p>
+<h3 id="release-hashes">Verify the file you actually downloaded</h3>
+<p>Rolling assets are replaced over time. Read <code>build-info.json</code> inside the tester ZIP and keep it with your test report; it contains source/head commits, the Actions run and ELF SHA-256 hashes. Compare a downloaded ELF with those hashes, rather than a hash copied from an older guide.</p>
+<pre>sha256sum Simple-Media-System.elf
+# PowerShell:
+Get-FileHash .\Simple-Media-System.elf -Algorithm SHA256</pre>
+<p>The July stable release retains its own asset hashes on its release page. A source-code archive from a mutable rolling tag is not a substitute for the tester bundle's build identity.</p>
+<h2 id="whats-new">What the validation establishes</h2>
+<p>The merged work passed host regression tests, target builds and controlled emulator probes. Those checks expose specific parser, I/O and frame-lifetime defects. They do not establish affected-console color, USB throughput, exact-file MP4/MPEG playback, skin restart, shuffle or audio-switching acceptance. All nine reported issues were still open at this audit.</p>
+<h2 id="test-media">Synthetic test-media pack</h2>
+<p>The <a href="https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/test-media">test-media prerelease</a> is regenerated on master from <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/gen-test-media.sh">tools/gen-test-media.sh</a>. It includes short codec fixtures and the MP4 matrix with a README. Generation is a host operation. Record your console, storage source, build and actual result when playing it.</p>
+<h2 id="historical-changelog">Historical changelog</h2>
+<p>SMS has a long history. It was created by <b>Eugene Plotnikov</b> as, in his own words, "the simplest DivX
+player able to play good-resolution movies at good frame rate on the unmodded PS2 without any extra equipment,"
+and was developed intensively across 2005–2009 before the ps2homebrew community carried it forward. The high-level
+lineage below is drawn from the project's own <code>CHANGELOG.md</code> — refer to that file in the repository for
+the exhaustive, entry-by-entry history.</p>
+
+<table data-sortable>
+<thead><tr><th>Era</th><th>What arrived</th></tr></thead>
+<tbody>
+<tr><td>Mid&ndash;2005 — foundations</td><td>The core DivX/XviD/MPEG-4 player using the PS2's IPU for colour conversion;
+<b>CDDAFS</b> (playing data off a burned audio CD on an unmodded console); early A/V synchronisation and V-Blank sync;
+internal <b>HDD</b> support via APA/PFS partitions; a heavily PS2-optimised FFmpeg-derived core.</td></tr>
+<tr><td>Summer 2005 — the GUI</td><td>The three-area <b>GUI</b> that SMS still uses — device menu, file browser and
+status line — with pause / resume / stop, the file browser, and screen-alignment adjustments; <b>USB</b> mass-storage
+support; AC3 audio; config saved to the memory card.</td></tr>
+<tr><td>Late 2005 — network &amp; discs</td><td><b>Network (host:)</b> playback; ISO CD/DVD and later <b>DVD-Video</b>
+disc reading on unmodded consoles; more codecs; skin/background-image support; a proper SMS menu and internationalised,
+scalable fonts.</td></tr>
+<tr><td>Late 2005 / early 2006 — subtitles &amp; playlists</td><td>External <b>SRT / SUB subtitles</b> with adjustable
+size and colour, plus manual A/V and subtitle sync; multi-audio-track support; the object-oriented desktop rewrite;
+early <b>MP3 / M3U</b> playback and "play all in folder".</td></tr>
+<tr><td>2006 — more formats &amp; input</td><td>Remote-control support; <b>MPEG-1/2 program-stream</b> video; DTS and
+<b>OGG&nbsp;Vorbis</b> audio; on-disc file management (copy/delete on the internal HDD); pan-scan and display tuning;
+HD/DTV video-mode groundwork.</td></tr>
+<tr><td>Late 2006 — SMB</td><td>The <b>SMB/CIFS</b> network client, so SMS could browse Windows / Samba shares over the
+network adapter; faster network transfers; UTF-8 subtitle support.</td></tr>
+<tr><td>2007 — HD video &amp; WMA</td><td><b>720p / 1080i</b> and VESA/DTV video modes; a new floating-point MPEG audio
+decoder; <b>WMA (ASF)</b> and raw PCM audio; multiple SMB servers; assorted decoder and sync refinements.</td></tr>
+<tr><td>2008 — audio breadth &amp; pictures</td><td><b>AAC / M4A</b> and <b>FLAC</b> audio; a baseline <b>JPEG</b> viewer
+with slideshow and rotate; big (4&nbsp;GB) OpenDML AVI support; USB/FAT driver rewrites; an on-screen exception handler.</td></tr>
+<tr><td>2009 — later refinements</td><td>576p video mode and 2:2 pulldown for smoother 24fps playback; audio-driver and
+AC3 downmix improvements; further USB/FAT speed work — the last stretch of the original development line before the
+project's community era.</td></tr>
+<tr><td><b>This fork — stable and rolling development</b></td><td><b>Working MX4SIO playback</b>, MP4/<code>mp4v</code> video,
+UDPFS, exFAT/ATA HDD, i.LINK, MMCE, DualShock 3/4 input, on-screen network/SMB setup, save-to-boot-device config,
+a refreshed theme and the reliability fixes listed
+<a href="#whats-new">above</a>.</td></tr>
+</tbody>
+</table>
+
+<div class="callout info"><div class="h">ℹ Reading the full changelog</div>
+The dates and one-liners above summarise a much larger record. The complete, dated changelog lives in the
+repository as <code>CHANGELOG.md</code>; open it there if you want the exact entry for a given feature or fix.</div>
+
+<details class="deep"><summary>Why does this fork jump to version 3.0?</summary>
+<p>SMS versioning has never been a single tidy line — the original author noted early on that different
+"distributors" would put their own signature on their builds. This documentation set describes the build labelled
+<b>v3.0.0-rev1</b>, displayed by SMS as <b>Version 3.0 (Rev.1)</b>: a storage-focused fork that keeps SMS's
+decades-old playback while adding the devices, MP4 path and on-screen setup covered throughout this site. The
+version shows on-screen during startup, so you can always confirm what you are running.</p></details>
+
+<details class="deep"><summary>Is this an official SMS release?</summary>
+<p>No. This is a community fork built on the work of many contributors — Eugene Plotnikov's original SMS, the
+ps2homebrew community's modernisation, and KrahJohlito's BDM/MX4SIO integration foundation among them. It is offered
+as-is, not as an official release. See <a href="credits.html">Credits &amp; Sources</a> for the full acknowledgements.</p></details>
+
+<h2 id="legacy-downloads">Legacy tools &amp; downloads</h2>
+<p class="lead">Companion tools and files for classic SMS, preserved from the original <a href="https://www.ps2-home.com/">ps2-home.com</a>
+forum posts so they don't vanish. They are <b>third-party works by their original authors</b>, kept here purely for
+archival — we didn't write them and can't vouch for the Windows binaries.</p>
+
+<div class="callout amber"><div class="h">Third-party, as-is</div>
+The <code>.exe</code> tools below are old Windows binaries (2005–2014) from the PS2 homebrew community, with no stated
+license; we have not run or vetted them, and antivirus may flag old packed executables — use at your own discretion.
+Credit belongs to their original authors. Some archives are <code>.rar</code> (open with 7-Zip / WinRAR).</div>
+
+<table>
+<thead><tr><th>Download</th><th>What it is</th><th>Author&nbsp;/&nbsp;source</th></tr></thead>
+<tbody>
+<tr>
+  <td><a href="downloads/SMS-manual.pdf">SMS manual (PDF)</a></td>
+  <td>The classic Simple Media System user manual.</td>
+  <td>SMS community · ps2-home.com</td>
+</tr>
+<tr>
+  <td><a href="downloads/SMS_lng09.rar">Language pack — <code>SMS_lng09</code></a></td>
+  <td>20 community translations (<code>.lng</code>): BG, CA, CZ, DE, EN, ES, FR, HU, ID, IT, NL, PL, PT, PT-BR, RU, SE, SK,
+      TR, UA. <b>Vintage 2009</b> — likely missing newer menu strings, so treat as a reference/starting point.</td>
+  <td>Translators credited in the pack's <code>README</code> (EN by Eugene&nbsp;Plotnikov)</td>
+</tr>
+<tr>
+  <td><a href="downloads/pic2smi.rar">pic2smi</a></td>
+  <td>Windows tool: converts a picture into an SMS <code>.smi</code> skin / background.</td>
+  <td>ps2-home.com</td>
+</tr>
+<tr>
+  <td><a href="downloads/smspal.rar">smspal</a></td>
+  <td>Windows tool: edit / generate an SMS palette (<code>SMS.pal</code>).</td>
+  <td>ps2-home.com</td>
+</tr>
+<tr>
+  <td><a href="downloads/Rad-HOST-Client-1.8a.zip">Rad HOST Client 1.8a</a></td>
+  <td>Windows PC tool: streams media to SMS over its <code>host:</code> connection.</td>
+  <td>ps2-home.com</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="next">Where to next</h2>
+<div class="grid">
+<a class="tile" href="install.html"><span class="icon icon-install" aria-hidden="true"></span><b>Install &amp; First Boot</b><span>Get the ELF running</span></a>
+<a class="tile" href="mx4sio.html"><span class="icon icon-usb" aria-hidden="true"></span><b>MX4SIO</b><span>The headline feature</span></a>
+<a class="tile" href="building.html"><span class="icon icon-troubleshoot" aria-hidden="true"></span><b>Building from Source</b><span>Compile it yourself</span></a>
+<a class="tile" href="credits.html"><span class="icon icon-credits" aria-hidden="true"></span><b>Credits &amp; Sources</b><span>Who built what</span></a>
+</div>
