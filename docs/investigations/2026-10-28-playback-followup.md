@@ -51,7 +51,7 @@ optional NumPy series comparator reports per-frame errors and signed RGB bias.
 Independent layout controls passed for RGBA and RGB555, a known red-channel
 error and truncated input rejection.
 
-Longer controls exposed two concrete motion-compensation defects:
+Longer controls exposed three concrete decoder defects:
 
 1. Chroma vector derivation used shifts/low bits of the luma vector. MPEG-1/2
    4:2:0 requires signed division by two toward zero, which differs for negative
@@ -62,6 +62,10 @@ Longer controls exposed two concrete motion-compensation defects:
    before aligning their first row to the requested X coordinate. Moving that
    shift after the initial alignment fixes an independent bilinear-prediction
    error, including for nonnegative vectors.
+3. `_MPEG_put_block_fl` correctly wove top/bottom luma rows but stored chroma
+   rows grouped by field. Packing each top/bottom chroma row pair together
+   restores frame order for field-predicted blocks without residual data. A
+   direct output oracle failed at Cb row 1 (82 instead of 41) before this fix.
 
 The [FFmpeg MPEG motion implementation](https://github.com/FFmpeg/FFmpeg/blob/n9.0.2/libavcodec/mpegvideo_motion.c)
 provides an independent signed-vector reference. Neither fix changes IPU IDCT,
@@ -74,7 +78,10 @@ the first negative-vector control (-17,-17); a separate nonnegative control
 fails at (2,2). The corrected decoder passes 12,250 cases and 2,822,400 scalar
 pixel comparisons, including frame/field and put/average modes. The host
 production-vector control passes 171,610 cases under ASan/UBSan. Native layout
-checks preserve the assembly offsets and the existing GP data footprint.
+checks preserve the assembly offsets and the existing GP data footprint. The
+extended oracle also checks the final field-row weave, bringing the final count
+to 12,251 cases and 2,822,784 pixel comparisons; it passes at decoder revision
+`b8f0998ae72fede0b516947b4f1b108fefecb9b4`.
 
 ### Unchanged-bitstream decoder comparisons
 
@@ -135,18 +142,18 @@ reference; other cases remain 640x480. All 16 additional runs capture 150 frames
 | MPEG-1, two B | 16 | 3.4205 -> 2.2807 | 255 -> 26 |
 | MPEG-2, two B | 32 | 3.3962 -> 1.9412 | 255 -> 42 |
 | MPEG-2, two B | 16 | 4.5042 -> 3.2739 | 255 -> 41 |
-| Interlaced MPEG-2, two B | 32 | 2.2307 -> 0.7114 | 255 -> 255 |
-| Interlaced MPEG-2, two B | 16 | 4.5447 -> 3.1888 | 255 -> 255 |
+| Interlaced MPEG-2, two B | 32 | 2.2307 -> 0.5537 | 255 -> 16 |
+| Interlaced MPEG-2, two B | 16 | 4.5447 -> 3.0442 | 255 -> 21 |
 
-The interlaced residual is an **unresolved software control**, separate from
-console acceptance. In 32-bit output it retains 46,469 channel differences over
-32 levels (baseline 669,335). Frame 1, a B picture, has 144 such differences
-inside x=70..79/y=178..189; its mean error is 0.597 and maximum is 154. Frame 0
-is an I picture with maximum 5 and no differences over 32. Frame 3 is a P picture
-with maximum 6 and none over 32. This narrows a follow-up toward the interlaced
-B-picture integration, beyond the isolated interpolation oracle. Do not treat
-the remaining large differences as explained quantization or label this case
-fully corrected. No new regression is inferred from its lower aggregate error.
+The first two fixes left an interlaced B-picture residual: 46,469 channel
+differences over 32 levels in 32-bit output. Frame 1 had 144 inside
+x=70..79/y=178..189. The traced block used field backward prediction without
+residual data, which isolated `_MPEG_put_block_fl`. Its direct scalar/assembly
+control proved the chroma row-order fault independently. After the third fix,
+both 16/32-bit interlaced runs have **zero** differences over 32 across 150
+frames. All 16 candidate cells were replayed with fresh per-run logs at
+`b8f0998`, retaining identical baseline/encoded inputs. The controls establish
+the corrected paths in PCSX2; reporter/console acceptance remains separate.
 
 Skipped-block investigation must preserve the implicit prediction rules in
 [H.262 section 7.6.6](https://www.ee.columbia.edu/~eleft/e6880-Spring97/docs/is138182.pdf#page=116):
@@ -170,9 +177,9 @@ when investigating a residual.
 - All 29 host scripts pass. Pinned release/packed, DIAG and BDM=0 player builds
   pass after the decoder correction. Release small-data and small-BSS sizes
   remain `0x96be` / `0x63cc`; no GP threshold or linker-script change is needed.
-- Follow the reproducible interlaced B-picture residual above through reference
-  selection, field placement, residual integration and skipped macroblocks.
-  Preserve an unchanged baseline/candidate pair for any further decoder patch.
+- The reproducible severe interlaced residual is fixed and covered by the native
+  field-output oracle. Retain the matrix and unchanged bitstreams when checking
+  another decoder change; residual host/IPU errors are recorded, not assumed zero.
 - Verify current-head CI and the manifest of its downloadable player artifact.
 - Keep physical-console testing on hold until the user resumes it. Do not close
   the reporter issues based on host or emulator results alone.
