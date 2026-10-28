@@ -772,7 +772,8 @@ static int _mov_read_esds_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVA
      * AAC-LC use the encoded AudioSpecificConfig; retain the entry values
      * for PCE, explicit rates and other object types handled by the decoder. */
     if ( _mp4_get_id ( lObjectType ) == SMS_CodecID_AAC && lLen >= 2 ) {
-     static const unsigned int s_Rates[] = {
+     /* Keep this immutable lookup out of the crowded -G8192 small-data area. */
+     static const unsigned int s_Rates[] __attribute__( ( section( ".rodata" ) ) ) = {
       96000, 88200, 64000, 48000, 44100, 32000, 24000,
       22050, 16000, 12000, 11025, 8000, 7350
      };
