@@ -968,14 +968,15 @@ _MPEG_put_block_fl:
     pminh   $t5, $v0, $t5
     pminh   $t6, $v0, $t6
     pminh   $t7, $v0, $t7
-    ppacb   $t0, $t1, $t0
-    ppacb   $t2, $t3, $t2
-    ppacb   $t4, $t5, $t4
-    ppacb   $t6, $t7, $t6
+    /* Weave top/bottom chroma rows just as the luma rows above. */
+    ppacb   $t0, $t4, $t0
+    ppacb   $t1, $t5, $t1
+    ppacb   $t2, $t6, $t2
+    ppacb   $t3, $t7, $t3
     sq      $t0,  0($a2)
-    sq      $t2, 16($a2)
-    sq      $t4, 32($a2)
-    sq      $t6, 48($a2)
+    sq      $t1, 16($a2)
+    sq      $t2, 32($a2)
+    sq      $t3, 48($a2)
     bgtzl   $v1, 2b
     addiu   $a2, $a2, 64
     jr      $ra

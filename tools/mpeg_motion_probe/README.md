@@ -15,7 +15,7 @@ console. It logs a mismatch and stops at the first failing pixel. The successful
 final marker is:
 
 ```text
-[sms-motion] exit=0 cases=12250 pixels=2822400 failures=0
+[sms-motion] exit=0 cases=12251 pixels=2822784 failures=0
 ```
 
 Cases cover every pair of signed vectors from -17 through 17, frame and field
@@ -24,6 +24,11 @@ The data spans macroblock boundaries and exercises both Cb and Cr. Coordinates
 are interior to the reference image; this does not test malformed out-of-frame
 vectors, bitstream parsing, IPU reconstruction, GS display or storage timing.
 The output's `pixels` count includes checked luma and chroma samples.
+
+The final case packs distinct top/bottom luma and chroma field rows, runs the
+actual `_MPEG_put_block_fl`, and checks the woven macroblock bytes. The earlier
+decoder at `f062629` passes interpolation but fails this output case at Cb row 1:
+82 instead of 41. Correcting the chroma row weave makes the full oracle pass.
 
 Use `VECTOR_MIN=0` with a unique `OUT` for a nonnegative-vector control.
 `DECODER_SOURCE` and `DECODER_CORE` can select saved baseline source files;

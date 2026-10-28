@@ -10,6 +10,7 @@ typedef char motion_callback_check[offsetof(_MPEGMotion, MC_Luma) == 32 ? 1 : -1
 
 static unsigned cases, pixels, failures;
 static _MPEGMacroBlock8 reference[64] __attribute__((aligned(128)));
+static _MPEGMacroBlock8 output_block __attribute__((aligned(128)));
 
 static int sample(int plane, int x, int y) {
  return (x * (plane + 3) + y * (plane + 7) + (x ^ (y * 3)) * 11) & 255;
@@ -59,6 +60,39 @@ static int check(int dx,int dy,int h,int field,int dst,int avg) {
  return 1;
 }
 
+static int check_field_put(void) {
+ _MPEGMotions motions;
+ short* res=(short*)0x70000000;
+ unsigned char* output=UNCACHED_SEG(&output_block);
+ int plane,x,y;
+ memset(&motions,0,sizeof(motions));
+ motions.m_pSrc=(unsigned char*)res;
+ motions.m_pMBDstY=output;motions.m_pMBDstCbCr=output+256;
+ for(plane=0;plane<3;++plane) {
+  int width=plane?8:16,height=width;
+  int offset=plane?256+(plane-1)*64:0;
+  for(y=0;y<height;++y)for(x=0;x<width;++x) {
+   int packed_y=y/2+(y&1)*(height/2);
+   res[offset+packed_y*width+x]=sample(plane,x,y);
+  }
+ }
+ _MPEG_put_block_fl(&motions);
+ ++cases;
+ for(plane=0;plane<3;++plane) {
+  int width=plane?8:16,height=width;
+  int offset=plane?256+(plane-1)*64:0;
+  for(y=0;y<height;++y)for(x=0;x<width;++x) {
+   int actual=output[offset+y*width+x],expected=sample(plane,x,y);
+   ++pixels;
+   if(actual!=expected) {
+    printf("[sms-motion] field_put plane=%d x=%d y=%d actual=%d expected=%d\n",plane,x,y,actual,expected);
+    ++failures;return 0;
+   }
+  }
+ }
+ return 1;
+}
+
 int main(void) {
  int bx,by,x,y,h,field,dst,avg,dx,dy;
  memset(&s_MPEG12Ctx,0,sizeof(s_MPEG12Ctx));
@@ -76,6 +110,7 @@ int main(void) {
   for(dst=0;dst<(h==8?16:8);dst+=8)for(avg=0;avg<2;++avg)
    for(dy=VECTOR_MIN;dy<=17;++dy)for(dx=VECTOR_MIN;dx<=17;++dx)
     if(!check(dx,dy,h,field,dst,avg))goto done;
+ check_field_put();
 done:
  printf("[sms-motion] exit=%d cases=%u pixels=%u failures=%u\n",failures?1:0,cases,pixels,failures);
  fflush(stdout);SleepThread();return 0;
