@@ -27,6 +27,12 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # Only one master publisher may upload player assets and advance rolling.
+    # Keep queued builds: a historical rerun must not cancel the latest master.
+    concurrency:
+      group: sms-player-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'rolling' || format('{0}-{1}', github.run_id, github.run_attempt) }}
+      cancel-in-progress: false
+      queue: max
     steps:
     - uses: actions/checkout@v7
 
@@ -163,6 +169,10 @@ jobs:
       run: |
         # An old push rerun must not replace the current master release.
         master_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha')
+        if [[ ! "$master_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+          echo "Cannot verify master identity before player publication" >&2
+          exit 1
+        fi
         if [ "$master_sha" != "$GITHUB_SHA" ]; then
           echo "Skipping superseded rolling build $GITHUB_SHA (master is $master_sha)"
           exit 0

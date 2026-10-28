@@ -96,7 +96,7 @@ def run_case(name, expected, **overrides):
             assert sum(a[:3] == ["release", "create", "rolling"] for a in calls) == (not overrides.get("exists", True))
             assert any(a[:3] == ["release", "upload", "rolling"] for a in calls), calls
             assert calls[-1][1].endswith("/git/ref/tags/rolling"), calls
-        if overrides.get("master_error"):
+        if overrides.get("master_error") or name in ("invalid-master-identity", "empty-master-identity"):
             assert len(calls) == 1, calls
         if overrides.get("upload_error"):
             assert not any("PATCH" in a for a in calls), calls
@@ -108,8 +108,10 @@ run_case("first-release", True, exists=False)
 run_case("already-current", True, tag=SHA)
 run_case("superseded", True, master="d" * 40)
 run_case("master-api-failure", False, master_error=True)
+run_case("invalid-master-identity", False, master="null")
+run_case("empty-master-identity", False, master="")
 run_case("upload-failure", False, upload_error=True)
 run_case("tag-update-failure", False, patch_error=True)
 run_case("tag-read-failure", False, verify_error=True)
 run_case("tag-mismatch", False, verify_mismatch=True)
-print("Rolling release workflow: 9 publication/failure controls passed")
+print("Rolling release workflow: 11 publication/failure controls passed")

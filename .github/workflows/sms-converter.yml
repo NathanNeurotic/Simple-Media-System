@@ -14,6 +14,11 @@ jobs:
   test-and-build:
     name: Build & Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Serialize writers of each rolling asset family; other events stay parallel.
+    concurrency:
+      group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && format('sms-converter-rolling-{0}', matrix.os) || format('sms-converter-{0}-{1}-{2}', matrix.os, github.run_id, github.run_attempt) }}
+      queue: max
+      cancel-in-progress: false
     strategy:
       fail-fast: false
       matrix:
@@ -50,6 +55,7 @@ jobs:
         python tools/sms_converter/test_converter.py
         python tools/sms_converter/test_multitrack.py
         python tools/sms_converter/test_geometry.py
+        python tools/test_converter_publication.py
 
     - name: Run End-to-End Hardware Preset Tests
       env:
@@ -90,28 +96,61 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       shell: bash
       run: |
+        # The player workflow owns release creation and the rolling tag.
+        # Recheck master on every retry, including while waiting for creation.
         for i in {1..12}; do
+          if ! master_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha'); then
+            echo "Cannot verify master before converter publication" >&2
+            exit 1
+          fi
+          if [[ ! "$master_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "Invalid master identity from GitHub API" >&2
+            exit 1
+          fi
+          if [ "$master_sha" != "$GITHUB_SHA" ]; then
+            echo "Skipping superseded converter build $GITHUB_SHA (master is $master_sha)"
+            exit 0
+          fi
           if gh release upload rolling dist-artifact/SMS-Media-Converter.exe --clobber; then
             echo "Uploaded SMS-Media-Converter.exe to rolling release!"
-            break
+            exit 0
           fi
-          echo "Waiting for rolling release creation..."
-          sleep 10
+          echo "Waiting for rolling release creation or retrying failed upload..."
+          if [ "$i" -lt 12 ]; then sleep 10; fi
         done
+        echo "Failed to publish SMS-Media-Converter.exe after 12 attempts" >&2
+        exit 1
 
     - name: Upload Linux Package to Rolling Release
       if: runner.os == 'Linux' && github.event_name == 'push' && github.ref == 'refs/heads/master'
       env:
         GH_TOKEN: ${{ github.token }}
+      shell: bash
       run: |
+        # The player workflow owns release creation and the rolling tag.
+        # Recheck master on every retry, including while waiting for creation.
         for i in {1..12}; do
+          if ! master_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha'); then
+            echo "Cannot verify master before converter publication" >&2
+            exit 1
+          fi
+          if [[ ! "$master_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "Invalid master identity from GitHub API" >&2
+            exit 1
+          fi
+          if [ "$master_sha" != "$GITHUB_SHA" ]; then
+            echo "Skipping superseded converter build $GITHUB_SHA (master is $master_sha)"
+            exit 0
+          fi
           if gh release upload rolling dist-artifact/*.zip --clobber; then
             echo "Uploaded SMS-Media-Converter-Linux.zip to rolling release!"
-            break
+            exit 0
           fi
-          echo "Waiting for rolling release creation..."
-          sleep 10
+          echo "Waiting for rolling release creation or retrying failed upload..."
+          if [ "$i" -lt 12 ]; then sleep 10; fi
         done
+        echo "Failed to publish SMS-Media-Converter-Linux.zip after 12 attempts" >&2
+        exit 1
 
     # --- Publish to Version Release on Tag Push (v*) ---
     - name: Upload Windows Executable to Version Release
@@ -164,6 +203,10 @@ jobs:
   build-windows7:
     name: Build (Windows 7 compatible)
     runs-on: windows-latest
+    concurrency:
+      group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'sms-converter-rolling-win7' || format('sms-converter-win7-{0}-{1}', github.run_id, github.run_attempt) }}
+      queue: max
+      cancel-in-progress: false
     steps:
     - uses: actions/checkout@v7
 
@@ -205,6 +248,7 @@ jobs:
         python tools/sms_converter/test_converter.py
         python tools/sms_converter/test_multitrack.py
         python tools/sms_converter/test_geometry.py
+        python tools/test_converter_publication.py
 
     # This step has no `shell:` key, so it runs in pwsh -- keep each command on ONE line.
     # A trailing backslash is not a line continuation there and would truncate the build.
@@ -227,14 +271,30 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       shell: bash
       run: |
+        # The player workflow owns release creation and the rolling tag.
+        # Recheck master on every retry, including while waiting for creation.
         for i in {1..12}; do
+          if ! master_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha'); then
+            echo "Cannot verify master before converter publication" >&2
+            exit 1
+          fi
+          if [[ ! "$master_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "Invalid master identity from GitHub API" >&2
+            exit 1
+          fi
+          if [ "$master_sha" != "$GITHUB_SHA" ]; then
+            echo "Skipping superseded converter build $GITHUB_SHA (master is $master_sha)"
+            exit 0
+          fi
           if gh release upload rolling dist-artifact/SMS-Media-Converter-Win7.exe --clobber; then
             echo "Uploaded SMS-Media-Converter-Win7.exe to rolling release!"
-            break
+            exit 0
           fi
-          echo "Waiting for rolling release creation..."
-          sleep 10
+          echo "Waiting for rolling release creation or retrying failed upload..."
+          if [ "$i" -lt 12 ]; then sleep 10; fi
         done
+        echo "Failed to publish SMS-Media-Converter-Win7.exe after 12 attempts" >&2
+        exit 1
 
     - name: Upload Windows 7 Executable to Version Release
       if: startsWith(github.ref, 'refs/tags/v')
