@@ -327,6 +327,7 @@ static void _playlist_menu_redraw ( GUIMenu* apMenu ) {
 static int _playlist_menu ( SMS_List* apList, SMS_ListNode** appNode ) {
 
  int           lCount  = 0;
+ int           lResult;
  SMS_ListNode* lpNode  = apList -> m_pHead;
  GUIMenu*      lpMenu  = ( GUIMenu* )GUI_CreateMenu ();
  int           lWidth  = g_GSCtx.m_Width  - ( g_GSCtx.m_Width  >> 2 );
@@ -391,12 +392,13 @@ static int _playlist_menu ( SMS_List* apList, SMS_ListNode** appNode ) {
  GUI_Run ();
 
  appNode[ 0 ] = SMS_ListFind ( apList, lpState -> m_pCurr -> m_pOptionName -> m_pStr );
+ lResult = ( int )lpMenu -> m_pUserData;
 
  GUI_DeleteObject ( STR_SELECT_FILE.m_pStr );
 
  free ( lpNames );
  free ( lpItems );
 
- return ( int )lpMenu -> m_pUserData;
+ return lResult;
 
 }  /* end _playlist_menu */

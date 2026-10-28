@@ -25,17 +25,21 @@ static int producer_done;
 static unsigned char stack[16384] __attribute__((aligned(16)));
 static int (*real_picture)(void *,s64 *);
 
-void SMS_FrameBufferInit(SMS_FrameBuffer *frames,int count,int width,int height,int depth) {
+int SMS_FrameBufferInit(SMS_FrameBuffer *frames,int count,int width,int height,int depth) {
  int i;
  width=(width+15)&~15;height=(height+15)&~15;
  frame_bytes=width*height*(depth?2:4);
  for(i=0;i<count;++i) {
   frames[i].m_pBase=memalign(128,frame_bytes);
-  if(!frames[i].m_pBase) { printf("[sms-pool] allocation failure\n");fflush(stdout);SleepThread(); }
+  if(!frames[i].m_pBase) {
+   SMS_FrameBufferDestroy(frames,i);
+   printf("[sms-pool] allocation failure\n");fflush(stdout);return 0;
+  }
   frames[i].m_pData=NULL;frames[i].m_FrameType=-1;
  }
  printf("[sms-pool] sequence=%dx%d mode=%d bytes=%u\n",width,height,depth?16:32,frame_bytes);
  fflush(stdout);
+ return 1;
 }
 
 void SMS_FrameBufferDestroy(SMS_FrameBuffer *frames,int count) {

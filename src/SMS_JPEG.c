@@ -59,7 +59,6 @@
 #define MAX_SIZE( c )  (  ( c ) ? 384 : 64  )
 #define MAX_CELLS( c ) (  MAX_SIZE( c ) - 32  )
 #define GET_SIZE( c )  (  _get_short_be ( c )  )
-#define SKIP_SEG( c )  (  _skip (  c, GET_SIZE( c ) - 2  )  )
 #define DATA_END( c )  (  ( c ) -> m_pData >= ( c ) -> m_pDataEnd  )
 
 #define HEOB 0x00
@@ -85,25 +84,41 @@ static void         _init_clr_fmt ( _jpeg_clr_fmt                  );
 static unsigned int _next_MK      ( SMS_JPEGContext*               );
 static int          _load_huff    ( SMS_JPEGContext*               );
 static int          _load_qtbls   ( SMS_JPEGContext*               );
-static void         _process_MCU  ( SMS_JPEGContext*, unsigned int );
+static int          _process_MCU  ( SMS_JPEGContext*, unsigned int );
 
 static unsigned int inline _get_short_be ( SMS_JPEGContext* apCtx ) {
  unsigned int retVal;
- retVal = apCtx -> m_pData[ 0 ];
- retVal = ( retVal << 8 ) | apCtx -> m_pData[ 1 ];
+ if ( apCtx -> m_pDataEnd - apCtx -> m_pData < 2 ) { apCtx -> m_Error = 1; return 0; }
+ retVal = ( apCtx -> m_pData[ 0 ] << 8 ) | apCtx -> m_pData[ 1 ];
  apCtx -> m_pData += 2;
  return retVal;
 }  /* end _get_short_be */
 
+
 static void inline _skip ( SMS_JPEGContext* apCtx, unsigned int anBytes ) {
+ if ( anBytes > ( unsigned int )( apCtx -> m_pDataEnd - apCtx -> m_pData ) ) {
+  apCtx -> m_Error = 1;
+  return;
+ }
  apCtx -> m_pData += anBytes;
 }  /* end _skip */
 
+
 static unsigned int inline _get_byte ( SMS_JPEGContext* apCtx ) {
- unsigned int retVal = apCtx -> m_pData[ 0 ];
- apCtx -> m_pData   += 1;
- return retVal;
+ if ( DATA_END( apCtx ) ) { apCtx -> m_Error = 1; return 0; }
+ return *apCtx -> m_pData++;
 }  /* end _get_byte */
+
+/* Return the end of a complete length-prefixed segment, after its length. */
+static unsigned char* _segment ( SMS_JPEGContext* apCtx ) {
+ unsigned int lSize = GET_SIZE( apCtx );
+ if ( apCtx -> m_Error || lSize < 2 || lSize - 2 > ( unsigned int )( apCtx -> m_pDataEnd - apCtx -> m_pData ) ) {
+  apCtx -> m_Error = 1;
+  return NULL;
+ }
+ return apCtx -> m_pData + lSize - 2;
+}  /* end _segment */
+
 
 static void inline VU0Kick ( void ) {
  __asm__ __volatile__(
@@ -337,6 +352,8 @@ SMS_JPEGContext* SMS_JPEGInit (  void ( *aProgress ) ( void*, unsigned int ), vo
 
  retVal = ( SMS_JPEGContext* )calloc (  1, sizeof ( SMS_JPEGContext )  );
 
+ if ( !retVal ) return NULL;
+
  retVal -> m_pHTbl[ 0 ] = &retVal -> m_DCTbl[ 0 ][ 0 ];
  retVal -> m_pHTbl[ 1 ] = &retVal -> m_DCTbl[ 1 ][ 0 ];
  retVal -> m_pHTbl[ 2 ] = &retVal -> m_ACTbl[ 0 ][ 0 ];
@@ -379,6 +396,13 @@ void SMS_JPEGDestroy ( SMS_JPEGContext* apCtx ) {
 int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize ) {
 
  int retVal = 0;
+ int lfFrame = 0, lfScan = 0;
+
+ if ( !apCtx ) return 0;
+ apCtx -> m_nBitmapBytes = apCtx -> m_nBitmapQWC = 0;
+ apCtx -> m_nComp = apCtx -> m_Width = apCtx -> m_Height = 0;
+ apCtx -> m_Error = apCtx -> m_QTableMask = apCtx -> m_HuffmanMask = 0;
+ if ( !apData || aDataSize < 4 ) return 0;
 
  apCtx -> m_MR       = 0;
  apCtx -> m_MC       = 0;
@@ -403,16 +427,19 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
     _jpeg_comp_desc* lpDesc = &apCtx -> m_CompDesc[ 0 ], *lpEnd;
     unsigned int     lnComp;
     _jpeg_clr_fmt    lFmt;
+    unsigned char*  lpEndSeg = _segment ( apCtx );
+    SMS_RescaleContext* lpRC;
  
-    if (  apCtx -> m_pData + GET_SIZE( apCtx ) >= apCtx -> m_pDataEnd  ) goto end;
+    if ( lfFrame || lfScan || !lpEndSeg || lpEndSeg - apCtx -> m_pData != 15 ) goto end;
 
-    _get_byte ( apCtx );
+    if ( _get_byte ( apCtx ) != 8 ) goto end;
 
     apCtx -> m_Height = GET_SIZE( apCtx );
     apCtx -> m_Width  = GET_SIZE( apCtx );
     apCtx -> m_nComp  = lnComp = _get_byte ( apCtx );
 
-    if ( lnComp != 3 ) goto end;
+    if ( lnComp != 3 || !apCtx -> m_Width || !apCtx -> m_Height ||
+         apCtx -> m_Width > 65520 ) goto end;
 
     lpEnd = lpDesc + lnComp;
 
@@ -423,8 +450,24 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
      lpDesc -> m_HSF    = HI_NIBBLE( lMark );
      lpDesc -> m_VSF    = LO_NIBBLE( lMark );
      lpDesc -> m_QT     = _get_byte ( apCtx );
+     if ( !lpDesc -> m_HSF || lpDesc -> m_HSF > 2 ||
+          !lpDesc -> m_VSF || lpDesc -> m_VSF > 2 ||
+          ( unsigned char )lpDesc -> m_QT >= 4 ) goto end;
 
     } while ( ++lpDesc != lpEnd );
+
+    if ( apCtx -> m_CompDesc[ 0 ].m_HSF * apCtx -> m_CompDesc[ 0 ].m_VSF +
+         apCtx -> m_CompDesc[ 1 ].m_HSF * apCtx -> m_CompDesc[ 1 ].m_VSF +
+         apCtx -> m_CompDesc[ 2 ].m_HSF * apCtx -> m_CompDesc[ 2 ].m_VSF > 6 ||
+         apCtx -> m_CompDesc[ 0 ].m_CompID == apCtx -> m_CompDesc[ 1 ].m_CompID ||
+         apCtx -> m_CompDesc[ 0 ].m_CompID == apCtx -> m_CompDesc[ 2 ].m_CompID ||
+         apCtx -> m_CompDesc[ 1 ].m_CompID == apCtx -> m_CompDesc[ 2 ].m_CompID ) goto end;
+
+    /* The four CSC microprograms consume 1/2/4 Y blocks, then one Cb and
+     * one Cr block. MCU dimensions alone do not describe another component
+     * arrangement: no per-component sampling metadata is sent to VU1. */
+    if ( apCtx -> m_CompDesc[ 1 ].m_HSF != 1 || apCtx -> m_CompDesc[ 1 ].m_VSF != 1 ||
+         apCtx -> m_CompDesc[ 2 ].m_HSF != 1 || apCtx -> m_CompDesc[ 2 ].m_VSF != 1 ) goto end;
 
     _init_MCU ( apCtx );
 
@@ -456,12 +499,15 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
 
     if ( apCtx -> m_Format != lFmt ) _init_clr_fmt ( apCtx -> m_Format = lFmt );
 
-    apCtx -> m_pRC = SMS_RescaleInit (
+    lpRC = SMS_RescaleInit (
      apCtx -> m_pRC, apCtx -> m_Width, apCtx -> m_Height,
      apCtx -> m_MCUH, apCtx -> m_MCUW
     );
+    if ( !lpRC || !lpRC -> m_pStripePtr ) goto end;
+    apCtx -> m_pRC = lpRC;
 
     apCtx -> m_pDst = ( unsigned int* )apCtx -> m_pRC -> m_pStripePtr;
+    lfFrame = 1;
 
    } break;
 
@@ -479,7 +525,8 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
 
    case MK_DRI: {
 
-    GET_SIZE( apCtx );
+    unsigned char* lpEndSeg = _segment ( apCtx );
+    if ( lfScan || !lpEndSeg || lpEndSeg - apCtx -> m_pData != 2 ) goto end;
     lRstInt = GET_SIZE( apCtx );
 
    } break;
@@ -487,22 +534,25 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
    case MK_SOS: {
 
     int lnComp = apCtx -> m_nComp;
+    unsigned char* lpEndSeg = _segment ( apCtx );
 
-    if (  apCtx -> m_pData + GET_SIZE( apCtx ) >= apCtx -> m_pDataEnd  ) goto end;
+    if ( !lfFrame || lfScan || !lpEndSeg || lpEndSeg - apCtx -> m_pData != 10 ) goto end;
 
     if (  _get_byte ( apCtx ) != ( int )apCtx -> m_nComp  ) goto end;
 
     for (  i = 0; i < ( unsigned )lnComp; ++i  ) {
-     char lByte;
+     unsigned int lByte;
      if (  _get_byte ( apCtx ) != apCtx -> m_CompDesc[ i ].m_CompID  ) goto end;
 	 lByte = _get_byte ( apCtx );
 	 apCtx -> m_CompDesc[ i ].m_DCHT = HI_NIBBLE( lByte );
 	 apCtx -> m_CompDesc[ i ].m_ACHT = LO_NIBBLE( lByte );
+     if ( HI_NIBBLE( lByte ) > 1 || LO_NIBBLE( lByte ) > 1 ||
+          !( apCtx -> m_QTableMask & ( 1 << apCtx -> m_CompDesc[ i ].m_QT ) ) ||
+          !( apCtx -> m_HuffmanMask & ( 1 << HID( 0, HI_NIBBLE( lByte ) ) ) ) ||
+          !( apCtx -> m_HuffmanMask & ( 1 << HID( 1, LO_NIBBLE( lByte ) ) ) ) ) goto end;
     }  /* end for */
 
-    if (  apCtx -> m_pData + GET_SIZE( apCtx ) >= apCtx -> m_pDataEnd  ) goto end;
-
-    _get_byte ( apCtx );
+    if ( _get_byte ( apCtx ) != 0 || _get_byte ( apCtx ) != 63 || _get_byte ( apCtx ) != 0 ) goto end;
 
     apCtx -> m_nBits = 0;
 
@@ -512,27 +562,37 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
      unsigned int lnRst = _ceil_div ( apCtx -> m_MW * apCtx -> m_MH, lRstInt ) - 1;
      lLeft = apCtx -> m_MW * apCtx -> m_MH - lnRst * lRstInt;
      for ( i = 0; i < lnRst; ++i ) {
-      _process_MCU ( apCtx, lRstInt );
+      if ( !_process_MCU ( apCtx, lRstInt ) ) goto end;
       lMark = _next_MK ( apCtx );
-      if (  !MK_RST( lMark )  ) goto end;
+      if ( lMark != ( 0xFFD0 | ( i & 7 ) ) ) goto end;
       apCtx -> m_nBits = 0;
       _reset_pred ( apCtx );
      }  /* end for */
     } else lLeft = apCtx -> m_MW * apCtx -> m_MH;
 
-    _process_MCU ( apCtx, lLeft );
+    if ( !_process_MCU ( apCtx, lLeft ) ) goto end;
+    lfScan = 1;
 
    } break;
 
    case MK_EOI: {
 
-    SMS_RescaleContext* lpRC    = apCtx -> m_pRC;
-    unsigned int        lnAlloc = lpRC -> m_NewWidth * lpRC -> m_NewHeight * 3;
+    SMS_RescaleContext* lpRC = apCtx -> m_pRC;
+    unsigned int lnAlloc;
+    if ( !lfFrame || !lfScan || apCtx -> m_Error || !lpRC ) goto end;
+    lnAlloc = lpRC -> m_NewWidth * lpRC -> m_NewHeight * 3;
 
     apCtx -> m_nBitmapQWC   = (  ( lnAlloc + 15 ) & ~15  ) >> 4;
     apCtx -> m_nBitmapBytes = lnAlloc;
 
-    apCtx -> m_pBitmap = ( unsigned char* )SMS_ReallocWithAlign(   apCtx -> m_pBitmap, &( apCtx -> m_nAlloc ), (  ( lnAlloc ) + 64  ) & ~63   );
+    if ( !apCtx -> m_pBitmap || apCtx -> m_nAlloc < ( ( lnAlloc + 64 ) & ~63 ) ) {
+     unsigned int lSize = ( lnAlloc + 64 ) & ~63;
+     unsigned char* lpBitmap = ( unsigned char* )memalign ( 64, lSize );
+     if ( !lpBitmap ) goto end;
+     free ( apCtx -> m_pBitmap );
+     apCtx -> m_pBitmap = lpBitmap;
+     apCtx -> m_nAlloc = lSize;
+    }  /* end if */
 
     lpRC -> ProcessBuffer (  lpRC, UNCACHED_SEG( apCtx -> m_pBitmap )  );
 
@@ -543,7 +603,9 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
 
    case MK_COM: {
 
-    SKIP_SEG( apCtx );
+    unsigned char* lpEndSeg = _segment ( apCtx );
+    if ( !lpEndSeg ) goto end;
+    apCtx -> m_pData = lpEndSeg;
 
    } break;
 
@@ -552,17 +614,18 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
    } goto end;
 
    default: {
-    if (  ( lMark & MK_MSK ) == MK_APP  )
-     SKIP_SEG( apCtx );
-    else if (  MK_RST( lMark )  )
-     _reset_pred ( apCtx );
-    else goto end;
+    if ( ( lMark & MK_MSK ) == MK_APP ) {
+     unsigned char* lpEndSeg = _segment ( apCtx );
+     if ( !lpEndSeg ) goto end;
+     apCtx -> m_pData = lpEndSeg;
+    } else goto end;
    } break;
 
   } while ( 1 );
 
  }  /* end if */
 end:
+ if ( !retVal ) apCtx -> m_nBitmapBytes = apCtx -> m_nBitmapQWC = 0;
  return retVal;
 
 }  /* end SMS_JPEGLoad */
@@ -693,87 +756,56 @@ __asm__(
 );
 
 static unsigned int _next_MK ( SMS_JPEGContext* apCtx ) {
-
- unsigned char* lpData    = apCtx -> m_pData;
- unsigned char* lpDataEnd = apCtx -> m_pDataEnd;
- unsigned int   lChr0     = *lpData++;
- unsigned int   retVal;
-
- while ( 1 ) {
-
-  unsigned int lChr1 = *lpData;
-
-  if ( lChr0 == 0xFF && lChr1 ) {
-   lpData += 1;
-   retVal  = 0xFF00 | lChr1;
-   break;
-  }  /* end if */
-
-  if ( lpData >= lpDataEnd ) {
-   retVal = 0x80000000;
-   break;
-  }  /* end if */
-
-  lChr0   = lChr1;
-  lpData += 1;
-
- }  /* end while */
-
- apCtx -> m_pData = lpData;
-
- return retVal;
-
+ while ( apCtx -> m_pData < apCtx -> m_pDataEnd ) {
+  unsigned int lByte = *apCtx -> m_pData++;
+  if ( lByte != 0xFF ) continue;
+  do {
+   if ( DATA_END( apCtx ) ) return 0x80000000;
+   lByte = *apCtx -> m_pData++;
+  } while ( lByte == 0xFF );
+  if ( lByte ) return 0xFF00 | lByte;
+ }
+ return 0x80000000;
 }  /* end _next_MK */
 
+
 static int _load_qtbls ( SMS_JPEGContext* apCtx ) {
-
- unsigned char* lpData = apCtx -> m_pData;
- int            lLen;
-
- lLen    = (   (  ( unsigned int )lpData[ 0 ] << 8  ) |
-               (  ( unsigned int )lpData[ 1 ]       )
-           ) - 2;
- lpData += 2;
-
- while ( lLen >= 65 ) {
-
-  unsigned char lVal = *lpData++;
-
-  if (  HI_NIBBLE( lVal ) > 0  ) return 0;
-
-  memcpy ( apCtx -> m_QTable[ LO_NIBBLE( lVal ) ], lpData, 64 );
-
-  lpData += 64;
-  lLen   -= 65;
-
- }  /* end for */
-
- apCtx -> m_pData = lpData;
-
- return lpData < apCtx -> m_pDataEnd;
-
+ unsigned char* lpEnd = _segment ( apCtx );
+ if ( !lpEnd || lpEnd == apCtx -> m_pData ) return 0;
+ while ( apCtx -> m_pData < lpEnd ) {
+  unsigned int lVal;
+  if ( lpEnd - apCtx -> m_pData < 65 ) return 0;
+  lVal = _get_byte ( apCtx );
+  if ( HI_NIBBLE( lVal ) || LO_NIBBLE( lVal ) >= 4 ) return 0;
+  memcpy ( apCtx -> m_QTable[ LO_NIBBLE( lVal ) ], apCtx -> m_pData, 64 );
+  apCtx -> m_QTableMask |= 1 << LO_NIBBLE( lVal );
+  _skip ( apCtx, 64 );
+ }
+ return !apCtx -> m_Error;
 }  /* end _load_qtbls */
+
 
 static int _load_huff ( SMS_JPEGContext* apCtx ) {
 
  int            i, j, lVal, lSize, lCls, lID, lMaxSize;
  int            lnLeaves, lnNodes, lnCells, lMaxDepth;
- int            lfDone, lNextCell, lNextLevel;
+ int            lNextCell, lNextLevel;
  unsigned int*  lpPtr;
+ unsigned char* lpEnd = _segment ( apCtx );
  unsigned char* lpData = apCtx -> m_pData;
+ if ( !lpEnd || lpEnd == lpData ) return 0;
 
- lSize   = (   (  ( unsigned int )lpData[ 0 ] << 8  ) |
-               (  ( unsigned int )lpData[ 1 ]       )
-           ) - 2;
- lpData += 2;
+ lSize = lpEnd - lpData;
 
  while ( lSize > 0 ) {
 
+  int lnSymbols = 0;
+  if ( lSize < 17 ) return 0;
   lVal = *lpData++;
   lCls = HI_NIBBLE( lVal );
   lID  = LO_NIBBLE( lVal );
 
-  if ( lID > 1 ) return 0;
+  if ( lCls > 1 || lID > 1 ) return 0;
 
   lID      = HID( lCls, lID ); --lSize;
   lnCells  = lnNodes   = 1;
@@ -789,29 +821,35 @@ static int _load_huff ( SMS_JPEGContext* apCtx ) {
    lnLeaves = lpPtr[ lMaxSize - ( i << 1 ) - 1 ] = *lpData++;
    lnCells  = lnNodes << 1;
    lnNodes  = lpPtr[ lMaxSize - ( i << 1 ) - 2 ] = lnCells - lnLeaves;
+   if ( lnNodes < 0 ) return 0;
+   lnSymbols += lnLeaves;
    if ( lnLeaves ) lMaxDepth = i;
 
   }  /* end for */
 
   lSize     -= 16;
+  if ( !lnSymbols || lnSymbols > lSize || lnSymbols > 256 ) return 0;
+  for ( j = 0; j < lnSymbols; ++j ) {
+   int lSym = lpData[ j ];
+   if ( !lCls ? lSym > 11 : ( ( lSym & 15 ) > 10 || ( !( lSym & 15 ) && lSym != 0 && lSym != 0xF0 ) ) ) return 0;
+  }
+  apCtx -> m_HuffmanMask |= 1 << lID;
   lpPtr[ 0 ] = 0x101;
   lNextCell  = 2;
   i          = 0;
-  lfDone     = 0;
 
   while ( i <= lMaxDepth ) {
 
    lnLeaves = lpPtr[ lMaxSize - ( i << 1 ) - 1 ];
 
-   for ( j = 0; j < lnLeaves; ++j, ++lpData )
-	if ( !lfDone ) {
+   for ( j = 0; j < lnLeaves; ++j, ++lpData ) {
+     if ( lNextCell >= lVal ) return 0;
      lpPtr[ lNextCell++ ] = *lpData | 0x200;
-     if ( lNextCell >= lVal ) lfDone = !0;
-	}  /* end if */
+   }  /* end for */
 
    lSize -= lnLeaves;
 
-   if (  lfDone || ( i == lMaxDepth )  ) {
+   if ( i == lMaxDepth ) {
     ++i;
     continue;
    }  /* end if */
@@ -821,10 +859,7 @@ static int _load_huff ( SMS_JPEGContext* apCtx ) {
 
    for ( j = 0; j < lnNodes; ++j ) {
 
-    if ( lNextCell >= lVal ) {
-     lfDone = ~0;
-     break;
-    }  /* end if */
+    if ( lNextCell >= lVal || lNextLevel + 1 >= lVal ) return 0;
 
     lpPtr[ lNextCell++ ] = ( lNextLevel >> 1 ) | (
      (   !(  ( lNextLevel | 1 ) >= lVal  )   ) << 8
@@ -841,22 +876,48 @@ static int _load_huff ( SMS_JPEGContext* apCtx ) {
 
  apCtx -> m_pData = lpData;
 
- return lpData < apCtx -> m_pDataEnd;
+ return lpData == lpEnd;
 
 }  /* end _load_huff */
 
-static void inline _unpack ( SMS_JPEGContext* apCtx, short* apTbl, _jpeg_comp_desc* apDesc ) {
+static int _bits ( SMS_JPEGContext* apCtx, unsigned int anBits, unsigned int* apValue ) {
+ if ( anBits > 16 ) return 0;
+ while ( apCtx -> m_nBits < anBits ) {
+  unsigned int lByte;
+  if ( DATA_END( apCtx ) ) return 0;
+  lByte = *apCtx -> m_pData;
+  if ( lByte == 0xFF ) {
+   if ( apCtx -> m_pDataEnd - apCtx -> m_pData < 2 || apCtx -> m_pData[ 1 ] ) return 0;
+   ++apCtx -> m_pData;
+  }
+  ++apCtx -> m_pData;
+  apCtx -> m_BitBuf = ( apCtx -> m_BitBuf << 8 ) | lByte;
+  apCtx -> m_nBits += 8;
+ }
+ apCtx -> m_nBits -= anBits;
+ *apValue = ( apCtx -> m_BitBuf >> apCtx -> m_nBits ) & ( ( 1U << anBits ) - 1 );
+ return 1;
+}  /* end _bits */
 
- unsigned int   i, lRun;
- unsigned int   lVal;
- unsigned int   lSym;
- unsigned int*  lpDC    = apCtx -> m_pHTbl[ HID( 0, apDesc -> m_DCHT ) ];
- unsigned int*  lpAC    = apCtx -> m_pHTbl[ HID( 1, apDesc -> m_ACHT ) ];
- unsigned char* lpQT    = apCtx -> m_QTable[ ( unsigned char )apDesc -> m_QT ];
- unsigned int   lnBits  = apCtx -> m_nBits;
- unsigned int   lBitBuf = apCtx -> m_BitBuf;
- unsigned char* lpData  = apCtx -> m_pData;
+static int _huff_sym ( SMS_JPEGContext* apCtx, unsigned int* apTable, unsigned int aSize, unsigned int* apSym ) {
+ unsigned int lIdx = 0, i;
+ for ( i = 0; i <= 16; ++i ) {
+  unsigned int lNode, lBit;
+  if ( lIdx >= aSize ) return 0;
+  lNode = apTable[ lIdx ];
+  if ( ( lNode & 0x300 ) == 0x200 ) { *apSym = lNode & 0xFF; return 1; }
+  if ( i == 16 || ( lNode & 0x300 ) != 0x100 || !_bits ( apCtx, 1, &lBit ) ) return 0;
+  lIdx = ( ( lNode & 0xFF ) << 1 ) | lBit;
+ }
+ return 0;
+}  /* end _huff_sym */
 
+static int inline _unpack ( SMS_JPEGContext* apCtx, short* apTbl, _jpeg_comp_desc* apDesc ) {
+ unsigned int i, lSym, lBits;
+ int lVal;
+ unsigned int* lpDC = apCtx -> m_pHTbl[ HID( 0, apDesc -> m_DCHT ) ];
+ unsigned int* lpAC = apCtx -> m_pHTbl[ HID( 1, apDesc -> m_ACHT ) ];
+ unsigned char* lpQT = apCtx -> m_QTable[ ( unsigned char )apDesc -> m_QT ];
  __asm__ __volatile__(
   "sq   $zero,   0(%0)\n\t"
   "sq   $zero,  16(%0)\n\t"
@@ -869,99 +930,31 @@ static void inline _unpack ( SMS_JPEGContext* apCtx, short* apTbl, _jpeg_comp_de
   :: "r"( apTbl )
  );
 
- lSym = 0;
 
- while (   ( lpDC[ lSym ] & 0x300 ) == 0x100   ) {
-  unsigned int lBit;
-  while ( lnBits <= 16 ) {
-   unsigned char lChr = *lpData;
-   lpData += 1 + ( lChr == 0xFF );
-   lBitBuf = ( lBitBuf << 8 ) | lChr;
-   lnBits += 8;
-  }  /* end while */
-  lBit    = (  lBitBuf >> ( lnBits - 1 )  ) & 1;
-  lnBits -= 1;
-  lSym    = (  ( lpDC[ lSym ] & 0xFF ) << 1  ) | lBit;
- }  /* end while */
-
- lSym = (  ( lpDC[ lSym ] & 0x300 ) == 0x200  ) ? ( lpDC[ lSym ] & 0xFF ) : 0;
-
- while ( lnBits <= 16 ) {
-  unsigned char lChr = *lpData;
-  lpData += 1 + ( lChr == 0xFF );
-  lBitBuf = ( lBitBuf << 8 ) | lChr;
-  lnBits += 8;
- }  /* end while */
-
- lVal    = (  lBitBuf >> ( lnBits - lSym )  ) & (  ( 1 << lSym ) - 1  );
- lnBits -= lSym;
-
- if ( lSym ) {
-  unsigned int lTmp = 1 << ( lSym - 1 );
-  if ( lVal < lTmp ) lVal += 1 + (  ( -1 ) << lSym  );
- } else lVal = 0;
-
- lVal += apDesc -> m_Pred;
-
- apDesc -> m_Pred = lVal;
- apTbl[ 0 ] = lVal * lpQT[ 0 ];
-
+ if ( !_huff_sym ( apCtx, lpDC, MAX_CELLS( 0 ), &lSym ) || lSym > 11 || !_bits ( apCtx, lSym, &lBits ) ) return 0;
+ lVal = lBits;
+ if ( lSym && lBits < ( 1U << ( lSym - 1 ) ) ) lVal -= ( 1U << lSym ) - 1;
+ if ( ( long long )apDesc -> m_Pred + lVal > 2147483647LL ||
+      ( long long )apDesc -> m_Pred + lVal < -2147483647LL - 1 ) return 0;
+ apDesc -> m_Pred += lVal;
+ apTbl[ 0 ] = ( long long )apDesc -> m_Pred * lpQT[ 0 ];
  for ( i = 1; i < 64; ++i ) {
-
-  lSym = 0;
-
-  while (   ( lpAC[ lSym ] & 0x300 ) == 0x100   ) {
-   unsigned int lBit;
-   while ( lnBits <= 16 ) {
-    unsigned char lChr = *lpData;
-    lpData += 1 + ( lChr == 0xFF );
-    lBitBuf = ( lBitBuf << 8 ) | lChr;
-    lnBits += 8;
-   }  /* end while */
-   lBit    = (  lBitBuf >> ( lnBits - 1 )  ) & 1;
-   lnBits -= 1;
-   lSym    = (  ( lpAC[ lSym ] & 0xFF ) << 1  ) | lBit;
-  }  /* end while */
-
-  lSym = (  ( lpAC[ lSym ] & 0x300 ) == 0x200  ) ? ( lpAC[ lSym ] & 0xFF ) : 0;
-
+  unsigned int lRun;
+  if ( !_huff_sym ( apCtx, lpAC, MAX_CELLS( 1 ), &lSym ) ) return 0;
   if ( lSym == HEOB ) break;
-
-  if ( lSym == HZRL ) {
-   i += 15;
-   continue;
-  }  /* end if */
-
-  lRun  = ( lSym >> 4 ) & 0x0F;
-  lSym &= 0x0F;
-  i    += lRun;
-
-  while ( lnBits <= 16 ) {
-   unsigned char lChr = *lpData;
-   lpData += 1 + ( lChr == 0xFF );
-   lBitBuf = ( lBitBuf << 8 ) | lChr;
-   lnBits += 8;
-  }  /* end while */
-
-  lVal    = (  lBitBuf >> ( lnBits - lSym )  ) & (  ( 1 << lSym ) - 1  );
-  lnBits -= lSym;
-
-  if ( lSym ) {
-   unsigned int lTmp = 1 << ( lSym - 1 );
-   if ( lVal < lTmp ) lVal += 1 + (  ( -1 ) << lSym  );
-  } else lVal = 0;
-
-  apTbl[  g_SMS_DSP_zigzag_direct[ i ]  ] = lVal * lpQT[ i ];
-
- }  /* end for */
-
- apCtx -> m_pData  = lpData;
- apCtx -> m_BitBuf = lBitBuf;
- apCtx -> m_nBits  = lnBits;
-
+  if ( lSym == HZRL ) { if ( i > 48 ) return 0; i += 15; continue; }
+  lRun = lSym >> 4;
+  lSym &= 15;
+  i += lRun;
+  if ( i >= 64 || !lSym || lSym > 10 || !_bits ( apCtx, lSym, &lBits ) ) return 0;
+  lVal = lBits;
+  if ( lBits < ( 1U << ( lSym - 1 ) ) ) lVal -= ( 1U << lSym ) - 1;
+  apTbl[ g_SMS_DSP_zigzag_direct[ i ] ] = lVal * lpQT[ i ];
+ }
+ return 1;
 }  /* end _unpack */
 
-static void _process_MCU ( SMS_JPEGContext* apCtx, unsigned int anMCU ) {
+static int _process_MCU ( SMS_JPEGContext* apCtx, unsigned int anMCU ) {
 
  unsigned int     lnMCU    = apCtx -> m_nMCU;
  unsigned int     lnMCUOut = anMCU;
@@ -1019,7 +1012,11 @@ static void _process_MCU ( SMS_JPEGContext* apCtx, unsigned int anMCU ) {
    if ( lpDMA != lpADMA ) {
     BLK_RB_PUSHADVANCE( apCtx );
     anMCU -= 1;
-    _unpack ( apCtx, lpDMA + 8, lpDesc + lpIdx[ 0 ] );
+    if ( !_unpack ( apCtx, lpDMA + 8, lpDesc + lpIdx[ 0 ] ) ) {
+     /* Finish issued transfers before a failed load can reuse the scratchpad. */
+     while ( VIF0Busy () || VIF1Busy () || VU01Busy () || DMA9Busy () );
+     return 0;
+    }  /* end if */
     if ( ++lpIdx == lpEnd ) lpIdx = &apCtx -> m_MCUIdx[ 0 ];
    }  /* end if */
   }  /* end if */
@@ -1052,7 +1049,7 @@ static void _process_MCU ( SMS_JPEGContext* apCtx, unsigned int anMCU ) {
 
  }  /* end while */
 
- apCtx -> m_pData -= 4;
+ return 1;
 
 }  /* end _process_MCU */
 

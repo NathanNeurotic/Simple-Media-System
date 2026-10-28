@@ -33,7 +33,7 @@ typedef struct SMS_MPEGCSC {
 void SMS_Codec_MPEG4_Open ( SMS_CodecContext* );
 
 void MPEG4_PredAC        ( SMS_DCTELEM*, int, int            );
-void MPEG4_CommonInit    ( SMS_CodecContext*                 );
+int  MPEG4_CommonInit    ( SMS_CodecContext*                 );
 void MPEG4_CommonDestroy ( void                              );
 void MPEG4_CommonHWCtl   ( SMS_CodecContext*, SMS_CodecHWCtl );
 

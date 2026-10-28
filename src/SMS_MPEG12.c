@@ -35,6 +35,7 @@ typedef struct MPEGState {
  int               m_Height;
  int               m_PicIdx;
  unsigned char     m_f16;
+ int               m_AllocationFailed;
 
 } MPEGState;
 
@@ -89,6 +90,8 @@ void SMS_Codec_MPEG12_Open ( SMS_CodecContext* apCtx ) {
  memset (  &g_MPEGCtx, 0, sizeof ( g_MPEGCtx )  );
 
  apCtx -> m_pCodec = calloc (  1, sizeof ( SMS_Codec )  );
+ if ( !apCtx -> m_pCodec ) return;
+ apCtx -> m_HardwareError = 0;
 
  apCtx -> m_pCodec -> m_pName = g_pMPEG12;
  apCtx -> m_pCodec -> Init    = MPEG12_Init;
@@ -152,17 +155,20 @@ static void* _init_cb ( void* apParam, MPEGSequenceInfo* apSeqInfo ) {
   for ( i = 0; i < sizeof ( lpState -> m_Pics ) / sizeof ( lpState -> m_Pics[ 0 ] ); ++i )
    _wait_frame ( &lpState -> m_Pics[ i ] );
 
-  lpState -> m_pInfo  = apSeqInfo;
-  lpState -> m_Width  = lWidth;
-  lpState -> m_Height = lHeight;
-
   SMS_FrameBufferDestroy (
    s_MPEGState.m_Pics, sizeof ( s_MPEGState.m_Pics ) / sizeof ( s_MPEGState.m_Pics[ 0 ] )
   );
-  SMS_FrameBufferInit (
+  if ( !SMS_FrameBufferInit (
    s_MPEGState.m_Pics, sizeof ( s_MPEGState.m_Pics ) / sizeof ( s_MPEGState.m_Pics[ 0 ] ),
    lWidth, lHeight, s_MPEGState.m_f16
-  );
+  ) ) {
+   lpState -> m_Width = lpState -> m_Height = 0;
+   lpState -> m_AllocationFailed = 1;
+   return NULL;
+  }  /* end if */
+  lpState -> m_pInfo  = apSeqInfo;
+  lpState -> m_Width  = lWidth;
+  lpState -> m_Height = lHeight;
 
   FlushCache ( 0 );
 
@@ -204,6 +210,7 @@ static int32_t MPEG12_Decode ( SMS_CodecContext* apCtx, SMS_RingBuffer* apOutput
  SMS_FrameBuffer* lpFrame;
  int              retVal;
 
+ if ( apCtx -> m_HardwareError ) return 0;
  s_MPEGState.m_pInput = apInput;
 
  lPicIdx = s_MPEGState.m_PicIdx;
@@ -212,6 +219,17 @@ static int32_t MPEG12_Decode ( SMS_CodecContext* apCtx, SMS_RingBuffer* apOutput
  _wait_frame ( lpFrame );
 
  retVal = MPEG_Picture ( lpFrame -> m_pBase, &lPTS );
+
+ if ( retVal < 0 || s_MPEGState.m_AllocationFailed ) {
+  /* Stop input DMA before returning its leased packet to the producer. */
+  IPU_FRST ();
+  if ( s_MPEGState.m_pPacket ) {
+   SMS_RingBufferFree ( apInput, s_MPEGState.m_pPacket -> m_Size + 64 );
+   s_MPEGState.m_pPacket = NULL;
+  }  /* end if */
+  apCtx -> m_HardwareError = 1;
+  return 0;
+ }  /* end if */
 
  if ( retVal ) {
 

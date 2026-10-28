@@ -264,99 +264,99 @@ static void _copy_buffer ( struct SMS_RescaleContext* apCtx, void* apDst ) {
 SMS_RescaleContext* SMS_RescaleInit ( SMS_RescaleContext* apCtx, int aWidth, int aHeight, int aStripeH, int aStripeW ) {
 
  float lScale;
- int   lAllocSize, lStripeAllocSize;
- int   lMax  = aWidth > aHeight ? aWidth : aHeight;
- int   lMaxT = 1024;
- int   lWidth, lHeight;
- int   lPrevW, lPrevH;
- int   lStride, lStripeH;
+ int lAllocSize, lStripeAllocSize, lWidth, lHeight, lPrevW, lPrevH;
+ int lStride, lnStripes, lMax, lMaxT = 1024;
+ int lfNew = apCtx == NULL;
+ void* lpTemp;
+ void* lpStripe;
 
- if ( !apCtx ) apCtx = ( SMS_RescaleContext* )calloc (  1, sizeof ( SMS_RescaleContext )  );
-
+ /* The stripe/coordinate helpers and 16-bit stride support these JPEG MCU
+  * dimensions. Reject invalid input before rounding or allocation arithmetic. */
+ if ( aWidth <= 0 || aWidth > 65520 || aHeight <= 0 || aHeight > 65535 ||
+      ( aStripeH != 8 && aStripeH != 16 ) || ( aStripeW != 8 && aStripeW != 16 ) ) return NULL;
+ if ( lfNew ) {
+  apCtx = ( SMS_RescaleContext* )calloc ( 1, sizeof ( SMS_RescaleContext ) );
+  if ( !apCtx ) return NULL;
+ }
  lPrevW = apCtx -> m_Width;
  lPrevH = apCtx -> m_Height;
-
- lStripeH = aStripeH - 1;
- aStripeW = aStripeW - 1;
-
- apCtx -> m_Width    = aWidth;
- apCtx -> m_Height   = aHeight;
- apCtx -> m_Stride   = lStride = ( aWidth + aStripeW ) & ~aStripeW;
- apCtx -> m_nStripes = (  ( aHeight + lStripeH ) & ~lStripeH  ) / aStripeH;
- apCtx -> m_StripeH  = aStripeH;
-
+ lpTemp = apCtx -> m_pTemp;
+ lpStripe = apCtx -> m_pStripe;
+ lStride = ( aWidth + aStripeW - 1 ) & ~( aStripeW - 1 );
+ lnStripes = ( ( aHeight + aStripeH - 1 ) & ~( aStripeH - 1 ) ) / aStripeH;
  lStripeAllocSize = lStride * aStripeH * 4;
+ lMax = aWidth > aHeight ? aWidth : aHeight;
 
  while ( 1 ) {
-
   if ( lMax > lMaxT ) {
-
-   lScale     = ( float )lMaxT / lMax;
-   lWidth     = ( int )( aWidth  * lScale + 0.5F );
-   lHeight    = ( int )( aHeight * lScale + 0.5F );
+   lScale = ( float )lMaxT / lMax;
+   lWidth = ( int )( aWidth * lScale + 0.5F );
+   lHeight = ( int )( aHeight * lScale + 0.5F );
+   if ( lWidth < 1 ) lWidth = 1;
+   if ( lHeight < 1 ) lHeight = 1;
    lAllocSize = lWidth * lHeight * 8;
-
   } else {
-
-   lScale     = 1.0F;
-   lWidth     = aWidth;
-   lHeight    = aHeight;
-   lAllocSize = lStride * ( aStripeH * apCtx -> m_nStripes ) * 4;
-
-  }  /* end else */
-
+   lScale = 1.0F;
+   lWidth = aWidth;
+   lHeight = aHeight;
+   lAllocSize = lStride * ( aStripeH * lnStripes ) * 4;
+  }
   if ( 0x100000 - lWidth * lHeight >= 0xFC00 ) break;
+  --lMaxT;
+ }
 
-  lMaxT -= 1;
-
- }  /* end while */
-
- apCtx -> m_NewWidth  = lWidth;
- apCtx -> m_NewHeight = lHeight;
-
- if (  lAllocSize > ( int )apCtx -> m_nAlloc  ) {
-
+ /* Keep a reused context and both old allocations intact if either growth
+  * allocation fails. Its caller still owns it and may retry or destroy it. */
+ if ( lAllocSize > ( int )apCtx -> m_nAlloc ) {
+  lpTemp = malloc ( lAllocSize );
+  if ( !lpTemp ) goto error;
+ }
+ if ( lStripeAllocSize > ( int )apCtx -> m_nStripeAlloc ) {
+  lpStripe = malloc ( lStripeAllocSize );
+  if ( !lpStripe ) goto error;
+ }
+ if ( lpTemp != apCtx -> m_pTemp ) {
+  free ( apCtx -> m_pTemp );
+  apCtx -> m_pTemp = lpTemp;
   apCtx -> m_nAlloc = lAllocSize;
-  apCtx -> m_pTemp  = realloc ( apCtx -> m_pTemp, lAllocSize );
-
- }  /* end if */
-
- if (  lStripeAllocSize > ( int )apCtx -> m_nStripeAlloc  ) {
-
+ }
+ if ( lpStripe != apCtx -> m_pStripe ) {
+  free ( apCtx -> m_pStripe );
+  apCtx -> m_pStripe = lpStripe;
   apCtx -> m_nStripeAlloc = lStripeAllocSize;
-  apCtx -> m_pStripe      = realloc ( apCtx -> m_pStripe, lStripeAllocSize );
+ }
 
- }  /* end if */
-
+ apCtx -> m_Width = aWidth;
+ apCtx -> m_Height = aHeight;
+ apCtx -> m_Stride = lStride;
+ apCtx -> m_nStripes = lnStripes;
+ apCtx -> m_StripeH = aStripeH;
+ apCtx -> m_NewWidth = lWidth;
+ apCtx -> m_NewHeight = lHeight;
  apCtx -> m_Scale = lScale;
-
  if ( lScale != 1.0F ) {
-
-  apCtx -> m_Y     = 0;
+  apCtx -> m_Y = 0;
   apCtx -> m_pCurY = &apCtx -> m_YParam[ 0 ];
-
   if ( aWidth != lPrevW || aHeight != lPrevH ) {
    _precalc_y ( apCtx );
    _precalc_x ( apCtx );
-  }  /* end if */
-
+  }
   apCtx -> ProcessStripe = _rescale_stripe;
   apCtx -> ProcessBuffer = _rescale_buffer;
-
   apCtx -> m_pStripePtr = apCtx -> m_pStripe;
-
  } else {
-
   apCtx -> ProcessStripe = _copy_stripe;
   apCtx -> ProcessBuffer = _copy_buffer;
-
   apCtx -> m_pStripePtr = apCtx -> m_pTemp;
-
- }  /* end else */
-
+ }
  apCtx -> m_pTempPtr = apCtx -> m_pTemp;
-
  return apCtx;
+
+error:
+ if ( lpTemp != apCtx -> m_pTemp ) free ( lpTemp );
+ if ( lpStripe != apCtx -> m_pStripe ) free ( lpStripe );
+ if ( lfNew ) free ( apCtx );
+ return NULL;
 
 }  /* end SMS_RescaleInit */
 

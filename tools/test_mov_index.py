@@ -32,6 +32,7 @@ prefix = r"""
 #include <limits.h>
 #define SMS_MAX_STREAMS 8
 #define SMS_NOPTS_VALUE INT64_MIN
+#define SMS_MAXINT64 INT64_MAX
 #define SMS_CONT_FLAGS_SEEKABLE 1
 enum { SMS_CodecTypeUnknown, SMS_CodecTypeVideo, SMS_CodecTypeAudio };
 typedef struct { int m_Type,m_FrameSize; } SMS_CodecContext;
@@ -68,6 +69,7 @@ static void _free(void *p) { free(p); }
 static int seek_file(FileContext *f,unsigned n) { f->m_CurPos=n;return n; }
 static void File_Skip(FileContext *f,unsigned n) { f->Seek(f,f->m_CurPos+n); }
 static void SMSContainer_SetPTSInfo(SMS_Stream *s,int n,int d) { (void)s;assert(n>0 && d>0); }
+static int64_t SMS_Rescale(int64_t a,int64_t b,int64_t c) { assert(c>0);return a*b/c; }
 static uint32_t _mov_probe(FileContext *f) { (void)f;return 1; }
 static int _ReadPacket(SMS_Container *c,int *i) { (void)c;(void)i;return -1; }
 static int _Seek(SMS_Container *c,int i,int d,uint32_t p) { (void)c;(void)i;(void)d;(void)p;return 0; }
@@ -84,7 +86,10 @@ static int _mov_read_dflt(MOVContext *c,FileContext *f,MOVAtom *atom) {
 }
 """
 functions = free_tables + extract("_DestroyStream") + extract("_mov_read_trak") + extract("_mov_read_mdat")
-functions += extract("_add_idx_entry") + extract("_mov_build_index") + extract("_mov_read_header")
+functions += extract("_gcd") + extract("_add_idx_entry") + extract("_mov_build_index")
+if "end _mov_edit_fits" in source:
+    functions += extract("_mov_edit_fits")
+functions += extract("_mov_read_header")
 cleanup = r"""
 static void SMS_DestroyContainer(SMS_Container *c,int all) {
  (void)all;
@@ -98,14 +103,16 @@ static void SMS_DestroyContainer(SMS_Container *c,int all) {
 probe_fixture = r"""
 typedef struct { int m_SampleRate,m_nChannels,m_BitRate; } SMS_AudioInfo;
 static MOVParseEntry s_M4AProbeTbl[1];
-static int probe_header(SMS_Container *c) {
- MOVContext *m=c->m_pCtx;assert(m->m_pBase==c && !c->m_nStm && !c->m_pName);
+static int probe_result;
+static int probe_parser(MOVContext *m,FileContext *f,MOVAtom *atom) {
+ SMS_Container *c=m->m_pBase;assert(c->m_pCtx==m && !c->m_nStm && !c->m_pName);
+ assert(f==c->m_pFileCtx && atom->m_Size==f->m_Size);
  for(int i=0;i<SMS_MAX_STREAMS;++i) assert(!c->m_pStm[i]);
  SMS_AudioInfo *info=(SMS_AudioInfo *)m->m_pMDAT;
  info->m_SampleRate=48000;info->m_nChannels=2;info->m_BitRate=128000;
- return 0;
+ return probe_result;
 }
-""" + extract("SMS_M4AProbe").replace("_mov_read_header (", "probe_header (")
+""" + extract("SMS_M4AProbe").replace("_mov_read_dflt (", "probe_parser (")
 tests = r"""
 static SMS_Container container;
 static FileContext file;
@@ -219,8 +226,10 @@ static void stream_limit(void) {
  assert(container.m_nStm==7 && !container.m_pStm[7] && file.m_CurPos==100 && !calloc_calls);
 }
 static void audio_probe(void) {
- reset();SMS_AudioInfo info={0};file.m_CurPos=20;
- assert(SMS_M4AProbe(&file,&info)==1 && info.m_SampleRate==48000 && !file.m_CurPos);
+ for(int result=-1;result<=1;++result) {
+  reset();SMS_AudioInfo info={0};file.m_CurPos=20;probe_result=result;
+  assert(SMS_M4AProbe(&file,&info)==(result>=0) && info.m_SampleRate==48000 && !file.m_CurPos);
+ }
 }
 int main(int argc,char **argv) {
  const char *name=argc>1?argv[1]:"all";

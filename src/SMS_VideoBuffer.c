@@ -16,6 +16,7 @@
 #include <kernel.h>
 #include <malloc.h>
 #include <string.h>
+#include <limits.h>
 
 int _csc_handler ( int, void*, void* );
 
@@ -28,7 +29,12 @@ SMS_VideoBuffer* SMS_VideoBufferInit ( int aWidth, int aHeight ) {
  unsigned int     lShift = l16Msk & 1;
  SMS_VideoBuffer* retVal;
 
+ if ( aHeight == INT_MIN ) return NULL;
  if ( aHeight < 0 ) aHeight = -aHeight;
+ if ( aWidth <= 0 || aHeight <= 0 || aWidth > 65504 || aHeight > 65504 ) return NULL;
+ if ( ( unsigned long long )( ( ( aWidth + 15 ) >> 4 ) + 2 ) *
+      ( ( ( aHeight + 15 ) >> 4 ) + 2 ) * sizeof ( SMS_MacroBlock ) +
+      ( ( ( aHeight + 15 ) >> 4 ) * 16 ) > UINT_MAX ) return NULL;
 
  lMBW = (  ( aWidth  + 15 ) >> 4  ) + 2;
  lMBH = (  ( aHeight + 15 ) >> 4  ) + 2;
@@ -47,6 +53,8 @@ SMS_VideoBuffer* SMS_VideoBufferInit ( int aWidth, int aHeight ) {
  lMBH       <<= 1;
 
  retVal = ( SMS_VideoBuffer* )calloc (  1, sizeof ( SMS_VideoBuffer )  );
+ if ( !retVal ) return NULL;
+ retVal -> m_CSCParam.m_HandlerID = -1;
 
  retVal -> m_CSCParam.m_CSCmd     = 0x70000000 | l16Msk;
  retVal -> m_CSCParam.m_nBlk[ 0 ] = lnBlk / 1023;
@@ -57,9 +65,17 @@ SMS_VideoBuffer* SMS_VideoBufferInit ( int aWidth, int aHeight ) {
  for ( i = 0; i < 3; ++i ) {
 
   SMS_MacroBlock* lpBase   = ( SMS_MacroBlock* )memalign ( 128, lFrameSize + lDMASize );
-  u64*            lpDMA    = ( u64*           )(   (  ( char* )lpBase  ) + lFrameSize   );
-  unsigned char*  lpSrc    = ( unsigned char* )( lpBase + lFrameStride );
-  u64*            lpDMAEnd = lpDMA + lMBH;
+  u64*            lpDMA;
+  unsigned char*  lpSrc;
+  u64*            lpDMAEnd;
+
+  if ( !lpBase ) {
+   SMS_VideoBufferDestroy ( retVal );
+   return NULL;
+  }  /* end if */
+  lpDMA    = ( u64* )( ( char* )lpBase + lFrameSize );
+  lpSrc    = ( unsigned char* )( lpBase + lFrameStride );
+  lpDMAEnd = lpDMA + lMBH;
 
   memset ( lpBase, 0, lFrameSize );
 
@@ -87,6 +103,10 @@ SMS_VideoBuffer* SMS_VideoBufferInit ( int aWidth, int aHeight ) {
  retVal -> m_CSCParam.m_HandlerID = AddDmacHandler2 (
   3, _csc_handler, 0, &retVal -> m_CSCParam
  );
+ if ( retVal -> m_CSCParam.m_HandlerID < 0 ) {
+  SMS_VideoBufferDestroy ( retVal );
+  return NULL;
+ }  /* end if */
 
  return retVal;
 
@@ -96,10 +116,14 @@ void SMS_VideoBufferDestroy ( SMS_VideoBuffer* apBuf ) {
 
  int i;
 
+ if ( !apBuf ) return;
+
  for ( i = 0; i < 3; ++i ) free ( apBuf -> m_VFrm[ i ].m_pBase );
 
- DisableDmac ( 3 );
- RemoveDmacHandler ( 3, apBuf -> m_CSCParam.m_HandlerID );
+ if ( apBuf -> m_CSCParam.m_HandlerID >= 0 ) {
+  DisableDmac ( 3 );
+  RemoveDmacHandler ( 3, apBuf -> m_CSCParam.m_HandlerID );
+ }  /* end if */
 
  free ( apBuf );
 
@@ -248,7 +272,7 @@ __asm__(
  ".set reorder\n\t"
 );
 
-void SMS_FrameBufferInit ( SMS_FrameBuffer* apBuf, int anBuf, int aWidth, int aHeight, int af16 ) {
+int SMS_FrameBufferInit ( SMS_FrameBuffer* apBuf, int anBuf, int aWidth, int aHeight, int af16 ) {
 
  unsigned int   i, lSize;
  unsigned int   lMBW, lMBH;
@@ -256,6 +280,20 @@ void SMS_FrameBufferInit ( SMS_FrameBuffer* apBuf, int anBuf, int aWidth, int aH
  u64            lBitBltBuf;
  u64            lGIFTag;
  u64*           lpDMA;
+ unsigned long long lAllocSize;
+
+ if ( !apBuf || anBuf <= 0 ) return 0;
+ /* Callers supply an empty pool, including after a sequence resize. */
+ for ( i = 0; i < anBuf; ++i ) {
+  apBuf[ i ].m_pBase = apBuf[ i ].m_pData = NULL;
+  apBuf[ i ].m_FrameType = -1;
+ }  /* end for */
+ if ( aWidth <= 0 || aHeight <= 0 || aWidth > INT_MAX - 15 || aHeight > INT_MAX - 15 ) return 0;
+ lAllocSize = ( unsigned long long )( ( aWidth + 15 ) & ~15 ) * ( ( aHeight + 15 ) & ~15 );
+ if ( lAllocSize > UINT_MAX / ( af16 ? 2 : 4 ) ) return 0;
+ lAllocSize = lAllocSize * ( af16 ? 2 : 4 ) + ( 10ULL + 12ULL * ( ( aWidth + 15 ) >> 4 ) *
+              ( ( aHeight + 15 ) >> 4 ) ) * 8;
+ if ( lAllocSize > UINT_MAX ) return 0;
 
  aWidth  = ( aWidth  + 15 ) & ~15;
  aHeight = ( aHeight + 15 ) & ~15;
@@ -284,6 +322,11 @@ void SMS_FrameBufferInit ( SMS_FrameBuffer* apBuf, int anBuf, int aWidth, int aH
 
   int            lX, lY;
   unsigned char* lpPic = ( unsigned char* )memalign (   128, lSize + (  ( 10 + 12 * lMBW * lMBH ) << 3  )   );
+
+  if ( !lpPic ) {
+   SMS_FrameBufferDestroy ( apBuf, i );
+   return 0;
+  }  /* end if */
 
   apBuf[ i ].m_pBase     = ( SMS_MacroBlock* )lpPic;
   apBuf[ i ].m_pData     = ( SMS_MacroBlock* )(  lpDMA = ( u64*           )( lpPic + lSize )  );
@@ -322,6 +365,8 @@ void SMS_FrameBufferInit ( SMS_FrameBuffer* apBuf, int anBuf, int aWidth, int aH
 
  }  /* end for */
 
+ return 1;
+
 }  /* end SMS_FrameBufferInit */
 
 void SMS_FrameBufferDestroy ( SMS_FrameBuffer* apBuf, int anBuf ) {
@@ -331,7 +376,8 @@ void SMS_FrameBufferDestroy ( SMS_FrameBuffer* apBuf, int anBuf ) {
  for ( i = 0; i < anBuf; ++i )
   if ( apBuf[ i ].m_pBase ) {
    free ( apBuf[ i ].m_pBase );
-   apBuf[ i ].m_pBase = NULL;
+   apBuf[ i ].m_pBase = apBuf[ i ].m_pData = NULL;
+   apBuf[ i ].m_FrameType = -1;
   }  /* end for */
 
 }  /* end SMS_FrameBufferDestroy */

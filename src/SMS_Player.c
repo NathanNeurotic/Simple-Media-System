@@ -292,6 +292,8 @@ static void _init_queues ( int afCreate ) {
   memset ( s_VideoBuffer, 0, sizeof ( s_VideoBuffer ) );
   s_pVideoBuffer  = SMS_RingBufferInit (  s_VideoBuffer, sizeof ( s_VideoBuffer )  );
   s_pAudioBuffer  = SMS_RingBufferInit (  UNCACHED_SEG( SMS_AUDIO_BUFFER ), SMS_AUDIO_BUFFER_SIZE  );
+  SMS_RingBufferName ( s_pVideoBuffer, "video-output" );
+  SMS_RingBufferName ( s_pAudioBuffer, "audio-output" );
 
   lSema.init_count = 0;
   s_SemaPauseAudio = CreateSema ( &lSema );
@@ -559,9 +561,16 @@ static void _sms_video_decoder ( void* apParam ) {
 
  if ( !lpBuff ) return;
 
- while ( 1 ) if (   s_Player.m_pVideoCodec -> Decode ( lpCtx, s_pVideoBuffer, lpBuff )   ) {
-  RotateThreadReadyQueue ( SMS_THREAD_PRIORITY );
- }  /* end if */
+ while ( 1 ) {
+  if ( lpCtx -> m_HardwareError ) {
+   /* Let a producer blocked in ReadPacket regain control and shut down. */
+   SMS_AVPacket* lpPacket = ( SMS_AVPacket* )SMS_RingBufferWait ( lpBuff );
+   if ( lpPacket ) SMS_RingBufferFree ( lpBuff, lpPacket -> m_Size + 64 );
+   RotateThreadReadyQueue ( SMS_THREAD_PRIORITY );
+  } else if ( s_Player.m_pVideoCodec -> Decode ( lpCtx, s_pVideoBuffer, lpBuff ) ) {
+   RotateThreadReadyQueue ( SMS_THREAD_PRIORITY );
+  }  /* end else */
+ }  /* end while */
 
 }  /* end _sms_video_decoder */
 
@@ -1099,6 +1108,8 @@ static int _sms_play ( void* apPlayer ) {
  PlayerControl_Init ();
  FlushCache ( 0 );
 
+ if ( !lfNoVideo && lpStms[ s_Player.m_VideoIdx ] -> m_pCodec -> m_HardwareError ) goto hardware_error;
+
  if ( lfNoVideo ) {
 
   s_Player.m_pIPUCtx -> Suspend ();
@@ -1129,6 +1140,8 @@ repeat:
  while ( 1 ) {
 
   uint32_t lBtn = GUI_ReadButtons ();
+
+  if ( !lfNoVideo && lpStms[ s_Player.m_VideoIdx ] -> m_pCodec -> m_HardwareError ) goto hardware_error;
 
   if ( lBtn ) {
 
@@ -1454,9 +1467,16 @@ skip:
 
  }  /* end if */
 
+ goto playback_end;
+hardware_error:
+ s_Player.m_pErrorMsg = &STR_OUT_OF_MEMORY;
+playback_end:
  DeleteSema ( lSema );
  _terminate_threads ( 1 );
  IPU_FRST ();
+
+ if ( !lfNoVideo && lpStms[ s_Player.m_VideoIdx ] -> m_pCodec -> m_HardwareError )
+  GUI_Error ( STR_OUT_OF_MEMORY.m_pStr );
 
  if ( s_Player.m_Flags & SMS_FLAGS_EXIT ) _draw_text ( STR_STOPPING.m_pStr );
 
@@ -1701,7 +1721,10 @@ SMS_Player* SMS_InitPlayer ( FileContext* apFileCtx, FileContext* apSubFileCtx, 
         }  /* end if */
 
         s_Player.m_pVideoCodec = lpVideoCtx -> m_pCodec;
-        s_Player.m_pVideoCodec -> Init ( lpVideoCtx );
+        if ( !s_Player.m_pVideoCodec -> Init ( lpVideoCtx ) ) {
+         if ( lpVideoCtx -> m_HardwareError ) s_Player.m_pErrorMsg = &STR_OUT_OF_MEMORY;
+         goto destroy;
+        }  /* end if */
 
         s_Player.m_VideoIdx = i;
 
@@ -1713,6 +1736,7 @@ SMS_Player* SMS_InitPlayer ( FileContext* apFileCtx, FileContext* apSubFileCtx, 
           )
          ), SMS_VP_BUFFER_SIZE
         );
+        SMS_RingBufferName ( lpVideoBuffer, "video-packets" );
 
        }  /* end if */
 
@@ -1741,6 +1765,7 @@ addSub:
        s_Player.m_AudioSampleRate = lpCtx -> m_SampleRate;
        s_pAPBuff = SMS_SyncMalloc ( SMS_AP_BUFFER_SIZE );
        lpStm -> m_pPktBuf = lpAudioBuffer = SMS_RingBufferInit ( s_pAPBuff, SMS_AP_BUFFER_SIZE );
+       SMS_RingBufferName ( lpAudioBuffer, "audio-packets" );
       } else {
        lpStm -> m_pPktBuf = lpAudioBuffer;
        SMS_RingBufferAddRef ( lpAudioBuffer );
@@ -1848,6 +1873,11 @@ destroy:
 
  } else {
 error:
+  /* A rejected video Init can follow an already opened audio stream.
+   * Its packet ring was destroyed with the container above. */
+  free ( s_pAPBuff );
+  free ( s_pVPBuff );
+  s_pAPBuff = s_pVPBuff = NULL;
   if (  ( int )apFileCtx > 0 && apSubFileCtx  ) apSubFileCtx -> Destroy ( apSubFileCtx );
 
  }  /* end else */

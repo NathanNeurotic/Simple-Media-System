@@ -13,6 +13,10 @@
 #include <kernel.h>
 #include <malloc.h>
 #include <string.h>
+#ifdef SMS_DIAG
+#include "SMS_Timer.h"
+#include <stdio.h>
+#endif
 
 SMS_RingBuffer* SMS_RingBufferInit ( void* apBuffer, int aSize ) {
 
@@ -30,6 +34,10 @@ SMS_RingBuffer* SMS_RingBufferInit ( void* apBuffer, int aSize ) {
  retVal -> WaitCB     = NULL;
  retVal -> BlockCB    = NULL;
  retVal -> m_nRef     = 1;
+#ifdef SMS_DIAG
+ retVal -> m_WaitEvents = retVal -> m_WaitMs = retVal -> m_MaxWaitMs = 0;
+ retVal -> m_pDiagName = "unnamed";
+#endif
 
  lSema.init_count = 0;
  retVal -> m_Sema[ 0 ] = CreateSema ( &lSema );
@@ -53,6 +61,12 @@ SMS_RingBuffer* SMS_RingBufferAddRef ( SMS_RingBuffer* apRB ) {
 void SMS_RingBufferDestroy ( SMS_RingBuffer* apRB ) {
 
  if ( !--apRB -> m_nRef ) {
+#ifdef SMS_DIAG
+  /* Includes startup, pause and seek waits: compare like-for-like playback
+   * runs. A wait alone is not proof of a storage underrun. */
+  printf ( "[sms-queue] name=%s buffer=%p capacity=%d waits=%u wait_ms=%u max_wait_ms=%u\n",
+   apRB -> m_pDiagName, apRB, apRB -> m_Capacity, apRB -> m_WaitEvents, apRB -> m_WaitMs, apRB -> m_MaxWaitMs );
+#endif
 
   DeleteSema ( apRB -> m_Sema[ 0 ] );
   DeleteSema ( apRB -> m_Sema[ 1 ] );
@@ -167,10 +181,24 @@ void SMS_RingBufferUnalloc ( SMS_RingBuffer* apRB, int aSize ) {
 }  /* end SMS_RingBufferUnalloc */
 
 void* SMS_RingBufferWait ( SMS_RingBuffer* apRB ) {
+#ifdef SMS_DIAG
+ unsigned int lStart, lMs;
+#endif
 
  if ( apRB -> WaitCB ) apRB -> WaitCB ( apRB );
 
+#ifdef SMS_DIAG
+ lStart = ( unsigned int )*( volatile u64* )&g_Timer;
+#endif
  WaitSema ( apRB -> m_Sema[ 1 ] );
+#ifdef SMS_DIAG
+ lMs = ( unsigned int )*( volatile u64* )&g_Timer - lStart;
+ if ( lMs ) {
+  ++apRB -> m_WaitEvents;
+  apRB -> m_WaitMs += lMs;
+  if ( lMs > apRB -> m_MaxWaitMs ) apRB -> m_MaxWaitMs = lMs;
+ }
+#endif
  WaitSema ( apRB -> m_Sema[ 2 ] );
 
  if ( apRB -> m_pOut == apRB -> m_pJmp ) {

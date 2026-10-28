@@ -485,7 +485,7 @@ void SMS_Codec_MPEG4_Open ( SMS_CodecContext* apCtx ) {
 
 }  /* end SMS_Codec_MPEG4_Open */
 
-void MPEG4_CommonInit ( SMS_CodecContext* apCtx ) {
+int MPEG4_CommonInit ( SMS_CodecContext* apCtx ) {
 
  int   i;
  int   lYSize  = BASECTX().m_B8Stride * (  2 * BASECTX().m_MBH + 1  );
@@ -494,11 +494,14 @@ void MPEG4_CommonInit ( SMS_CodecContext* apCtx ) {
  float lFrameRate;
 
  BASECTX().m_pACValBase = calloc (  1, lYCSize * sizeof ( int16_t ) * 16  );
+ if ( !BASECTX().m_pACValBase ) goto allocation_error;
+ BASECTX().m_pDCValBase = calloc (  1, lYCSize * sizeof ( int16_t )  );
+ if ( !BASECTX().m_pDCValBase ) goto allocation_error;
+
  BASECTX().m_pACVal[ 0 ] = BASECTX().m_pACValBase + BASECTX().m_B8Stride + 1;
  BASECTX().m_pACVal[ 1 ] = BASECTX().m_pACValBase + lYSize + BASECTX().m_MBStride + 1;
  BASECTX().m_pACVal[ 2 ] = BASECTX().m_pACVal[ 1 ] + lCSize;
 
- BASECTX().m_pDCValBase  = calloc (  1, lYCSize * sizeof ( int16_t )  );
  BASECTX().m_pDCVal[ 0 ] = BASECTX().m_pDCValBase + BASECTX().m_B8Stride + 1;
  BASECTX().m_pDCVal[ 1 ] = BASECTX().m_pDCValBase + lYSize + BASECTX().m_MBStride + 1;
  BASECTX().m_pDCVal[ 2 ] = BASECTX().m_pDCVal[ 1 ] + lCSize;
@@ -524,12 +527,24 @@ void MPEG4_CommonInit ( SMS_CodecContext* apCtx ) {
   :: "r"(  ( uint32_t )(  ( 1000.0F / lFrameRate ) * 147456.0F + 0.5F )  )
  );
 
+ apCtx -> m_HardwareError = 0;
+ return 1;
+
+allocation_error:
+ MPEG4_CommonDestroy ();
+ apCtx -> m_HardwareError = 1;
+ return 0;
+
 }  /* end MPEG4_CommonInit */
 
 void MPEG4_CommonDestroy ( void ) {
 
  free (  BASECTX().m_pACValBase  );
  free (  BASECTX().m_pDCValBase  );
+ BASECTX().m_pACValBase = NULL;
+ BASECTX().m_pDCValBase = NULL;
+ memset ( BASECTX().m_pACVal, 0, sizeof ( BASECTX().m_pACVal ) );
+ memset ( BASECTX().m_pDCVal, 0, sizeof ( BASECTX().m_pDCVal ) );
 
 }  /* end MPEG4_CommonDestroy */
 
@@ -542,15 +557,26 @@ void MPEG4_CommonHWCtl ( SMS_CodecContext* apCtx, SMS_CodecHWCtl aCtl ) {
    int          lf16    = g_IPUCtx.m_TexFmt == GSPixelFormat_PSMCT16;
    SMS_MPEGCSC* lpParam = ( SMS_MPEGCSC* )calloc (  1, sizeof ( SMS_MPEGCSC )  );
 
-   apCtx -> m_pIntBuf = SMS_VideoBufferInit ( apCtx -> m_Width, lf16 ? -apCtx -> m_Height : apCtx -> m_Height );
+   apCtx -> m_HardwareError = 0;
+   if ( !lpParam ) goto allocation_error;
 
-   SMS_FrameBufferInit (
+   apCtx -> m_pIntBuf = SMS_VideoBufferInit ( apCtx -> m_Width, lf16 ? -apCtx -> m_Height : apCtx -> m_Height );
+   if ( !apCtx -> m_pIntBuf ) goto allocation_error;
+
+   if ( !SMS_FrameBufferInit (
     lpParam -> m_Buf, sizeof ( lpParam -> m_Buf ) / sizeof ( lpParam -> m_Buf[ 0 ] ),
     apCtx -> m_Width, apCtx -> m_Height, lf16
-   );
+   ) ) goto allocation_error;
    SMS_CSCResume ();
 
    apCtx -> m_pHWData = lpParam;
+   break;
+
+allocation_error:
+   SMS_VideoBufferDestroy ( ( SMS_VideoBuffer* )apCtx -> m_pIntBuf );
+   apCtx -> m_pIntBuf = NULL;
+   free ( lpParam );
+   apCtx -> m_HardwareError = 1;
 
   } break;
 
@@ -558,12 +584,15 @@ void MPEG4_CommonHWCtl ( SMS_CodecContext* apCtx, SMS_CodecHWCtl aCtl ) {
 
    SMS_MPEGCSC* lpParam = ( SMS_MPEGCSC* )apCtx -> m_pHWData;
 
-   SMS_CSCSync ();
-   SMS_FrameBufferDestroy (
-    lpParam -> m_Buf, sizeof ( lpParam -> m_Buf ) / sizeof ( lpParam -> m_Buf[ 0 ] )
-   );
+   if ( lpParam ) {
+    SMS_CSCSync ();
+    SMS_FrameBufferDestroy (
+     lpParam -> m_Buf, sizeof ( lpParam -> m_Buf ) / sizeof ( lpParam -> m_Buf[ 0 ] )
+    );
+   }  /* end if */
    SMS_VideoBufferDestroy (  ( SMS_VideoBuffer* )apCtx -> m_pIntBuf  );
    free ( lpParam );
+   apCtx -> m_pHWData = apCtx -> m_pIntBuf = NULL;
 
   } break;
 
@@ -583,6 +612,8 @@ void MPEG4_CommonHWCtl ( SMS_CodecContext* apCtx, SMS_CodecHWCtl aCtl ) {
 
    int          i;
    SMS_MPEGCSC* lpParam = ( SMS_MPEGCSC* )apCtx -> m_pHWData;
+
+   if ( !lpParam ) break;
 
    for (  i = 0; i < sizeof ( lpParam -> m_Buf ) / sizeof ( lpParam -> m_Buf[ 0 ] ); ++i  )
     lpParam -> m_Buf[ i ].m_FrameType = -1;
@@ -652,10 +683,11 @@ static int32_t MPEG4_Init ( SMS_CodecContext* apCtx ) {
 
   SMS_MPEGContext_Init ( apCtx -> m_Width, apCtx -> m_Height );
 
-  MPEG4_CommonInit ( apCtx );
+  if ( !MPEG4_CommonInit ( apCtx ) ) goto allocation_error;
 
   BASECTX().m_pCBPTbl     = calloc ( 1, i = BASECTX().m_MBH * BASECTX().m_MBStride * sizeof ( uint8_t )  );
   BASECTX().m_pPredDirTbl = calloc ( 1, i );
+  if ( !BASECTX().m_pCBPTbl || !BASECTX().m_pPredDirTbl ) goto allocation_error;
 
  }  /* end if */
 
@@ -688,6 +720,13 @@ static int32_t MPEG4_Init ( SMS_CodecContext* apCtx ) {
 
  return 1;
 
+allocation_error:
+ /* Reuse the complete initializer's cleanup, including tables and context. */
+ s_Init = 1;
+ MPEG4_Destroy ( apCtx );
+ apCtx -> m_HardwareError = 1;
+ return 0;
+
 }  /* end MPEG4_Init */
 
 static void MPEG4_Destroy ( SMS_CodecContext* apCtx ) {
@@ -719,6 +758,7 @@ static void MPEG4_Destroy ( SMS_CodecContext* apCtx ) {
 
   free (  BASECTX().m_pCBPTbl     );
   free (  BASECTX().m_pPredDirTbl );
+  BASECTX().m_pCBPTbl = BASECTX().m_pPredDirTbl = NULL;
 
  }  /* end if */
 
@@ -3220,9 +3260,11 @@ static int32_t MPEG4_Decode ( SMS_CodecContext* apCtx, SMS_RingBuffer* apOutput,
  SMS_FrameBuffer*  lpFrame;
  SMS_BitContext*   lpBitCtx;
  int32_t           retVal = 0;
- SMS_AVPacket*     lpPck  = ( SMS_AVPacket* )SMS_RingBufferWait ( apInput );
+ SMS_AVPacket*     lpPck;
  SMS_FrameBuffer** lppFrame;
 
+ if ( apCtx -> m_HardwareError ) return 0;
+ lpPck = ( SMS_AVPacket* )SMS_RingBufferWait ( apInput );
  if ( !lpPck ) return retVal;
 
  if ( lpPck -> m_Flags & SMS_PKT_FLAG_SUB ) {

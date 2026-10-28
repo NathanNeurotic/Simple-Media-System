@@ -72,6 +72,10 @@ typedef struct SMS_JPEGContext {
  void ( *pack     ) ( void*, int, int     );
  void ( *progress ) ( void*, unsigned int );
 
+ unsigned int               m_QTableMask;
+ unsigned int               m_HuffmanMask;
+ int                        m_Error;
+
 } SMS_JPEGContext;
 
 typedef struct SMS_JPEGViewer {
