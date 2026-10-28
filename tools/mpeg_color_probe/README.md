@@ -3,9 +3,9 @@
 This small ELF exercises SMS's actual libmpeg/IPU path without the demuxer,
 player queues, GS texture upload or display output. It writes five frames to
 `host:`. A successful emulator run is not physical-console or reporter acceptance.
-Use an elementary stream of at most 1,048,560 bytes (65,535 quadwords); the
-compressed input is held in RAM and fed with one DMA transfer. Larger inputs
-are rejected before starting the decoder, respecting the 16-bit DMA QWC limit.
+The raw decoder control accepts an elementary stream of at most 8 MiB. The
+compressed input and an aligned copy are held in RAM; the feed uses consecutive
+DMA transfers of at most 65,535 quadwords each, respecting the 16-bit QWC limit.
 
 Generate a reproducible progressive control in this directory:
 
@@ -42,12 +42,50 @@ Generated streams, binaries, objects and pixel captures are ignored. Record the
 player/probe source revision, input hash, mode, decoder dimensions, emulator
 version or real-console model, and full final status line with each result.
 
+## Longer GOP controls
+
+Set `CAPTURE_FRAMES` between 1 and 600 to capture multiple GOPs, and use `INPUT`
+to keep generated elementary streams outside the source directory. Nondefault
+frame counts use separate object directories; specify a unique `OUT` when
+comparing different inputs or source revisions. For example:
+
+```sh
+make COLOR16=0 CAPTURE_FRAMES=150 INPUT=/work/control-g50.m2v OUT=/work/control-g50-32
+ffmpeg -i /work/control-g50.m2v -frames:v 150 -f rawvideo -pix_fmt rgb24 /work/reference.rgb
+python compare_series.py /work/control-g50-32/decoded.rgba /work/reference.rgb --width 640 --height 480 --frames 150 --output /work/errors.json
+```
+
+`compare_series.py` requires NumPy and reports per-frame absolute errors and
+signed RGB bias after untile, as well as aggregate error. Match the encoded
+stream, dimensions, frame order and capture count. Record actual picture types
+with FFprobe: encoder scene cuts can insert I pictures before the maximum GOP
+length. Compare GOP variants against their own independently decoded references,
+and relate errors to the number of pictures since the last I picture before
+attributing a difference to prediction drift. The host feed check is
+`python tools/test_mpeg_color_feed.py`; it checks DMA limits and continuity, not
+IPU execution or color correctness.
+
+`generate_series.py SOURCE --output /work/series` recreates the two 150-frame
+GOP 50/15 intervals used in the follow-up report with the actual converter
+profiles. It saves commands, input hashes and actual picture types in a JSON
+manifest. It explicitly allows upscaling to reproduce the historical 640x480
+canvas. `--extended` generates MPEG-1 with zero/two B-frames, MPEG-2 with two
+B-frames, and a synthetic top-field-first interlaced MPEG-2 control instead.
+The source itself is not included; provide a local file you may use. Generated
+references and encoded streams are local research outputs and are not uploaded.
+
+`DECODER_SOURCE` and `DECODER_CORE` can select saved baseline files for matched
+comparisons; keep the baseline C beside its matching headers and use a unique
+`OUT` for every source/input/mode. Interlaced sequences can have a padded decoder
+height: use the logged aligned dimensions and crop to the reference dimensions.
+
 ## Delayed-consumer frame-pool control
 
 `make POOL=1 COLOR16=0` or `make POOL=1 COLOR16=1` builds `pool0/probe.elf` or
 `pool1/probe.elf`. Use a stream with at least eight frames, such as the 640x480
 control in the investigation report, and compare the five captured frames with
-the same `compare.py` command. The input size limit is unchanged.
+the same `compare.py` command. This separate pool control still captures five
+frames and retains its original one-transfer input limit of 1,048,560 bytes.
 
 This control includes the actual `SMS_MPEG12.c`, ring buffer and libmpeg/IPU
 code. A producer runs the codec, while a consumer at the same player thread

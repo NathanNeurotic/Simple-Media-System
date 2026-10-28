@@ -1012,7 +1012,11 @@ static void _mpeg12_get_ref (
 
  int          lfInt    = ( aH & 8 ) >> 3;
  int          lDXY     = (  ( aDY & 1 ) << 1  ) | ( aDX & 1 );
- int          lUVXY    = (  ( aDX & 2 ) >> 1  ) | ( aDY & 2 );
+ /* MPEG-1/2 4:2:0 chroma vectors divide the signed luma vector by two
+  * toward zero. A right shift rounds negative odd vectors downward. */
+ int          lUVDX    = aDX / 2;
+ int          lUVDY    = aDY / 2;
+ int          lUVXY    = ( lUVDX & 1 ) | ( ( lUVDY & 1 ) << 1 );
  int          lSrcX    = aX  + ( aDX >> 1 );
  int          lSrcY    = (   (  anY + ( aDY >> 1 )  ) << lfInt   ) + aFSrc;
  int          lMBX     = lSrcX >> 4;
@@ -1045,6 +1049,12 @@ static void _mpeg12_get_ref (
  lpMotion -> m_Field    = aFSrc;
  lpMotion -> MC_Luma    = LumaOp  [ lDXY  + afAvg ];
  lpMotion -> MC_Chroma  = ChromaOp[ lUVXY + afAvg ];
+ /* The transferred reference starts at the luma macroblock. Chroma can
+  * advance to the next block when a negative odd vector rounds toward zero. */
+ lpMotion -> m_ChromaX = ( ( lSrcX & 0xF ) + ( aDX < 0 && ( aDX & 1 ) ) ) >> 1;
+ lpMotion -> m_ChromaY = ( ( ( ( ( lSrcY & 0xF ) - aFSrc ) >> lfInt ) +
+                              ( aDY < 0 && ( aDY & 1 ) ) ) >> 1 ) << lfInt;
+ lpMotion -> m_ChromaY += aFSrc;
 
 }  /* end _mpeg12_get_ref */
 

@@ -117,6 +117,9 @@ $(EE_OBJ_DIR)SMS_MPEG.o : $(EE_SRC_DIR)SMS_MPEG.c $(EE_INC_DIR)SMS_MPEG.h
 $(EE_OBJ_DIR)SMS_H263.o : $(EE_SRC_DIR)SMS_H263.c $(EE_INC_DIR)SMS_MPEG.h
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
+# The C/assembly motion layout is shared even though the core is handwritten.
+$(EE_OBJ_DIR)libmpeg.o $(EE_OBJ_DIR)libmpeg_core.o: $(EE_INC_DIR)libmpeg_internal.h $(EE_INC_DIR)libmpeg.h
+
 $(EE_OBJ_DIR)SMS_GS_1.o : $(EE_SRC_DIR)SMS_GS_1.c
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
