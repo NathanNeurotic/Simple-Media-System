@@ -29,6 +29,9 @@
 #include "SMS_ioctl.h"
 #include "SMS_SMB.h"
 #include "SMS_GUIClock.h"
+#include "SMS_Artwork.h"
+#include "SMS_JPEG.h"
+#include "SMS_Rescale.h"
 
 #include <kernel.h>
 #include <malloc.h>
@@ -71,6 +74,8 @@ typedef struct GUIFileMenu {
  u64*           m_pSelRect;
  int            m_Active;
  int            m_ActiveY;
+ int            m_ArtworkMode;
+ SMS_ArtworkCache m_Artwork;
 
 } GUIFileMenu;
 
@@ -82,6 +87,150 @@ typedef struct _FileMenuItem {
 } _FileMenuItem;
 
 static u64           s_BitBltPack[ sizeof ( GSLoadImage ) * 9 ] __attribute__(   (  aligned( 16 ), section( ".data" )  )   );
+
+/* All cached buffers are DMA sources. Never evict one while a preceding
+ * display chain can still refer to its pixels or upload packet. */
+static void _artwork_drain ( void ) {
+ DMA_Wait ( DMAC_VIF1 );
+ DMA_Wait ( DMAC_GIF );
+}
+
+static void _artwork_restore_gs ( void ) {
+ /* GS_XYZ/GS_XYZv use VU0 vf31 for the current display's Y scale. JPEG's
+  * IDCT owns VU0 registers. GUI packets otherwise use VIF DIRECT and require
+  * no VU microprogram, but this macro-mode register must be restored before
+  * building coordinates or resuming the clock. */
+ const float* lpScale = GS_Params () -> m_AspectRatio;
+ __asm__ __volatile__( "lqc2 $vf31, 0(%0)\n\t" :: "r"( lpScale ) : "memory" );
+}
+
+static void _artwork_position ( GUIFileMenu* apMenu ) {
+ SMS_ListNode* lpNode = apMenu -> m_pFiltList -> m_pHead;
+ unsigned int lIndex = 0, i;
+ while ( lpNode && lpNode != apMenu -> m_pCurrent ) { lpNode = lpNode -> m_pNext; ++lIndex; }
+ if ( !lpNode ) {
+  apMenu -> m_pCurrent = apMenu -> m_pFiltList -> m_pHead;
+  lIndex = 0;
+ }
+ apMenu -> m_YOffset = lIndex % SMS_ARTWORK_SLOTS;
+ apMenu -> m_pFirst = SMS_ListAt ( apMenu -> m_pFiltList, lIndex - apMenu -> m_YOffset );
+ lpNode = apMenu -> m_pFirst;
+ apMenu -> m_pLast = NULL;
+ for ( i = 0; i < SMS_ARTWORK_SLOTS && lpNode; ++i ) {
+  apMenu -> m_pLast = lpNode;
+  lpNode = lpNode -> m_pNext;
+ }
+}
+
+static void _artwork_move ( GUIFileMenu* apMenu, int aDelta ) {
+ SMS_ListNode* lpNode = apMenu -> m_pFiltList -> m_pHead;
+ unsigned int lIndex = 0;
+ while ( lpNode && lpNode != apMenu -> m_pCurrent ) { lpNode = lpNode -> m_pNext; ++lIndex; }
+ apMenu -> m_pCurrent = SMS_ListAt ( apMenu -> m_pFiltList,
+  SMS_ArtworkMove ( apMenu -> m_pFiltList -> m_Size, lIndex, aDelta ) );
+ _artwork_position ( apMenu );
+}
+
+static unsigned char* _artwork_load ( const void* apKey, void* apParam ) {
+ const SMS_ListNode* lpMedia = ( const SMS_ListNode* )apKey;
+ SMS_ListNode* lpArt = NULL;
+ FileContext* lpFile = NULL;
+ SMS_JPEGContext* lpJPEG = NULL;
+ unsigned char* lpData = NULL;
+ unsigned char* retVal = NULL;
+ char lName[ 320 ], lPath[ 1024 ];
+ unsigned int lPrefix, lLength;
+ int i;
+ ( void )apParam;
+
+ if ( ( int )lpMedia -> m_Param != GUICON_AVI && ( int )lpMedia -> m_Param != GUICON_AVIS &&
+      ( int )lpMedia -> m_Param != GUICON_MP3 && ( int )lpMedia -> m_Param != GUICON_M3U ) return NULL;
+ /* Resolve against the unfiltered listing: preserve its real case even on a
+  * case-sensitive network share. .jpg wins over .jpeg; no speculative opens. */
+ for ( i = 0; i < 2 && !lpArt; ++i )
+  if ( SMS_ArtworkName ( lName, sizeof ( lName ), _STR( lpMedia ), i ) ) lpArt = SMS_ListFindI ( g_pFileList, lName );
+ if ( !lpArt ) return NULL;
+ lPrefix = strlen ( g_CWD );
+ lLength = strlen ( _STR( lpArt ) );
+ if ( !lPrefix || lPrefix + lLength + 2 > sizeof ( lPath ) ) return NULL;
+ memcpy ( lPath, g_CWD, lPrefix );
+ if ( lPath[ lPrefix - 1 ] != '/' ) lPath[ lPrefix++ ] = '/';
+ strcpy ( lPath + lPrefix, _STR( lpArt ) );
+
+ if ( g_CMedia == 1 && g_pCDDACtx ) lpFile = CDDA_InitFileContext ( lPath + 7, g_pCDDACtx );
+ else lpFile = STIO_InitFileContext ( lPath, NULL );
+ if ( !lpFile ) return NULL;
+ if ( !lpFile -> m_Size || lpFile -> m_Size > SMS_ARTWORK_MAX_FILE ) goto end;
+ lLength = lpFile -> m_Size;
+ lpData = ( unsigned char* )memalign ( 64, lLength + 64 );
+ if ( !lpData ) goto end;
+ memset ( lpData + lLength, 0, 64 );
+ if ( lpFile -> Read ( lpFile, lpData, lLength ) != ( int )lLength || !SMS_ArtworkJPEGSize ( lpData, lLength ) ) goto end;
+ lpFile -> Destroy ( lpFile );
+ lpFile = NULL;
+
+ SMS_GUIClockSuspend ();
+ _artwork_drain ();
+ lpJPEG = SMS_JPEGInit ( NULL, NULL );
+ if ( lpJPEG && SMS_JPEGLoad ( lpJPEG, lpData, lLength ) && lpJPEG -> m_pRC &&
+      lpJPEG -> m_nBitmapBytes == lpJPEG -> m_pRC -> m_NewWidth * lpJPEG -> m_pRC -> m_NewHeight * 3 ) {
+  retVal = ( unsigned char* )memalign ( 64, SMS_ARTWORK_BYTES );
+  /* JPEG ProcessBuffer writes through the uncached alias. Sample that same
+   * alias: cached lines from a reused heap block may still hold older data. */
+  if ( retVal && !SMS_ArtworkThumbnail ( retVal, UNCACHED_SEG( lpJPEG -> m_pBitmap ),
+       lpJPEG -> m_pRC -> m_NewWidth, lpJPEG -> m_pRC -> m_NewHeight ) ) {
+   free ( retVal ); retVal = NULL;
+  }
+  if ( retVal ) SyncDCache ( retVal, retVal + SMS_ARTWORK_BYTES );
+ }
+ DMA_Wait ( DMAC_VIF0 );
+ _artwork_drain ();
+ SMS_JPEGDestroy ( lpJPEG );
+ _artwork_restore_gs ();
+ SMS_GUIClockResume ();
+end:
+ if ( lpFile ) lpFile -> Destroy ( lpFile );
+ free ( lpData );
+ return retVal;
+}
+
+/* The ordinary icon renderer already owns 0x3FC0..0x4000 as transient
+ * PSMCT32 scratch. Upload/draw each 64x64 thumbnail in the same VIF chain;
+ * TEXFLUSH precedes its sprite and the next upload follows that draw. */
+static void _artwork_packet ( u64* apDMA, unsigned char* apPixels, int aX, int aY, int aSide ) {
+ apDMA[  0 ] = DMA_TAG( 6, 0, DMATAG_ID_CNT, 0, 0, 0 );
+ apDMA[  1 ] = VIF_DIRECT( 6 );
+ apDMA[  2 ] = GIF_TAG( 4, 0, 0, 0, GIFTAG_FLG_PACKED, 1 );
+ apDMA[  3 ] = GIFTAG_REGS_AD;
+ apDMA[  4 ] = GS_SET_BITBLTBUF( 0, 0, 0, 0x3FC0, 1, GSPixelFormat_PSMCT32 );
+ apDMA[  5 ] = GS_BITBLTBUF;
+ apDMA[  6 ] = GS_SET_TRXPOS( 0, 0, 0, 0, 0 );
+ apDMA[  7 ] = GS_TRXPOS;
+ apDMA[  8 ] = GS_SET_TRXREG( SMS_ARTWORK_SIDE, SMS_ARTWORK_SIDE );
+ apDMA[  9 ] = GS_TRXREG;
+ apDMA[ 10 ] = GS_SET_TRXDIR( GS_TRXDIR_HOST_TO_LOCAL );
+ apDMA[ 11 ] = GS_TRXDIR;
+ apDMA[ 12 ] = GIF_TAG( SMS_ARTWORK_BYTES / 16, 0, 0, 0, GIFTAG_FLG_IMAGE, 0 );
+ apDMA[ 13 ] = 0;
+ apDMA[ 14 ] = DMA_TAG( SMS_ARTWORK_BYTES / 16, 0, DMATAG_ID_REF, 0, ( unsigned int )apPixels, 0 );
+ apDMA[ 15 ] = VIF_DIRECT( SMS_ARTWORK_BYTES / 16 );
+ apDMA[ 16 ] = DMA_TAG( 7, 0, DMATAG_ID_RET, 0, 0, 0 );
+ apDMA[ 17 ] = VIF_DIRECT( 7 );
+ apDMA[ 18 ] = GIF_TAG( 3, 0, 0, 0, GIFTAG_FLG_PACKED, 1 );
+ apDMA[ 19 ] = GIFTAG_REGS_AD;
+ apDMA[ 20 ] = 0;
+ apDMA[ 21 ] = GS_TEXFLUSH;
+ apDMA[ 22 ] = GS_SET_TEX0( 0x3FC0, 1, GSPixelFormat_PSMCT32, 6, 6, GS_TEX_TCC_RGBA, GS_TEX_TFX_DECAL, 0, 0, 0, 0, 0 );
+ apDMA[ 23 ] = GS_TEX0_1;
+ apDMA[ 24 ] = GS_SET_PRIM( GS_PRIM_PRIM_SPRITE, 0, 1, 0, 1, 0, 1, 0, 0 );
+ apDMA[ 25 ] = GS_PRIM;
+ apDMA[ 26 ] = GIF_TAG( 2, 1, 0, 0, GIFTAG_FLG_REGLIST, 2 );
+ apDMA[ 27 ] = GS_UV | ( GS_XYZ2 << 4 );
+ apDMA[ 28 ] = GS_SET_UV( 8, 8 );
+ apDMA[ 29 ] = GS_XYZ ( aX, aY, 0 );
+ apDMA[ 30 ] = GS_SET_UV( ( SMS_ARTWORK_SIDE << 4 ) - 8, ( SMS_ARTWORK_SIDE << 4 ) - 8 );
+ apDMA[ 31 ] = GS_XYZ ( aX + aSide, aY + aSide, 0 );
+}
 
 static int _filter_item ( SMS_ListNode* apNode ) {
 
@@ -212,11 +361,88 @@ static _FileMenuItem* GUIFileMenu_RenderItem ( SMS_ListNode* apNode, int anY, in
 
 }  /* end GUIFileMenu_RenderItem */
 
+static void _artwork_render ( GUIFileMenu* apMenu, int aCtx ) {
+ SMS_ListNode* lpNode;
+ _FileMenuItem* lpPack;
+ const void* lKeys[ SMS_ARTWORK_SLOTS ];
+ unsigned int i, lCount = 0;
+ int lCellW = ( g_GSCtx.m_Width - 16 ) / SMS_ARTWORK_COLUMNS;
+ int lCellH = ( g_GSCtx.m_Height - 116 ) / 2;
+ int lSide = lCellH - 42;
+
+ if ( lSide > lCellW - 20 ) lSide = lCellW - 20;
+ if ( lSide > 128 ) lSide = 128;
+ if ( lSide < 16 ) lSide = 16;
+
+ if ( !apMenu -> m_pGSPacket ) {
+  u64* lpDMA;
+  _artwork_position ( apMenu );
+  lpNode = apMenu -> m_pFirst;
+  while ( lpNode && lCount < SMS_ARTWORK_SLOTS ) { lKeys[ lCount++ ] = lpNode; lpNode = lpNode -> m_pNext; }
+  _artwork_drain ();
+  SMS_ArtworkPage ( &apMenu -> m_Artwork, lKeys, lCount );
+  /* Decode first. Display lists/packets live on the heap; the decoder owns
+   * scratchpad 0x70000000..0x70001fff and VU memory. No packet is submitted
+   * during decoding, and all coordinate construction follows GS restoration. */
+  for ( i = 0; i < lCount; ++i ) SMS_ArtworkGet ( &apMenu -> m_Artwork, i, _artwork_load, NULL );
+
+  lpDMA = GSContext_NewList ( GS_RRT_PACKET_SIZE() );
+  GS_RenderRoundRect ( ( GSRoundRectPacket* )( lpDMA - 2 ), 0, 60,
+   g_GSCtx.m_Width - 1, g_GSCtx.m_Height - 101, -8, g_Palette[ *apMenu -> m_pColor - 1 ] );
+  apMenu -> m_pGSPacket = lpDMA;
+  lpNode = apMenu -> m_pFirst;
+  g_GSCtx.m_TextColor = 1;
+
+  for ( i = 0; i < lCount; ++i ) {
+   unsigned char* lpPixels = apMenu -> m_Artwork.m_Slots[ i ].m_pPixels;
+   char lName[ 320 ];
+   const char* lpName = _STR( lpNode );
+   int lLen, lX = 8 + ( i % SMS_ARTWORK_COLUMNS ) * lCellW;
+   int lY = 68 + ( i / SMS_ARTWORK_COLUMNS ) * lCellH;
+   lpPack = ( _FileMenuItem* )SMS_SyncMalloc ( sizeof ( _FileMenuItem ) );
+   if ( !lpPack ) break;
+   if ( lpPixels ) _artwork_packet ( UNCACHED_SEG( lpPack -> m_IconPack ), lpPixels,
+    lX + ( lCellW - lSide ) / 2, lY + 5, lSide );
+   else GUI_DrawIcon ( ( int )lpNode -> m_Param, lX + ( lCellW - 32 ) / 2,
+    lY + 5 + ( lSide - 32 ) / 2, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
+
+   if ( _is_utf8 ( lpName ) && TranslateUTF8 ( g_GSCtx.m_CodePage, lName, sizeof ( lName ) - 1, lpName ) > 0 ) lpName = lName;
+   lLen = strlen ( lpName );
+   while ( lLen > 0 && GSFont_WidthEx ( ( char* )lpName, lLen, -6 ) > lCellW - 12 ) --lLen;
+   lpPack -> m_pTxtPack = GSContext_NewList ( GS_TXT_PACKET_SIZE( lLen ) );
+   GSFont_RenderEx ( ( char* )lpName, lLen, lX + 6, lY + lSide + 9, lpPack -> m_pTxtPack, -6, -8 );
+   SMS_ListPushBack ( apMenu -> m_pFileList, _STR( lpNode ) ) -> m_Param = ( unsigned int )lpPack;
+
+   if ( lpNode == apMenu -> m_pCurrent ) {
+    u64 lColor = g_Palette[ g_Config.m_BrowserSCIdx - 1 ];
+    if ( !apMenu -> m_pSelRect ) apMenu -> m_pSelRect = GSContext_NewList ( GS_RRT_PACKET_SIZE() << 1 );
+    GS_RenderRoundRect ( ( GSRoundRectPacket* )( apMenu -> m_pSelRect + GS_RRT_PACKET_SIZE() - 2 ),
+     lX, lY, lCellW - 4, lCellH - 4, 8, ( lColor & 0x00FFFFFF ) | 0x18000000 );
+    GS_RenderRoundRect ( ( GSRoundRectPacket* )( apMenu -> m_pSelRect - 2 ),
+     lX, lY, lCellW - 4, lCellH - 4, -8, lColor );
+    apMenu -> m_pSelRect[ -1 ] = VIF_DIRECT( GS_RRT_PACKET_SIZE() );
+    apMenu -> m_ActiveY = lY;
+   }
+   lpNode = lpNode -> m_pNext;
+  }
+  SMS_InitBitBlt ( s_BitBltPack, 9, 59, g_GSCtx.m_Height - 59 - 36 );
+ }
+ GSContext_CallList ( aCtx, apMenu -> m_pGSPacket );
+ if ( apMenu -> m_pSelRect && apMenu -> m_pFileList -> m_Size ) GSContext_CallList ( aCtx, apMenu -> m_pSelRect );
+ for ( lpNode = apMenu -> m_pFileList -> m_pHead; lpNode; lpNode = lpNode -> m_pNext ) {
+  lpPack = ( _FileMenuItem* )( unsigned int )lpNode -> m_Param;
+  GSContext_CallList2 ( aCtx, lpPack -> m_IconPack );
+  GSContext_CallList ( aCtx, lpPack -> m_pTxtPack );
+ }
+}
+
 static void GUIFileMenu_Render ( GUIObject* apObj, int aCtx ) {
 
  GUIFileMenu*   lpMenu = ( GUIFileMenu* )apObj;
  SMS_ListNode*  lpNode;
  _FileMenuItem* lpPack;
+
+ if ( lpMenu -> m_ArtworkMode ) { _artwork_render ( lpMenu, aCtx ); return; }
 
  if ( !lpMenu -> m_pGSPacket ) {
 
@@ -326,12 +552,13 @@ static void GUIFileMenu_Render ( GUIObject* apObj, int aCtx ) {
 
 }  /* end GUIFileMenu_Render */
 
-static void GUIFileMenu_Cleanup ( GUIObject* apObj ) {
+static void GUIFileMenu_CleanupPackets ( GUIObject* apObj ) {
 
  GUIFileMenu*   lpMenu = ( GUIFileMenu* )apObj;
  SMS_ListNode*  lpNode = lpMenu -> m_pFileList -> m_pHead;
  _FileMenuItem* lpPack;
 
+ _artwork_drain ();
  GUIObject_Cleanup ( apObj );
 
  while ( lpNode ) {
@@ -347,11 +574,17 @@ static void GUIFileMenu_Cleanup ( GUIObject* apObj ) {
 
  SMS_ListDestroy ( lpMenu -> m_pFileList, 0 );
 
+}  /* end GUIFileMenu_CleanupPackets */
+
+static void GUIFileMenu_Cleanup ( GUIObject* apObj ) {
+ GUIFileMenu* lpMenu = ( GUIFileMenu* )apObj;
+ GUIFileMenu_CleanupPackets ( apObj );
+ SMS_ArtworkClear ( &lpMenu -> m_Artwork );
 }  /* end GUIFileMenu_Cleanup */
 
 static void _redraw ( GUIFileMenu* apMenu, int afAll ) {
 
- GUIFileMenu_Cleanup (  ( GUIObject* )apMenu  );
+ GUIFileMenu_CleanupPackets (  ( GUIObject* )apMenu  );
 
  if ( !afAll ) {
 
@@ -393,6 +626,8 @@ static void GUIFileMenu_SetFocus ( GUIObject* apObj, int afSet ) {
 
 static void _reset ( GUIFileMenu* apMenu, int afAll ) {
 
+ _artwork_drain ();
+ SMS_ArtworkClear ( &apMenu -> m_Artwork );
  apMenu -> m_pFirst   = NULL;
  apMenu -> m_pLast    = NULL;
  apMenu -> m_pCurrent = NULL;
@@ -593,7 +828,8 @@ void** SMS_OpenMediaFile ( const char* apName, int aFlags ) {
 
 static void _perform_file_action ( GUIFileMenu* apMenu, int aFlags ) {
 
- SMS_OpenMediaFile (  _STR( apMenu -> m_pCurrent ), aFlags | SMS_FA_FLAGS_MSG  );
+ if ( apMenu -> m_ArtworkMode ) GUIFileMenu_Cleanup ( ( GUIObject* )apMenu );
+ if ( !SMS_OpenMediaFile ( _STR( apMenu -> m_pCurrent ), aFlags | SMS_FA_FLAGS_MSG ) && apMenu -> m_ArtworkMode ) _redraw ( apMenu, 0 );
 
 }  /* end _perform_file_action */
 
@@ -979,6 +1215,32 @@ static int GUIFileMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
 
   int lBtn = anEvent & GUI_MSG_PAD_MASK;
 
+  if ( lBtn == SMS_PAD_R2 ) {
+   GUIFileMenu_Cleanup ( apObj );
+   lpMenu -> m_ArtworkMode = !lpMenu -> m_ArtworkMode;
+   if ( lpMenu -> m_ArtworkMode ) _artwork_position ( lpMenu );
+   else { lpMenu -> m_pFirst = lpMenu -> m_pCurrent; lpMenu -> m_YOffset = 0; }
+   _redraw ( lpMenu, 0 );
+   return GUIHResult_Handled;
+  }
+
+  if ( lpMenu -> m_ArtworkMode ) {
+   int lDelta = 0;
+   if ( lBtn == SMS_PAD_LEFT ) {
+    if ( lpMenu -> m_pCurrent == lpMenu -> m_pFiltList -> m_pHead ) return GUIHResult_ChangeFocus;
+    lDelta = -1;
+   } else if ( lBtn == SMS_PAD_RIGHT ) lDelta = 1;
+   else if ( lBtn == SMS_PAD_UP ) lDelta = -SMS_ARTWORK_COLUMNS;
+   else if ( lBtn == SMS_PAD_DOWN ) lDelta = SMS_ARTWORK_COLUMNS;
+   else if ( lBtn == SMS_PAD_L1 || lBtn == RC_PREV ) lDelta = -SMS_ARTWORK_SLOTS;
+   else if ( lBtn == SMS_PAD_L2 || lBtn == RC_NEXT ) lDelta = SMS_ARTWORK_SLOTS;
+   if ( lDelta ) {
+    _artwork_move ( lpMenu, lDelta );
+    _redraw ( lpMenu, 0 );
+    return GUIHResult_Handled;
+   }
+  }
+
   if ( lBtn == RC_TOP_MENU || lBtn == SMS_PAD_LEFT || lBtn == SMS_PAD_RIGHT ) {
 
    retVal = GUIHResult_ChangeFocus;
@@ -1153,6 +1415,7 @@ redraw:
 
    if ( g_pFileList ) {
 
+    GUIFileMenu_Cleanup ( apObj );
     SMS_ListNode* lpNode = g_pFileList -> m_pHead;
     SMS_ListDestroy ( lpMenu -> m_pFiltList, 0 );
 

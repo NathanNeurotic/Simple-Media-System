@@ -34,7 +34,7 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite in control
 
 ## Poster / cover-art grid — #26
 
-[Poster-grid browsing is unimplemented.](https://github.com/NathanNeurotic/Simple-Media-System/issues/26) A future feature needs artwork naming, fallback/navigation rules, a bounded JPEG cache, lifecycle cleanup, and memory/VRAM and slow-storage testing. The current picture viewer is not a poster browser.
+[#26 remains open.](https://github.com/NathanNeurotic/Simple-Media-System/issues/26) A separate development candidate adds an optional R2 poster grid with same-basename JPEG sidecars, a six-thumbnail cache, fallback icons and browser/player cleanup. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Host lookup/cache/navigation and upload-packet checks are implemented; console acceptance for display modes, memory/VRAM, slow or disconnected storage, and returning from playback is pending. The candidate depends on the companion JPEG parser/allocation fixes; it is not part of the PR #30 baseline summarized above.
 
 ## How to read validation claims
 

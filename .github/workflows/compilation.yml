@@ -64,6 +64,7 @@ jobs:
         python3 tools/test_m3u_probe.py
         python3 tools/test_playlist_playback.py
         python3 tools/test_playlist_menu.py
+        python3 tools/test_browser_artwork.py
         python3 tools/test_file_skip.py
         python3 tools/test_file_string.py
         python3 tools/test_mov_packets.py

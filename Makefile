@@ -24,7 +24,7 @@ EE_OBJS  = main.o SMS_OS.o SMS_GS_0.o SMS_GS_1.o SMS_GS_2.o SMS_Timer.o         
            SMS_RingBuffer.o SMS_Container.o SMS_ContainerAVI.o SMS_ContainerMP3.o \
            SMS_ContainerM3U.o SMS_List.o SMS_Config.o About.o SMS_Data.o          \
            SMS_GSFont.o About_Data.o SMS_GUIcons.o SMS_ConfigIcon.o SMS_GUI.o     \
-           SMS_GUIDevMenu.o  SMS_DirTree.o SMS_GUIFileMenu.o SMS_Locale.o         \
+           SMS_GUIDevMenu.o  SMS_DirTree.o SMS_GUIFileMenu.o SMS_Artwork.o SMS_Locale.o \
            SMS_FileDir.o SMS_GUIMenu.o SMS_DTS.o SMS_SubtitleContext.o            \
            SMS_GUICmdProc.o SMS_GUIDesktop.o SMS_PlayerMenu.o SMS_Sounds.o        \
            SMS_DSP_QPel.o SMS_GUIMiniBrowser.o SMS_DSP_FFT.o SMS_Spectrum.o       \

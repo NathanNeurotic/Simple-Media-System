@@ -12,7 +12,7 @@ MPEG-1 / MPEG-2 · DIVX / XVID · AUDIO & JPEG · MX4SIO · SMB / UDPFS
 
 SMS was created by **Eugene Plotnikov** and developed by the PS2 homebrew community. This storage-focused fork adds MX4SIO, ATA/exFAT, i.LINK and MMCE paths, a folder-served UDPFS network drive, on-screen network configuration, USB/Bluetooth DualShock 3/4 input and updated artwork. You need a PS2 that can already launch homebrew; a hard disk or network adapter is optional.
 
-The October development work adds folder shuffle, converter multi-audio output and text-subtitle burn-in, and fixes reproduced parser, streaming and frame-lifetime defects. [Known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) distinguishes implemented fixes from the reports still awaiting affected-console tests. Poster-grid browsing remains a feature request.
+The October development work adds folder shuffle, converter multi-audio output and text-subtitle burn-in, and fixes reproduced parser, streaming and frame-lifetime defects. [Known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) distinguishes implemented fixes from the reports still awaiting affected-console tests. An optional [poster-grid candidate](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser) is under development, with console acceptance pending.
 
 ## Choose your next step
 
