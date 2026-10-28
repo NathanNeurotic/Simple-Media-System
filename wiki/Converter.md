@@ -35,7 +35,7 @@ The target width and height define a bounding box or output canvas according to 
 | Mode | Output in this example | Picture treatment |
 | --- | --- | --- |
 | Fit inside dimensions | 640×360 | Keeps the full picture and its display proportions. Adds no borders; the encoded frame can be smaller than the target. |
-| Letterbox (pad with black bars) | 640×480 | Keeps the full picture inside the canvas. Adds black borders above and below this widescreen source. |
+| Letterbox to exact dimensions | 640×480 | Keeps the full picture inside the canvas. Adds black borders above and below this widescreen source. |
 | Crop to fill | 640×480 | Keeps picture proportions, fills the canvas and removes the excess edges. This example loses picture at the left and right. |
 | Stretch | 640×480 | Fills the canvas by changing picture proportions. Circles and faces can become narrower or wider. |
 

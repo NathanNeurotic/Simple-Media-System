@@ -45,7 +45,7 @@
 <p>The target width and height define a bounding box or output canvas according to <b>Scaling mode</b>. For a 1280×720 widescreen source and a 640×480 target, the modes produce these results:</p>
 <table><thead><tr><th>Mode</th><th>Output in this example</th><th>Picture treatment</th></tr></thead><tbody>
 <tr><td>Fit inside dimensions</td><td>640×360</td><td>Keeps the full picture and its display proportions. Adds no borders; the encoded frame can be smaller than the target.</td></tr>
-<tr><td>Letterbox (pad with black bars)</td><td>640×480</td><td>Keeps the full picture inside the canvas. Adds black borders above and below this widescreen source.</td></tr>
+<tr><td>Letterbox to exact dimensions</td><td>640×480</td><td>Keeps the full picture inside the canvas. Adds black borders above and below this widescreen source.</td></tr>
 <tr><td>Crop to fill</td><td>640×480</td><td>Keeps picture proportions, fills the canvas and removes the excess edges. This example loses picture at the left and right.</td></tr>
 <tr><td>Stretch</td><td>640×480</td><td>Fills the canvas by changing picture proportions. Circles and faces can become narrower or wider.</td></tr>
 </tbody></table>
