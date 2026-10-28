@@ -73,6 +73,8 @@ typedef struct GUIObject {
 } GUIObject;
 
 void GUIObject_Cleanup ( GUIObject* );
+/* Rebuild browser display packets while retaining its decoded thumbnails. */
+void GUIFileMenu_CleanupPackets ( GUIObject* );
 
 typedef enum GUIRedrawMethod {
 

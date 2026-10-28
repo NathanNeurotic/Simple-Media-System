@@ -65,10 +65,20 @@ helper and extracts the actual browser loader, navigation and upload-packet
 builder under ASan/UBSan. Cases cover filename/path bounds, case resolution,
 extension priority and fallback, missing artwork, short reads, oversized source
 files/dimensions, decoder/allocation failures, aspect padding, failed-entry
-memoization, six-entry page eviction, page boundaries, selection restoration,
+memoization, six-entry page eviction, page boundaries, current-item positioning,
+null-selection fallback,
 and image-transfer/TEXFLUSH/sprite ordering. File I/O, JPEG decoding and GS
 execution are stubbed. These controls establish host-side behavior and packet
 structure, not physical rendering or complete decoder acceptance.
+
+Run `python3 tools/test_browser_artwork_lifecycle.py` for the production GUI
+cleanup dispatch, browser packet cleanup, destruction callback and reset path.
+It verifies that ordinary/full GUI redraws reuse decoded thumbnails, destruction
+releases them, and reset clears the filtered list before the grid can select a
+stale entry. Both redraw and reset controls failed against the original PR head
+and pass with these fixes under ASan/UBSan/LSan. List storage and GS/DMA calls
+use host adapters. Folder-return selection and device removal on a console
+remain in the acceptance checklist below.
 
 ## Console acceptance still needed
 

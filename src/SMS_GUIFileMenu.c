@@ -552,7 +552,7 @@ static void GUIFileMenu_Render ( GUIObject* apObj, int aCtx ) {
 
 }  /* end GUIFileMenu_Render */
 
-static void GUIFileMenu_CleanupPackets ( GUIObject* apObj ) {
+void GUIFileMenu_CleanupPackets ( GUIObject* apObj ) {
 
  GUIFileMenu*   lpMenu = ( GUIFileMenu* )apObj;
  SMS_ListNode*  lpNode = lpMenu -> m_pFileList -> m_pHead;
@@ -628,6 +628,9 @@ static void _reset ( GUIFileMenu* apMenu, int afAll ) {
 
  _artwork_drain ();
  SMS_ArtworkClear ( &apMenu -> m_Artwork );
+ /* Grid positioning chooses the filtered head when there is no selection.
+  * Remove stale entries before redrawing a removed or changing device. */
+ SMS_ListDestroy ( apMenu -> m_pFiltList, 0 );
  apMenu -> m_pFirst   = NULL;
  apMenu -> m_pLast    = NULL;
  apMenu -> m_pCurrent = NULL;
