@@ -103,14 +103,16 @@ static void SMS_DestroyContainer(SMS_Container *c,int all) {
 probe_fixture = r"""
 typedef struct { int m_SampleRate,m_nChannels,m_BitRate; } SMS_AudioInfo;
 static MOVParseEntry s_M4AProbeTbl[1];
-static int probe_header(SMS_Container *c) {
- MOVContext *m=c->m_pCtx;assert(m->m_pBase==c && !c->m_nStm && !c->m_pName);
+static int probe_result;
+static int probe_parser(MOVContext *m,FileContext *f,MOVAtom *atom) {
+ SMS_Container *c=m->m_pBase;assert(c->m_pCtx==m && !c->m_nStm && !c->m_pName);
+ assert(f==c->m_pFileCtx && atom->m_Size==f->m_Size);
  for(int i=0;i<SMS_MAX_STREAMS;++i) assert(!c->m_pStm[i]);
  SMS_AudioInfo *info=(SMS_AudioInfo *)m->m_pMDAT;
  info->m_SampleRate=48000;info->m_nChannels=2;info->m_BitRate=128000;
- return 0;
+ return probe_result;
 }
-""" + extract("SMS_M4AProbe").replace("_mov_read_header (", "probe_header (")
+""" + extract("SMS_M4AProbe").replace("_mov_read_dflt (", "probe_parser (")
 tests = r"""
 static SMS_Container container;
 static FileContext file;
@@ -224,8 +226,10 @@ static void stream_limit(void) {
  assert(container.m_nStm==7 && !container.m_pStm[7] && file.m_CurPos==100 && !calloc_calls);
 }
 static void audio_probe(void) {
- reset();SMS_AudioInfo info={0};file.m_CurPos=20;
- assert(SMS_M4AProbe(&file,&info)==1 && info.m_SampleRate==48000 && !file.m_CurPos);
+ for(int result=-1;result<=1;++result) {
+  reset();SMS_AudioInfo info={0};file.m_CurPos=20;probe_result=result;
+  assert(SMS_M4AProbe(&file,&info)==(result>=0) && info.m_SampleRate==48000 && !file.m_CurPos);
+ }
 }
 int main(int argc,char **argv) {
  const char *name=argc>1?argv[1]:"all";

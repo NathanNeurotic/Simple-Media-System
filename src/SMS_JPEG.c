@@ -463,6 +463,12 @@ int SMS_JPEGLoad ( SMS_JPEGContext* apCtx, void* apData, unsigned int aDataSize 
          apCtx -> m_CompDesc[ 0 ].m_CompID == apCtx -> m_CompDesc[ 2 ].m_CompID ||
          apCtx -> m_CompDesc[ 1 ].m_CompID == apCtx -> m_CompDesc[ 2 ].m_CompID ) goto end;
 
+    /* The four CSC microprograms consume 1/2/4 Y blocks, then one Cb and
+     * one Cr block. MCU dimensions alone do not describe another component
+     * arrangement: no per-component sampling metadata is sent to VU1. */
+    if ( apCtx -> m_CompDesc[ 1 ].m_HSF != 1 || apCtx -> m_CompDesc[ 1 ].m_VSF != 1 ||
+         apCtx -> m_CompDesc[ 2 ].m_HSF != 1 || apCtx -> m_CompDesc[ 2 ].m_VSF != 1 ) goto end;
+
     _init_MCU ( apCtx );
 
     if ( apCtx -> m_MCUW == 8 && apCtx -> m_MCUH == 8 ) {

@@ -18,7 +18,7 @@ import tempfile
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
 CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts",
-         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "m4a-metadata")
+         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-before-track", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -97,9 +97,18 @@ int main(int argc,char **argv) {
  unsigned char *data=malloc(size);assert(data);
  assert(fread(data,1,size,in)==(size_t)size);fclose(in);
  FileContext f={size,0,data,read_file,seek_file};SMS_Container c={0};c.m_pFileCtx=&f;c.AllocPacket=packet_alloc;
+ if(!strcmp(argv[3],"probe-reject")) {
+  SMS_AudioInfo info={0};assert(!SMS_M4AProbe(&f,&info));assert(!f.m_CurPos);
+  free(data);return 0;
+ }
  if(!strcmp(argv[3],"probe")) {
+  int rate,channels;FILE *expected=fopen(argv[2],"r");assert(expected);
+  assert(fscanf(expected,"%d %d",&rate,&channels)==2);fclose(expected);
   SMS_AudioInfo info={0};assert(SMS_M4AProbe(&f,&info)==1);
-  assert(info.m_SampleRate==8000 && info.m_nChannels==1 && info.m_BitRate>0 && f.m_CurPos==0);
+  fprintf(stderr,"M4A metadata: rate=%d channels=%d bitrate=%d position=%u\n",
+          info.m_SampleRate,info.m_nChannels,info.m_BitRate,f.m_CurPos);
+  assert(info.m_SampleRate==rate);assert(info.m_nChannels==channels);
+  assert(info.m_BitRate>0);assert(f.m_CurPos==0);
   free(data);return 0;
  }
  int result=_GetContainerMOV(&c,s_MOVParseTbl);
@@ -168,6 +177,11 @@ def rewrite(data, kind, video=False):
             continue
         if tag in (b"moov", b"trak", b"mdia", b"minf", b"stbl", b"edts"):
             body = rewrite(body, kind, b"vide" in body if tag == b"trak" else video)
+        if kind == "edit-before-track" and tag == b"moov":
+            # The table is well-formed but has no owning track. Dispatch must
+            # skip it without indexing an unpublished stream or changing packets.
+            edit = bytes(4) + struct.pack(">IIihh", 1, 1000, 0, 1, 0)
+            body = struct.pack(">I4s", len(edit) + 8, b"elst") + edit + body
         if tag == b"elst":
             count = struct.unpack_from(">I", body, 4)[0]
             if kind == "edit-v1":
@@ -188,6 +202,24 @@ def rewrite(data, kind, video=False):
             body = body[:8] + b"".join(struct.pack(">II", n, offset + 1024) for n, offset in entries)
         if kind == "ctts-unknown" and tag == b"ctts":
             body = b"\x02" + body[1:]
+        if kind == "m4a-metadata-bad-asc" and tag == b"stsd" and not video:
+            # Find the AudioSpecificConfig descriptor through the standard
+            # ES/DecoderConfig headers, then overstate its remaining payload.
+            def descriptor(pos, expected):
+                assert body[pos] == expected
+                pos += 1
+                for _ in range(4):
+                    last = pos
+                    pos += 1
+                    if not body[last] & 0x80:
+                        return pos, last
+                raise AssertionError("unterminated descriptor length")
+            esds = body.index(b"esds") + 4
+            payload, _ = descriptor(esds + 4, 3)
+            config, _ = descriptor(payload + 3, 4)
+            asc, last = descriptor(config + 13, 5)
+            assert len(body) - asc < 127
+            body = body[:last] + b"\x7f" + body[last + 1:]
         if kind == "short-stts" and tag == b"stts":
             count = struct.unpack_from(">I", body, 8)[0]
             assert count > 0
@@ -220,7 +252,10 @@ with tempfile.TemporaryDirectory() as temporary:
     cases = CASES if args.case == "all" else (args.case,)
     for case in cases:
         fixture = tmp / f"{case}.mp4"
-        if case == "faststart":
+        if case == "m4a-metadata-stereo":
+            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(media),
+                            "-c:v", "copy", "-c:a", "aac", "-ac", "2", str(fixture)], check=True, timeout=20)
+        elif case == "faststart":
             subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(media), "-c", "copy",
                             "-movflags", "+faststart", str(fixture)], check=True, timeout=20)
         elif case in ("ctts-v0", "ctts-v0-two-frame", "ctts-v1", "ctts-unknown", "edit-delay", "edit-v1", "no-edits", "edit-trim", "edit-tail"):
@@ -242,8 +277,13 @@ with tempfile.TemporaryDirectory() as temporary:
         else:
             fixture.write_bytes(original if case == "standard" else rewrite(original, case))
         manifest = tmp / "packets.txt"
-        if case == "m4a-metadata":
+        if case == "m4a-metadata-bad-asc":
+            mode = "probe-reject"
+        elif case in ("m4a-metadata", "m4a-metadata-stereo"):
             mode = "probe"
+            audio = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "a:0",
+                                                       "-show_streams", "-of", "json", str(fixture)], timeout=10))["streams"][0]
+            manifest.write_text(f"{audio['sample_rate']} {audio['channels']}\n")
         elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail"):
             mode = "reject"
         else:
