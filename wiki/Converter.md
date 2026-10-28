@@ -28,6 +28,23 @@ Ordinary video presets use GOP 50 and zero B-frames unless changed; the high-qua
 
 ## Tracks, subtitles and advanced controls
 
+### Scaling mode and output size
+
+The target width and height define a bounding box or output canvas according to **Scaling mode**. For a 1280×720 widescreen source and a 640×480 target, the modes produce these results:
+
+| Mode | Output in this example | Picture treatment |
+| --- | --- | --- |
+| Fit inside dimensions | 640×360 | Keeps the full picture and its display proportions. Adds no borders; the encoded frame can be smaller than the target. |
+| Letterbox to exact dimensions | 640×480 | Keeps the full picture inside the canvas. Adds black borders above and below this widescreen source. |
+| Crop to fill | 640×480 | Keeps picture proportions, fills the canvas and removes the excess edges. This example loses picture at the left and right. |
+| Stretch | 640×480 | Fills the canvas by changing picture proportions. Circles and faces can become narrower or wider. |
+
+The default is letterbox with **Allow upscaling** off. When upscaling is disabled, a small input can also reduce the canvas for letterbox, crop and stretch. For example, a square-pixel 320×180 source with a requested 640×480 target produces 320×180 with Fit and a 240×180 canvas with the other three modes. Enable upscaling when you deliberately want that small source enlarged to the requested canvas. Final dimensions are even for the supported encoders.
+
+Normal scaling converts anamorphic sources to square pixels using their display aspect ratio. A 720×480 source tagged with a 32:27 sample aspect ratio therefore has a 16:9 picture, and fits 640×360 rather than being treated as a square-pixel 3:2 image. The source-SD option below has precedence for eligible sources and preserves their pixel aspect.
+
+Loading a preset restores the default scaling mode and disables upscaling. Changing either setting makes the settings badge custom. These controls determine encoded geometry; final TV presentation still depends on SMS's display and aspect settings.
+
 ### One audio track or all source audio
 
 **Source audio track** selects a zero-based source index. **Keep all source audio tracks** encodes all selected source audio to the configured audio codec in AVI, MPEG-PS or MP4. At most **six audio tracks plus video** are allowed; excess tracks produce a settings error. Tracks are re-encoded, not copied bit for bit. Language/title metadata are preserved where supported by the container.
@@ -42,7 +59,7 @@ For switchable text, retain a separate matching SRT/SUB/TXT sidecar and use SMS'
 
 ### Keep source SD dimensions
 
-**Keep source SD resolution** retains even source dimensions up to 720×576. Larger sources use the selected target; it is enabled by default only for the high-quality preset. Check display aspect and pixel aspect on your TV. Choosing this option alone does not establish hardware playback speed.
+**Keep source SD resolution** retains source dimensions up to 720×576, rounded down to even values when needed, and preserves the source display aspect through its sample aspect ratio. It takes precedence over the selected scaling mode for eligible sources: choosing Stretch or Crop does not reshape an SD source while this option is enabled. Larger sources use the selected scaling mode and target. It is enabled by default only for the high-quality preset. Check display aspect and pixel aspect on your TV. Choosing this option alone does not establish hardware playback speed.
 
 ### Two-pass encoding
 

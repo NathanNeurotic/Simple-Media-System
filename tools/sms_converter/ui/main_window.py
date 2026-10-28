@@ -384,7 +384,8 @@ class MainWindow(QMainWindow):
             fields += [("vcodec", preset.vcodec), ("vtag", preset.vtag),
                        ("width", preset.width), ("height", preset.height),
                        ("vbitrate_kbps", preset.vbitrate_kbps), ("gop", preset.gop),
-                       ("keep_sd_resolution", preset.keep_sd_resolution)]
+                       ("keep_sd_resolution", preset.keep_sd_resolution),
+                       ("scaling_mode", preset.scaling_mode)]
             if preset.fps is not None:
                 fields.append(("fps", str(preset.fps)))
 
