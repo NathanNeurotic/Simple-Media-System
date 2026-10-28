@@ -194,18 +194,39 @@ with tempfile.TemporaryDirectory() as temp:
         fixture = temp / ('sampling-' + str(sampling) + '.jpg')
         fixture.write_bytes(control)
         subprocess.run([str(exe), str(fixture)], check=True, timeout=15)
+    # These fit MCUIdx but put extra blocks in Cb/Cr. The VU program is selected
+    # only by maximum MCU dimensions; no component arrangement is transferred.
+    for factors in ((0x11, 0x21, 0x11), (0x11, 0x12, 0x11),
+                    (0x11, 0x11, 0x22), (0x21, 0x11, 0x21)):
+        control = bytearray(tiny)
+        sof = control.index(b'\xff\xc0')
+        for offset, sampling in zip((11, 14, 17), factors):
+            control[sof + offset] = sampling
+        count = sum((v >> 4) * (v & 15) for v in factors)
+        whole, remainder = divmod(count * 2, 8)
+        control[-3:-2] = bytes(whole) + (bytes([(1 << (8 - remainder)) - 1]) if remainder else b'')
+        fixture = temp / ('unsupported-chroma-' + '-'.join(map(str, factors)) + '.jpg')
+        fixture.write_bytes(control)
+        subprocess.run([str(exe), str(fixture), 'unsupported-chroma-layout'], check=True, timeout=15)
     if not shutil.which('ffmpeg'):
         raise SystemExit('ffmpeg is required for independent baseline controls')
     for pix_fmt in ('yuvj444p', 'yuvj422p', 'yuvj420p'):
         fixture = temp / (pix_fmt + '.jpg')
         subprocess.run(['ffmpeg', '-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=34x18:rate=1',
                         '-frames:v', '1', '-threads', '1', '-c:v', 'mjpeg', '-pix_fmt', pix_fmt, str(fixture)], check=True)
-        # FFmpeg's 4:2:2 encoder uses eight blocks per MCU, beyond this decoder's
-        # six-entry MCUIdx. Reject it before _init_MCU can overwrite the context.
+        # FFmpeg versions differ: 5.1 also emits 4:4:4 with sampling 1x2 on
+        # every component. That has six blocks but is not the VU 8x16 layout
+        # (two Y, one Cb, one Cr). Check the actual independent fixture instead
+        # of assuming a pixel format implies a particular MCU arrangement.
+        data = fixture.read_bytes()
+        sof = data.index(b'\xff\xc0')
+        factors = tuple(data[sof + offset] for offset in (11, 14, 17))
         command = [str(exe), str(fixture)]
-        if pix_fmt == 'yuvj422p':
-            command.append('unsupported-eight-block-mcu')
+        if factors not in ((0x11, 0x11, 0x11), (0x21, 0x11, 0x11),
+                           (0x12, 0x11, 0x11), (0x22, 0x11, 0x11)):
+            command.append('unsupported-component-layout')
         subprocess.run(command, check=True, timeout=15)
+        print(f'FFmpeg JPEG {pix_fmt}: sampling={factors}, expected={"reject" if len(command) > 2 else "accept"}')
     for name in ('main_bg_mini.jpg', 'jellyfish.jpg', 'splash.jpg'):
         subprocess.run([str(exe), str(root / 'images' / name), 'valid-only'], check=True, timeout=15)
-print('JPEG parser: four MCU layouts, FFmpeg 4:4:4/4:2:0 controls, unsupported eight-block MCU, every truncated prefix, malformed segments/tables/selectors/sampling, repeated loads, EOI-only and bitmap failure passed')
+print('JPEG parser: four MCU layouts, independent FFmpeg component-layout controls, unsupported chroma/eight-block layouts, every truncated prefix, malformed segments/tables/selectors/sampling, repeated loads, EOI-only and bitmap failure passed')

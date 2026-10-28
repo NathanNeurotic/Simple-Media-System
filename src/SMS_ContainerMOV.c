@@ -752,6 +752,7 @@ static int _mov_read_stsd_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVA
 
 static int _mov_read_esds_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* apAtom ) {
  SMS_AudioInfo* lpInfo = ( SMS_AudioInfo* )apCtx -> m_pMDAT;
+ uint32_t lStartPos = apFileCtx -> m_CurPos;
  if ( lpInfo -> m_nChannels > 0 ) {
   int         lTag, lLen;
   File_Skip ( apFileCtx, 4 );
@@ -759,10 +760,33 @@ static int _mov_read_esds_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVA
   File_Skip ( apFileCtx, lTag == MP4ESDescrTag ? 3 : 2 );
   lLen = _mp4_read_descr ( apFileCtx, &lTag );
   if ( lTag == MP4DecConfigDescrTag ) {
-   File_Skip ( apFileCtx, 9 );
+   int lObjectType = File_GetByte ( apFileCtx );
+   File_Skip ( apFileCtx, 8 );
    lpInfo -> m_BitRate = _read_int_be ( apFileCtx );
    lLen = _mp4_read_descr ( apFileCtx, &lTag );
-   if ( lTag == MP4DecSpecificDescrTag ) File_Skip ( apFileCtx, lLen );
+   if ( lTag == MP4DecSpecificDescrTag ) {
+    uint64_t lUsed = apFileCtx -> m_CurPos - lStartPos;
+    if ( apFileCtx -> m_CurPos < lStartPos || lUsed > apAtom -> m_Size ||
+         lLen < 0 || ( uint64_t )lLen > apAtom -> m_Size - lUsed ) return -1;
+    /* mp4a's sample entry can say stereo even for mono AAC. For ordinary
+     * AAC-LC use the encoded AudioSpecificConfig; retain the entry values
+     * for PCE, explicit rates and other object types handled by the decoder. */
+    if ( _mp4_get_id ( lObjectType ) == SMS_CodecID_AAC && lLen >= 2 ) {
+     static const unsigned int s_Rates[] = {
+      96000, 88200, 64000, 48000, 44100, 32000, 24000,
+      22050, 16000, 12000, 11025, 8000, 7350
+     };
+     unsigned int lASC = File_GetShortBE ( apFileCtx );
+     unsigned int lRate = ( lASC >> 7 ) & 15;
+     unsigned int lChannels = ( lASC >> 3 ) & 15;
+     if ( ( lASC >> 11 ) == 2 && lRate < 13 && lChannels > 0 && lChannels <= 7 ) {
+      lpInfo -> m_SampleRate = s_Rates[ lRate ];
+      lpInfo -> m_nChannels = lChannels == 7 ? 8 : lChannels;
+     }  /* end if */
+     lLen -= 2;
+    }  /* end if */
+    File_Skip ( apFileCtx, lLen );
+   }  /* end if */
   }  /* end if */
  }  /* end if */
  return 0;
@@ -1469,6 +1493,7 @@ uint64_t SMS_M4AProbe ( FileContext* apFileCtx, SMS_AudioInfo* apInfo ) {
 
   SMS_Container lCont; memset ( &lCont, 0, sizeof ( lCont ) );
   MOVContext    lMyCont; memset (  &lMyCont, 0, sizeof ( lMyCont )  );
+  MOVAtom       lAtom = { 0, 0, apFileCtx -> m_Size };
 
   lCont.m_pCtx        = &lMyCont;
   lCont.m_pFileCtx    = apFileCtx;
@@ -1480,7 +1505,10 @@ uint64_t SMS_M4AProbe ( FileContext* apFileCtx, SMS_AudioInfo* apInfo ) {
   apInfo -> m_nChannels  = 0;
   apInfo -> m_BitRate    = 0;
 
-  retVal = _mov_read_header ( &lCont ) >= 0 && apInfo -> m_SampleRate && apInfo -> m_nChannels && apInfo -> m_BitRate;
+  /* The metadata table does not create/index streams or set MOOV/MDAT flags.
+   * Use its parser result directly; _mov_read_header maps errors to zero. */
+  retVal = _mov_read_dflt ( &lMyCont, apFileCtx, &lAtom ) >= 0 && !lMyCont.m_fError &&
+           apInfo -> m_SampleRate && apInfo -> m_nChannels && apInfo -> m_BitRate;
 
  }  /* end if */
 
