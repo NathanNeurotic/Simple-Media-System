@@ -65,6 +65,20 @@ attributing a difference to prediction drift. The host feed check is
 `python tools/test_mpeg_color_feed.py`; it checks DMA limits and continuity, not
 IPU execution or color correctness.
 
+`generate_series.py SOURCE --output /work/series` recreates the two 150-frame
+GOP 50/15 intervals used in the follow-up report with the actual converter
+profiles. It saves commands, input hashes and actual picture types in a JSON
+manifest. It explicitly allows upscaling to reproduce the historical 640x480
+canvas. `--extended` generates MPEG-1 with zero/two B-frames, MPEG-2 with two
+B-frames, and a synthetic top-field-first interlaced MPEG-2 control instead.
+The source itself is not included; provide a local file you may use. Generated
+references and encoded streams are local research outputs and are not uploaded.
+
+`DECODER_SOURCE` and `DECODER_CORE` can select saved baseline files for matched
+comparisons; keep the baseline C beside its matching headers and use a unique
+`OUT` for every source/input/mode. Interlaced sequences can have a padded decoder
+height: use the logged aligned dimensions and crop to the reference dimensions.
+
 ## Delayed-consumer frame-pool control
 
 `make POOL=1 COLOR16=0` or `make POOL=1 COLOR16=1` builds `pool0/probe.elf` or

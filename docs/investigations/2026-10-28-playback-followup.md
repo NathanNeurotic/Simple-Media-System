@@ -118,12 +118,51 @@ to preserve the current compression/seek tradeoff. These measurements do not
 prove that every reporter color symptom has the same cause, and cannot validate
 the player's full GS path, device timing or physical-console behavior.
 
+### Additional MPEG-1, B-frame and interlaced controls
+
+Four additional 150-frame streams use the same baseline/candidate source and
+both output modes. MPEG-1 uses the actual 1.15 Mbps converter profile. The
+interlaced control is generated from `testsrc2=size=320x240:rate=60` using
+`tinterlace=interleave_top,setfield=tff`, interlaced MPEG-2 flags, GOP 50 and
+two B-frames. Its decoder output is 320x256 and is cropped to the 320x240
+reference; other cases remain 640x480. All 16 additional runs capture 150 frames.
+
+| Control | Mode | Mean error, before -> after | Maximum error, before -> after |
+| --- | ---: | ---: | ---: |
+| MPEG-1, zero B | 32 | 4.4747 -> 0.5936 | 255 -> 27 |
+| MPEG-1, zero B | 16 | 5.5674 -> 2.2946 | 255 -> 28 |
+| MPEG-1, two B | 32 | 2.0618 -> 0.5182 | 255 -> 25 |
+| MPEG-1, two B | 16 | 3.4205 -> 2.2807 | 255 -> 26 |
+| MPEG-2, two B | 32 | 3.3962 -> 1.9412 | 255 -> 42 |
+| MPEG-2, two B | 16 | 4.5042 -> 3.2739 | 255 -> 41 |
+| Interlaced MPEG-2, two B | 32 | 2.2307 -> 0.7114 | 255 -> 255 |
+| Interlaced MPEG-2, two B | 16 | 4.5447 -> 3.1888 | 255 -> 255 |
+
+The interlaced residual is an **unresolved software control**, separate from
+console acceptance. In 32-bit output it retains 46,469 channel differences over
+32 levels (baseline 669,335). Frame 1, a B picture, has 144 such differences
+inside x=70..79/y=178..189; its mean error is 0.597 and maximum is 154. Frame 0
+is an I picture with maximum 5 and no differences over 32. Frame 3 is a P picture
+with maximum 6 and none over 32. This narrows a follow-up toward the interlaced
+B-picture integration, beyond the isolated interpolation oracle. Do not treat
+the remaining large differences as explained quantization or label this case
+fully corrected. No new regression is inferred from its lower aggregate error.
+
+The [machine-readable metrics](data/2026-10-28-mpeg-chroma-metrics.json) retain
+input hashes, frame picture types, exact aggregate errors, per-frame means,
+candidate decoder source hashes and the baseline/candidate revision identity.
+No source video, firmware or raw capture is committed. Recreate the inputs with
+`tools/mpeg_color_probe/generate_series.py`; retain local raw captures and logs
+when investigating a residual.
+
 ## Remaining validation at this checkpoint
 
-- All 28 host scripts pass. Recheck the pinned player variants and GP checks
-  after the decoder correction; the initial USB-only variants already passed.
-- Consolidate input hashes/per-frame metrics and add MPEG-1 and interlaced/B-frame
-  bitstream controls in addition to the native interpolation oracle.
+- All 28 host scripts pass. Pinned release/packed, DIAG and BDM=0 player builds
+  pass after the decoder correction. Release small-data and small-BSS sizes
+  remain `0x96be` / `0x63cc`; no GP threshold or linker-script change is needed.
+- Follow the reproducible interlaced B-picture residual above through reference
+  selection, field placement, residual integration and skipped macroblocks.
+  Preserve an unchanged baseline/candidate pair for any further decoder patch.
 - Verify current-head CI and the manifest of its downloadable player artifact.
 - Keep physical-console testing on hold until the user resumes it. Do not close
   the reporter issues based on host or emulator results alone.

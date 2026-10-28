@@ -2,6 +2,8 @@ COLOR16 ?= 0
 POOL ?= 0
 CAPTURE_FRAMES ?= 5
 INPUT ?= probe.m2v
+DECODER_SOURCE ?= ../../src/libmpeg.c
+DECODER_CORE ?= ../../src/libmpeg_core.S
 OUT = obj$(COLOR16)
 ifneq ($(CAPTURE_FRAMES),5)
 OUT = obj$(COLOR16)-$(CAPTURE_FRAMES)
@@ -25,9 +27,9 @@ $(OUT):
 	mkdir -p $@
 $(OUT)/main.o: $(MAIN_SOURCE) ../../src/SMS_MPEG12.c ../../include/libmpeg_internal.h | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
-$(OUT)/libmpeg.o: ../../src/libmpeg.c ../../include/libmpeg_internal.h | $(OUT)
+$(OUT)/libmpeg.o: $(DECODER_SOURCE) ../../include/libmpeg_internal.h | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
-$(OUT)/libmpeg_core.o: ../../src/libmpeg_core.S | $(OUT)
+$(OUT)/libmpeg_core.o: $(DECODER_CORE) | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 $(OUT)/input.c: $(INPUT) | $(OUT)
 	bin2c $< $@ probe_m2v

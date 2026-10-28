@@ -19,7 +19,7 @@ this measurement yet.
 A file close emits:
 
 ```
-[sms-io] path=... chunk=4096 calls=... bytes=... read_ms=... max_read_ms=... errors=... refills=... refill_ms=... max_refill_ms=...
+[sms-io] path=... chunk=4096 fill_limit=32768 calls=... bytes=... read_ms=... max_read_ms=... errors=... refills=... refill_ms=... max_refill_ms=...
 ```
 
 - `calls`, `bytes`, `read_ms`, `max_read_ms` and `errors` describe native reads
@@ -27,8 +27,10 @@ A file close emits:
   zero-byte EOF. `chunk` is the configured maximum per fileXio read; zero on the
   legacy non-BDM path does not mean zero-byte requests.
 - `refills`, `refill_ms` and `max_refill_ms` cover the whole synchronous batch.
-  The BDM 4 KiB path still makes at most eight native reads per refill. UDPFS
-  still uses its own read sizing.
+  `fill_limit` is its byte bound; zero retains the full configured buffer.
+  The BDM 4 KiB path still makes at most eight native reads per refill.
+  Driver-confirmed USB uses one 64 KiB read per refill. UDPFS still uses its
+  own read sizing and full-buffer policy.
 - Counters include probing, synchronous startup fills, seeks, and subsequent
   refills for that FileContext. Legacy asynchronous prefetch/completion reads
   are outside these counters. Compare matched playback sessions, not the raw
@@ -52,8 +54,19 @@ can all cause a wait. Compare storage and queue results together, using the
 same playback actions and elapsed duration.
 
 All counters, clock samples and report strings compile out of ordinary builds.
-The diagnostics do not change buffer sizes, chunk limits, RPC mode or queue
-semaphore operations.
+Diagnostic and ordinary builds use the same buffer sizes, chunk limits, RPC
+mode and queue semaphore operations.
+
+## USB policy follow-up (2026-10-28)
+
+PR #35 identifies the driver on the successfully opened mass file, rather than
+using the browser's unit/icon mask. A positive USB name query selects 64 KiB
+requests with a 64 KiB refill bound. Non-USB, unsupported and unknown results
+retain 4 KiB requests / 32 KiB refills; MMCE, SMB and UDPFS policy is unchanged.
+One query occurs at open, outside timed refills. This removes unnecessary USB
+RPC splitting while preserving the SIO2 workaround and bounding synchronous
+work. It does not establish USB throughput or an improvement on the reporter's
+console. Keep a matched old/new DIAG comparison with the same file and actions.
 
 ## Matched device experiment
 
@@ -68,9 +81,10 @@ semaphore operations.
 4. Compare file read/batch latency with packet-queue blocking and observed
    stutter. Record when stutter occurred; whole-session totals cannot correlate
    a single missed frame to a particular read.
-5. Only then choose USB-specific request size/read-ahead, queue scheduling or
-   decoder/renderer work. Preserve the MX4SIO 4 KiB workaround and UDPFS sizing
-   unless a separate device control justifies changing them.
+5. Compare the confirmed-USB policy with the previous 4 KiB / 32 KiB policy
+   before selecting further read-ahead, queue scheduling or decoder/renderer
+   work. Preserve the MX4SIO workaround and UDPFS sizing unless a separate
+   device control justifies changing them.
 
 Host regression `tools/test_io_diagnostics.py` checks accounting, EOF/error
 classification, low-word timer wrap and preservation of queue wrap behavior.
