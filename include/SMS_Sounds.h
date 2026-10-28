@@ -20,6 +20,8 @@
 #define SMSound_Mount  &g_SMSound[ 2 ]
 #define SMSound_UMount &g_SMSound[ 3 ]
 
+/* Current directory occupies bytes 512..1535, before the TOC workspace. */
+#define SMS_CWD_CAPACITY 1024
 #define g_CWD     (  ( char*          )&g_SMSounds[   512 ]  )
 #define g_TOC     (  ( char*          )&g_SMSounds[  1536 ]  )
 #define g_SCPaint (  ( u64*           )&g_SMSounds[  3600 ]  )

@@ -74,10 +74,9 @@ scripts pass, including both artwork controls, the new vector/skip controls and
 the existing playback/I/O checks. Pinned GCC 3.2.3 release, packed, diagnostic
 and BDM=0 players and the native motion oracle compile successfully.
 
-Keep PR #34 draft for console acceptance and merge PR #35 first. The artwork
-PR is stacked on the playback branch for a focused review; retarget it to master
-once the playback change has merged. Preserve a separate artwork tester bundle
-with its own source/head manifest identity.
+PR #35 merged as `83c94b823b474d19978e5a5e4c150d3ec10f1853`, and PR #34 now
+targets master. Keep the artwork PR draft for console acceptance. Preserve a
+separate artwork tester bundle with its own source/head manifest identity.
 
 ## Host verification
 
@@ -97,9 +96,20 @@ cleanup dispatch, browser packet cleanup, destruction callback and reset path.
 It verifies that ordinary/full GUI redraws reuse decoded thumbnails, destruction
 releases them, and reset clears the filtered list before the grid can select a
 stale entry. Both redraw and reset controls failed against the original PR head
-and pass with these fixes under ASan/UBSan/LSan. List storage and GS/DMA calls
-use host adapters. Folder-return selection and device removal on a console
-remain in the acceptance checklist below.
+and pass with these fixes under ASan/UBSan/LSan.
+
+The lifecycle control also executes the production folder action, level-stack
+push/pop, refill and event handler in both list and grid modes. It covers nested
+folder entry, Back with directory names longer than a pointer, restoration of
+the selected filename/page, refresh, media removal and oversized-path rejection.
+The refill now copies its input before reset can release the selected node.
+The shared CWD workspace is explicitly bounded to its 1,024-byte region; Back
+uses that capacity rather than `sizeof` a pointer. Folder length checks happen
+before saving a navigation level, so rejecting an oversized name preserves the
+current listing and level stack. Independent negative controls detect the old
+folder-name lifetime error and the small Back buffer. Directory/list storage
+and GS/DMA calls use host adapters; only EE pointer transport is widened for the
+host. Console folder-return and media-removal acceptance remains below.
 
 ## Console acceptance still needed
 

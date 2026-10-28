@@ -670,11 +670,16 @@ static void _pop_state ( GUIFileMenu* apMenu ) {
 static void _fill ( GUIFileMenu* apMenu, char* apPath, int afAll ) {
 
  SMS_ListNode* lpNode;
+ char lPath[ SMS_CWD_CAPACITY ];
+ unsigned int lLength = strlen ( apPath );
 
+ /* A folder action passes its filtered node's name. Reset frees that node. */
+ if ( lLength >= sizeof ( lPath ) ) return;
+ memcpy ( lPath, apPath, lLength + 1 );
  _reset ( apMenu, afAll );
 
  SMS_PgIndStart ();
- SMS_FileDirInit ( apPath );
+ SMS_FileDirInit ( lPath );
 
  lpNode = g_pFileList -> m_pHead;
  SMS_ListDestroy ( apMenu -> m_pFiltList, 0 );
@@ -950,6 +955,16 @@ static void _action_folder ( GUIFileMenu* apMenu, int afPopup ) {
 
  if ( !afPopup ) {
 
+  unsigned int lLength = strlen ( g_CWD );
+  unsigned int lNameLength = strlen ( _STR( apMenu -> m_pCurrent ) );
+  unsigned int lSeparator = lLength && g_CWD[ lLength - 1 ] != '/' &&
+                           g_CWD[ lLength - 1 ] != '\\' &&
+                           _STR( apMenu -> m_pCurrent )[ 0 ] != '/' &&
+                           _STR( apMenu -> m_pCurrent )[ 0 ] != '\\';
+  /* Check before saving a navigation level or discarding the current list.
+   * Reserve a separator and the terminator in the shared CWD workspace. */
+  if ( lLength >= SMS_CWD_CAPACITY ||
+       lNameLength >= SMS_CWD_CAPACITY - lLength - lSeparator ) return;
   _push_state ( apMenu );
   _fill (  apMenu, _STR( apMenu -> m_pCurrent ), 0  );
   _redraw ( apMenu, 0 );
@@ -1313,7 +1328,7 @@ redraw:
     SMS_ListNode* lpState = lpMenu -> m_pLevels -> m_pTail;
     SMS_ListNode* lpNode;
     _LevelInfo*   lpInfo  = ( _LevelInfo* )( unsigned int )lpState -> m_Param;
-    char          lCWD[ sizeof ( g_CWD ) ] __attribute__(   (  aligned( 4 )  )   );
+    char          lCWD[ SMS_CWD_CAPACITY ] __attribute__(   (  aligned( 4 )  )   );
     char*         lpPtr;
 
     SPU_PlaySound ( SMSound_PAD, g_Config.m_PlayerVolume );
