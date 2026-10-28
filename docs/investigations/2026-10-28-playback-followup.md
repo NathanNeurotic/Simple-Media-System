@@ -51,18 +51,79 @@ optional NumPy series comparator reports per-frame errors and signed RGB bias.
 Independent layout controls passed for RGBA and RGB555, a known red-channel
 error and truncated input rejection.
 
-Longer GOP 50 and GOP 15 inputs have been generated from the reporter's Samsung
-source at two offsets. Native builds and emulator comparisons are still in
-progress at this checkpoint. The proposed GOP-default change is not included:
-the claim that prediction drift causes the reported red/green artifacts still
-requires evidence. A successful isolated decoder run cannot validate the
-player's GS path, storage timing or physical-console behavior.
+Longer controls exposed two concrete motion-compensation defects:
+
+1. Chroma vector derivation used shifts/low bits of the luma vector. MPEG-1/2
+   4:2:0 requires signed division by two toward zero, which differs for negative
+   odd vectors. Luma and chroma now carry separate coordinates within the
+   existing 40-byte motion layout. The MMI path handles a chroma start that
+   advances into the second transferred macroblock row.
+2. Both put and average chroma XY routines set the one-byte neighbor shift
+   before aligning their first row to the requested X coordinate. Moving that
+   shift after the initial alignment fixes an independent bilinear-prediction
+   error, including for nonnegative vectors.
+
+The [FFmpeg MPEG motion implementation](https://github.com/FFmpeg/FFmpeg/blob/n9.0.2/libavcodec/mpegvideo_motion.c)
+provides an independent signed-vector reference. Neither fix changes IPU IDCT,
+color-conversion coefficients or the converter's GOP defaults.
+
+The new native [motion oracle](../../tools/mpeg_motion_probe/README.md) includes
+the actual vector setup, transfers reference blocks through the production SPR
+DMA routine, and executes the actual MMI interpolation. Baseline `1422165` fails
+the first negative-vector control (-17,-17); a separate nonnegative control
+fails at (2,2). The corrected decoder passes 12,250 cases and 2,822,400 scalar
+pixel comparisons, including frame/field and put/average modes. The host
+production-vector control passes 171,610 cases under ASan/UBSan. Native layout
+checks preserve the assembly offsets and the existing GP data footprint.
+
+### Unchanged-bitstream decoder comparisons
+
+Environment: PCSX2 2.9.147 with isolated settings, host filesystem output and
+the null renderer; pinned GCC 3.2.3 probes; FFmpeg 9.0.2 host reference. The source
+SHA-256 is `e412c2332ba448eab546bd6dafdc96988cf2d23173df548faeb1ff1f1ab80858`.
+Two 150-frame intervals start at 0 and 30 seconds. These use the actual MPEG-2
+converter profile with audio disabled, explicit upscaling allowed for a 640x480
+canvas, zero B-frames, and GOP 50/15. Explicit upscaling matches the historical
+canvas; current no-upscale sizing would choose 480x360 for this 640x360 source.
+Each baseline/fix pair decodes identical elementary-stream bytes, and each
+GOP variant has its own independently decoded RGB24 reference.
+
+| Offset / GOP | ES SHA-256 | Bytes |
+| --- | --- | ---: |
+| 0 s / 50 | 64e8ca438ed137272bc609a0299b10317cc896d8ba9f7b9bf2db8d90c67d2d16 | 1,713,410 |
+| 0 s / 15 | 819b72e4fc4dae191513f4ba52af06327360e4c5100163b6d2ef879acccd7d0f | 1,722,136 |
+| 30 s / 50 | d35a69d0e1ee331d99712ef3bad4d982ef69f11b560a5318b434ae42ee6eec21 | 1,369,045 |
+| 30 s / 15 | 09d10b1250540bbd36993fe758c5040635af0afd2b22d5a04ee4a93c05093798 | 1,492,063 |
+
+| Offset / GOP | Mode | Mean absolute channel error, before -> after | Maximum channel error, before -> after |
+| --- | ---: | ---: | ---: |
+| 0 s / 50 | 32 | 5.7285 -> 1.9786 | 255 -> 41 |
+| 0 s / 50 | 16 | 6.6345 -> 3.2783 | 255 -> 40 |
+| 0 s / 15 | 32 | 3.7268 -> 1.9504 | 255 -> 43 |
+| 0 s / 15 | 16 | 4.7966 -> 3.2656 | 255 -> 40 |
+| 30 s / 50 | 32 | 2.5779 -> 1.3095 | 146 -> 39 |
+| 30 s / 50 | 16 | 3.9499 -> 3.2171 | 146 -> 48 |
+| 30 s / 15 | 32 | 1.6054 -> 1.2128 | 106 -> 24 |
+| 30 s / 15 | 16 | 3.3078 -> 3.1700 | 115 -> 34 |
+
+All 16 baseline/candidate runs capture 150 frames with two DMA transfers.
+The first GOP 50 interval's 32-bit channel differences above 32 levels fall
+from 5,650,343 to 5,019; the second falls from 904,114 to 112. Residual errors
+include host/IPU color conversion, chroma reconstruction and RGB555 quantization;
+the test does not establish which residual comes from each stage.
+
+The earlier GOP 15 experiment reduced the accumulated error before the decoder
+fix, but it did not identify these defects. The GOP defaults remain unchanged
+to preserve the current compression/seek tradeoff. These measurements do not
+prove that every reporter color symptom has the same cause, and cannot validate
+the player's full GS path, device timing or physical-console behavior.
 
 ## Remaining validation at this checkpoint
 
-- Finish the full host workflow, pinned GCC 3.2.3 player variants and GP checks.
-- Run the longer GOP controls, retain exact input hashes and per-frame results,
-  and update this report with the measured outcome.
+- All 28 host scripts pass. Recheck the pinned player variants and GP checks
+  after the decoder correction; the initial USB-only variants already passed.
+- Consolidate input hashes/per-frame metrics and add MPEG-1 and interlaced/B-frame
+  bitstream controls in addition to the native interpolation oracle.
 - Verify current-head CI and the manifest of its downloadable player artifact.
 - Keep physical-console testing on hold until the user resumes it. Do not close
   the reporter issues based on host or emulator results alone.

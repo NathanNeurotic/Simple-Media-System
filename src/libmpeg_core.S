@@ -1443,8 +1443,8 @@ _MPEG_do_mc:
     lw      $a1,  0($a0)
     addiu   $sp, $sp, -16
     lw      $a2,  4($a0)
-    lw      $a3, 12($a0)
-    lw      $t0, 16($a0)
+    lhu     $a3, 12($a0)
+    lhu     $t0, 16($a0)
     lw      $t1, 20($a0)
     lw      $t2, 24($a0)
     lw      $t4, 28($a0)
@@ -1463,10 +1463,19 @@ _MPEG_do_mc:
     lw      $a1,  0($a0)
     lw      $a2,  8($a0)
     lw      $t5, 36($a0)
+    lhu     $a3, 14($a0)
+    lhu     $t0, 18($a0)
+    lw      $t4, 28($a0)
     addiu   $a1, $a1, 256
-    srl     $t4, $t4, 1
-    srl     $a3, $a3, 1
-    srl     $t0, $t0, 1
+    subu    $t0, $t0, $t4
+    sll     $t4, $t4, 3
+    slti    $v0, $t0, 8
+    bne     $v0, $zero, 1f
+    nop
+    /* Chroma rounding can move the start into the second transferred row. */
+    addiu   $a1, $a1, 768
+    addiu   $t0, $t0, -8
+1:
     srl     $t1, $t1, 1
     lw      $ra, 0($sp)
     srlv    $t0, $t0, $t2
@@ -1750,13 +1759,13 @@ _MPEG_put_chroma_XY:
     pnor    $t9, $zero, $zero
     ld      $a0,   0($a1)
     ld      $v0,  64($a1)
-    mtsab   $zero, 1
     ld      $t0, 384($a1)
     ld      $t1, 448($a1)
     pcpyld  $a0, $t0, $a0
     pcpyld  $v0, $t1, $v0
     qfsrv   $a0, $a0, $a0
     qfsrv   $v0, $v0, $v0
+    mtsab   $zero, 1
     psrlh   $t9, $t9, 15
     psllh   $t9, $t9, 1
     addu    $a1, $a1, $t3
@@ -2206,13 +2215,13 @@ _MPEG_avg_chroma_XY:
     pnor    $t9, $zero, $zero
     ld      $a0,   0($a1)
     ld      $v0,  64($a1)
-    mtsab   $zero, 1
     ld      $t0, 384($a1)
     ld      $t1, 448($a1)
     pcpyld  $a0, $t0, $a0
     pcpyld  $v0, $t1, $v0
     qfsrv   $a0, $a0, $a0
     qfsrv   $v0, $v0, $v0
+    mtsab   $zero, 1
     psrlh   $t9, $t9, 15
     psllh   $t9, $t9,  1
     addu    $a1, $a1, $t3

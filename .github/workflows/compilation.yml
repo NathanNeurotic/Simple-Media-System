@@ -55,6 +55,7 @@ jobs:
         python3 tools/test_mpeg_ps_probe.py
         python3 tools/test_mpeg12_frame_lifetime.py
         python3 tools/test_mpeg_color_feed.py
+        python3 tools/test_mpeg_motion_vectors.py
         python3 tools/test_frame_buffer_allocation.py
         python3 tools/test_mpeg4_init_allocation.py
         python3 tools/test_rescale_allocation.py
@@ -85,7 +86,7 @@ jobs:
     - name: Build (ps2dev v1.0 toolchain)
       run: |
         docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
-          sh -c 'apk add --no-cache build-base git zip && make all pack'
+          sh -c 'apk add --no-cache build-base git zip && make all pack && make -C tools/mpeg_motion_probe'
 
     - name: Package
       run: |

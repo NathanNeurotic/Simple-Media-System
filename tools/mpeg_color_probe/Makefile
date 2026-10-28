@@ -23,9 +23,9 @@ EE_CFLAGS = -O2 -G8192 -D_EE -DCOLOR16=$(COLOR16) -DCAPTURE_FRAMES=$(CAPTURE_FRA
 all: $(OUT) $(EE_BIN)
 $(OUT):
 	mkdir -p $@
-$(OUT)/main.o: $(MAIN_SOURCE) ../../src/SMS_MPEG12.c | $(OUT)
+$(OUT)/main.o: $(MAIN_SOURCE) ../../src/SMS_MPEG12.c ../../include/libmpeg_internal.h | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
-$(OUT)/libmpeg.o: ../../src/libmpeg.c | $(OUT)
+$(OUT)/libmpeg.o: ../../src/libmpeg.c ../../include/libmpeg_internal.h | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 $(OUT)/libmpeg_core.o: ../../src/libmpeg_core.S | $(OUT)
 	$(EE_CC) -I../../include $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
