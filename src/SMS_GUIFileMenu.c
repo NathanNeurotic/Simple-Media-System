@@ -714,14 +714,19 @@ void RestoreFileDir ( void** apParam ) {
 
 }  /* end RestoreFileDir */
 
-static void _make_path ( char* apBuff, char** appPathEnd, const char* apName ) {
+static int _make_path ( char* apBuff, unsigned int aCapacity, char** appPathEnd, const char* apName ) {
 
- strcpy ( apBuff, g_CWD );
-
- if (  apBuff[ strlen ( apBuff ) - 1 ] != '/'  ) strcat ( apBuff, g_SlashStr );
-
- *appPathEnd = apBuff + strlen ( apBuff );
- strcat ( apBuff, apName );
+ unsigned int lPrefix = strlen ( g_CWD );
+ unsigned int lName = strlen ( apName );
+ unsigned int lSlash = lPrefix && g_CWD[ lPrefix - 1 ] != '/';
+ *appPathEnd = NULL;
+ if ( lPrefix >= aCapacity || lSlash >= aCapacity - lPrefix ||
+      lName >= aCapacity - lPrefix - lSlash ) return 0;
+ memcpy ( apBuff, g_CWD, lPrefix );
+ if ( lSlash ) apBuff[ lPrefix++ ] = '/';
+ memcpy ( apBuff + lPrefix, apName, lName + 1 );
+ *appPathEnd = apBuff + lPrefix;
+ return 1;
 
 }  /* end _make_path */
 
@@ -742,7 +747,10 @@ void** SMS_OpenMediaFile ( const char* apName, int aFlags ) {
 
  SMS_PgIndStart ();
 
- _make_path ( lPath, &lpPathEnd, apName );
+ if ( !_make_path ( lPath, sizeof ( lPath ), &lpPathEnd, apName ) ) {
+  SMS_PgIndStop ();
+  return NULL;
+ }
 
  strncpy (  g_LastPlayed, apName, sizeof ( g_LastPlayed ) - 1  );
  g_LastPlayed[  sizeof ( g_LastPlayed ) - 1  ] = '\0';
@@ -801,6 +809,7 @@ void** SMS_OpenMediaFile ( const char* apName, int aFlags ) {
      FileContext* lpSubFileCtx;
      char*        lpName = g_CMedia == 1 && g_pCDDACtx ? &lPath[ 7 ] : lPath;
 
+     if ( strlen ( _STR( lpNode ) ) >= sizeof ( lPath ) - ( lpPathEnd - lPath ) ) continue;
      strcpy (  lpPathEnd, _STR( lpNode )  );
      lpSubFileCtx = lpFileCtx -> Open ( lpName, lpFileCtx -> m_pOpenParam );
 
@@ -920,7 +929,7 @@ static void _context_action_file ( GUIFileMenu* apMenu, int afPopup ) {
   char* lpCur      = _STR( apMenu -> m_pCurrent );
   char  lRoot[ 2 ] = { '\x01', '\x00' };
 
-  _make_path ( lPath, &lpPathEnd, lpCur );
+  if ( !_make_path ( lPath, sizeof ( lPath ), &lpPathEnd, lpCur ) ) return;
 
   if ( lAction == 10 ) lpCur = lRoot;
 
