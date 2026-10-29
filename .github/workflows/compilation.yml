@@ -27,6 +27,12 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # Only one master publisher may upload player assets and advance rolling.
+    # Keep queued builds: a historical rerun must not cancel the latest master.
+    concurrency:
+      group: sms-player-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'rolling' || format('{0}-{1}', github.run_id, github.run_attempt) }}
+      cancel-in-progress: false
+      queue: max
     steps:
     - uses: actions/checkout@v7
 
@@ -42,6 +48,9 @@ jobs:
         if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
           sudo apt-get update && sudo apt-get install -y ffmpeg
         fi
+
+    - name: Check rolling release publication behavior
+      run: python3 tools/test_rolling_release.py
 
     - name: Host playback and file I/O regression checks
       run: |
@@ -158,6 +167,17 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
+        # An old push rerun must not replace the current master release.
+        master_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/master" --jq '.object.sha')
+        if [[ ! "$master_sha" =~ ^[0-9a-fA-F]{40}$ ]]; then
+          echo "Cannot verify master identity before player publication" >&2
+          exit 1
+        fi
+        if [ "$master_sha" != "$GITHUB_SHA" ]; then
+          echo "Skipping superseded rolling build $GITHUB_SHA (master is $master_sha)"
+          exit 0
+        fi
+
         cat > notes.md <<NOTES
         Latest development build of Simple-Media-System -- auto-updated on every push to master.
 
@@ -199,8 +219,9 @@ jobs:
         # always" is the problem: any run where that ordering flipped would silently publish a
         # release whose notes advertise converter downloads that are not attached.
         #
-        # Create-if-missing, then edit + clobber-upload: idempotent, moves the tag to this
-        # commit, refreshes the notes, and leaves other workflows' assets alone.
+        # Create-if-missing, then edit + clobber-upload: idempotent, refreshes the
+        # notes, and leaves other workflows' assets alone. --target only creates
+        # a missing tag; editing the release does not move an existing Git ref.
         gh release view rolling >/dev/null 2>&1 || \
           gh release create rolling --prerelease --target "$GITHUB_SHA" \
             --title "Rolling build (latest master)" --notes-file notes.md
@@ -213,6 +234,16 @@ jobs:
           dist/Simple-Media-System-packed.elf \
           dist/Simple-Media-System-DIAG.elf \
           dist/*.zip --clobber
+
+        # Advance the lightweight rolling tag explicitly, without allowing a
+        # rewind or divergent update. Stable version tags are never touched.
+        gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/rolling" \
+          -f sha="$GITHUB_SHA" -F force=false >/dev/null
+        rolling_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/rolling" --jq '.object.sha')
+        if [ "$rolling_sha" != "$GITHUB_SHA" ]; then
+          echo "Rolling tag verification failed: $rolling_sha != $GITHUB_SHA" >&2
+          exit 1
+        fi
 
     # --- Stable release: cut when you push a version tag (e.g. git tag v1.0) ---
     - name: Create stable release
