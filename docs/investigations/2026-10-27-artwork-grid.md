@@ -31,8 +31,11 @@ file and the existing Play-all menus use the same media paths as the list.
   opaque black padding. Captions are clipped to their tile width. The original
   source filename remains unchanged for opening media.
 - Page change, folder/device change, browser refill, switching back to the list,
-  and player/GUI cleanup drain DMA and release cached pixels. A full GUI repaint
-  also clears the cache through the browser's cleanup callback.
+  and opening a file from the grid drain DMA and release cached pixels. A full
+  GUI repaint drains DMA and releases display packets only; decoded thumbnails
+  survive it. `GUIFileMenu_Cleanup` releases thumbnails on artwork-mode file
+  actions and other explicit cleanup paths. Calling this callback does not
+  itself establish that the browser object is destroyed.
 
 ## GS ownership
 
