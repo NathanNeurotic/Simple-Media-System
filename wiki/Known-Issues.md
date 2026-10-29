@@ -34,7 +34,7 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer co
 
 ## Poster / cover-art grid — #26
 
-[Draft PR #34 implements an optional R2 JPEG cover grid for #26.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. The candidate includes PR #35's playback fixes, while console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
+[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
 
 ## How to read validation claims
 

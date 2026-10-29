@@ -75,7 +75,7 @@ Highlight the video file and press `✕`. SMS reads the file straight from the d
 
 ## Optional poster grid in the file browser
 
-This is a development candidate for [#26](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#posters); console acceptance is pending.
+This feature is included in current master for [#26](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#posters); console acceptance is pending.
 
 While browsing files, press **R2** to switch between the normal list and a three-column, two-row poster grid. The list is the default at startup; the grid choice is not saved. Press **R2** again to return to the list with the same file selected. This shortcut applies to the browser; R2 keeps its existing function during playback.
 
