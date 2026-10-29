@@ -73,6 +73,26 @@ Highlight the video file and press `✕`. SMS reads the file straight from the d
 
  This fork's headline feature is smooth video playback from an **MX4SIO** microSD adapter, which earlier SMS builds could not do reliably. It works exactly like any other device: pick the MX4SIO device, browse to your movie, press `✕`. See the [MX4SIO](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html) page for setup.
 
+## Optional poster grid in the file browser
+
+This is a development candidate for [#26](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#posters); console acceptance is pending.
+
+While browsing files, press **R2** to switch between the normal list and a three-column, two-row poster grid. The list is the default at startup; the grid choice is not saved. Press **R2** again to return to the list with the same file selected. This shortcut applies to the browser; R2 keeps its existing function during playback.
+
+Place a baseline, three-component JPEG next to a media file using the same basename: `Movie.avi` with `Movie.jpg` or `Movie.jpeg`. The lookup is case-insensitive against the directory listing and opens the actual filename, so `MOVIE.JPG` also works on a case-sensitive share. If both extensions are present, `.jpg` takes precedence. Folder tiles retain their folder icons. Artwork in a separate `ART` directory and PNG images are not supported.
+
+Use JPEGs no larger than **256 KiB**, with width and height each no greater than **512 pixels**. Each visible cover is fitted into a 64×64 thumbnail with its aspect ratio preserved and black padding. Missing, unsupported, malformed, oversized or unreadable artwork falls back to the file's normal icon. Only the six visible tiles are cached; changing pages, folders or devices releases the old images. Artwork is read synchronously when a page first appears, so slow or disconnected storage can delay that page.
+
+| Button in the grid | Action |
+| --- | --- |
+| **Left / Right** | Previous / next tile. Left on the first tile returns focus to the device menu. |
+| **Up / Down** | Move three items backward / forward, stopping at the beginning or end. |
+| **L1 / L2** | Move six items backward / forward to the previous / next page. |
+| **Cross / Triangle** | Open or play the selection / go back, as in the list. |
+| **Circle / Square** | Keep the existing alternate-play and file-context actions. |
+
+The grid still needs console acceptance for display modes, selection, slow storage and returning from playback. It depends on the JPEG parser hardening in the companion player fixes.
+
 ## Player controls
 
 While a video is playing, the pad drives the player directly:

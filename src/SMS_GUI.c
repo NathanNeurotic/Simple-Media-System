@@ -131,7 +131,10 @@ static void _cleanup ( int afAll ) {
 
   GUIObject* lpObj = ( GUIObject* )( unsigned int )lpNode -> m_Param;
 
-  lpObj -> Cleanup ( lpObj );
+  /* Redraw invalidates display packets, but the file browser's decoded
+   * thumbnails stay valid until its page, directory or media changes. */
+  if ( lpObj == g_pFileMenu ) GUIFileMenu_CleanupPackets ( lpObj );
+  else lpObj -> Cleanup ( lpObj );
 
   lpNode = lpNode -> m_pNext;
 
