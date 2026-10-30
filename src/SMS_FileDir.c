@@ -249,6 +249,9 @@ static int _append_directory_path ( const char* apPath ) {
  lSeparator = g_CMedia == 4 ? apPath[ 0 ] && lLength > 5 &&
               g_CWD[ lLength - 1 ] != '\\' && apPath[ 0 ] != '\\' :
               g_CWD[ lLength - 1 ] != '/' && apPath[ 0 ] != '/';
+ /* A current-directory scan needs no suffix. If the optional slash cannot
+  * fit, scan the unchanged directory rather than discarding its entries. */
+ if ( !lAppend && lLength + lSeparator >= SMS_CWD_CAPACITY ) lSeparator = 0;
  if ( lSeparator >= SMS_CWD_CAPACITY - lLength ||
       lAppend >= SMS_CWD_CAPACITY - lLength - lSeparator ) return 0;
  if ( lSeparator ) g_CWD[ lLength++ ] = lSlash;

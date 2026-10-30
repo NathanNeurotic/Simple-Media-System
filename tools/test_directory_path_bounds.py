@@ -98,9 +98,9 @@ int main(void) {
   if(media==3)continue; /* CDDA has no fio directory scan. */
   char slash=media==4?'\\':'/';
   for(unsigned length=1;length<1024;++length) {
-   scan(length,media,'d',sentinel,length<1023);
+   scan(length,media,'d',sentinel,1);
    scan(length,media,slash,sentinel,1);
-   scan(length,media,'d',".",length<1023);
+   scan(length,media,'d',".",1);
   }
  }
  scan(0,0,'d',sentinel,0);
@@ -111,6 +111,8 @@ int main(void) {
  /* Known entry types remain listable at the maximum directory length. */
  entry_mode=FIO_SO_IFREG;emit_entry=1;
  scan(1023,0,'/',sentinel,1);assert(g_pFileList->m_pHead);
+ emit_entry=1;scan(1023,0,'d',sentinel,1);assert(g_pFileList->m_pHead);
+ assert(strlen(g_CWD)==1023 && g_CWD[1022]=='d');
  /* Untyped entries require a probe whose full path must also fit. */
  entry_mode=0;emit_entry=1;probes=0;
  scan(1023,0,'/',sentinel,1);assert(!probes && !g_pFileList->m_pHead);
