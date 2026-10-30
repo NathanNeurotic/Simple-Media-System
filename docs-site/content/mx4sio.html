@@ -44,7 +44,7 @@ Autostart for the one you actually use, and leave the other off. See <a href="#v
 
 <h2 id="compatibility">Compatibility</h2>
 <p>SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as <b>FAT32</b> or <b>exFAT</b>
-will mount. Use FAT32 or exFAT supported by your device/firmware. exFAT filesystem support does not remove SMS's below-4-GiB limit for each media file. Either way, the media files themselves must be a format SMS can play — see
+will mount. Use FAT32 or exFAT supported by your device/firmware. Keep each media file below 2 GiB for portable seeking, including on exFAT; filesystem support does not widen SMS's signed seek offsets. Either way, the media files themselves must be a format SMS can play — see
 <a href="video.html">Video</a>, <a href="audio.html">Audio</a> and <a href="pictures.html">Pictures</a> for the full
 list (MPEG-4 Part&nbsp;2 AVI, <code>mp4v</code> MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC,
 OGG, WMA, JPEG, and so on).</p>

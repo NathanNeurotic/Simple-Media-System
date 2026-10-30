@@ -28,7 +28,7 @@ MX4SIO and MMCE cannot both run
 
 ## Compatibility
 
-SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as **FAT32** or **exFAT** will mount. Use FAT32 or exFAT supported by your device/firmware. exFAT filesystem support does not remove SMS's below-4-GiB limit for each media file. Either way, the media files themselves must be a format SMS can play — see [Video](https://nathanneurotic.github.io/Simple-Media-System/video.html), [Audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html) and [Pictures](https://nathanneurotic.github.io/Simple-Media-System/pictures.html) for the full list (MPEG-4 Part 2 AVI, `mp4v` MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC, OGG, WMA, JPEG, and so on).
+SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as **FAT32** or **exFAT** will mount. Use FAT32 or exFAT supported by your device/firmware. Keep each media file below 2 GiB for portable seeking, including on exFAT; filesystem support does not widen SMS's signed seek offsets. Either way, the media files themselves must be a format SMS can play — see [Video](https://nathanneurotic.github.io/Simple-Media-System/video.html), [Audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html) and [Pictures](https://nathanneurotic.github.io/Simple-Media-System/pictures.html) for the full list (MPEG-4 Part 2 AVI, `mp4v` MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC, OGG, WMA, JPEG, and so on).
 
 ℹ Hardware note
 
