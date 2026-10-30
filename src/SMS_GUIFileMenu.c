@@ -640,19 +640,23 @@ static void _reset ( GUIFileMenu* apMenu, int afAll ) {
 
 }  /* end _reset */
 
-static void _push_state ( GUIFileMenu* apMenu ) {
+static int _push_state ( GUIFileMenu* apMenu, int aPosition ) {
 
  _LevelInfo* lpInfo = ( _LevelInfo* )malloc (  sizeof ( _LevelInfo )  );
+ SMS_ListNode* lpNode;
+ if ( !lpInfo ) return 0;
 
  lpInfo -> m_pCurrent = ( char* )malloc (   strlen (  _STR( apMenu -> m_pCurrent )  ) + 1   );
+ if ( !lpInfo -> m_pCurrent ) { free ( lpInfo ); return 0; }
  lpInfo -> m_YOffset  = apMenu -> m_YOffset;
- lpInfo -> m_Pos      = strlen ( g_CWD );
+ lpInfo -> m_Pos      = aPosition;
 
  strcpy (  lpInfo -> m_pCurrent, _STR( apMenu -> m_pCurrent )  );
 
- SMS_ListPushBack (
-  apMenu -> m_pLevels, _STR( apMenu -> m_pFirst )
- ) -> m_Param = ( unsigned int )lpInfo;
+ lpNode = SMS_ListPushBack ( apMenu -> m_pLevels, _STR( apMenu -> m_pFirst ) );
+ if ( !lpNode ) { free ( lpInfo -> m_pCurrent ); free ( lpInfo ); return 0; }
+ lpNode -> m_Param = ( unsigned int )lpInfo;
+ return 1;
 
 }  /* end _push_state */
 
@@ -878,27 +882,27 @@ static void _action_partition ( GUIFileMenu* apMenu, int afPopup ) {
  char lPath[ 2 ] __attribute__(   (  aligned( 4 )  )   );
  char lMountPath[ strlen (  _STR( apMenu -> m_pCurrent )  ) + 6 ];
 
+ if ( !_push_state ( apMenu, strlen ( g_pPFS ) ) ) return;
  strcpy (  lMountPath, g_pDevName[ 2 ]               );
  strcat (  lMountPath, g_ColonStr                    );
  strcat (  lMountPath, _STR( apMenu -> m_pCurrent )  );
- strcpy (  g_CWD,      g_pPFS                        );
 
- if ( g_PD >= 0 ) g_PD = 0 - !SMS_IOCtl ( g_CWD, PFS_IOCTL_UMOUNT, NULL );
+ if ( g_PD >= 0 ) g_PD = 0 - !SMS_IOCtl ( g_pPFS, PFS_IOCTL_UMOUNT, NULL );
 
- lPD = SMS_HDDMount ( g_CWD, lMountPath, FIO_MT_RDWR );
+ lPD = SMS_HDDMount ( g_pPFS, lMountPath, FIO_MT_RDWR );
 
  if ( lPD >= 0 ) {
 
+  strcpy (  g_CWD, g_pPFS  );
   strcpy (  g_Config.m_Partition, _STR( apMenu -> m_pCurrent )  );
 
   *( unsigned short* )&lPath[ 0 ] = 0x002F;
-  _push_state ( apMenu );
   _fill ( apMenu, lPath, 0 );
   _redraw ( apMenu, 0 );
 
   g_PD = lPD;
 
- }  /* end if */
+ } else _pop_state ( apMenu );
 
 }  /* end _action_partition */
 
@@ -983,7 +987,7 @@ static void _action_folder ( GUIFileMenu* apMenu, int afPopup ) {
    * Reserve a separator and the terminator in the shared CWD workspace. */
   if ( lLength >= SMS_CWD_CAPACITY ||
        lNameLength >= SMS_CWD_CAPACITY - lLength - lSeparator ) return;
-  _push_state ( apMenu );
+  if ( !_push_state ( apMenu, strlen ( g_CWD ) ) ) return;
   _fill (  apMenu, _STR( apMenu -> m_pCurrent ), 0  );
   _redraw ( apMenu, 0 );
 
@@ -1004,6 +1008,7 @@ static void _action_share ( GUIFileMenu* apMenu, int afPopup ) {
  char*             lpPath = _STR( apMenu -> m_pCurrent );
  int               lRes;
 
+ if ( !_push_state ( apMenu, 4 ) ) return;
  if ( g_SMBU >= 0 ) {
 
 #ifdef BDM
@@ -1050,6 +1055,7 @@ static void _action_share ( GUIFileMenu* apMenu, int afPopup ) {
  lRes = -999;
 #endif
 
+ if ( lRes != 0 ) _pop_state ( apMenu );
  if ( lRes == 0 ) {
 
   g_SMBU = 0;
@@ -1058,7 +1064,6 @@ static void _action_share ( GUIFileMenu* apMenu, int afPopup ) {
   g_CWD[ 4 ]                = '\x00';
   *( unsigned short* )lPath = 0x002F;
 
-  _push_state ( apMenu );
   _fill ( apMenu, lPath, 0 );
   _redraw ( apMenu, 0 );
 
