@@ -38,6 +38,17 @@ class TestSMSConverter(unittest.TestCase):
         self.assertEqual(xvid_preset.width, 640)
         self.assertEqual(xvid_preset.height, 480)
 
+    def test_ipu_presets_keep_dvd_length_gops(self):
+        # The IPU's IDCT drifts from FFmpeg's across chained P-frames (#20, #23);
+        # MPEG-1/2 presets must refresh with an I-frame at DVD/VCD intervals.
+        for preset in PRESETS.values():
+            if preset.vcodec in ("mpeg1video", "mpeg2video"):
+                self.assertLessEqual(preset.gop, 18, preset.name)
+                cmd = build_ffmpeg_cmd("ffmpeg", "in.mp4", "out.mpg", {
+                    "vcodec": preset.vcodec, "acodec": preset.acodec,
+                    "gop": preset.gop, "fps": preset.fps, "ext": preset.ext})
+                self.assertEqual(cmd[cmd.index("-g") + 1], str(preset.gop))
+
     def test_fps_mapping(self):
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["23.976"], "24000/1001")
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["29.97"], "30000/1001")

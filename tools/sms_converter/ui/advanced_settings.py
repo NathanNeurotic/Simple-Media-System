@@ -175,7 +175,10 @@ class AdvancedSettingsWidget(QWidget):
             "extra seek delay. Past that it flattens -- 300 saves only another 4% but costs ten "
             "more seconds every time you jump.\n\n"
             "50 sits at that knee. Raise it toward 300 if you only ever watch straight through "
-            "and want the smallest files; lower it if you scrub around a lot."
+            "and want the smallest files; lower it if you scrub around a lot.\n\n"
+            "MPEG-1/MPEG-2 are different: the PS2's IPU decoder drifts slightly from the "
+            "encoder on every P-frame, and long intervals show it as colour that builds up "
+            "and snaps back. Their presets use 15, as DVD and VCD do; keep them at 18 or less."
         )
         self.spin_gop.valueChanged.connect(self._on_control_changed)
 
