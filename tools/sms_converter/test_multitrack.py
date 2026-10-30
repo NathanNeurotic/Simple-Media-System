@@ -175,10 +175,13 @@ class TestTrackConversion(unittest.TestCase):
         for codec, value in re.findall(r"SMS_CodecID_(\w+)\s*,\s*(0x[0-9a-fA-F]+)", table):
             tags.setdefault(codec, set()).add(int(value, 16).to_bytes(4, "little").upper())
 
-        for encoder, codec_id, supported in (("aac", "AAC", True), ("libvorbis", "OGGV", False)):
-            with self.subTest(encoder=encoder):
-                out = self.convert("mapping-" + encoder + ".avi", self.settings(
-                    acodec=encoder, width=160, height=128, keep_sd_resolution=False))
+        cases = [("aac", "AAC", True, rate) for rate in (48000, 44100, 32000, 22050)]
+        cases.append(("libvorbis", "OGGV", False, 48000))
+        for encoder, codec_id, supported, requested_rate in cases:
+            with self.subTest(encoder=encoder, sample_rate=requested_rate):
+                out = self.convert(f"mapping-{encoder}-{requested_rate}.avi", self.settings(
+                    acodec=encoder, sample_rate=requested_rate,
+                    width=160, height=128, keep_sd_resolution=False))
                 formats = avi_audio_formats(out)
                 audio = [s for s in get_media_info(self.fp, str(out))["streams"]
                          if s["codec_type"] == "audio"]
@@ -187,13 +190,15 @@ class TestTrackConversion(unittest.TestCase):
                 for stream, (tag, channels, rate, extra) in zip(audio, formats):
                     self.assertEqual(tag, int(stream["codec_tag"], 16))
                     self.assertEqual(tag.to_bytes(4, "little").upper() in tags[codec_id], supported)
-                    self.assertEqual((channels, rate), (2, 48000))
+                    self.assertEqual((channels, rate), (2, requested_rate))
                     self.assertTrue(extra)
                     if encoder == "aac":
                         # WAVE cbSize reaches SMS _NeAACDecInit2. Leading ASC fields:
                         # objectType(5), frequencyIndex(4), channelConfig(4), GASpecific(3).
                         asc = int.from_bytes(extra[:2], "big")
-                        self.assertEqual((asc >> 11, (asc >> 7) & 15, (asc >> 3) & 15), (2, 3, 2))
+                        frequency_index = {48000: 3, 44100: 4, 32000: 5, 22050: 7}[requested_rate]
+                        self.assertEqual((asc >> 11, (asc >> 7) & 15, (asc >> 3) & 15),
+                                         (2, frequency_index, 2))
                         self.assertEqual(asc & 7, 0)  # ordinary 1024-sample AAC-LC frames
                 result = validate_converted_file(self.fp, str(out))
                 self.assertEqual(result.status, "PASS" if supported else "WARN", result.generate_report())
