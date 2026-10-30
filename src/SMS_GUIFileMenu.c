@@ -974,10 +974,11 @@ static void _action_folder ( GUIFileMenu* apMenu, int afPopup ) {
 
   unsigned int lLength = strlen ( g_CWD );
   unsigned int lNameLength = strlen ( _STR( apMenu -> m_pCurrent ) );
-  unsigned int lSeparator = lLength && g_CWD[ lLength - 1 ] != '/' &&
+  unsigned int lSeparator = g_CMedia == 4 ? lLength > 5 &&
                            g_CWD[ lLength - 1 ] != '\\' &&
-                           _STR( apMenu -> m_pCurrent )[ 0 ] != '/' &&
-                           _STR( apMenu -> m_pCurrent )[ 0 ] != '\\';
+                           _STR( apMenu -> m_pCurrent )[ 0 ] != '\\' :
+                           lLength && g_CWD[ lLength - 1 ] != '/' &&
+                           _STR( apMenu -> m_pCurrent )[ 0 ] != '/';
   /* Check before saving a navigation level or discarding the current list.
    * Reserve a separator and the terminator in the shared CWD workspace. */
   if ( lLength >= SMS_CWD_CAPACITY ||
