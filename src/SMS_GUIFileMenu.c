@@ -929,9 +929,11 @@ static void _context_action_file ( GUIFileMenu* apMenu, int afPopup ) {
   char* lpCur      = _STR( apMenu -> m_pCurrent );
   char  lRoot[ 2 ] = { '\x01', '\x00' };
 
+  if ( lAction == 10 ) {
+   GUI_FileCtxMenu ( lRoot, NULL, lAction, apMenu -> m_ActiveY );
+   return;
+  }
   if ( !_make_path ( lPath, sizeof ( lPath ), &lpPathEnd, lpCur ) ) return;
-
-  if ( lAction == 10 ) lpCur = lRoot;
 
   if ( lAction == 0 || lAction == 100 ) {
    if (  !strcmp ( lpCur, &g_SMSLng[ 4 ] )  )
