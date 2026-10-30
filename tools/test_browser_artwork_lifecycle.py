@@ -143,6 +143,10 @@ static void SMS_FileDirInit(char *path) {
  assert(progress && !strcmp(path,expected_path));++directory_reads;
  SMS_ListDestroy(&listing,0);
  if(g_CMedia==2 || g_CMedia==6) {
+  if(!path[0]) {
+   strcpy(g_CWD,g_CMedia==2?"hdd0:/":"smb:");
+   SMS_ListPushBack(&listing,"movie.avi")->m_Param=g_CMedia==2?5:7;return;
+  }
   assert(!strcmp(path,"/") && !strcmp(g_CWD,g_CMedia==2?"pfs0:":"smb:"));
   strcat(g_CWD,"/");SMS_ListPushBack(&listing,"inside.avi")->m_Param=2;return;
  }
@@ -276,7 +280,12 @@ static void device_navigation(int media,int artwork) {
  assert(!strcmp(_STR(menu.m_pCurrent),"inside.avi"));
  if(media==2)assert(g_PD==7 && !strcmp(g_Config.m_Partition,"movie.avi"));
  else assert(!g_SMBU);
- _pop_state(&menu);menu.Cleanup((GUIObject *)&menu);
+ strcpy(expected_path,"");
+ GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_TRIANGLE);
+ assert(directory_reads==2 && !levels.m_Size && !strcmp(g_CWD,root_path));
+ assert(!strcmp(_STR(menu.m_pCurrent),"movie.avi"));
+ if(media==2)assert(!g_Config.m_Partition[0]);
+ menu.Cleanup((GUIObject *)&menu);
  SMS_ListDestroy(&filtered,0);SMS_ListDestroy(&listing,0);
 }
 int main(int argc,char **argv) {
