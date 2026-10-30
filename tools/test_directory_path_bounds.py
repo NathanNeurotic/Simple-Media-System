@@ -53,8 +53,18 @@ static const CDDADirectory *CDDA_DirectoryList(void *p) { (void)p;abort(); }
 static CDDAFile *CDDA_GetFileList(void *p,const CDDADirectory *d) { (void)p;(void)d;abort(); }
 static void CDDA_DestroyFileList(CDDAFile *p) { (void)p;abort(); }
 typedef struct FC { void (*Destroy)(struct FC *); } FileContext;
-static FileContext *STIO_InitFileContext(char *p,void *q) { (void)p;(void)q;return NULL; }
-static void File_GetString(FileContext *p,char *s,int n) { (void)p;(void)s;(void)n;abort(); }
+static char host_line[1024];
+static unsigned host_enabled,host_cursor,host_closed;
+static void close_host(FileContext *p) { (void)p;++host_closed; }
+static FileContext host_context={close_host};
+static FileContext *STIO_InitFileContext(char *p,void *q) {
+ assert(!strcmp(p,"host:elflist.txt") && !q);return host_enabled?&host_context:NULL;
+}
+static void File_GetString(FileContext *p,char *s,int n) {
+ assert(p==&host_context && n==1024);
+ const char *line=host_cursor==0?host_line:host_cursor==1?"valid.mpg":"";
+ strcpy(s,line);++host_cursor;
+}
 #define FILE_EOF(p) 1
 typedef struct { struct { int attr,mode; } stat;char name[256]; } fio_dirent_t;
 static unsigned opens,reads,stops,statuses,entry_mode,emit_entry,probes;
@@ -118,6 +128,19 @@ int main(void) {
  scan(1023,0,'/',sentinel,1);assert(!probes && !g_pFileList->m_pHead);
  emit_entry=1;scan(1015,0,'/',sentinel,1);assert(probes==1);
  emit_entry=1;scan(1016,0,'/',sentinel,1);assert(probes==1);
+ /* HOST's listing file can supply lines longer than host: + line can fit.
+  * An overlong line must not hide the following ordinary entry. */
+ host_enabled=1;g_CMedia=4;
+ for(unsigned length=1018;length<=1023;++length) {
+  memset(host_line,'n',length);host_line[length]=0;
+  host_cursor=host_closed=probes=0;SMS_FileDirInit("");
+  assert(host_closed==1 && host_cursor==3 && !strcmp(g_CWD,"host:"));
+  SMS_ListNode *node=g_pFileList->m_pHead;
+  if(length==1018) {
+   assert(probes==2 && node && strlen(_STR(node))==length);node=node->m_pNext;
+  } else assert(probes==1);
+  assert(node && !strcmp(_STR(node),"valid.mpg") && !node->m_pNext);
+ }
  SMS_ListDestroy(g_pFileList,1);
  return 0;
 }
@@ -130,4 +153,4 @@ with tempfile.TemporaryDirectory() as td:
                     '-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                     str(path / 'test.c'), '-o', str(exe)], check=True)
     subprocess.run([str(exe)], check=True, timeout=60)
-print('Production directory scanner: sentinel, separator, entry-probe boundaries passed')
+print('Production directory scanner: sentinel, separator, entry-probe and HOST listing boundaries passed')

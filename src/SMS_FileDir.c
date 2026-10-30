@@ -492,6 +492,7 @@ void SMS_FileDirInit ( char* apPath ) {
 
      }  /* end if */
 
+     if ( strlen ( lBuf ) >= sizeof ( lPath ) - strlen ( s_pHST ) ) continue;
      strcpy ( lPath, s_pHST );
      strcat ( lPath, lBuf   );
 
