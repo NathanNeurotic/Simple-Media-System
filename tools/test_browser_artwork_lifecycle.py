@@ -37,6 +37,15 @@ prefix = r'''
 #include "SMS_Artwork.h"
 #include "SMS_PAD.h"
 #include "SMS_RC.h"
+static unsigned allocation_count,fail_at;
+static void *checked_malloc(size_t n) {
+ ++allocation_count;if(fail_at==allocation_count)return NULL;return malloc(n);
+}
+static void *checked_calloc(size_t n,size_t size) {
+ ++allocation_count;if(fail_at==allocation_count)return NULL;return calloc(n,size);
+}
+#define malloc checked_malloc
+#define calloc checked_calloc
 '''
 cwd_defines = "\n".join(line for line in (root / "include/SMS_Sounds.h").read_text().splitlines()
                          if line.startswith("#define SMS_CWD_CAPACITY") or line.startswith("#define g_CWD "))
@@ -157,6 +166,17 @@ static void folder_navigation(int artwork) {
  assert(GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_CROSS)==GUIHResult_Handled);
  assert(directory_reads==old_reads && !levels.m_Size && menu.m_pCurrent==long_node);
  menu.m_pCurrent=SMS_ListAt(&filtered,7);
+
+ /* Each state-save allocation must fail before directory I/O or list reset. */
+ for(unsigned failure=1;failure<=3;++failure) {
+  SMS_ListNode *selected=menu.m_pCurrent;
+  unsigned reads=directory_reads,count=filtered.m_Size;
+  fail_at=allocation_count+failure;
+  GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_CROSS);
+  fail_at=0;
+  assert(directory_reads==reads && filtered.m_Size==count && !levels.m_Size);
+  assert(menu.m_pCurrent==selected && !strcmp(g_CWD,"mass0:/"));
+ }
 
  /* CROSS invokes the real folder action; its argument aliases the node that
   * _reset frees. The directory adapter reads that name after the reset. */

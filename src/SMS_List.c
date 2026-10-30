@@ -37,6 +37,7 @@ SMS_ListNode* SMS_ListPushBack ( SMS_List* apList, const char* apString ) {
 
  SMS_ListNode* lpNode = ( SMS_ListNode* )calloc (  1, sizeof ( SMS_ListNode ) + strlen ( apString ) + 1  );
 
+ if ( !lpNode ) return NULL;
  strcpy (  _STR( lpNode ) , apString  );
 
  if ( apList -> m_pTail ) {
