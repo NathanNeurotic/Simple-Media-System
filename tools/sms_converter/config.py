@@ -77,12 +77,10 @@ class Preset:
     keep_sd_resolution: bool = False
     scaling_mode: str = DEFAULT_SCALING_MODE
 
-# MPEG-1/2 keyframe interval. The PS2 decodes these on the IPU, whose IDCT does not
-# reconstruct exactly what FFmpeg's encoder reconstructed; the small difference is
-# copied forward by every P-frame until the next I-frame. Over the generic 50-frame
-# GOP that error visibly builds up and then snaps back -- the green cast (#20) and
-# "pumping" reds (#23), which play the same way in 2.9rev4. DVD and VCD cap the GOP
-# at 15-18 frames for exactly this reason, so the IPU presets follow the standard.
+# Shorter MPEG-1/2 prediction chains are a mitigation candidate for #20/#23.
+# The presets refresh with an I-frame every 15 frames rather than the generic 50.
+# Reporter playback of re-converted files is still needed; neither the specific
+# reconstruction-drift mechanism nor a complete color fix is established.
 MPEG_IPU_GOP = 15
 
 PRESETS: Dict[str, Preset] = {
