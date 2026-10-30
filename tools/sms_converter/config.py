@@ -270,16 +270,17 @@ AUDIO_CODECS_MAP = {
     "PCM 16-bit [uncompressed for AVI]": "pcm_s16le",
 }
 
-# WHAT SMS CAN ACTUALLY DEMUX, PER CONTAINER.
+# CONVERTER OUTPUT MAPPINGS SUPPORTED BY SMS, PER CONTAINER.
 #
 # A codec is not enough on its own -- SMS looks the codec up in a table that belongs to the
 # CONTAINER's reader, so a stream can be perfectly valid, play everywhere else, and still be
-# undecodable on the PS2 because that container's table has no entry for it. Read straight
-# out of the SMS sources, not assumed:
+# undecodable on the PS2 because that container's table has no entry for the tag FFmpeg
+# writes. This describes converter outputs, not every legacy input SMS can read:
 #
-#   AVI      SMS-v1/src/SMS_Codec.c:33-54 (video FourCCs) and :58-65 (audio wFormatTag).
+#   AVI      src/SMS_Codec.c (video FourCCs and audio wFormatTag).
 #            Video is MPEG-4 Part 2 and MS-MPEG4v3 ONLY -- there is no MPEG-1 or MPEG-2
-#            FourCC in that table at all, and no AAC in the audio one.
+#            FourCC. AAC's 0x00FF tag and WAVE extra data reach SMS's AAC config decoder.
+#            FFmpeg Vorbis uses 0x566F, which does not match SMS's legacy 0x674F entry.
 #   MP4/M4A  SMS-v1/src/SMS_ContainerMOV.c:346-356, by MPEG-4 object type id.
 #   MPEG-PS  SMS-v1/src/SMS_ContainerMPEG_PS.c:673-718, by stream id.
 #
@@ -291,7 +292,7 @@ AUDIO_CODECS_MAP = {
 SMS_CONTAINER_CODECS = {
     ".avi": {
         "video": {"mpeg4", "msmpeg4v3"},
-        "audio": {"mp3", "mp2", "ac3", "dts", "vorbis", "wmav1", "wmav2", "pcm_s16le"},
+        "audio": {"mp3", "mp2", "aac", "ac3", "dts", "wmav1", "wmav2", "pcm_s16le"},
     },
     ".mpg": {
         "video": {"mpeg1video", "mpeg2video"},
@@ -328,7 +329,9 @@ def codec_name_for(encoder: str) -> str:
     return ENCODER_TO_CODEC_NAME.get(encoder, encoder)
 
 def sms_supports(ext: str, kind: str, encoder_or_codec: str) -> bool:
-    """Can SMS decode `encoder_or_codec` as `kind` ("video"/"audio") inside `ext`?
+    """Does this converter's codec/container output map to an SMS reader?
+
+    This covers generated output mappings, not every legacy codec tag SMS accepts.
 
     Unknown containers return True: this table is a statement about what SMS is KNOWN to
     read, and an unlisted extension means "no information", which must not be reported as a

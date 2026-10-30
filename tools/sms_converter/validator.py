@@ -288,13 +288,13 @@ def validate_converted_file(
             result.status = "FAIL"
             result.reasons.append(f"Unsupported audio codec: {a_name.upper()} (audio track {audio_index}).")
         elif not sms_supports(container_ext, "audio", a_name):
-            # Same container-aware backstop, same WARN-not-FAIL reasoning. AAC in an AVI is
-            # the common case: SMS's AVI wFormatTag table has no AAC entry.
+            # Keep unrecognised converter mappings as WARN, preserving the output. For
+            # example, FFmpeg's AVI Vorbis tag differs from SMS's legacy Vorbis entry.
             if result.status != "FAIL":
                 result.status = "WARN"
             result.warnings.append(
-                f"{a_name.upper()} audio inside {container_ext} is not in SMS's codec table "
-                f"for that container and probably will not play on the PS2."
+                f"{a_name.upper()} audio inside {container_ext} is not a supported converter "
+                f"output mapping for SMS and probably will not play on the PS2."
             )
 
     # Packet Scan
