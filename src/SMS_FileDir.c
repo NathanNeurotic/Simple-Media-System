@@ -239,6 +239,24 @@ int SMS_FileID ( const char* apName ) {
 
 }  /* end SMS_FileID */
 
+static int _append_directory_path ( const char* apPath ) {
+ unsigned int lLength = strlen ( g_CWD );
+ unsigned int lAppend = ( ( apPath[ 0 ] == '.' && !apPath[ 1 ] ) ||
+                          apPath[ 0 ] == '\x01' ) ? 0 : strlen ( apPath );
+ unsigned int lSeparator;
+ char lSlash = g_CMedia == 4 ? '\\' : '/';
+ if ( !lLength || lLength >= SMS_CWD_CAPACITY ) return 0;
+ lSeparator = g_CMedia == 4 ? apPath[ 0 ] && lLength > 5 &&
+              g_CWD[ lLength - 1 ] != '\\' && apPath[ 0 ] != '\\' :
+              g_CWD[ lLength - 1 ] != '/' && apPath[ 0 ] != '/';
+ if ( lSeparator >= SMS_CWD_CAPACITY - lLength ||
+      lAppend >= SMS_CWD_CAPACITY - lLength - lSeparator ) return 0;
+ if ( lSeparator ) g_CWD[ lLength++ ] = lSlash;
+ if ( lAppend ) memcpy ( g_CWD + lLength, apPath, lAppend );
+ g_CWD[ lLength + lAppend ] = '\0';
+ return 1;
+}  /* end _append_directory_path */
+
 void SMS_FileDirInit ( char* apPath ) {
 
  int           lFD;
@@ -392,17 +410,9 @@ void SMS_FileDirInit ( char* apPath ) {
 
  }  /* end if */
 
+ if ( !_append_directory_path ( apPath ) ) goto end;
  lpDirList  = SMS_ListInit ();
  lpFileList = SMS_ListInit ();
- lFD        = strlen ( g_CWD ) - 1;
-
- if ( g_CMedia == 4 ) {
-
-  if ( apPath[ 0 ] && g_CWD[ 5 ] && g_CWD[ lFD ] != '\\' && apPath[ 0 ] != '\\' ) strcat ( g_CWD, g_BSlashStr );
-
- } else if ( apPath[ 0 ] != '/' && g_CWD[ lFD ] != '/' ) strcat ( g_CWD, g_SlashStr );
-
- if (  !( apPath[ 0 ] == '.' && apPath[ 1 ] == '\x00' ) && apPath[ 0 ] != '\x01' ) strcat ( g_CWD, apPath );
 
  if ( g_CMedia == 1 && g_pCDDACtx ) {
 
@@ -518,13 +528,15 @@ doScan:
 
    if ( lFD >= 0 ) {
 
-    int lIdx = strlen ( g_CWD ) - 1;
+    unsigned int lLength = strlen ( g_CWD );
 
     strcpy ( lPath, g_CWD );
 
-    if ( lPath[ lIdx ] != '\\' && lPath[ lIdx ] != '/' ) strcat ( lPath, g_BSlashStr );
+    if ( lPath[ lLength - 1 ] != '\\' && lPath[ lLength - 1 ] != '/' &&
+         lLength + 1 < sizeof ( lPath ) ) lPath[ lLength++ ] = '\\';
 
-    lpPtr = lPath + strlen ( lPath );
+    lPath[ lLength ] = '\0';
+    lpPtr = lPath + lLength;
 
     while (  fioDread ( lFD, &lEntry ) > 0  ) {
 
@@ -532,6 +544,10 @@ doScan:
 
      if ( !lEntry.stat.mode ) {
 
+      /* Some devices omit the entry type and require a full-path probe.
+       * Skip only that entry when the probe path cannot fit. */
+      if ( lLength == sizeof ( lPath ) - 1 ||
+           strlen ( lEntry.name ) >= sizeof ( lPath ) - lLength ) continue;
       strcpy ( lpPtr, lEntry.name );
 
       lID = fioOpen ( lPath, O_RDONLY );
