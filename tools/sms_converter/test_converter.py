@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config import (
-    PRESETS, MAX_WIDTH, MAX_HEIGHT, SIZE_4_0_GIB, MAX_VIDEO_PACKET_SIZE,
+    PRESETS, MAX_WIDTH, MAX_HEIGHT, MAX_VIDEO_PACKET_SIZE,
     MAX_AUDIO_PACKET_SIZE, MPEG_ALLOWED_FPS_MAP
 )
 from ffmpeg_utils import (

@@ -31,7 +31,7 @@ The October development work adds folder shuffle, converter multi-audio output a
 | Music | MP2/MP3/MPA, AAC/M4A, AC-3, FLAC, Ogg Vorbis and WMA v1/v2. [Audio constraints](https://nathanneurotic.github.io/Simple-Media-System/audio.html). |
 | Pictures and text | Baseline JPEG, M3U playlists and external SRT/SUB/TXT subtitles. Existing AVI DXSB bitmap subtitles are a separate path. |
 | Video dimensions | At most 1024 pixels on either axis. This is an acceptance check, not a real-time playback guarantee. |
-| Files | Keep each file below 4 GiB on every source, including exFAT. |
+| Files | Keep each file below 2 GiB for portable seeking, including on exFAT. |
 | Tracks | Eight stream-table slots; MP4 and MPEG-PS retain at most seven streams to reserve a terminator. The converter allows video plus six audio tracks. |
 | Unsupported video | H.264/AVC, H.265/HEVC, VP9, AV1 and WMV. An MP4 extension alone does not identify the video codec. |
 
