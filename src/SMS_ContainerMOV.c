@@ -575,7 +575,19 @@ static int _mov_read_stsz ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
    lpMyStm -> m_nSamples = 0;
    return 0;
   }  /* end if */
-  for ( i = 0; i < lnEntries; ++i ) lpMyStm -> m_pSampleSize[ i ] = _read_int_be ( apFileCtx );
+/* Read the variable-size table as one payload. File_GetUInt's buffered fast path
+ * does not report a failed refill, so a truncated payload must be checked here
+ * before publishing samples to the index builder. Swap through unsigned int,
+ * the unsigned counterpart of the allocated int entries. */
+  if (  apFileCtx -> Read ( apFileCtx, lpMyStm -> m_pSampleSize,
+                           lnEntries * sizeof ( int ) ) != lnEntries * sizeof ( int )  ) {
+   lpMyStm -> m_nSamples = 0;
+   return 0;
+  }  /* end if */
+  for ( i = 0; i < lnEntries; ++i ) {
+   unsigned int* lpSizes = ( unsigned int* )lpMyStm -> m_pSampleSize;
+   lpSizes[ i ] = SMS_bswap32 ( lpSizes[ i ] );
+  }  /* end for */
  } else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
  return 0;
 }  /* end mov_read_stsz */
