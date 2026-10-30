@@ -1,6 +1,6 @@
 """Actual browser navigation, reset and redraw cleanup under ASan/UBSan/LSan.
 
-Uses the production cache, layouts, folder actions/event handler and cleanup.
+Uses the production cache, layouts, folder/HDD/SMB actions, event handler and cleanup.
 Directory I/O and GS/DMA are host adapters; this does not execute a PS2 display
 chain or establish console acceptance after returning from a folder or player.
 """
@@ -8,10 +8,11 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 root = Path(__file__).resolve().parents[1]
-browser = (root / "src/SMS_GUIFileMenu.c").read_text()
+browser = (Path(sys.argv[1]) if len(sys.argv) > 1 else root / "src/SMS_GUIFileMenu.c").read_text()
 gui = (root / "src/SMS_GUI.c").read_text()
 lists = (root / "src/SMS_List.c").read_text()
 
@@ -37,6 +38,9 @@ prefix = r'''
 #include "SMS_Artwork.h"
 #include "SMS_PAD.h"
 #include "SMS_RC.h"
+#include "SMS_SMB.h"
+#include "SMS_ioctl.h"
+#define BDM 1
 static unsigned allocation_count,fail_at;
 static void *checked_malloc(size_t n) {
  ++allocation_count;if(fail_at==allocation_count)return NULL;return malloc(n);
@@ -64,6 +68,30 @@ static int g_CMedia,g_PD,g_SMBU;
 static struct { int m_PlayerVolume;char m_Partition[64]; } g_Config;
 static unsigned drains,generic_cleanups,unloads,redraws;
 static unsigned directory_reads,progress;
+static char g_pPFS[]="pfs0:",g_pSMBS[]="smb:",g_ColonStr[]=":";
+static char *g_pDevName[3]={"mass0","cdfs","hdd0"};
+#define FIO_MT_RDWR 1
+static int mount_result,unmount_result,share_result;
+static unsigned mounts,unmounts,share_opens,share_closes,errors;
+static int SMS_IOCtl(const char *fs,int request,void *arg) {
+ assert(!strcmp(fs,g_pPFS) && request==PFS_IOCTL_UMOUNT && !arg);
+ ++unmounts;return unmount_result;
+}
+static int SMS_HDDMount(const char *fs,const char *path,int mode) {
+ assert(!strcmp(fs,g_pPFS) && !strcmp(path,"hdd0:movie.avi") && mode==FIO_MT_RDWR);
+ ++mounts;return mount_result;
+}
+static int fileXioDevctl(const char *dev,unsigned request,void *in,int insize,void *out,int outsize) {
+ assert(!strcmp(dev,g_pSMBS) && !out && !outsize);
+ if(request==SMB_DEVCTL_CLOSESHARE) {
+  assert(!in && !insize);++share_closes;return 0;
+ }
+ assert(request==SMB_DEVCTL_OPENSHARE && insize==sizeof(smbOpenShare_in_t));
+ smbOpenShare_in_t *p=in;
+ assert(!strcmp(p->ShareName,"movie.avi") && p->PasswordType==NO_PASSWORD);
+ ++share_opens;return share_result;
+}
+void GUI_Error(char *message) { assert(message[0]);++errors; }
 static void _artwork_drain(void) { ++drains; }
 static void GSContext_DeleteList(u64 *p) { free(p); }
 static void GUI_UnloadIcons(void) { ++unloads; }
@@ -92,7 +120,7 @@ static int _page_scroll(int (*step)(GUIFileMenu *,int),GUIFileMenu *p) {
  (void)step;(void)p;assert(0);return 0;
 }
 static void _context_action_file(GUIFileMenu *p,int popup) { (void)p;(void)popup;assert(0); }
-static void _action_partition(GUIFileMenu *p,int popup) { (void)p;(void)popup;assert(0); }
+static void _action_partition(GUIFileMenu *p,int popup);
 static void _action_folder(GUIFileMenu *p,int popup);
 static void (*Action[9])(GUIFileMenu *,int)={_action_folder};
 static void (*ContextAction[9])(GUIFileMenu *,int)={_context_action_file};
@@ -114,6 +142,10 @@ post = r'''
 static void SMS_FileDirInit(char *path) {
  assert(progress && !strcmp(path,expected_path));++directory_reads;
  SMS_ListDestroy(&listing,0);
+ if(g_CMedia==2 || g_CMedia==6) {
+  assert(!strcmp(path,"/") && !strcmp(g_CWD,g_CMedia==2?"pfs0:":"smb:"));
+  strcat(g_CWD,"/");SMS_ListPushBack(&listing,"inside.avi")->m_Param=2;return;
+ }
  if(!path[0])strcpy(g_CWD,"mass0:/");
  else if(strcmp(path,".")) {
   if(g_CWD[strlen(g_CWD)-1]!='/' && path[0]!='/')strcat(g_CWD,"/");
@@ -211,6 +243,42 @@ static void folder_navigation(int artwork) {
  assert(!filtered.m_Size && !menu.m_pCurrent && !menu.m_pFirst && !menu.m_pLast);
  menu.Cleanup((GUIObject *)&menu);SMS_ListDestroy(&listing,0);
 }
+static void device_navigation(int media,int artwork) {
+ menu.m_pLevels=&levels;menu.m_ArtworkMode=artwork;g_CMedia=media;
+ const char *root_path=media==2?"hdd0:/":"smb:";
+ strcpy(g_CWD,root_path);strcpy(g_Config.m_Partition,"previous");
+ SMS_ListNode *selected=menu.m_pCurrent;
+ for(unsigned failure=1;failure<=3;++failure) {
+  g_PD=g_SMBU=0;fail_at=allocation_count+failure;
+  if(media==2)_action_partition(&menu,0);else _action_share(&menu,0);
+  fail_at=0;
+  assert(!mounts && !unmounts && !share_opens && !share_closes && !errors);
+  assert(!directory_reads && !levels.m_Size && filtered.m_Size==1);
+  assert(menu.m_pCurrent==selected && !strcmp(g_CWD,root_path));
+  assert(!strcmp(g_Config.m_Partition,"previous") && !g_PD && !g_SMBU);
+ }
+ /* Repeated device failures must retain the root listing and release the
+  * reserved navigation record, including when a prior device is open. */
+ for(unsigned active=0;active<2;++active) {
+  g_PD=g_SMBU=active?0:-1;mount_result=-5;share_result=-5;unmount_result=0;
+  if(media==2)_action_partition(&menu,0);else _action_share(&menu,0);
+  assert(!strcmp(g_CWD,root_path) && !levels.m_Size && !directory_reads);
+  assert(menu.m_pCurrent==selected && filtered.m_Size==1);
+  assert(!strcmp(g_Config.m_Partition,"previous"));
+  assert(media==2?g_PD<0:g_SMBU<0);
+ }
+ assert(media==2?(mounts==2 && unmounts==1 && !errors):
+                  (share_opens==2 && share_closes==1 && errors==2));
+ mount_result=7;share_result=0;strcpy(expected_path,"/");
+ if(media==2)_action_partition(&menu,0);else _action_share(&menu,0);
+ assert(directory_reads==1 && levels.m_Size==1 && filtered.m_Size==1);
+ assert(!strcmp(g_CWD,media==2?"pfs0:/":"smb:/"));
+ assert(!strcmp(_STR(menu.m_pCurrent),"inside.avi"));
+ if(media==2)assert(g_PD==7 && !strcmp(g_Config.m_Partition,"movie.avi"));
+ else assert(!g_SMBU);
+ _pop_state(&menu);menu.Cleanup((GUIObject *)&menu);
+ SMS_ListDestroy(&filtered,0);SMS_ListDestroy(&listing,0);
+}
 int main(int argc,char **argv) {
  assert(argc==2);populate();
  if(!strcmp(argv[1],"redraw")) {
@@ -238,6 +306,8 @@ int main(int argc,char **argv) {
   _reset(&menu,0);
   assert(redraws==1 && drains>=2 && !filtered.m_Size && !menu.m_Artwork.m_Count);
   menu.Cleanup((GUIObject *)&menu);
+ } else if(!strncmp(argv[1],"hdd-",4) || !strncmp(argv[1],"smb-",4)) {
+  device_navigation(argv[1][0]=='h'?2:6,strstr(argv[1],"grid")!=NULL);
  } else {
   assert(!strcmp(argv[1],"folder-list") || !strcmp(argv[1],"folder-grid"));
   folder_navigation(!strcmp(argv[1],"folder-grid"));
@@ -256,6 +326,7 @@ source += function(browser, "_reset") + function(browser, "_fill")
 # production filenames, node allocation/free and restoration code are unchanged.
 source += function(browser, "_push_state").replace("( unsigned int )lpInfo", "( uintptr_t )lpInfo")
 source += function(browser, "_pop_state").replace("( _LevelInfo* )( unsigned int )", "( _LevelInfo* )( uintptr_t )")
+source += function(browser, "_action_partition") + function(browser, "_action_share")
 source += function(browser, "_action_folder") + function(browser, "_artwork_move")
 source += function(browser, "GUIFileMenu_HandleEvent").replace("( _LevelInfo* )( unsigned int )", "( _LevelInfo* )( uintptr_t )")
 source += function(gui, "_cleanup") + post
@@ -270,9 +341,9 @@ with tempfile.TemporaryDirectory() as temporary:
                     "-Wno-int-to-pointer-cast", "-I", str(tmp), "-I", str(root / "include"),
                     str(fixture), str(root / "src/SMS_Artwork.c"), "-o", str(exe)], check=True)
     failures = []
-    for case in ("redraw", "reset", "folder-list", "folder-grid"):
+    for case in ("redraw", "reset", "folder-list", "folder-grid", "hdd-list", "hdd-grid", "smb-list", "smb-grid"):
         if subprocess.run([str(exe), case], timeout=15).returncode:
             failures.append(case)
     if failures:
         raise SystemExit("Artwork lifecycle controls failed: " + ", ".join(failures))
-print("Artwork lifecycle: redraw reuse, destruction, folder entry/back, refresh and empty-media reset passed")
+print("Artwork lifecycle: redraw, folder entry/back, HDD/SMB allocation and device failures/retry, refresh and empty-media reset passed")

@@ -886,14 +886,14 @@ static void _action_partition ( GUIFileMenu* apMenu, int afPopup ) {
  strcpy (  lMountPath, g_pDevName[ 2 ]               );
  strcat (  lMountPath, g_ColonStr                    );
  strcat (  lMountPath, _STR( apMenu -> m_pCurrent )  );
- strcpy (  g_CWD,      g_pPFS                        );
 
- if ( g_PD >= 0 ) g_PD = 0 - !SMS_IOCtl ( g_CWD, PFS_IOCTL_UMOUNT, NULL );
+ if ( g_PD >= 0 ) g_PD = 0 - !SMS_IOCtl ( g_pPFS, PFS_IOCTL_UMOUNT, NULL );
 
- lPD = SMS_HDDMount ( g_CWD, lMountPath, FIO_MT_RDWR );
+ lPD = SMS_HDDMount ( g_pPFS, lMountPath, FIO_MT_RDWR );
 
  if ( lPD >= 0 ) {
 
+  strcpy (  g_CWD, g_pPFS  );
   strcpy (  g_Config.m_Partition, _STR( apMenu -> m_pCurrent )  );
 
   *( unsigned short* )&lPath[ 0 ] = 0x002F;
