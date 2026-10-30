@@ -11,7 +11,7 @@ from qt_compat import (
 
 import crash_log
 from config import (
-    PRESETS, SIZE_3_8_GIB, SIZE_4_0_GIB, MSG_FILE_SIZE_APPROACHING_LIMIT, Preset
+    PRESETS, FILE_SIZE_WARNING_BYTES, FILE_SIZE_ABORT_BYTES, Preset
 )
 from ffmpeg_utils import calculate_estimated_output_size, generate_unique_output_path
 from validator import ValidationResult
@@ -105,6 +105,7 @@ class MainWindow(QMainWindow):
         self.lbl_estimated_size.setStyleSheet("font-weight: bold; font-size: 13px; color: #E2E8F0;")
 
         self.lbl_size_warning = QLabel("")
+        self.lbl_size_warning.setWordWrap(True)
         self.lbl_size_warning.setStyleSheet("font-size: 11px; font-weight: bold;")
         self.lbl_estimated_size.setToolTip("Estimated output file size calculated from target video and audio bitrates.")
         self.lbl_size_warning.hide()
@@ -417,7 +418,7 @@ class MainWindow(QMainWindow):
         The video bitrate is only counted when a video codec is actually being ENCODED. Both
         call sites used to pass settings.get("vbitrate_kbps", 1500) unconditionally, so every
         audio-only preset was estimated as if it were also writing 1500 kbps of video --
-        roughly 9x too large for a 128 kbps MP3, which then dragged the 4 GiB banner along
+        roughly 9x too large for a 128 kbps MP3, which then dragged the size banner along
         with it.
         """
         vbitrate = settings.get("vbitrate_kbps", 1500) if settings.get("vcodec") else 0
@@ -435,8 +436,8 @@ class MainWindow(QMainWindow):
             self.lbl_size_warning.hide()
             return
 
-        # GiB/MiB: these are powers of 1024, and the 4 GiB ceiling they are compared against
-        # is too. Labelling them GB/MB understated the number by ~7% against the limit the
+        # GiB/MiB: these are powers of 1024, as are the warning and abort thresholds.
+        # Labelling them GB/MB understated the number by ~7% against the limit the
         # user is being warned about.
         mib = total_bytes / (1024 * 1024)
         if mib >= 1024:
@@ -446,9 +447,9 @@ class MainWindow(QMainWindow):
 
         self.lbl_estimated_size.setText(f"Estimated output: {size_str}")
 
-        # The 4 GiB ceiling is a PER-FILE limit -- it is what SMS itself can open, and what
-        # the worker's own size safeguard aborts a single encode on. Testing it against the
-        # SUM of the queue meant five perfectly fine 1 GB files raised a red "BLOCKED"
+        # The signed-seek ceiling and early-abort threshold are PER-FILE limits.
+        # Testing either against the SUM of the queue meant five perfectly fine
+        # 1 GB files raised a red "BLOCKED"
         # banner, while one genuinely oversized file among small ones could be missed. And
         # "BLOCKED" was a lie in both directions: nothing consults this label, Convert stays
         # enabled, and the worker aborts on real size mid-encode regardless.
@@ -456,12 +457,14 @@ class MainWindow(QMainWindow):
             (item.estimated_size_bytes for item in self.queue_table.items_dict.values()),
             default=0,
         )
-        if largest >= SIZE_4_0_GIB:
-            self.lbl_size_warning.setText("[A file is projected over the 4.0 GiB limit and will be stopped]")
+        if largest >= FILE_SIZE_ABORT_BYTES:
+            self.lbl_size_warning.setText(
+                "[A file is projected to reach the stop threshold: 10 MiB below the portable 2 GiB minus 1 byte seek limit]"
+            )
             self.lbl_size_warning.setStyleSheet("color: #E53E3E; font-weight: bold;")
             self.lbl_size_warning.show()
-        elif largest >= SIZE_3_8_GIB:
-            self.lbl_size_warning.setText("[WARNING: Projected file size approaching 4.0 GiB ceiling]")
+        elif largest >= FILE_SIZE_WARNING_BYTES:
+            self.lbl_size_warning.setText("[WARNING: A file is approaching the 2 GiB signed-seek limit]")
             self.lbl_size_warning.setStyleSheet("color: #ED8936; font-weight: bold;")
             self.lbl_size_warning.show()
         else:

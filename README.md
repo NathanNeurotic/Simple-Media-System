@@ -60,7 +60,7 @@ extension is not enough: inspect the actual codec.
 | MPEG-1/2 rate table | 23.976, 24, 25, 29.97, 30, 50, 59.94 and 60 fps. |
 | Streams | Eight table slots. MP4/MPEG-PS reserve a terminator and retain at most seven streams; the converter allows video plus six audio tracks. |
 | Compressed packets | Video: 2,097,088 bytes; audio: 524,224 bytes. |
-| Individual files | **Below 4 GiB on every source, including exFAT**, because the player uses 32-bit file addressing. |
+| Individual files | **Below 2 GiB for portable playback**, including on exFAT. Common fio/fileXio paths use signed 32-bit seek offsets. |
 
 Earlier project documentation records standard-definition playback profiles, including
 640×480 / 30 fps Xvid+MP3 and MPEG-2+MP2. These are historical reported baselines,

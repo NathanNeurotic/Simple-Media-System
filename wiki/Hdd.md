@@ -138,7 +138,7 @@ On a clean install optional Autostart choices are off — you turn on exactly wh
 - [i.LINK FireWire storage, also BDM mass](https://nathanneurotic.github.io/Simple-Media-System/ilink.html)
 - [Settings Reference Every autostart toggle](https://nathanneurotic.github.io/Simple-Media-System/settings.html)
 
-**File-size and test scope:** keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
+**File-size and test scope:** keep every SMS media file below 2 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
 
 ---
 [Searchable manual](https://nathanneurotic.github.io/Simple-Media-System/hdd.html) · [Edit the maintained source](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs-site/content/hdd.html)

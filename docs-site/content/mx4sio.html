@@ -57,7 +57,7 @@ misbehave; if a particular card gives trouble, try a different, known-good one.<
 <h2 id="prepare-card">Preparing the card</h2>
 <div class="steps">
 <div class="step"><h3>Format the microSD</h3>
-<p>Use a compatible <b>FAT32</b> or <b>exFAT</b> volume. Keep each SMS media file below 4 GiB on either filesystem.
+<p>Use a compatible <b>FAT32</b> or <b>exFAT</b> volume. Keep each SMS media file below 2 GiB on either filesystem.
 Back up the contents before reformatting; an already compatible volume can be used as it is.</p></div>
 
 <div class="step"><h3>Copy your media on</h3>
@@ -141,7 +141,7 @@ open them like on any other device.</li>
 <li>You can browse into any folder structure; there is no mandatory layout. Keep <code>.srt</code>/<code>.sub</code>
 subtitle files beside their video.</li>
 <li>Enable <b>either</b> MX4SIO <b>or</b> MMCE, never both — they share the SIO2 slot bus.</li>
-<li>Prefer <b>FAT32</b> for maximum compatibility; use <b>exFAT</b> if supported by your setup. Keep individual SMS media files below 4 GiB on either filesystem.</li>
+<li>Prefer <b>FAT32</b> for maximum compatibility; use <b>exFAT</b> if supported by your setup. Keep individual SMS media files below 2 GiB on either filesystem.</li>
 <li>If a specific card acts up, try another known-good microSD before assuming a software fault.</li>
 <li>Your Autostart MX4SIO choice is saved with your settings and persists across reboots — see
 <a href="settings.html">Settings</a> for where the config lives.</li>
@@ -160,4 +160,4 @@ wherever they are. There is no OPL-style mandatory folder structure and no ISO/c
 your files on, organise them however you like, and browse to them.</p>
 </details>
 
-<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 2 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>

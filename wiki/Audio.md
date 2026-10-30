@@ -32,7 +32,7 @@ Supported movie/container tracks can additionally use **DTS** and **16-bit littl
 | FLAC and Ogg Vorbis channels | Mono or stereo only |
 | FLAC, Ogg and AAC decoded output | 16-bit PCM |
 | Container tracks | Eight table slots; MP4 and MPEG-PS retain at most seven streams including video/subtitles |
-| Individual file size | Smaller than 4 GiB because file sizes, positions and seeks are 32-bit |
+| Individual file size | Below 2 GiB for portable seeking through SMS's signed 32-bit file APIs |
 
 ## Previously reported audio matrix
 

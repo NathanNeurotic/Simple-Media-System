@@ -14,6 +14,8 @@ records and 32 wiki files (30 articles, sidebar and footer). Native GitHub wiki
 publication remains a separate normal Git push, described in
 [the maintainer workflow](../../docs-site/README.md).
 
+> File-size guidance in this dated audit was superseded by the [2026-10-30 signed-seek review](2026-10-30-converter-file-size.md). Use the maintained manual's below-2-GiB portable target.
+
 ## Material corrections
 
 | Subject | Corrected guidance and evidence boundary |

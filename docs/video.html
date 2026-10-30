@@ -56,7 +56,7 @@ movie can carry an MP3, AAC, AC3, or other supported audio track. For the full a
 and standalone music — see <a href="audio.html">Audio &amp; Playlists</a>.</p>
 
 <h2 id="implementation-limits">Exact implementation limits</h2>
-<p>These are hard limits visible in the current source, not estimates:</p>
+<p>These source constraints and portable targets do not establish playback speed:</p>
 
 <table>
 <thead><tr><th>Property</th><th>Limit</th><th>What it means</th></tr></thead>
@@ -69,8 +69,7 @@ rate table, including MPEG-2 extensions.</td></tr>
 mandatory 64-byte allocation overhead.</td></tr>
 <tr><td>Streams/tracks</td><td><b>Eight table slots; MP4/MPEG-PS retain at most seven usable streams</b></td><td>The container-wide stream table includes video, audio and
 subtitle tracks.</td></tr>
-<tr><td>Individual file size</td><td><b>smaller than 4 GiB</b></td><td>File sizes, positions and seeks use 32-bit
-addressing.</td></tr>
+<tr><td>Portable file-size target</td><td><b>below 2 GiB</b> (at most 2,147,483,647 bytes)</td><td>Common fio/fileXio paths take signed 32-bit seek offsets. Driver-specific sequential behavior does not establish portable playback above this boundary.</td></tr>
 </tbody>
 </table>
 
@@ -261,8 +260,7 @@ interlaced field/DCT paths, and MPEG-2 supports frame- and field-encoded interla
 profiles above are progressive.</li>
 <li><b>The source ceiling and the real-time ceiling are different.</b> SMS accepts each dimension through 1024,
 but no single bitrate or resolution below that is guaranteed for every codec-tool and storage combination.</li>
-<li><b>Large files remain 32-bit addressed.</b> exFAT removes FAT32's filesystem limit, but the SMS file context
-still limits an individual file to less than 4 GiB.</li>
+<li><b>Keep files below 2 GiB for portable playback.</b> exFAT permits larger files, but SMS uses signed 32-bit seek offsets on common fio/fileXio paths. A driver-specific sequential read of a larger file does not establish normal indexed playback or seeking.</li>
 </ul>
 
 <details class="deep"><summary>Why can a stock PS2 play "good-resolution movies" at all?</summary>
