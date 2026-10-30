@@ -767,6 +767,12 @@ void** SMS_OpenMediaFile ( const char* apName, int aFlags ) {
 
   retVal = malloc (   (  sizeof ( void* ) << 1  ) + sizeof ( void* )  );
 
+  if ( !retVal ) {
+   lpFileCtx -> Destroy ( lpFileCtx );
+   SMS_PgIndStop ();
+   return NULL;
+  }
+
   retVal[ 0 ] = lpFileCtx;
   retVal[ 1 ] = NULL;
 
