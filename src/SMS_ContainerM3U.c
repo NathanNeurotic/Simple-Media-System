@@ -85,14 +85,17 @@ static FileContext* _open_file (
                     ) {
 
  char lFileName[ 1024 ];
+ unsigned int lPrefix = strlen ( g_CWD );
+ unsigned int lName = strlen ( MYENTR( apNode ) -> m_pPath );
+ unsigned int lSlash = lPrefix && g_CWD[ lPrefix - 1 ] != '/' &&
+                      MYENTR( apNode ) -> m_pPath[ 0 ] != '/';
 
- strcpy ( lFileName, g_CWD );
-
- if (  MYENTR( apNode ) -> m_pPath[ 0 ] != '/' &&
-       g_CWD[ strlen ( g_CWD ) - 1 ]    != '/'
- ) strcat (  lFileName, g_SlashStr );
-
- strcat (  lFileName, MYENTR( apNode ) -> m_pPath  );
+ if ( lPrefix >= sizeof ( lFileName ) ||
+      lSlash >= sizeof ( lFileName ) - lPrefix ||
+      lName >= sizeof ( lFileName ) - lPrefix - lSlash ) return NULL;
+ memcpy ( lFileName, g_CWD, lPrefix );
+ if ( lSlash ) lFileName[ lPrefix++ ] = '/';
+ memcpy ( lFileName + lPrefix, MYENTR( apNode ) -> m_pPath, lName + 1 );
 
  return apOpen ( lFileName, apOpenParam );
 

@@ -86,7 +86,7 @@ struct SMS_Container {
  int (*Seek)(SMS_Container *,int,int,uint32_t);void (*Destroy)(SMS_Container *,int);
 };
 typedef struct { int m_SampleRate,m_nChannels,m_BitRate; } SMS_AudioInfo;
-static char g_CWD[]="mass0:/music",g_SlashStr[]="/",g_pM3UStr[]="M3U";
+static char g_CWD[1024]="mass0:/music",g_SlashStr[]="/",g_pM3UStr[]="M3U";
 static char g_pExtM3UStr[]="#EXTM3U",g_pExtInfStr[]="#EXTINF",g_pPercDStr[]="%u";
 static struct { unsigned m_PlayerFlags; } g_Config;
 static int g_CMedia,g_RandSeed,g_Timer;
@@ -165,10 +165,46 @@ static int SMS_GetContainerMOV(SMS_Container *c) {
 }
 """
 test = r"""
+static char expected_path[2048];
+static unsigned path_opens;
+static FileContext path_result;
+static FileContext *open_path(const char *path,void *param) {
+ assert(param==&path_result && !strcmp(path,expected_path));++path_opens;return &path_result;
+}
+static void path_bounds(void) {
+ const unsigned lengths[]={0,1,2,255,510,511,512};
+ char name[513];_M3UEntry entry={0,name};SMS_ListNode node={0};
+ node.m_Param=(uintptr_t)&entry;
+ for(unsigned iteration=0;iteration<1024;++iteration) {
+  unsigned prefix=(iteration+1023)%1024;
+  for(unsigned trailing=0;trailing<2;++trailing) {
+   memset(g_CWD,'d',prefix);g_CWD[prefix]=0;
+   if(prefix && trailing)g_CWD[prefix-1]='/';
+   for(unsigned i=0;i<sizeof(lengths)/sizeof(lengths[0]);++i) {
+    unsigned length=lengths[i];
+    for(unsigned leading=0;leading<2;++leading) {
+     memset(name,'n',length);name[length]=0;if(length && leading)name[0]='/';
+     unsigned slash=prefix && g_CWD[prefix-1]!='/' && name[0]!='/';
+     unsigned total=prefix+slash+length;
+     memcpy(expected_path,g_CWD,prefix);
+     if(slash)expected_path[prefix]='/';
+     memcpy(expected_path+prefix+slash,name,length+1);
+     path_opens=0;
+     FileContext *result=_open_file(NULL,&node,open_path,&path_result);
+     assert(result==(total<1024?&path_result:NULL));
+     assert(path_opens==(unsigned)(total<1024));
+     assert(strlen(g_CWD)==prefix && !memcmp(g_CWD,expected_path,prefix));
+    }
+   }
+  }
+ }
+}
 int main(int argc,char **argv) {
  assert(argc==2);const char *name=argv[1];
+ if(!strcmp(name,"path-bounds")) { path_bounds();return 0; }
  int automatic=strstr(name,"automatic")!=NULL,selecting=!strncmp(name,"select-",7);
  int success=strstr(name,"success")!=NULL || selecting;
+ int overlong=strstr(name,"overlong")!=NULL;
  unsigned expected_child_closes;
  child_kind=selecting?2:strstr(name,"missing")?0:success?2:1;
  if(strstr(name,"allocation")) fail_at=4;
@@ -177,9 +213,10 @@ int main(int argc,char **argv) {
  input->data=selecting?"track.mp3\nnext.mp3\n":"track.mp3\n";
  input->m_Size=strlen(input->data);input->Seek=seek_file;input->Destroy=close_file;
  input->Open=STIO_InitFileContext;input->original=1;
+ if(overlong && !selecting) { memset(g_CWD,'d',1023);g_CWD[1023]=0; }
  SMS_Container *result=SMS_GetContainer(input,automatic?-1:SMS_CONTAINER_M3U);
  assert((result!=NULL)==success);
- expected_child_closes=success?1U:child_kind && !fail_at?1U:0U;
+ expected_child_closes=success?1U:child_kind && !fail_at && !overlong?1U:0U;
  if(success) {
   assert(original_closes==1 && !child_closes && result->m_pFileCtx);
   assert(result->m_pCtx && result->m_pPlayList && result->m_pPlayItem);
@@ -188,7 +225,8 @@ int main(int argc,char **argv) {
    FileContext *old=result->m_pFileCtx;_M3UContainer *m=MYCONT(result);
    result->m_pPlayItem=result->m_pPlayItem->m_pNext;assert(result->m_pPlayItem);
    child_kind=strstr(name,"missing")?0:2;
-   if(!child_kind) {
+   if(overlong) { memset(g_CWD,'d',1023);g_CWD[1023]=0; }
+   if(!child_kind || overlong) {
     assert(_SelectFile(result,m)==0);old->Seek(old,0);
     assert(result->m_pFileCtx==old && m->m_pSubCont->m_pFileCtx==old && !child_closes);
    } else {
@@ -219,7 +257,8 @@ types_end = adapted.index("static void _m3u_destroy_list")
 adapted_types, adapted_functions = adapted[:types_end], adapted[types_end:]
 cases = ("automatic-missing", "automatic-unsupported", "explicit-missing", "explicit-unsupported",
          "automatic-allocation", "explicit-allocation", "automatic-success", "explicit-success",
-         "select-missing", "select-success")
+         "select-missing", "select-success", "automatic-overlong", "explicit-overlong",
+         "select-overlong", "path-bounds")
 with tempfile.TemporaryDirectory() as temporary:
     src, exe = Path(temporary) / "m3u.c", Path(temporary) / "m3u"
     src.write_text("\n".join((prefix, list_helpers, stub_creators, table, destroy, adapted_types, adapted_functions, test)))
