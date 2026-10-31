@@ -27,12 +27,20 @@ WARNING_RESOLUTION_MSG = (
     "⚠️ Resolution exceeds standard 640×480. It satisfies SMS format rules but may drop frames on real PS2 hardware."
 )
 
-# File Size Limits (Bytes)
-SIZE_3_8_GIB = int(3.8 * 1024 * 1024 * 1024)
-SIZE_4_0_GIB = int(4.0 * 1024 * 1024 * 1024) - (10 * 1024 * 1024) # ~3.99 GiB limit
+# Cross-device output limits. STIO uses the signed 32-bit fioLseek/fileXioLseek
+# interface, including transports that internally support 64-bit file positions.
+# Keep generated files seekable through that common path. This is independent
+# of FAT32/exFAT filesystem limits and is not a claim about sequential reads.
+MAX_SMS_FILE_SIZE_BYTES = (1 << 31) - 1
+FILE_SIZE_WARNING_BYTES = int(1.9 * 1024 * 1024 * 1024)
+# Stop an active encode early to leave room for buffered data/muxer finalization.
+# Post-conversion validation separately enforces the exact hard ceiling above.
+FILE_SIZE_ABORT_HEADROOM_BYTES = 10 * 1024 * 1024
+FILE_SIZE_ABORT_BYTES = MAX_SMS_FILE_SIZE_BYTES - FILE_SIZE_ABORT_HEADROOM_BYTES
 
 MSG_FILE_SIZE_APPROACHING_LIMIT = (
-    "Conversion stopped because the output was approaching the SMS 32-bit file-size limit. "
+    "Conversion stopped because the output reached the stop threshold "
+    "(10 MiB below the portable 2 GiB minus 1 byte seek limit). "
     "Reduce the bitrate, resolution, or duration."
 )
 
@@ -77,12 +85,10 @@ class Preset:
     keep_sd_resolution: bool = False
     scaling_mode: str = DEFAULT_SCALING_MODE
 
-# MPEG-1/2 keyframe interval. The PS2 decodes these on the IPU, whose IDCT does not
-# reconstruct exactly what FFmpeg's encoder reconstructed; the small difference is
-# copied forward by every P-frame until the next I-frame. Over the generic 50-frame
-# GOP that error visibly builds up and then snaps back -- the green cast (#20) and
-# "pumping" reds (#23), which play the same way in 2.9rev4. DVD and VCD cap the GOP
-# at 15-18 frames for exactly this reason, so the IPU presets follow the standard.
+# Shorter MPEG-1/2 prediction chains are a mitigation candidate for #20/#23.
+# The presets refresh with an I-frame every 15 frames rather than the generic 50.
+# Reporter playback of re-converted files is still needed; neither the specific
+# reconstruction-drift mechanism nor a complete color fix is established.
 MPEG_IPU_GOP = 15
 
 PRESETS: Dict[str, Preset] = {

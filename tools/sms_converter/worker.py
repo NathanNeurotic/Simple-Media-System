@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 from qt_compat import QThread, Signal
 
 import crash_log
-from config import SIZE_4_0_GIB, MSG_FILE_SIZE_APPROACHING_LIMIT
+from config import FILE_SIZE_ABORT_BYTES, MSG_FILE_SIZE_APPROACHING_LIMIT
 
 # The keys "-progress pipe:1" writes once per block. Recognised so they can drive the progress
 # bar without also being forwarded to the log pane -- see the note at the parse site.
@@ -49,7 +49,7 @@ class InspectWorker(QThread):
 class ConversionWorker(QThread):
     """
     Worker thread that executes FFmpeg with pipe:1 progress reporting,
-    monitors partial file size against the 4 GiB SMS ceiling,
+    stops active output 10 MiB before the SMS signed-seek ceiling,
     and runs post-conversion validation.
     """
     progress_signal = Signal(str, float, str)  # item_id, percentage, status_msg
@@ -318,12 +318,14 @@ class ConversionWorker(QThread):
             # Size safeguard, only meaningful while a real file is being written -- the
             # analysis pass sends its output to the null device.
             if pass_num != 1 and os.path.exists(self.partial_file):
-                if os.path.getsize(self.partial_file) >= SIZE_4_0_GIB:
+                if os.path.getsize(self.partial_file) >= FILE_SIZE_ABORT_BYTES:
                     self.cancel()
                     try:
                         self._process.wait(timeout=5)
                     except Exception:
                         pass
+                    if self._process.stdout:
+                        self._process.stdout.close()
                     self.failed_signal.emit(self.item_id, MSG_FILE_SIZE_APPROACHING_LIMIT)
                     self._cleanup_partial(passlog)
                     return "failed"

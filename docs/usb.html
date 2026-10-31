@@ -60,7 +60,7 @@ which volume you are browsing.</div>
 </tbody>
 </table>
 <p>Format the drive as a single MBR partition. FAT32 is the most universally compatible choice; use <b>exFAT</b> if
-you prefer that filesystem on a larger volume; each SMS media file must still be below 4 GiB. There is no coverart, ISO or
+you prefer that filesystem on a larger volume; each SMS media file must still be below 2 GiB. There is no coverart, ISO or
 special-folder requirement — SMS is a media player that reads your files where they are, not a game loader.</p>
 
 <div class="callout info"><div class="h">ℹ A note on USB speed</div>
@@ -130,7 +130,7 @@ M3U playlists that live alongside your media on the USB drive are picked up auto
 
 <h2 id="tips">Tips &amp; troubleshooting</h2>
 <ul class="checklist">
-<li><b>Keep every media file below 4 GiB.</b> exFAT can store larger files, but SMS still uses 32-bit file addressing. Split or re-encode an oversized movie; changing the filesystem does not remove that player limit.</li>
+<li><b>Keep every media file below 2 GiB.</b> exFAT can store larger files, but SMS still uses signed 32-bit seek offsets on common file paths. Split or re-encode an oversized movie; changing the filesystem does not widen those offsets.</li>
 <li><b>Keep files unfragmented.</b> On a heavily-fragmented drive, playback can stutter as the PS2 chases scattered
 pieces of a file. The simplest fix is to copy everything off, reformat the drive, and copy it back so each file lands
 contiguously. On slow or old media this matters more than anything else.</li>
@@ -159,7 +159,7 @@ across all BDM devices</i>, not the USB port or the drive brand. Whichever volum
 screen always tells you which device and path you are currently browsing.</p>
 </details>
 
-<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>
+<div class="note"><p><b>File-size and test scope:</b> keep every SMS media file below 2 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See <a href="known-issues.html">known issues</a> and keep the same file/build/device when comparing results.</p></div>
 </main><aside class="toc" aria-label="On this page"><div class="toc-h">On this page</div><nav id="toc-nav" aria-label="Page sections"></nav></aside></div>
 <footer><p><b>SMS Documentation</b> — Simple Media System for PlayStation 2. Created by Eugene Plotnikov; this community fork is maintained by NathanNeurotic and contributors. <a href="credits.html">Credits &amp; licenses</a>.</p>
 <p class="prov-inline">Documentation reviewed 2026-10-27. See <a href="known-issues.html">known issues and validation limits</a>. Sister projects: <a href="https://nathanneurotic.github.io/Launchstation/">Launchstation</a> · <a href="https://nathanneurotic.github.io/POPSLoader/">POPSLoader</a> · <a href="https://nathanneurotic.github.io/Open-PS2-Loader/">RiptOPL</a>.</p></footer>

@@ -24,7 +24,7 @@ Audio inside a video (the soundtrack) is decoded by the same engine that plays s
 
 ## Exact implementation limits
 
-These are hard limits visible in the current source, not estimates:
+These source constraints and portable targets do not establish playback speed:
 
 | Property | Limit | What it means |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ These are hard limits visible in the current source, not estimates:
 | MPEG-1/2 frame rate | 23.976, 24, 25, 29.97, 30, 50, 59.94 or 60 fps | The MPEG sequence-header rate table, including MPEG-2 extensions. |
 | Compressed video packet/sample | **2,097,088 bytes** | The 2 MiB packet ring minus its mandatory 64-byte allocation overhead. |
 | Streams/tracks | **Eight table slots; MP4/MPEG-PS retain at most seven usable streams** | The container-wide stream table includes video, audio and subtitle tracks. |
-| Individual file size | **smaller than 4 GiB** | File sizes, positions and seeks use 32-bit addressing. |
+| Portable file-size target | **below 2 GiB** (at most 2,147,483,647 bytes) | Common fio/fileXio paths take signed 32-bit seek offsets. Driver-specific sequential behavior does not establish portable playback above this boundary. |
 
 1024×1024 is an acceptance ceiling, not a speed guarantee
 
@@ -168,7 +168,7 @@ SMS is a stock-console player, and a few historic limits come with that. Knowing
 - **Codec support is deliberately narrow.** There are no H.264, H.265, VP9, AV1 or WMV video decoders.
 - **Interlaced is supported, but not part of the current fixture baseline.** The MPEG-4 decoder contains interlaced field/DCT paths, and MPEG-2 supports frame- and field-encoded interlaced video. The published test profiles above are progressive.
 - **The source ceiling and the real-time ceiling are different.** SMS accepts each dimension through 1024, but no single bitrate or resolution below that is guaranteed for every codec-tool and storage combination.
-- **Large files remain 32-bit addressed.** exFAT removes FAT32's filesystem limit, but the SMS file context still limits an individual file to less than 4 GiB.
+- **Keep files below 2 GiB for portable playback.** exFAT permits larger files, but SMS uses signed 32-bit seek offsets on common fio/fileXio paths. A driver-specific sequential read of a larger file does not establish normal indexed playback or seeking.
 
 <details><summary>Why can a stock PS2 play &quot;good-resolution movies&quot; at all?</summary>
 

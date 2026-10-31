@@ -39,7 +39,7 @@ Getting media onto an MMCE card is the same job as preparing any SD card — do 
 
 ### Format the SD card
 
-Format the SD card as **FAT32** or **exFAT**. FAT32 is the most universally compatible; exFAT is another option where supported by the adapter firmware. Keep each SMS media file below 4 GiB on either filesystem.
+Format the SD card as **FAT32** or **exFAT**. FAT32 is the most universally compatible; exFAT is another option where supported by the adapter firmware. Keep each SMS media file below 2 GiB on either filesystem.
 
 ### Copy your media on
 
@@ -100,7 +100,7 @@ Select a video, track or picture and press **Cross** to play it. During playback
 - Slot 1 mounts as `mmce0:` and slot 2 mounts as `mmce1:`. If you have two MMCE adapters, both can appear at once — each as its own device.
 - MMCE and MX4SIO are **mutually exclusive** — both use the memory-card (SIO2) bus, so enable only one. USB, the internal HDD, i.LINK and SMB are unaffected and can run alongside your MMCE card.
 - There is **no required folder layout**. SMS reads the raw SD card and plays media from wherever you put it — this is a media player, not a game loader, so there are no disc images or artwork folders to set up.
-- Format the SD card **FAT32** or **exFAT**. Keep each SMS media file below 4 GiB even on exFAT.
+- Format the SD card **FAT32** or **exFAT**. Keep each SMS media file below 2 GiB even on exFAT.
 - Keep external subtitles (`.srt` / `.sub`) next to the matching video so SMS pairs them automatically. See [Subtitles](https://nathanneurotic.github.io/Simple-Media-System/subtitles.html).
 - If the device doesn't appear, confirm MX4SIO Autostart is off, the card is seated, and MMCE Autostart (or **Start MMCE now**) has been used. See [Troubleshooting](https://nathanneurotic.github.io/Simple-Media-System/troubleshooting.html).
 
@@ -124,7 +124,7 @@ The **MMCE** command protocol was designed by **bbsan2k** and is used by SD-card
 
 </details>
 
-**File-size and test scope:** keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
+**File-size and test scope:** keep every SMS media file below 2 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
 
 ---
 [Searchable manual](https://nathanneurotic.github.io/Simple-Media-System/mmce.html) · [Edit the maintained source](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs-site/content/mmce.html)

@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config import (
-    PRESETS, MAX_WIDTH, MAX_HEIGHT, SIZE_4_0_GIB, MAX_VIDEO_PACKET_SIZE,
+    PRESETS, MAX_WIDTH, MAX_HEIGHT, MAX_VIDEO_PACKET_SIZE,
     MAX_AUDIO_PACKET_SIZE, MPEG_ALLOWED_FPS_MAP
 )
 from ffmpeg_utils import (
@@ -38,12 +38,12 @@ class TestSMSConverter(unittest.TestCase):
         self.assertEqual(xvid_preset.width, 640)
         self.assertEqual(xvid_preset.height, 480)
 
-    def test_ipu_presets_keep_dvd_length_gops(self):
-        # The IPU's IDCT drifts from FFmpeg's across chained P-frames (#20, #23);
-        # MPEG-1/2 presets must refresh with an I-frame at DVD/VCD intervals.
+    def test_ipu_presets_use_shorter_prediction_chains(self):
+        # Preserve the merged 15-frame preset and its generated FFmpeg argument.
+        # This command check does not establish the cause of console color changes.
         for preset in PRESETS.values():
             if preset.vcodec in ("mpeg1video", "mpeg2video"):
-                self.assertLessEqual(preset.gop, 18, preset.name)
+                self.assertEqual(preset.gop, 15, preset.name)
                 cmd = build_ffmpeg_cmd("ffmpeg", "in.mp4", "out.mpg", {
                     "vcodec": preset.vcodec, "acodec": preset.acodec,
                     "gop": preset.gop, "fps": preset.fps, "ext": preset.ext})

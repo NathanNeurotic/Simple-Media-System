@@ -24,7 +24,7 @@ H.264, H.265, VP9 and AV1 are not SMS video decoders. An MP4 container may hold 
 | MP3 / Ogg Vorbis / AAC music | 192 kbps, 48 kHz stereo. | Lossy audio output. Video and embedded cover art are dropped. |
 | FLAC music | FLAC with the source sample rate/channel count retained when possible. | Lossless compression does not restore a lossy source or guarantee unchanged samples after format conversion. SMS's FLAC path requires mono/stereo and outputs 16-bit PCM; read validation results for your input. |
 
-Ordinary video presets use GOP 50 and zero B-frames unless changed; the high-quality preset uses GOP 6. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.
+MPEG-1/2 presets use GOP 15; ordinary MPEG-4 presets use GOP 50 and the high-quality Xvid preset uses GOP 6. All default to zero B-frames. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.
 
 ## Tracks, subtitles and advanced controls
 
@@ -67,11 +67,11 @@ The app implements two-pass video encoding: analysis followed by an encode using
 
 ### Keyframe interval and B-frames
 
-GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 50 is about 1.67 seconds. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other.
+GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 15 is about 0.5 seconds and GOP 50 about 1.67 seconds. The shorter MPEG-1/2 default is a mitigation candidate for the [reported color changes](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#colors); re-convert existing files to test it. The exact cause and affected-console acceptance remain unconfirmed. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other.
 
 ## Understand PASS, WARN and FAIL
 
-The validator checks codecs/container mappings, dimensions, frame-rate constraints, track counts, file size and observed packet sizes across audio/video streams. Video packets must fit 2,097,088 bytes and audio packets 524,224 bytes. It stops an output approaching the 32-bit file limit; keep each file below 4 GiB.
+The validator checks codecs/container mappings, dimensions, frame-rate constraints, track counts, file size and observed packet sizes across audio/video streams. Video packets must fit 2,097,088 bytes and audio packets 524,224 bytes. Keep each output at or below 2,147,483,647 bytes (below 2 GiB) for portable seeking through SMS's signed 32-bit file APIs. The active-encode stop threshold is 10 MiB below that boundary; the validator also rejects an oversized output that finishes between monitoring checks. Queue estimates apply the warning to each file, not the batch total. Estimates omit some container overhead and cannot guarantee the final size.
 
 - **PASS**: the inspected output passed the host checks. It is not a console playback result.
 - **WARN**: an issue needs attention or inspection was incomplete. The packet scan is bounded for memory/time; an incomplete scan keeps the output and cannot certify unobserved packets.

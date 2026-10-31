@@ -45,7 +45,7 @@ Those codecs are registered for embedded audio, but the browser does not expose 
 <tr><td>FLAC and Ogg Vorbis channels</td><td>Mono or stereo only</td></tr>
 <tr><td>FLAC, Ogg and AAC decoded output</td><td>16-bit PCM</td></tr>
 <tr><td>Container tracks</td><td>Eight table slots; MP4 and MPEG-PS retain at most seven streams including video/subtitles</td></tr>
-<tr><td>Individual file size</td><td>Smaller than 4 GiB because file sizes, positions and seeks are 32-bit</td></tr>
+<tr><td>Individual file size</td><td>Below 2 GiB for portable seeking through SMS's signed 32-bit file APIs</td></tr>
 </tbody>
 </table>
 
