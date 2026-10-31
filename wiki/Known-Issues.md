@@ -1,6 +1,6 @@
 # Known Issues & Testing
 
-Status reviewed 2026-10-28 against merged baseline `26c3d2e` and the playback fixes in [PR #35](https://github.com/NathanNeurotic/Simple-Media-System/pull/35). All nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
+Status reviewed 2026-10-30 against merged master `34000cf`, including browser, MPEG preset and MOV sample-size follow-ups through [PR #42](https://github.com/NathanNeurotic/Simple-Media-System/pull/42). All nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
 
 ## MPEG-2/AC3 opening freeze — #29
 
@@ -14,11 +14,11 @@ Status reviewed 2026-10-28 against merged baseline `26c3d2e` and the playback fi
 
 [Green color](https://github.com/NathanNeurotic/Simple-Media-System/issues/20) and [red fluctuation](https://github.com/NathanNeurotic/Simple-Media-System/issues/23) have newer paired recordings and converter logs. Conversion success does not establish correct console output. The exact failing MPG bytes/hash are still needed.
 
-The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer controls in PR #35 exposed signed chroma-vector rounding, XY interpolation and field-row order defects. Their fixes pass a native C/DMA/MMI and field-output oracle; unchanged 150-frame MPEG-1/2 inputs have substantially lower error in both 16/32-bit output. The field-row fix also removes all channel differences over 32 levels in the interlaced B-picture control. Read the [measured decoder report](https://github.com/NathanNeurotic/Simple-Media-System/blob/47b7df63abc0a05eb4f1c6c5c0b08851a03ae886/docs/investigations/2026-10-28-playback-followup.md) for scope and residual errors. These controls exclude the affected console's full display path. Test the unchanged failing MPG, pause/resume, seek, stop and sequence changes on the affected setup. No blanket BT.601/range transform or GOP-default change is supplied.
+The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer controls in PR #35 exposed signed chroma-vector rounding, XY interpolation and field-row order defects. Their fixes pass a native C/DMA/MMI and field-output oracle; unchanged 150-frame MPEG-1/2 inputs have substantially lower error in both 16/32-bit output. The field-row fix also removes all channel differences over 32 levels in the interlaced B-picture control. Read the [measured decoder report](https://github.com/NathanNeurotic/Simple-Media-System/blob/47b7df63abc0a05eb4f1c6c5c0b08851a03ae886/docs/investigations/2026-10-28-playback-followup.md) for scope and residual errors. These controls exclude the affected console's full display path. Test the unchanged failing MPG, pause/resume, seek, stop and sequence changes on the affected setup. No blanket BT.601/range transform is supplied. [PR #41 changed MPEG-1/2 converter presets from GOP 50 to 15](https://github.com/NathanNeurotic/Simple-Media-System/pull/41) to shorten prediction chains. Existing converted files are unchanged: re-convert the same source and compare both encodes on the affected setup. This is a mitigation candidate; the specific reconstruction-drift explanation and a complete color fix are not established by host or packaging tests.
 
 ## MP4 late start and stall — #10
 
-[The reported 0:28 start and 0:35 video/audio-loop stall remain unconfirmed.](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) MOV packet selection, offsets, timing tables, co64/extended atoms, allocation ownership and failed sample reads have host-tested fixes. Obtain the exact original and converted files and test both ordinary and fast-start layouts through the full player. Faster opening alone does not demonstrate that the stall is fixed.
+[The reported 0:28 start and 0:35 video/audio-loop stall remain unconfirmed.](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) MOV packet selection, offsets, timing tables, co64/extended atoms, allocation ownership and failed sample reads have host-tested fixes. [PR #42 additionally rejects incomplete variable sample-size tables](https://github.com/NathanNeurotic/Simple-Media-System/pull/42), with production-reader truncation controls. This does not establish faster opening. Obtain the exact original and converted files and test both ordinary and fast-start layouts through the full player. Faster opening alone does not demonstrate that the stall is fixed.
 
 ## Saved skin after restart / Spanish — #27
 
@@ -34,7 +34,7 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer co
 
 ## Poster / cover-art grid — #26
 
-[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
+[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Merged follow-ups through PR #40 also cover long browser/HOST/M3U paths, navigation allocation failures and failed device entry. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
 
 ## How to read validation claims
 

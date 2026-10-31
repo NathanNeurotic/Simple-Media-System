@@ -39,7 +39,7 @@
 <tr><td>MP3 / Ogg Vorbis / AAC music</td><td>192 kbps, 48 kHz stereo.</td><td>Lossy audio output. Video and embedded cover art are dropped.</td></tr>
 <tr><td>FLAC music</td><td>FLAC with the source sample rate/channel count retained when possible.</td><td>Lossless compression does not restore a lossy source or guarantee unchanged samples after format conversion. SMS's FLAC path requires mono/stereo and outputs 16-bit PCM; read validation results for your input.</td></tr>
 </tbody></table>
-<p>Ordinary video presets use GOP 50 and zero B-frames unless changed; the high-quality preset uses GOP 6. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.</p>
+<p>MPEG-1/2 presets use GOP 15; ordinary MPEG-4 presets use GOP 50 and the high-quality Xvid preset uses GOP 6. All default to zero B-frames. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.</p>
 <h2 id="advanced">Tracks, subtitles and advanced controls</h2>
 <h3 id="scaling">Scaling mode and output size</h3>
 <p>The target width and height define a bounding box or output canvas according to <b>Scaling mode</b>. For a 1280×720 widescreen source and a 640×480 target, the modes produce these results:</p>
@@ -63,7 +63,7 @@
 <h3 id="encoding-passes">Two-pass encoding</h3>
 <p>The app implements two-pass video encoding: analysis followed by an encode using the recorded statistics. It can improve bitrate allocation, at the cost of another processing pass. It does not cap every instantaneous packet or eliminate source/transport bottlenecks. More than two passes is not exposed by this application.</p>
 <h3 id="keyframes">Keyframe interval and B-frames</h3>
-<p>GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 50 is about 1.67 seconds. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other.</p>
+<p>GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 15 is about 0.5 seconds and GOP 50 about 1.67 seconds. The shorter MPEG-1/2 default is a mitigation candidate for the <a href="known-issues.html#colors">reported color changes</a>; re-convert existing files to test it. The exact cause and affected-console acceptance remain unconfirmed. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other.</p>
 <h2 id="notes">Understand PASS, WARN and FAIL</h2>
 <p>The validator checks codecs/container mappings, dimensions, frame-rate constraints, track counts, file size and observed packet sizes across audio/video streams. Video packets must fit 2,097,088 bytes and audio packets 524,224 bytes. Keep each output at or below 2,147,483,647 bytes (below 2 GiB) for portable seeking through SMS's signed 32-bit file APIs. The active-encode stop threshold is 10 MiB below that boundary; the validator also rejects an oversized output that finishes between monitoring checks. Queue estimates apply the warning to each file, not the batch total. Estimates omit some container overhead and cannot guarantee the final size.</p>
 <ul><li><b>PASS</b>: the inspected output passed the host checks. It is not a console playback result.</li>

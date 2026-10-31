@@ -176,9 +176,10 @@ class AdvancedSettingsWidget(QWidget):
             "more seconds every time you jump.\n\n"
             "50 sits at that knee. Raise it toward 300 if you only ever watch straight through "
             "and want the smallest files; lower it if you scrub around a lot.\n\n"
-            "MPEG-1/MPEG-2 are different: the PS2's IPU decoder drifts slightly from the "
-            "encoder on every P-frame, and long intervals show it as colour that builds up "
-            "and snaps back. Their presets use 15, as DVD and VCD do; keep them at 18 or less."
+            "MPEG-1/MPEG-2 presets use 15 frames to shorten prediction chains while "
+            "investigating the reported colour changes. Re-convert existing files to test "
+            "this setting. A complete colour fix and the exact cause still need controlled "
+            "playback confirmation on the affected console."
         )
         self.spin_gop.valueChanged.connect(self._on_control_changed)
 
