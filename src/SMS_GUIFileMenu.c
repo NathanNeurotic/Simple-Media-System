@@ -1450,6 +1450,7 @@ redraw:
 
   case GUI_MSG_RELOAD_BROWSER:
    _fill ( lpMenu, g_DotStr, 0 );
+   _redraw ( lpMenu, 0 );
   break;
 
   case GUI_MSG_REFILL_BROWSER: {
