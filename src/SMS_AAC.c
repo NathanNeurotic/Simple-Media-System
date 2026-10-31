@@ -8263,6 +8263,15 @@ static int32_t _aac_init ( SMS_CodecContext* apCtx ) {
   retVal = _NeAACDecInit2 ( lpAAC, apCtx -> m_pUserData, apCtx -> m_UserDataLen, &lSR, &lnChan );
  else retVal = _NeAACDecInit  (  lpAAC, apCtx -> m_pUserData, abs ( apCtx -> m_UserDataLen ), &lSR, &lnChan  );
 
+ if ( retVal ) {
+  /* The player configures audio after Init. Match the PCM rate used by Decode,
+   * including implicit upsampling, rather than retaining the container rate. */
+  lSR = get_sample_rate ( lpAAC -> sf_index );
+  if (  ( lpAAC -> sbr_present_flag || lpAAC -> forceUpSampling ) && !lpAAC -> downSampledSBR  )
+   lSR <<= 1;
+  apCtx -> m_SampleRate = lSR;
+ }  /* end if */
+
  return retVal;
 
 }  /* end _aac_init */

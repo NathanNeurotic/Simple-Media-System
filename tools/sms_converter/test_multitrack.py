@@ -2,6 +2,8 @@
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
+import re
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +12,39 @@ from unittest.mock import patch
 from config import PRESETS
 from ffmpeg_utils import build_ffmpeg_cmd, find_ffmpeg_binaries, get_media_info
 from validator import validate_converted_file
+
+
+def avi_audio_formats(path):
+    """Read WAVE tags/config from the small, valid AVI fixtures FFmpeg creates."""
+    data = path.read_bytes()
+
+    def chunks(start, end):
+        while start + 8 <= end:
+            kind, size = struct.unpack_from("<4sI", data, start)
+            payload = start + 8
+            yield kind, payload, payload + size
+            start = payload + size + (size & 1)
+
+    if data[:4] != b"RIFF" or data[8:12] != b"AVI ":
+        raise AssertionError("FFmpeg did not produce an AVI RIFF header")
+    formats = []
+    for kind, start, end in chunks(12, len(data)):
+        if kind != b"LIST" or data[start:start + 4] != b"hdrl":
+            continue
+        for kind, start, end in chunks(start + 4, end):
+            if kind != b"LIST" or data[start:start + 4] != b"strl":
+                continue
+            fields = {kind: data[first:last] for kind, first, last in chunks(start + 4, end)}
+            if fields.get(b"strh", b"")[:4] != b"auds":
+                continue
+            wave = fields[b"strf"]
+            tag, channels, sample_rate = struct.unpack_from("<HHI", wave)
+            extra_size = struct.unpack_from("<H", wave, 16)[0] if len(wave) > 16 else 0
+            extra = wave[18:18 + extra_size]
+            if len(extra) != extra_size:
+                raise AssertionError("FFmpeg produced incomplete WAVE extra data")
+            formats.append((tag, channels, sample_rate, extra))
+    return formats
 
 
 class TestTrackConversion(unittest.TestCase):
@@ -130,6 +165,69 @@ class TestTrackConversion(unittest.TestCase):
                 self.assertIn(validate_converted_file(self.fp, str(out)).status, ("PASS", "WARN"))
                 decoded = subprocess.run([self.ff, "-v", "error", "-i", str(out), "-map", "0:a", "-f", "null", "-"], capture_output=True)
                 self.assertEqual(decoded.returncode, 0, decoded.stderr.decode(errors="replace"))
+
+    def test_avi_aac_and_vorbis_emitted_tags_and_validation(self):
+        # Compare actual muxer output with the owning player's table rather than copying
+        # the converter allowlist into this test. SMS_CodecGetID ignores ASCII tag case.
+        source = (Path(__file__).resolve().parents[2] / "src" / "SMS_Codec.c").read_text()
+        table = source.split("s_CodecAudioTags[] =", 1)[1].split("};", 1)[0]
+        tags = {}
+        for codec, value in re.findall(r"SMS_CodecID_(\w+)\s*,\s*(0x[0-9a-fA-F]+)", table):
+            tags.setdefault(codec, set()).add(int(value, 16).to_bytes(4, "little").upper())
+
+        cases = [("aac", "AAC", True, rate) for rate in (48000, 44100, 32000, 22050)]
+        cases.append(("libvorbis", "OGGV", False, 48000))
+        for encoder, codec_id, supported, requested_rate in cases:
+            with self.subTest(encoder=encoder, sample_rate=requested_rate):
+                out = self.convert(f"mapping-{encoder}-{requested_rate}.avi", self.settings(
+                    acodec=encoder, sample_rate=requested_rate,
+                    width=160, height=128, keep_sd_resolution=False))
+                formats = avi_audio_formats(out)
+                audio = [s for s in get_media_info(self.fp, str(out))["streams"]
+                         if s["codec_type"] == "audio"]
+                self.assertEqual(len(formats), 2)
+                self.assertEqual(len(audio), len(formats))
+                for stream, (tag, channels, rate, extra) in zip(audio, formats):
+                    self.assertEqual(tag, int(stream["codec_tag"], 16))
+                    self.assertEqual(tag.to_bytes(4, "little").upper() in tags[codec_id], supported)
+                    self.assertEqual((channels, rate), (2, requested_rate))
+                    self.assertTrue(extra)
+                    if encoder == "aac":
+                        # WAVE cbSize reaches SMS _NeAACDecInit2. Leading ASC fields:
+                        # objectType(5), frequencyIndex(4), channelConfig(4), GASpecific(3).
+                        asc = int.from_bytes(extra[:2], "big")
+                        frequency_index = {48000: 3, 44100: 4, 32000: 5, 22050: 7}[requested_rate]
+                        self.assertEqual((asc >> 11, (asc >> 7) & 15, (asc >> 3) & 15),
+                                         (2, frequency_index, 2))
+                        self.assertEqual(asc & 7, 0)  # ordinary 1024-sample AAC-LC frames
+                result = validate_converted_file(self.fp, str(out))
+                self.assertEqual(result.status, "PASS" if supported else "WARN", result.generate_report())
+                mapping_warnings = [w for w in result.warnings if "converter output mapping" in w]
+                if supported:
+                    self.assertFalse(mapping_warnings, result.generate_report())
+                else:
+                    self.assertTrue(mapping_warnings, result.generate_report())
+                    self.assertTrue(all("VORBIS audio inside .avi" in w for w in mapping_warnings))
+                    self.assertTrue(out.exists())
+
+    def test_avi_audio_choices_include_aac_and_exclude_ffmpeg_vorbis(self):
+        from config import AUDIO_CODECS_MAP
+        from ui.advanced_settings import AdvancedSettingsWidget
+        widget = AdvancedSettingsWidget()
+        try:
+            widget.load_preset(next(p for p in PRESETS.values() if p.ext == ".avi"))
+            offered = {AUDIO_CODECS_MAP[widget.combo_acodec.itemText(i)]
+                       for i in range(widget.combo_acodec.count())}
+            self.assertIn("aac", offered)
+            self.assertIn("libmp3lame", offered)
+            self.assertIn("pcm_s16le", offered)
+            self.assertNotIn("libvorbis", offered)
+            widget.load_preset(next(p for p in PRESETS.values() if p.ext == ".ogg"))
+            offered = {AUDIO_CODECS_MAP[widget.combo_acodec.itemText(i)]
+                       for i in range(widget.combo_acodec.count())}
+            self.assertIn("libvorbis", offered)
+        finally:
+            widget.close()
 
     def test_source_sd_resolution_is_preserved(self):
         out = self.convert("sd.mp4", self.settings())

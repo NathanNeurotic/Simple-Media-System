@@ -237,10 +237,12 @@ class TestOnlyPlayableCombinationsAreOffered(unittest.TestCase):
         """Guards the specific facts the table encodes, so a careless edit is caught."""
         from config import sms_supports
 
-        # SMS_Codec.c AVI FourCC table has no MPEG-1/MPEG-2 entry, and no AAC in its audio one.
+        # AVI has no MPEG-1/MPEG-2 FourCC; FFmpeg AAC matches SMS's audio tag,
+        # while FFmpeg Vorbis differs from SMS's legacy Vorbis mapping.
         self.assertFalse(sms_supports(".avi", "video", "mpeg2video"))
         self.assertFalse(sms_supports(".avi", "video", "mpeg1video"))
-        self.assertFalse(sms_supports(".avi", "audio", "aac"))
+        self.assertTrue(sms_supports(".avi", "audio", "aac"))
+        self.assertFalse(sms_supports(".avi", "audio", "libvorbis"))
         self.assertTrue(sms_supports(".avi", "video", "mpeg4"))
         self.assertTrue(sms_supports(".avi", "audio", "libmp3lame"))   # encoder name normalised
         # MPEG-PS carries MPEG-1/2 video; MP4 has no msmpeg4v3 object type.
