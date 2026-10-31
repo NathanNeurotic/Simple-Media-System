@@ -33,7 +33,10 @@ def function(source, name):
     match = re.search(r'^static [^;\n]*\b' + re.escape(name) + r'\s*\(', source, re.M)
     if not match:
         raise RuntimeError(f'Cannot find {name}')
-    end = source.index('/* end ' + name + ' */', match.start())
+    marker = '/* end ' + name + ' */'
+    end = source.find(marker, match.start())
+    if end < 0:
+        raise RuntimeError(f'Missing "{marker}" marker after {name}')
     return source[match.start():source.index('\n', end)]
 
 
