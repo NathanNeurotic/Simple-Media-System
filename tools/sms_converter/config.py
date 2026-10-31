@@ -27,12 +27,20 @@ WARNING_RESOLUTION_MSG = (
     "⚠️ Resolution exceeds standard 640×480. It satisfies SMS format rules but may drop frames on real PS2 hardware."
 )
 
-# File Size Limits (Bytes)
-SIZE_3_8_GIB = int(3.8 * 1024 * 1024 * 1024)
-SIZE_4_0_GIB = int(4.0 * 1024 * 1024 * 1024) - (10 * 1024 * 1024) # ~3.99 GiB limit
+# Cross-device output limits. STIO uses the signed 32-bit fioLseek/fileXioLseek
+# interface, including transports that internally support 64-bit file positions.
+# Keep generated files seekable through that common path. This is independent
+# of FAT32/exFAT filesystem limits and is not a claim about sequential reads.
+MAX_SMS_FILE_SIZE_BYTES = (1 << 31) - 1
+FILE_SIZE_WARNING_BYTES = int(1.9 * 1024 * 1024 * 1024)
+# Stop an active encode early to leave room for buffered data/muxer finalization.
+# Post-conversion validation separately enforces the exact hard ceiling above.
+FILE_SIZE_ABORT_HEADROOM_BYTES = 10 * 1024 * 1024
+FILE_SIZE_ABORT_BYTES = MAX_SMS_FILE_SIZE_BYTES - FILE_SIZE_ABORT_HEADROOM_BYTES
 
 MSG_FILE_SIZE_APPROACHING_LIMIT = (
-    "Conversion stopped because the output was approaching the SMS 32-bit file-size limit. "
+    "Conversion stopped because the output reached the stop threshold "
+    "(10 MiB below the portable 2 GiB minus 1 byte seek limit). "
     "Reduce the bitrate, resolution, or duration."
 )
 

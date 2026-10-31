@@ -28,7 +28,7 @@ MX4SIO and MMCE cannot both run
 
 ## Compatibility
 
-SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as **FAT32** or **exFAT** will mount. Use FAT32 or exFAT supported by your device/firmware. exFAT filesystem support does not remove SMS's below-4-GiB limit for each media file. Either way, the media files themselves must be a format SMS can play — see [Video](https://nathanneurotic.github.io/Simple-Media-System/video.html), [Audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html) and [Pictures](https://nathanneurotic.github.io/Simple-Media-System/pictures.html) for the full list (MPEG-4 Part 2 AVI, `mp4v` MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC, OGG, WMA, JPEG, and so on).
+SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted as **FAT32** or **exFAT** will mount. Use FAT32 or exFAT supported by your device/firmware. Keep each media file below 2 GiB for portable seeking, including on exFAT; filesystem support does not widen SMS's signed seek offsets. Either way, the media files themselves must be a format SMS can play — see [Video](https://nathanneurotic.github.io/Simple-Media-System/video.html), [Audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html) and [Pictures](https://nathanneurotic.github.io/Simple-Media-System/pictures.html) for the full list (MPEG-4 Part 2 AVI, `mp4v` MP4, MPEG-1/2 program streams, MP2/MP3, AAC, AC3, FLAC, OGG, WMA, JPEG, and so on).
 
 ℹ Hardware note
 
@@ -38,7 +38,7 @@ SMS reads the card through the standard FAT/exFAT layer, so a microSD formatted 
 
 ### Format the microSD
 
-Use a compatible **FAT32** or **exFAT** volume. Keep each SMS media file below 4 GiB on either filesystem. Back up the contents before reformatting; an already compatible volume can be used as it is.
+Use a compatible **FAT32** or **exFAT** volume. Keep each SMS media file below 2 GiB on either filesystem. Back up the contents before reformatting; an already compatible volume can be used as it is.
 
 ### Copy your media on
 
@@ -103,7 +103,7 @@ You don't need to know any of this to use MX4SIO — but in short: a continuousl
 - MX4SIO reads any format SMS can play — it is a storage device, not a format. Point the browser at your files and open them like on any other device.
 - You can browse into any folder structure; there is no mandatory layout. Keep `.srt`/`.sub` subtitle files beside their video.
 - Enable **either** MX4SIO **or** MMCE, never both — they share the SIO2 slot bus.
-- Prefer **FAT32** for maximum compatibility; use **exFAT** if supported by your setup. Keep individual SMS media files below 4 GiB on either filesystem.
+- Prefer **FAT32** for maximum compatibility; use **exFAT** if supported by your setup. Keep individual SMS media files below 2 GiB on either filesystem.
 - If a specific card acts up, try another known-good microSD before assuming a software fault.
 - Your Autostart MX4SIO choice is saved with your settings and persists across reboots — see [Settings](https://nathanneurotic.github.io/Simple-Media-System/settings.html) for where the config lives.
 
@@ -119,7 +119,7 @@ No. SMS is a media player, not a game loader — it browses the raw filesystem o
 
 </details>
 
-**File-size and test scope:** keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
+**File-size and test scope:** keep every SMS media file below 2 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
 
 ---
 [Searchable manual](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html) · [Edit the maintained source](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs-site/content/mx4sio.html)

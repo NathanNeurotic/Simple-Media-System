@@ -71,7 +71,7 @@ GOP/keyframe interval controls how far the player may need to decode from an ear
 
 ## Understand PASS, WARN and FAIL
 
-The validator checks codecs/container mappings, dimensions, frame-rate constraints, track counts, file size and observed packet sizes across audio/video streams. Video packets must fit 2,097,088 bytes and audio packets 524,224 bytes. It stops an output approaching the 32-bit file limit; keep each file below 4 GiB.
+The validator checks codecs/container mappings, dimensions, frame-rate constraints, track counts, file size and observed packet sizes across audio/video streams. Video packets must fit 2,097,088 bytes and audio packets 524,224 bytes. Keep each output at or below 2,147,483,647 bytes (below 2 GiB) for portable seeking through SMS's signed 32-bit file APIs. The active-encode stop threshold is 10 MiB below that boundary; the validator also rejects an oversized output that finishes between monitoring checks. Queue estimates apply the warning to each file, not the batch total. Estimates omit some container overhead and cannot guarantee the final size.
 
 - **PASS**: the inspected output passed the host checks. It is not a console playback result.
 - **WARN**: an issue needs attention or inspection was incomplete. The packet scan is bounded for memory/time; an incomplete scan keeps the output and cannot certify unobserved packets.

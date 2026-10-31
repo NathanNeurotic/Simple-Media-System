@@ -8,7 +8,7 @@ import tempfile
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Tuple, Optional
 from config import (
-    MAX_WIDTH, MAX_HEIGHT, SIZE_4_0_GIB, MAX_SMS_STREAMS,
+    MAX_WIDTH, MAX_HEIGHT, MAX_SMS_FILE_SIZE_BYTES, MAX_SMS_STREAMS,
     MAX_VIDEO_PACKET_SIZE, MAX_AUDIO_PACKET_SIZE, MPEG_ALLOWED_FPS_MAP,
     sms_supports
 )
@@ -157,9 +157,13 @@ def validate_converted_file(
     result.file_size_mib = file_size_bytes / (1024 * 1024)
 
     # 1. File Size check
-    if file_size_bytes >= SIZE_4_0_GIB:
+    if file_size_bytes > MAX_SMS_FILE_SIZE_BYTES:
         result.status = "FAIL"
-        result.reasons.append(f"File size ({result.file_size_mib:.1f} MiB) exceeds the 4 GiB SMS 32-bit ceiling.")
+        result.reasons.append(
+            f"File size ({file_size_bytes:,} bytes) exceeds the portable SMS seek limit "
+            f"of {MAX_SMS_FILE_SIZE_BYTES:,} bytes (2 GiB minus 1 byte)."
+        )
+        return result
 
     probe_info = get_media_info(ffprobe_path, file_path)
     if "error" in probe_info:

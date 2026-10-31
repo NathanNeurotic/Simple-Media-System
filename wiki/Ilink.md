@@ -116,9 +116,9 @@ Yes. i.LINK is an *external* FireWire device on its own bus, so it does not clas
 
  [USB](https://nathanneurotic.github.io/Simple-Media-System/usb.html) and [MX4SIO](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html) are the other BDM mass devices and behave the same way once mounted. For the internal drive (APA and exFAT) see [Internal HDD](https://nathanneurotic.github.io/Simple-Media-System/hdd.html). For the full list of per-device Autostart toggles, see the [Settings Reference](https://nathanneurotic.github.io/Simple-Media-System/settings.html). For a bird's-eye view of every storage backend, see the [Devices Overview](https://nathanneurotic.github.io/Simple-Media-System/devices.html).
 
-The driver uses SBP-2/SCSI over IEEE 1394, not PS2 ATA commands. Historical project documentation reports an exFAT enclosure test; it does not establish every bridge, drive or console combination. Keep each media file below 4 GiB.
+The driver uses SBP-2/SCSI over IEEE 1394, not PS2 ATA commands. Historical project documentation reports an exFAT enclosure test; it does not establish every bridge, drive or console combination. Keep each media file below 2 GiB.
 
-**File-size and test scope:** keep every SMS media file below 4 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
+**File-size and test scope:** keep every SMS media file below 2 GiB, including on exFAT. Existing project reports do not qualify every drive/adapter or the current development build. See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html) and keep the same file/build/device when comparing results.
 
 ---
 [Searchable manual](https://nathanneurotic.github.io/Simple-Media-System/ilink.html) · [Edit the maintained source](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs-site/content/ilink.html)
