@@ -1,6 +1,6 @@
 # SMSUdpfs — vendored UDPFS network-drive stack
 
-`smap/`, `ministack/` and `udpfs/` are vendored from **[rickgaiser/neutrino](https://github.com/rickgaiser/neutrino)**
+`smap/`, `ministack/` and `udpfs/` are vendored from **[ps2max32/neutrino](https://github.com/ps2max32/neutrino)** (formerly rickgaiser/neutrino)
 (`iop/smap`, `iop/ministack`, `iop/udpfs`), licensed **Academic Free License v3.0** — compatible with
 SMS's AFL v2.0. Original authorship and copyright remain with the neutrino project and its
 contributors; the UDPRDMA/UDPFS protocol work credits **rickgaiser** and **Maximus32**.

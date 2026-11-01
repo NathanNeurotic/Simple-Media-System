@@ -34,7 +34,7 @@ Author of the **MMCE (Memory Card Mass Storage)** protocol — the protocol behi
 
 [rickgaiser](https://github.com/rickgaiser) (Maximus32) & the neutrino contributors
 
-The **UDPFS / UDPRDMA**, ministack and SMAP foundation vendored from [neutrino](https://github.com/rickgaiser/neutrino). The working load sequence was cross-checked against [saildot4k](https://github.com/saildot4k)'s [wLaunchELF-R3Z](https://github.com/saildot4k/wLaunchELF_R3Z). SMS carries documented local integration changes while preserving upstream attribution.
+The **UDPFS / UDPRDMA**, ministack and SMAP foundation vendored from [neutrino](https://github.com/ps2max32/neutrino). The working load sequence was cross-checked against [saildot4k](https://github.com/saildot4k)'s [wLaunchELF-R3Z](https://github.com/saildot4k/wLaunchELF_R3Z). SMS carries documented local integration changes while preserving upstream attribution.
 
 The Open PS2 Loader contributors
 
