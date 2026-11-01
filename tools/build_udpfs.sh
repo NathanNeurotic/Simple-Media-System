@@ -4,7 +4,7 @@
 # WHAT THIS IS
 #   UDPFS ( "UDP File System", protocol UDPRDMA, port 0xF5F6 / service 0xF5F5 ) serves a
 #   PC *folder* over UDP; SMS mounts it as the iomanX device "udpfs:" and browses/streams
-#   it like any other filesystem. Source: rickgaiser/neutrino iop/{smap,ministack,udpfs},
+#   it like any other filesystem. Source: ps2max32/neutrino iop/{smap,ministack,udpfs},
 #   vendored in SMS-v1/iop/SMSUdpfs ( AFL v3.0 -- see that tree's ATTRIBUTION ).
 #   NOT to be confused with UDPBD ( legacy udpbd, port 0xBDBD ), a *block device* needing
 #   a disk image. UDPBD is a subset of UDPFS; SMS no longer ships it.
