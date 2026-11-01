@@ -1633,9 +1633,10 @@ static int STIO_FillPf ( FileContext* apCtx ) {
 
 }  /* end STIO_FillPf */
 
-/* Waits for any read in flight, so the buffer may be freed or reused and the
- * descriptor repositioned. The device position is then ahead of m_CurPos;
- * every caller seeks before reading again. */
+/* Waits for any read in flight, so the buffer may be freed or reused, then puts
+ * the descriptor back at the logical cursor. Paths that return without seeking
+ * ( an out-of-range Stream, a failed allocation or seek ) then resume reading
+ * with STIO_Fill from m_CurPos, not from wherever read-ahead had reached. */
 static void STIO_PfStop ( FileContext* apCtx ) {
 
  if ( s_PF.m_pOwner != apCtx || apCtx == NULL ) return;
@@ -1654,6 +1655,8 @@ static void STIO_PfStop ( FileContext* apCtx ) {
  apCtx -> m_pPos   = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
  apCtx -> Fill     = STIO_Fill;
  apCtx -> Seek     = STIO_Seek;
+ fileXioLseek ( (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_FD, apCtx -> m_CurPos, SEEK_SET );
+ apCtx -> m_Pos    = apCtx -> m_CurPos;
 
 }  /* end STIO_PfStop */
 
@@ -1795,6 +1798,7 @@ static int STIO_SeekPf ( FileContext* apCtx, unsigned int aPos ) {
 
  unsigned int lBlocks = apCtx -> m_BufSize / 4096;
 
+ if ( aPos > apCtx -> m_Size ) return -1;   /* keep reading ahead from the old position */
  if ( !apCtx -> Stream ( apCtx, aPos, 0 ) ) return -1;
  if ( aPos < apCtx -> m_Size &&
       apCtx -> Stream ( apCtx, aPos, lBlocks ) <= 0 ) return -1;

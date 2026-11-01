@@ -68,8 +68,10 @@ static int fileXioIoctl2 ( int fd, int cmd, void *a, unsigned b, void *c, unsign
 }
 static int fileXioLseek ( int fd, int off, int whence ) {
  int r, k = slot ( fd );
- pthread_mutex_lock ( &fxio_lock ); pthread_mutex_lock ( &dev_lock );
+ pthread_mutex_lock ( &dev_lock );       /* checked before waiting for the client lock */
  assert ( !dev_inflight[ k ] );          /* never reposition under a read */
+ pthread_mutex_unlock ( &dev_lock );
+ pthread_mutex_lock ( &fxio_lock ); pthread_mutex_lock ( &dev_lock );
  if ( whence == SEEK_END ) r = ( int )dev_size;
  else { dev_pos[ k ] = ( unsigned )off; r = off; }
  pthread_mutex_unlock ( &dev_lock ); pthread_mutex_unlock ( &fxio_lock );
@@ -143,6 +145,11 @@ static void expect_eof ( FileContext *f ) {
 static unsigned reads_now ( void ) {
  unsigned n;
  pthread_mutex_lock ( &dev_lock ); n = dev_reads; pthread_mutex_unlock ( &dev_lock );
+ return n;
+}
+static unsigned inflight_now ( void ) {
+ unsigned n;
+ pthread_mutex_lock ( &dev_lock ); n = dev_inflight[ 0 ]; pthread_mutex_unlock ( &dev_lock );
  return n;
 }
 static int prefetching ( FileContext *f ) { return f -> Fill == STIO_FillPf; }
@@ -235,11 +242,13 @@ int main ( int argc, char **argv ) {
  case 9: /* Teardown with every slot full, and with a read in flight. */
   f = open_file ( 2000000, 0x00627375 );
   assert ( f -> Stream ( f, 0, 48 ) > 0 );
-  usleep ( 20000 );                       /* helper fills all slots, then blocks */
+  { int tries = 0; while ( reads_now () < ( unsigned )s_PF.m_nSlots && tries++ < 5000 ) usleep ( 200 ); }
+  assert ( reads_now () >= ( unsigned )s_PF.m_nSlots );   /* every slot is full */
   f -> Destroy ( f ); assert ( !s_PF.m_pOwner && dev_closes == 1 );
   f = open_file ( 2000000, 0x00627375 ); dev_delay_us = 20000;
   assert ( f -> Stream ( f, 0, 48 ) > 0 );
-  usleep ( 5000 );                        /* helper is inside a slow read */
+  { int tries = 0; while ( !inflight_now () && tries++ < 5000 ) usleep ( 200 ); }
+  assert ( inflight_now () );             /* helper is inside a slow read */
   f -> Destroy ( f ); assert ( !s_PF.m_pOwner && dev_closes == 2 );
   assert ( shim_threads_started == 1 && shim_sems_in_use () == 2 );   /* one persistent helper */
   break;
@@ -270,6 +279,17 @@ int main ( int argc, char **argv ) {
   expect_bytes ( f, 20000, 880000, 4096 ); expect_eof ( f );
   f -> Destroy ( f );
   break;
+ case 13: /* Stop paths that do not seek resume at the logical cursor. */
+  f = open_file ( 900000, 0x00627375 );
+  assert ( f -> Stream ( f, 0, 48 ) > 0 ); expect_bytes ( f, 0, 10001, 777 );
+  assert ( f -> Seek ( f, 900001 ) == -1 && prefetching ( f ) );   /* rejected before stopping */
+  expect_bytes ( f, 10001, 10000, 999 );
+  { int tries = 0; while ( reads_now () < 3 && tries++ < 5000 ) usleep ( 200 ); }
+  assert ( f -> Stream ( f, 900000, 48 ) == 0 && !prefetching ( f ) );   /* stops, no seek */
+  expect_bytes ( f, 20001, 100000, 4096 );                            /* STIO_Fill from m_CurPos */
+  expect_bytes ( f, 120001, 779999, 4096 ); expect_eof ( f );
+  f -> Destroy ( f );
+  break;
  default: assert ( 0 );
  }
  assert ( !s_PF.m_pOwner );
@@ -290,7 +310,7 @@ with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([cc, "-std=gnu99", "-g", "-O1", "-Wall", "-Wextra", "-Werror", "-Wno-sign-compare",
                         "-Wno-unused-function", "-Wno-unused-parameter", "-Wno-missing-field-initializers", "-no-pie", "-pthread", "-DBDM=1",
                         *defs, *san, str(src), "-o", str(exe)], check=True)
-        for case in ([int(selected)] if selected else range(1, 13)):
+        for case in ([int(selected)] if selected else range(1, 14)):
             env = dict(os.environ, TSAN_OPTIONS="halt_on_error=1 second_deadlock_stack=1")
             r = subprocess.run([str(exe), str(case)], timeout=60, env=env)
             if r.returncode:
