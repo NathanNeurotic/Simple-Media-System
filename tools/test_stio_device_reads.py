@@ -75,6 +75,13 @@ static int STIO_Read(FileContext *f,void *p,unsigned n) { (void)f;(void)p;(void)
 static int STIO_Seek(FileContext *f,unsigned p) { (void)f;(void)p;return 0; }
 static int STIO_Stream(FileContext *f,unsigned p,unsigned n) { (void)f;(void)p;(void)n;return 0; }
 '''
+a = source.index("#if defined( BDM ) && !defined( _WIN32 )\n/* Confirmed-USB read-ahead")
+b = source.index("#endif  /* BDM && !_WIN32 */", a) + len("#endif  /* BDM && !_WIN32 */")
+# STIO_Seek/STIO_Stream are stubs above; no stream is started, so the read-ahead
+# is linked but idle, and Destroy's stop is a no-op.
+readahead = ("\n#ifdef BDM\n" + (root / "tools/ps2_kernel_shim.h").read_text() +
+             "\nstatic void STIO_PfStop(FileContext *);\n#endif\n")
+readahead_body = source[a:b] + "\n"
 main = r'''
 static FileContext *open_file(const char *name,int kind) {
  path=name;driver=kind;allocations=fail_at=opens=closes=queries=reads=total=0;open_failure=0;
@@ -133,10 +140,10 @@ int main(int argc,char **argv) {
 with tempfile.TemporaryDirectory() as temporary:
     tmp = Path(temporary)
     fixture = tmp / "stio_devices.c"
-    fixture.write_text(prefix + function("STIO_Fill") + function("STIO_DestroyFileContext") + function("STIO_InitFileContext") + main)
+    fixture.write_text(prefix + readahead + function("STIO_DestroyFileContext") + "\n" + function("STIO_Fill") + "\n" + readahead_body.replace("static int STIO_SeekPf ( FileContext* apCtx, unsigned int aPos );", "static int STIO_SeekPf ( FileContext* apCtx, unsigned int aPos ) { (void)apCtx; return (int)aPos; }") + function("STIO_InitFileContext") + main)
     for bdm in (1, 0):
         exe = tmp / f"stio-devices-{bdm}"
-        cmd = [os.environ.get("CC", "cc"), "-std=c99", "-g", "-no-pie",
+        cmd = [os.environ.get("CC", "cc"), "-std=gnu99", "-g", "-no-pie", "-pthread",
                "-fsanitize=address,undefined", "-fno-sanitize-recover=all"]
         if bdm:
             cmd += ["-DBDM=1"]
