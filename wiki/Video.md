@@ -157,7 +157,7 @@ ffmpeg -i INPUT.mp4 -c:v mpeg4 -vtag mp4v -b:v 1500k -bf 0 -g 30 \
 
 ### Community 960×544 MPEG-2 profile
 
-tktagmedia reported a successful 44-minute MX4SIO playback using the higher-resolution MPEG-2/MP2 approach. The [preserved Windows drag-and-drop script](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/tktagmedia-recommended-dragndrop-converter.bat) scales to 960×540, pads to 960×544, forces a 16:9 display aspect, uses two passes at 3 Mbps (3.4 Mbps maxrate), GOP 15, two B-frames and 224 kbps/48 kHz stereo MP2.
+[tktagmedia](https://github.com/tktagmedia) reported a successful 44-minute MX4SIO playback using the higher-resolution MPEG-2/MP2 approach. The [preserved Windows drag-and-drop script](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/tktagmedia-recommended-dragndrop-converter.bat) scales to 960×540, pads to 960×544, forces a 16:9 display aspect, uses two passes at 3 Mbps (3.4 Mbps maxrate), GOP 15, two B-frames and 224 kbps/48 kHz stereo MP2.
 
 This is a reported profile, not a universal default or a confirmed fix for the open USB/color reports. The script does not cap the source frame rate at 30 fps, and its forced aspect is unsuitable for every source. Start with a short sample and compare the same file/settings on your console. A 60 ms `V/A -00:060` workaround is not a universal six-frame NTSC correction; use [the sync controls](https://nathanneurotic.github.io/Simple-Media-System/controls.html#playback) only as needed.
 

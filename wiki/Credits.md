@@ -20,21 +20,21 @@ The ps2homebrew community
 
 The maintainers and contributors who adopted and modernised SMS over many years — adding USB, internal-HDD, network (SMB) and playlist support, a GUI file browser, the `.smi` skin engine, and support for many more container and codec formats. The PS2SDK, the IOP module ecosystem, and the toolchain this fork builds with all come from that same open, community-maintained work.
 
-KrahJohlito
+[KrahJohlito](https://github.com/KrahJohlito)
 
 Provided the **BDM + MX4SIO integration foundation** this fork builds on: loading the block-device (BDM) module stack, the memory-card/pad rework that a shared SIO2 bus requires, and the device-menu wiring that lets MX4SIO appear as a first-class device. This groundwork is what made the playback fix possible to land.
 
-El_isra, Ripto & Berion
+[El_isra](https://github.com/israpps), [Ripto](https://github.com/NathanNeurotic) & [Berion](https://www.psx-place.com/members/berion.1431)
 
 Additional work and testing around the MX4SIO effort. Real-hardware testing and feedback are what turn a build that merely compiles into one that actually plays — and this fork's MX4SIO support was shaped by that hands-on QA.
 
-bbsan2k
+[bbsan2k](https://github.com/bbsan2k)
 
 Author of the **MMCE (Memory Card Mass Storage)** protocol — the protocol behind loading files from an **SD2PSX** or **MemCard PRO2** through the PS2's memory-card slot. This fork's `mmce0:` / `mmce1:` device support builds directly on that work. See [MMCE](https://nathanneurotic.github.io/Simple-Media-System/mmce.html).
 
-rickgaiser, Maximus32 & the neutrino contributors
+[rickgaiser](https://github.com/rickgaiser) (Maximus32) & the neutrino contributors
 
-The **UDPFS / UDPRDMA**, ministack and SMAP foundation vendored from [neutrino](https://github.com/rickgaiser/neutrino). The working load sequence was cross-checked against [wLaunchELF-R3Z](https://github.com/saildot4k/wLaunchELF_R3Z). SMS carries documented local integration changes while preserving upstream attribution.
+The **UDPFS / UDPRDMA**, ministack and SMAP foundation vendored from [neutrino](https://github.com/rickgaiser/neutrino). The working load sequence was cross-checked against [saildot4k](https://github.com/saildot4k)'s [wLaunchELF-R3Z](https://github.com/saildot4k/wLaunchELF_R3Z). SMS carries documented local integration changes while preserving upstream attribution.
 
 The Open PS2 Loader contributors
 
@@ -67,10 +67,10 @@ To be precise about which parts are new here versus inherited: this fork's own w
 
 Some of the most valuable work on this fork was not writing code. Homebrew runs on hardware nobody has all of, and a fault nobody can reproduce is a fault nobody can fix. These people supplied the missing half.
 
-- **Nadwiślański (Berion)** — the fork's graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
+- **[Nadwiślański (Berion)](https://www.psx-place.com/members/berion.1431)** — the fork's graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
 - **GhostTownUS** — systematic hardware testing on PS2 and PSX (DESR), with recorded sessions rather than descriptions. Traced the memory-card-less IP problem, and the screen capture that localised the PSX boot hang to a single step. Also spotted that wLaunchELF R3Z keeps its boot driver loaded where SMS resets the IOP — which is why config beside the ELF had to be read at a different point in boot.
-- **israpps** — root-caused the PSX boot failure from a DESR‑5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That single observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver instead of relying on the console's.
-- **TnA** — encoder expertise behind the Media Converter: multi-pass encoding, the distinction between B‑frames and the keyframe interval, and the push that led to real Xvid being used where the preset claimed it.
+- **[israpps](https://github.com/israpps)** — root-caused the PSX boot failure from a DESR‑5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That single observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver instead of relying on the console's.
+- **[TnA](https://github.com/TnA-Plastic)** — encoder expertise behind the Media Converter: multi-pass encoding, the distinction between B‑frames and the keyframe interval, and the push that led to real Xvid being used where the preset claimed it.
 
 ## From the original SMS thanks
 
@@ -107,9 +107,10 @@ The community-maintained SMS project lives with the [ps2homebrew](https://github
 
 ## October continuation and documentation
 
-- **eggcatroll** — the parser, stream, skin, playlist and regression continuation incorporated before PR #30 merged.
-- **Nacheras** — updated Spanish strings and skin/language feedback.
-- **tktagmedia** — the reported high-resolution MPEG-2/MX4SIO conversion profile, retained with its settings and limits.
+- **[eggcatroll](https://github.com/eggcatroll)** — the parser, stream, skin, playlist and regression continuation incorporated before PR #30 merged, the artwork grid ([PR #34](https://github.com/NathanNeurotic/Simple-Media-System/pull/34)) and the converter, browser and AAC follow-ups through [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46).
+- **[alekszverr-jpg](https://github.com/alekszverr-jpg)** — SMB direct share access and Cyrillic filenames from Windows servers ([PR #28](https://github.com/NathanNeurotic/Simple-Media-System/pull/28)).
+- **[Nacheras](https://github.com/Nacheras)** — updated Spanish strings and skin/language feedback.
+- **[tktagmedia](https://github.com/tktagmedia)** — the reported high-resolution MPEG-2/MX4SIO conversion profile, retained with its settings and limits.
 - Issue reporters supplied videos, logs, hardware comparisons and reproductions that remain essential to acceptance.
 
 The documentation theme shares the black/cyan PS2 design of the [Launchstation](https://nathanneurotic.github.io/Launchstation/), [POPSLoader](https://nathanneurotic.github.io/POPSLoader/) and [RiptOPL](https://nathanneurotic.github.io/Open-PS2-Loader/) sites. Existing SMS artwork is reused; the original manual/XML, screenshots, historical downloads and original README/changelog sections are preserved.

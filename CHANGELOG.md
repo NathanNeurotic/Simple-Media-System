@@ -6,6 +6,31 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
+## Rolling development — 2026-10-31
+
+Merged after PR #30, through [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46) at `4147f0a`. Rolling was
+republished from `4147f0a` on 2026-10-31. None of this is in the July `v3.0.0-rev1` tag.
+
+- Optional JPEG cover-art grid for video folders ([#34](https://github.com/NathanNeurotic/Simple-Media-System/pull/34)): same-folder,
+  same-basename JPEGs, a six-thumbnail cache and normal icons as the fallback.
+- MPEG-1/2 chroma prediction, XY interpolation and field-row order fixes, plus
+  driver-confirmed USB reads with a 64 KiB refill bound ([#35](https://github.com/NathanNeurotic/Simple-Media-System/pull/35)).
+- Playback timeline, menu lifetime and allocation-failure fixes ([#33](https://github.com/NathanNeurotic/Simple-Media-System/pull/33));
+  converter scaling modes match their output ([#32](https://github.com/NathanNeurotic/Simple-Media-System/pull/32)).
+- Browser, HOST listing and M3U path bounds, navigation allocation before device
+  changes, and a redraw of rebuilt entries during reload
+  ([#38](https://github.com/NathanNeurotic/Simple-Media-System/pull/38), [#39](https://github.com/NathanNeurotic/Simple-Media-System/pull/39), [#40](https://github.com/NathanNeurotic/Simple-Media-System/pull/40), [#45](https://github.com/NathanNeurotic/Simple-Media-System/pull/45)).
+- Incomplete MOV sample-size tables are rejected ([#42](https://github.com/NathanNeurotic/Simple-Media-System/pull/42)).
+- Converter: MPEG-1/2 presets use a 15-frame GOP ([#41](https://github.com/NathanNeurotic/Simple-Media-System/pull/41), [#44](https://github.com/NathanNeurotic/Simple-Media-System/pull/44));
+  outputs are capped below the 2 GiB signed-seek limit ([#43](https://github.com/NathanNeurotic/Simple-Media-System/pull/43)); AVI audio
+  choices match the codec tags actually written ([#46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46)).
+- Player: AAC that decodes with implicit upsampling (for example 22,050 Hz AAC-LC)
+  now reports its real output rate, matching the decoded frame count in host tests ([#46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46)).
+- Rolling publication is serialized and checks the release tag ([#36](https://github.com/NathanNeurotic/Simple-Media-System/pull/36)).
+
+CI (host tests and PS2 builds) passed on master `4147f0a`. **NOT TESTED on console**: all nine
+open reports still need the reporters' hardware results.
+
 ## Rolling development — 2026-10-27
 
 Merged in [PR #30](https://github.com/NathanNeurotic/Simple-Media-System/pull/30)
@@ -27,7 +52,8 @@ July `v3.0.0-rev1` stable tag.
 - Actual-source host regressions and controlled decoder/frame-pool probes.
 
 Affected-console color, USB stutter, exact-file playback, skin restart, shuffle
-and converter acceptance remain open. Poster-grid browsing is not implemented.
+and converter acceptance remain open. Poster-grid browsing was added later, in
+[PR #34](https://github.com/NathanNeurotic/Simple-Media-System/pull/34).
 See [known issues](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html).
 
 ## Earlier fork development

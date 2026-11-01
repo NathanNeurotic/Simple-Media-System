@@ -21,7 +21,7 @@ configuration, USB/Bluetooth DS3/DS4 support and a desktop media converter.
 | **Actions / PR artifact** | A specific candidate that may not yet be in rolling. Record the run, artifact and source/head SHA. |
 
 [PR #30](https://github.com/NathanNeurotic/Simple-Media-System/pull/30) merged on
-2026-10-27 as `4a6959a`, retaining eggcatroll's continuation and adding MPEG RGB
+2026-10-27 as `4a6959a`, retaining [eggcatroll](https://github.com/eggcatroll)'s continuation and adding MPEG RGB
 ownership and shutdown cleanup. Host regressions, PS2 builds and controlled
 emulator probes passed. **Affected-console reports remain open**: this is not a
 claim that the exact color, USB-stutter, MP4-stall or skin-restart cases are resolved.
@@ -71,7 +71,7 @@ defines repeatable inputs; its CI generation does not run a console.
 See [video](https://nathanneurotic.github.io/Simple-Media-System/video.html),
 [audio](https://nathanneurotic.github.io/Simple-Media-System/audio.html) and
 [current issue status](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html).
-tktagmedia's reported 960×544 MPEG-2/MX4SIO profile is preserved with its actual
+[tktagmedia](https://github.com/tktagmedia)'s reported 960×544 MPEG-2/MX4SIO profile is preserved with its actual
 [settings and limitations](https://nathanneurotic.github.io/Simple-Media-System/video.html#community-mpeg2),
 including the script's aspect/frame-rate behavior. It is not a universal default.
 
@@ -123,21 +123,22 @@ README/changelog are preserved separately from current user guidance.
 
 ## Credits & lineage
 
-This edition builds directly on the original **Simple Media System** by **Eugene Plotnikov** and the ps2dev / ps2homebrew community, and on the MX4SIO groundwork from KrahJohlito's SMS branch. All original code, authorship and licensing (Academic Free License) are retained unchanged. The complete original README is preserved in full below.
+This edition builds directly on the original **Simple Media System** by **Eugene Plotnikov** and the ps2dev / ps2homebrew community, and on the MX4SIO groundwork from [KrahJohlito](https://github.com/KrahJohlito)'s SMS branch. All original code, authorship and licensing (Academic Free License) are retained unchanged. The complete original README is preserved in full below.
 
 ### Testing & diagnosis
 
 Homebrew runs on hardware no single person owns, and a fault nobody can reproduce is a fault nobody can fix. These people supplied the half of the work that isn't code:
 
-- **Nadwiślański** *(Berion)* — graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
+- **[Nadwiślański](https://www.psx-place.com/members/berion.1431)** *(Berion)* — graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
 - **GhostTownUS** — systematic hardware testing on PS2 and PSX (DESR), with recorded sessions rather than descriptions. Traced the memory-card-less IP problem, and captured the screen that localised the PSX boot hang to a single step.
-- **israpps** — root-caused the PSX boot failure from a DESR-5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That one observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver.
-- **TnA** — encoder expertise behind the Media Converter: multi-pass encoding, the B-frames / keyframe-interval distinction, and the push that got real Xvid used where the preset claimed it.
+- **[israpps](https://github.com/israpps)** — root-caused the PSX boot failure from a DESR-5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That one observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver.
+- **[TnA](https://github.com/TnA-Plastic)** — encoder expertise behind the Media Converter: multi-pass encoding, the B-frames / keyframe-interval distinction, and the push that got real Xvid used where the preset claimed it.
 
 ---
 
-Additional October contributors include **eggcatroll** (parser/stream/skin/playlist
-continuation and regressions), **Nacheras** (Spanish strings and feedback), and the
+Additional October contributors include **[eggcatroll](https://github.com/eggcatroll)** (parser/stream/skin/playlist
+continuation, artwork grid and regressions), **[Nacheras](https://github.com/Nacheras)** (Spanish strings and feedback),
+**[alekszverr-jpg](https://github.com/alekszverr-jpg)** (SMB share access and Cyrillic names), and the
 reporters supplying exact-file, log and console comparisons. See the
 [complete credits](https://nathanneurotic.github.io/Simple-Media-System/credits.html).
 

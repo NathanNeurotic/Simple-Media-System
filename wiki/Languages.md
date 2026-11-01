@@ -9,7 +9,7 @@ Install a language pack from the same build as your player. The current table ha
 3. Alternatively highlight a language file in the browser and use its import/update action. Enable the external language with **Browser settings → Language**; choosing English uses the built-in strings.
 4. Select the matching **Character set**, save settings and check the UI after relaunch.
 
-Spanish was updated with Nacheras's submitted strings in the October work. Other variants can retain English placeholders for newer entries. Integrated strings and host checks do not establish that every glyph or long label fits on a console.
+Spanish was updated with [Nacheras](https://github.com/Nacheras)'s submitted strings in the October work. Other variants can retain English placeholders for newer entries. Integrated strings and host checks do not establish that every glyph or long label fits on a console.
 
 ## Encoding matters
 

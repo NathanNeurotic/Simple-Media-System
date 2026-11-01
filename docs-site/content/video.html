@@ -224,7 +224,7 @@ the <a href="subtitles.html">Subtitles</a> page.</li>
   -movflags +faststart OUTPUT.mp4</pre>
 
 <h3 id="community-mpeg2">Community 960×544 MPEG-2 profile</h3>
-<p>tktagmedia reported a successful 44-minute MX4SIO playback using the higher-resolution MPEG-2/MP2 approach. The <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/tktagmedia-recommended-dragndrop-converter.bat">preserved Windows drag-and-drop script</a> scales to 960×540, pads to 960×544, forces a 16:9 display aspect, uses two passes at 3 Mbps (3.4 Mbps maxrate), GOP 15, two B-frames and 224 kbps/48 kHz stereo MP2.</p>
+<p><a href="https://github.com/tktagmedia">tktagmedia</a> reported a successful 44-minute MX4SIO playback using the higher-resolution MPEG-2/MP2 approach. The <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/tools/tktagmedia-recommended-dragndrop-converter.bat">preserved Windows drag-and-drop script</a> scales to 960×540, pads to 960×544, forces a 16:9 display aspect, uses two passes at 3 Mbps (3.4 Mbps maxrate), GOP 15, two B-frames and 224 kbps/48 kHz stereo MP2.</p>
 <p>This is a reported profile, not a universal default or a confirmed fix for the open USB/color reports. The script does not cap the source frame rate at 30 fps, and its forced aspect is unsuitable for every source. Start with a short sample and compare the same file/settings on your console. A 60 ms <code>V/A -00:060</code> workaround is not a universal six-frame NTSC correction; use <a href="controls.html#playback">the sync controls</a> only as needed.</p>
 <h2 id="limitations">Limitations</h2>
 <p>SMS is a stock-console player, and a few historic limits come with that. Knowing them up front saves a lot of
