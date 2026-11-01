@@ -25,6 +25,19 @@ def extract(name):
     return source[start:end]
 
 
+def readahead():
+    """The BDM read-ahead blocks; non-USB contexts never start them here."""
+    a = source.find("#if defined( BDM ) && !defined( _WIN32 )\n/* Confirmed-USB read-ahead")
+    if a < 0:
+        return ""  # a pre-read-ahead baseline
+    b = source.index("#endif  /* BDM && !_WIN32 */", a) + len("#endif  /* BDM && !_WIN32 */")
+    c = source.index("#if defined( BDM ) && !defined( _WIN32 )\nstatic int STIO_SeekPf (")
+    d = source.index("#endif  /* BDM && !_WIN32 */", c) + len("#endif  /* BDM && !_WIN32 */")
+    shim = (root / "tools/ps2_kernel_shim.h").read_text()
+    return ("\n#if defined(BDM) && !defined(_WIN32)\n#define USB_RD_CHUNK 65536\n" + shim +
+            "\n#endif\n" + source[a:b] + "\n" + source[c:d] + "\n")
+
+
 harness = r"""
 #include <assert.h>
 #include <stdio.h>
@@ -43,7 +56,7 @@ typedef struct { int m_hFile; OVERLAPPED m_Ovlp; } STIOFilePrivate;
 #define TRUE 1
 #define ERROR_IO_PENDING 997
 #else
-typedef struct { int m_FD,m_fXio,m_RdChunk,m_FillLimit; } STIOFilePrivate;
+typedef struct { int m_FD,m_fXio,m_RdChunk,m_FillLimit,m_fUSB; } STIOFilePrivate;
 #endif
 typedef struct FileContext FileContext;
 struct FileContext {
@@ -113,7 +126,7 @@ static int GetOverlappedResult(int h,OVERLAPPED *o,void *n,int wait) {
 #endif
 static int STIO_Stream(FileContext *,unsigned,unsigned);
 """ + "\n".join(extract(n) for n in (
-    "File_AllocStreamBuffers", "STIO_Read", "STIO_Seek", "STIO_Fill",
+    "File_AllocStreamBuffers", "STIO_Read", "STIO_Seek", "STIO_Fill")) + readahead() + "\n".join(extract(n) for n in (
     "STIO_FillStm", "STIO_SeekStm", "STIO_Stream")) + r"""
 static void init(FileContext *c,STIOFilePrivate *p,int xio) {
  memset(c,0,sizeof(*c));memset(p,0,sizeof(*p));
@@ -229,7 +242,8 @@ with tempfile.TemporaryDirectory() as tmp:
                            ("win32", ["-D_WIN32", "-Wno-unused-function"])):
         exe = Path(tmp) / ("stio-" + variant)
         subprocess.run([os.environ.get("CC", "cc"), "-g", "-Wall", "-Wextra", "-Werror", "-Wno-sign-compare", "-no-pie",
-                        "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
+                        "-fsanitize=address,undefined", "-fno-sanitize-recover=all", "-pthread",
+                        "-Wno-missing-field-initializers", "-Wno-unused-function",
                         *flags, str(src), "-o", str(exe)], check=True)
         for case in ([int(selected)] if selected else range(1, 15)):
             subprocess.run([str(exe), str(case)], check=True, timeout=15)

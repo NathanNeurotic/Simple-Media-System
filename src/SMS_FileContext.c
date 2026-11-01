@@ -1268,6 +1268,7 @@ typedef struct STIOFilePrivate {
  int m_fXio;      /* 1 = opened via fileXio (mass:/BDM); 0 = legacy fio */
  int m_RdChunk;   /* max bytes per fileXio read on THIS device ( see the note at top ) */
  int m_FillLimit; /* max bytes per synchronous refill; zero keeps the full buffer */
+ int m_fUSB;      /* the BDM driver-name query on this open file returned "usb" */
 #ifdef SMS_DIAG
  unsigned int m_ReadCalls, m_ReadBytes, m_ReadMs, m_MaxReadMs, m_ReadErrors;
  unsigned int m_Refills, m_RefillMs, m_MaxRefillMs;
@@ -1275,6 +1276,9 @@ typedef struct STIOFilePrivate {
 
 } STIOFilePrivate;
 #endif  /* _WIN32 */
+#if defined( BDM ) && !defined( _WIN32 )
+static void STIO_PfStop ( FileContext* apCtx );
+#endif
 #if defined(SMS_DIAG) && !defined(_WIN32)
 /* Milliseconds, quantized to the existing timer's 8 ms tick. Read once per
  * boundary, and report only on close so logging cannot slow a refill. */
@@ -1298,6 +1302,9 @@ static void STIO_DestroyFileContext ( FileContext* apCtx ) {
   CloseHandle (   (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_hFile         );
   CloseHandle (   (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_Ovlp.hEvent   );
 #else  /* PS2 */
+#ifdef BDM
+  STIO_PfStop ( apCtx );
+#endif
 #ifdef SMS_DIAG
   {
    STIOFilePrivate* lpPriv = ( STIOFilePrivate* )apCtx -> m_pData;
@@ -1465,6 +1472,263 @@ static int STIO_Fill ( FileContext* apCtx ) {
  return lLen;
 
 }  /* end STIO_Fill */
+#if defined( BDM ) && !defined( _WIN32 )
+/* Confirmed-USB read-ahead (#24).
+ *
+ * SMS 2.9rev4 streamed with two asynchronous fio buffers: the IOP read the next
+ * buffer while the EE parsed the current one. The fileXio path above is
+ * synchronous, so the IOP sits idle from the end of one refill until the parser
+ * has used up that buffer and the main thread is scheduled again. The main thread
+ * shares SMS_THREAD_PRIORITY with the decoders, so that wait can be long.
+ *
+ * One helper thread keeps up to STIO_PF_MAX_SLOTS 64 KiB reads queued inside the
+ * existing stream buffer, with the same blocking fileXioRead calls as STIO_Fill.
+ * fileXio's client lock serializes it with any other caller, and the global
+ * fileXio NOWAIT mode is never used. Only one file reads ahead at a time; every
+ * other file, and every non-USB device ( MX4SIO, MMCE, SMB, UDPFS ), keeps
+ * STIO_Fill unchanged. Any setup failure falls back to STIO_Fill. */
+# define STIO_PF_MAX_SLOTS 4
+# define STIO_PF_PRIORITY  ( SMS_THREAD_PRIORITY - 2 )
+# define STIO_PF_STACK     4096
+/* m_fStop is set by the reader while the helper may be testing it after an
+ * earlier wake-up. The EE has a single core, so a volatile access is enough;
+ * the host race-checker build overrides these with atomic accesses. */
+# ifndef STIO_PF_LOAD
+#  define STIO_PF_LOAD( x )     ( x )
+#  define STIO_PF_STORE( x, v ) (  ( x ) = ( v )  )
+# endif
+
+extern void* _gp;
+
+typedef struct STIOPrefetch {
+
+ FileContext*     m_pOwner;
+ STIOFilePrivate* m_pPriv;
+ int              m_ThreadID;
+ int              m_GoSema;     /* persistent: starts one read-ahead session      */
+ int              m_AckSema;    /* persistent: the helper has seen m_fStop        */
+ int              m_FreeSema;   /* per session: slots the helper may fill         */
+ int              m_FullSema;   /* per session: filled slots the reader may take  */
+ int              m_nSlots;
+ int              m_SlotSize;
+ unsigned char*   m_pSlot[ STIO_PF_MAX_SLOTS ];
+ int              m_Len  [ STIO_PF_MAX_SLOTS ];
+ int              m_Rd;         /* next slot the reader takes                     */
+ int              m_fHeld;      /* the reader still parses slot m_Rd - 1          */
+ int              m_fEnd;       /* the reader took a short or failed slot         */
+ volatile int     m_fStop;
+
+} STIOPrefetch;
+
+/* Explicit .bss/.data, as SMS_PAD does: under -G8192 these would otherwise
+ * take small-data space that the GP-relative window cannot spare. */
+static STIOPrefetch  s_PF __attribute__(   (  section( ".data" )  )   ) = { NULL, NULL, -1, -1, -1, -1, -1 };
+static unsigned char s_PFStack[ STIO_PF_STACK ] __attribute__(   (  aligned( 16 ), section( ".bss" )  )   );
+
+/* Runs at STIO_PF_PRIORITY, so a finished read is re-queued promptly; it spends
+ * almost all of its time blocked in the read RPC or on m_FreeSema. */
+static void STIO_PfThread ( void* apParam ) {
+
+ ( void )apParam;
+
+ while ( 1 ) {
+
+  int lWr = 0, lfDone = 0;
+
+  WaitSema ( s_PF.m_GoSema );
+
+  while ( 1 ) {
+
+   int            lTot = 0, lN;
+   unsigned char* lpDst;
+
+   WaitSema ( s_PF.m_FreeSema );
+
+   if (  STIO_PF_LOAD( s_PF.m_fStop )  ) break;
+   if ( lfDone       ) continue;   /* EOF or error: issue nothing until stopped */
+
+   lpDst = s_PF.m_pSlot[ lWr ];
+
+   while ( lTot < s_PF.m_SlotSize ) {
+    int lChunk = s_PF.m_SlotSize - lTot;
+#ifdef SMS_DIAG
+    unsigned int lReadStart = STIO_DiagNow ();
+#endif
+    if ( lChunk > s_PF.m_pPriv -> m_RdChunk ) lChunk = s_PF.m_pPriv -> m_RdChunk;
+    lN = fileXioRead ( s_PF.m_pPriv -> m_FD, ( char* )lpDst + lTot, lChunk );
+#ifdef SMS_DIAG
+    STIO_DiagRead ( s_PF.m_pPriv, lReadStart, lN );
+#endif
+    if ( lN <= 0 ) {
+     if ( lTot == 0 ) lTot = lN;   /* keep a failure visible to the reader */
+     break;
+    }  /* end if */
+    lTot += lN;
+   }  /* end while */
+
+   s_PF.m_Len[ lWr ] = lTot;
+   if ( lTot < s_PF.m_SlotSize ) lfDone = 1;
+   lWr = ( lWr + 1 ) % s_PF.m_nSlots;
+
+   SignalSema ( s_PF.m_FullSema );
+
+  }  /* end while */
+
+  SignalSema ( s_PF.m_AckSema );
+
+ }  /* end while */
+
+}  /* end STIO_PfThread */
+
+static int STIO_PfCreateSema ( int aCount, int aMax ) {
+ ee_sema_t lSema;
+ memset ( &lSema, 0, sizeof ( lSema ) );
+ lSema.init_count = aCount;
+ lSema.max_count  = aMax;
+ return CreateSema ( &lSema );
+}  /* end STIO_PfCreateSema */
+
+/* The reader's side. Waits only when the helper has not finished the next slot. */
+static int STIO_FillPf ( FileContext* apCtx ) {
+
+ int lSlot, lLen;
+#ifdef SMS_DIAG
+ unsigned int lFillStart;
+#endif
+
+ if ( s_PF.m_fHeld ) {   /* the parser has finished with the previous slot */
+  s_PF.m_fHeld = 0;
+  SignalSema ( s_PF.m_FreeSema );
+ }  /* end if */
+
+ if ( s_PF.m_fEnd || apCtx -> m_CurPos >= apCtx -> m_Size ) {
+  apCtx -> m_pPos = apCtx -> m_pEnd;
+  return 0;
+ }  /* end if */
+
+#ifdef SMS_DIAG
+ lFillStart = STIO_DiagNow ();
+#endif
+ WaitSema ( s_PF.m_FullSema );
+#ifdef SMS_DIAG
+ {
+  unsigned int lMs = STIO_DiagNow () - lFillStart;
+  ++s_PF.m_pPriv -> m_Refills;
+  s_PF.m_pPriv -> m_RefillMs += lMs;
+  if ( lMs > s_PF.m_pPriv -> m_MaxRefillMs ) s_PF.m_pPriv -> m_MaxRefillMs = lMs;
+ }
+#endif
+ lSlot        = s_PF.m_Rd;
+ s_PF.m_Rd    = ( lSlot + 1 ) % s_PF.m_nSlots;
+ s_PF.m_fHeld = 1;
+ lLen         = s_PF.m_Len[ lSlot ];
+
+ if ( lLen < s_PF.m_SlotSize ) s_PF.m_fEnd = 1;
+ if ( lLen < 0 ) lLen = 0;
+
+ apCtx -> m_pPos = s_PF.m_pSlot[ lSlot ];
+ apCtx -> m_pEnd = apCtx -> m_pPos + lLen;
+
+ return lLen;
+
+}  /* end STIO_FillPf */
+
+/* Waits for any read in flight, so the buffer may be freed or reused, then puts
+ * the descriptor back at the logical cursor. Paths that return without seeking
+ * ( an out-of-range Stream, a failed allocation or seek ) then resume reading
+ * with STIO_Fill from m_CurPos, not from wherever read-ahead had reached. */
+static void STIO_PfStop ( FileContext* apCtx ) {
+
+ if ( s_PF.m_pOwner != apCtx || apCtx == NULL ) return;
+
+ STIO_PF_STORE( s_PF.m_fStop, 1 );
+ SignalSema ( s_PF.m_FreeSema );
+ WaitSema   ( s_PF.m_AckSema  );
+
+ DeleteSema ( s_PF.m_FreeSema );
+ DeleteSema ( s_PF.m_FullSema );
+ s_PF.m_FreeSema = s_PF.m_FullSema = -1;
+ s_PF.m_pOwner   = NULL;
+ s_PF.m_pPriv    = NULL;
+
+ apCtx -> m_CurBuf = 0;
+ apCtx -> m_pPos   = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
+ apCtx -> Fill     = STIO_Fill;
+ apCtx -> Seek     = STIO_Seek;
+ fileXioLseek ( (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_FD, apCtx -> m_CurPos, SEEK_SET );
+ apCtx -> m_Pos    = apCtx -> m_CurPos;
+
+}  /* end STIO_PfStop */
+
+static int STIO_SeekPf ( FileContext* apCtx, unsigned int aPos );
+
+/* Call with the descriptor at m_CurPos and the stream buffer allocated. */
+static int STIO_PfStart ( FileContext* apCtx ) {
+
+ STIOFilePrivate* lpPriv  = ( STIOFilePrivate* )apCtx -> m_pData;
+ int              lnSlots = ( int )( apCtx -> m_BufSize / USB_RD_CHUNK );
+ int              i;
+
+ if ( !lpPriv -> m_fXio || !lpPriv -> m_fUSB || s_PF.m_pOwner != NULL || lnSlots < 2 ) return 0;
+ if ( lnSlots > STIO_PF_MAX_SLOTS ) lnSlots = STIO_PF_MAX_SLOTS;
+
+ if ( s_PF.m_ThreadID < 0 ) {
+
+  ee_thread_t lThread;
+
+  if ( s_PF.m_GoSema  < 0 ) s_PF.m_GoSema  = STIO_PfCreateSema ( 0, 1 );
+  if ( s_PF.m_AckSema < 0 ) s_PF.m_AckSema = STIO_PfCreateSema ( 0, 1 );
+  if ( s_PF.m_GoSema < 0 || s_PF.m_AckSema < 0 ) return 0;
+
+  memset ( &lThread, 0, sizeof ( lThread ) );
+  lThread.func             = STIO_PfThread;
+  lThread.stack            = s_PFStack;
+  lThread.stack_size       = sizeof ( s_PFStack );
+  lThread.gp_reg           = &_gp;
+  lThread.initial_priority = STIO_PF_PRIORITY;
+
+  i = CreateThread ( &lThread );
+  if ( i < 0 ) return 0;
+  if ( StartThread ( i, NULL ) < 0 ) {
+   DeleteThread ( i );
+   return 0;
+  }  /* end if */
+  s_PF.m_ThreadID = i;
+
+ }  /* end if */
+
+ s_PF.m_FreeSema = STIO_PfCreateSema ( lnSlots, lnSlots + 1 );
+ s_PF.m_FullSema = STIO_PfCreateSema ( 0,       lnSlots     );
+
+ if ( s_PF.m_FreeSema < 0 || s_PF.m_FullSema < 0 ) {
+  if ( s_PF.m_FreeSema >= 0 ) DeleteSema ( s_PF.m_FreeSema );
+  if ( s_PF.m_FullSema >= 0 ) DeleteSema ( s_PF.m_FullSema );
+  s_PF.m_FreeSema = s_PF.m_FullSema = -1;
+  return 0;
+ }  /* end if */
+
+ for ( i = 0; i < lnSlots; ++i ) s_PF.m_pSlot[ i ] = apCtx -> m_pBuff[ 0 ] + i * USB_RD_CHUNK;
+
+ s_PF.m_pOwner   = apCtx;
+ s_PF.m_pPriv    = lpPriv;
+ s_PF.m_nSlots   = lnSlots;
+ s_PF.m_SlotSize = USB_RD_CHUNK;
+ s_PF.m_Rd       = 0;
+ s_PF.m_fHeld    = 0;
+ s_PF.m_fEnd     = 0;
+ STIO_PF_STORE( s_PF.m_fStop, 0 );
+
+ apCtx -> m_CurBuf = 0;
+ apCtx -> m_pPos   = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
+ apCtx -> Fill     = STIO_FillPf;
+ apCtx -> Seek     = STIO_SeekPf;
+
+ SignalSema ( s_PF.m_GoSema );
+
+ return 1;
+
+}  /* end STIO_PfStart */
+#endif  /* BDM && !_WIN32 */
 
 static int STIO_FillStm ( FileContext* apCtx ) {
 
@@ -1529,6 +1793,21 @@ static int STIO_FillStm ( FileContext* apCtx ) {
 
 }  /* end STIO_FillStm */
 
+#if defined( BDM ) && !defined( _WIN32 )
+static int STIO_SeekPf ( FileContext* apCtx, unsigned int aPos ) {
+
+ unsigned int lBlocks = apCtx -> m_BufSize / 4096;
+
+ if ( aPos > apCtx -> m_Size ) return -1;   /* keep reading ahead from the old position */
+ if ( !apCtx -> Stream ( apCtx, aPos, 0 ) ) return -1;
+ if ( aPos < apCtx -> m_Size &&
+      apCtx -> Stream ( apCtx, aPos, lBlocks ) <= 0 ) return -1;
+
+ return aPos;
+
+}  /* end STIO_SeekPf */
+#endif  /* BDM && !_WIN32 */
+
 static int STIO_SeekStm ( FileContext* apCtx, unsigned int aPos ) {
 
  if ( !apCtx -> Stream ( apCtx, aPos, 0 ) ) return -1;
@@ -1555,6 +1834,7 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 #ifdef BDM
   /* mass: uses synchronous fileXio reads -- no async fio op is pending, so skip
    * the fio sync/blockmode reset (it can stall after heavy use on fileXio fds). */
+  STIO_PfStop ( apCtx );
   if ( !lpPriv -> m_fXio )
 #endif
   { fioSync ( FIO_WAIT, &lnRead ); fioSetBlockMode ( FIO_WAIT ); }
@@ -1570,6 +1850,9 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
  } else {
 
+#if defined( BDM ) && !defined( _WIN32 )
+  STIO_PfStop ( apCtx );   /* before the buffer can be reallocated */
+#endif
   if ( aStartPos >= apCtx -> m_Size ) return 0;
 
 #ifdef BDM
@@ -1588,7 +1871,9 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
 
 #ifdef BDM
   if ( lpPriv -> m_fXio ) {
-   /* Use the same bounded, device-specific synchronous refill as playback. */
+   /* Confirmed USB reads ahead; the first slot is still waited for here.
+    * Every other device uses the bounded, device-specific synchronous refill. */
+   if ( STIO_PfStart ( apCtx ) ) return STIO_FillPf ( apCtx );
    return STIO_Fill ( apCtx );
 
   }  /* end if m_fXio */
@@ -1725,6 +2010,7 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
  int lXio = ( aFileName != NULL && ( strncmp ( aFileName, "mass", 4 ) == 0 || strncmp ( aFileName, "smb", 3 ) == 0 || strncmp ( aFileName, "mmce", 4 ) == 0 ) ) || lUdpfs;   /* mmce: read via fileXio + STIO_Fill 4KB chunks -- mmce_fs_read does the whole request in ONE SIO2 shot ( no driver chunking ), the same large-read stall that hit MX4SIO on this bus */
  int lRdChunk = lUdpfs ? UDPFS_RD_CHUNK : MX4SIO_RD_CHUNK;   /* per-device: udpfs must NOT inherit MX4SIO's 4 KiB SIO2 workaround ( see note at top ) */
  int lFillLimit = lXio && !lUdpfs ? 8 * MX4SIO_RD_CHUNK : 0;
+ int lUSB = 0;
  int lFD  = lXio ? fileXioOpen ( aFileName, O_RDONLY ) : fioOpen ( aFileName, O_RDONLY );
 #else
  int lFD = fioOpen ( aFileName, O_RDONLY );
@@ -1737,6 +2023,7 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
        fileXioIoctl2 ( lFD, BDM_IOCTL_GET_DRIVERNAME, NULL, 0, NULL, 0 ) == BDM_DRIVER_USB ) {
    lRdChunk = USB_RD_CHUNK;
    lFillLimit = USB_RD_CHUNK;
+   lUSB = 1;
   }  /* end if */
 #endif
 
@@ -1776,6 +2063,7 @@ FileContext* STIO_InitFileContext ( const char* aFileName, void* apUnused ) {
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_fXio    = lXio;
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_RdChunk = lRdChunk;
     (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_FillLimit = lFillLimit;
+    (  ( STIOFilePrivate* )retVal -> m_pData  ) -> m_fUSB      = lUSB;
 #endif
 
     retVal -> Fill    = STIO_Fill;
