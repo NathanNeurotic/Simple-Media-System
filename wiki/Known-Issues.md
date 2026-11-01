@@ -1,6 +1,6 @@
 # Known Issues & Testing
 
-Status reviewed 2026-10-30 against merged master `34000cf`, including browser, MPEG preset and MOV sample-size follow-ups through [PR #42](https://github.com/NathanNeurotic/Simple-Media-System/pull/42). All nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
+Status reviewed 2026-11-01 against merged master `4147f0a` (the current rolling build), including the converter size cap, GOP wording, browser reload redraw and AVI/AAC follow-ups through [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46). No reporter has posted a console result since 2026-10-27, so all nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
 
 ## MPEG-2/AC3 opening freeze — #29
 
@@ -18,7 +18,7 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer co
 
 ## MP4 late start and stall — #10
 
-[The reported 0:28 start and 0:35 video/audio-loop stall remain unconfirmed.](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) MOV packet selection, offsets, timing tables, co64/extended atoms, allocation ownership and failed sample reads have host-tested fixes. [PR #42 additionally rejects incomplete variable sample-size tables](https://github.com/NathanNeurotic/Simple-Media-System/pull/42), with production-reader truncation controls. This does not establish faster opening. Obtain the exact original and converted files and test both ordinary and fast-start layouts through the full player. Faster opening alone does not demonstrate that the stall is fixed.
+[The reported 0:28 start and 0:35 video/audio-loop stall remain unconfirmed.](https://github.com/NathanNeurotic/Simple-Media-System/issues/10) MOV packet selection, offsets, timing tables, co64/extended atoms, allocation ownership and failed sample reads have host-tested fixes. [PR #42 additionally rejects incomplete variable sample-size tables](https://github.com/NathanNeurotic/Simple-Media-System/pull/42), with production-reader truncation controls. This does not establish faster opening. Obtain the exact original and converted files and test both ordinary and fast-start layouts through the full player. Faster opening alone does not demonstrate that the stall is fixed. Separately, [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46) makes AAC that decodes with implicit upsampling report its real output rate; a low-rate AAC track that played at the wrong length is worth retesting on rolling.
 
 ## Saved skin after restart / Spanish — #27
 
@@ -30,11 +30,11 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer co
 
 ## Converter tracks and subtitles — #22
 
-[Multi-audio, text burn-in, source-SD sizing and the high-quality Xvid/PCM preset are implemented and host-tested.](https://github.com/NathanNeurotic/Simple-Media-System/issues/22) SMS audio switching, SD aspect/display and high-bitrate playback on suitable storage remain acceptance work. Switchable embedded text, sidecar export and bitmap conversion are separate from the implemented burn-in control.
+[Multi-audio, text burn-in, source-SD sizing and the high-quality Xvid/PCM preset are implemented and host-tested.](https://github.com/NathanNeurotic/Simple-Media-System/issues/22) SMS audio switching, SD aspect/display and high-bitrate playback on suitable storage remain acceptance work. Switchable embedded text, sidecar export and bitmap conversion are separate from the implemented burn-in control. [PR #43](https://github.com/NathanNeurotic/Simple-Media-System/pull/43) caps converter output below 2 GiB so files stay seekable, and [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46) limits AVI audio choices to codecs the converter actually writes.
 
 ## Poster / cover-art grid — #26
 
-[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Merged follow-ups through PR #40 also cover long browser/HOST/M3U paths, navigation allocation failures and failed device entry. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
+[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Merged follow-ups through PR #40 also cover long browser/HOST/M3U paths, navigation allocation failures and failed device entry, and [PR #45](https://github.com/NathanNeurotic/Simple-Media-System/pull/45) redraws rebuilt entries during reload. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
 
 ## How to read validation claims
 
