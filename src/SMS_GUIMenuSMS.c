@@ -2641,10 +2641,18 @@ static void _advset_handler ( GUIMenu* apMenu, int aDir ) {
 
 }  /* end _advset_handler */
 
+/* The 720p ceiling used to be 1190 -- below the 1216 that SMS_Config.c ships as the 720p
+ * DEFAULT. The very first press of X/O on "Display width" in 720p therefore clamped the
+ * width down to 1190, and the default could never be selected again ( PSX-Place report,
+ * SCPH-50004 ). Inherited unchanged from 2.9 rev4. The ceiling is now the default itself,
+ * not 1280: the 720p framebuffer already takes ~3.3 MB of the GS's 4 MB ( see
+ * GS_DisplayOffsets in SMS_GS_1.c ), so growing it past the shipped size risks the font /
+ * icon VRAM collision that broke 1080i text. Every default must lie inside [ min, max ];
+ * tools/test_display_limits.py checks that for all eight modes. */
 static void _dispw_handler ( GUIMenu* apMenu, int aDir ) {
 
  static int s_lMin[ 8 ] __attribute__(   (  section( ".data" )  )   ) = { 640, 640, 640, 640, 1090, 1400, 640, 640 };
- static int s_lMax[ 8 ] __attribute__(   (  section( ".data" )  )   ) = { 720, 720, 720, 720, 1190, 1830, 720, 720 };
+ static int s_lMax[ 8 ] __attribute__(   (  section( ".data" )  )   ) = { 720, 720, 720, 720, 1216, 1830, 720, 720 };
 
  int lIdx = GS_VMode2Index (  GS_Params () -> m_GSCRTMode  );
  int lWidth;
