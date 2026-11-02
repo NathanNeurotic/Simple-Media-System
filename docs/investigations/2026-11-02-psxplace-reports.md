@@ -76,6 +76,9 @@ converter output.
 ## Smallest useful console test
 
 Rolling build that includes this branch, 720p over component:
-Settings > Display > Advanced, press X then O on Display width.
-Expected: the value moves between 1215 and 1216, never drops to 1190, and the
-picture still renders with fonts intact at 1216.
+Settings > Display > Advanced > Display width. X raises the value by 1 and
+O lowers it by 1. If an older build saved 1190, press X until it stops.
+1. Press X until the value stops climbing. Expected: it stops at 1216, not 1190.
+2. Press O once (1215), then X once. Expected: back to 1216.
+3. Select Apply settings at 1216. The width handler only stores the value, and
+   Apply reinitializes the display. Expected: text and icons render cleanly.
