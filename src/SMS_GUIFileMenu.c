@@ -241,20 +241,29 @@ static void _artwork_packet ( u64* apDMA, unsigned char* apPixels, int aX, int a
  * Ordinary photographs and audio/playlist artwork remain browseable. */
 static int _is_video_artwork ( SMS_ListNode* apNode ) {
  SMS_ListNode* lpMedia;
+ const char* lpName;
  const char* lpExt;
  char lName[ 320 ];
- int i;
+ int lJPEG;
+ unsigned int lStem;
 
  if ( !g_pFileList || ( int )apNode -> m_Param != GUICON_PICTURE ) return 0;
- lpExt = strrchr ( _STR( apNode ), '.' );
- if ( !lpExt || ( stricmp ( lpExt, ".jpg" ) && stricmp ( lpExt, ".jpeg" ) ) ) return 0;
+ lpName = _STR( apNode );
+ lpExt  = strrchr ( lpName, '.' );
+ if ( !lpExt || lpExt == lpName || ( stricmp ( lpExt, ".jpg" ) && stricmp ( lpExt, ".jpeg" ) ) ) return 0;
+ lJPEG = !stricmp ( lpExt, ".jpeg" );
+ lStem = ( unsigned int )( lpExt - lpName );
+ if ( lStem + ( lJPEG ? 6 : 5 ) > sizeof ( lName ) ) return 0;
 
  for ( lpMedia = g_pFileList -> m_pHead; lpMedia; lpMedia = lpMedia -> m_pNext ) {
+  const char* lpVideo = _STR( lpMedia );
+  const char* lpDot;
   int lType = ( int )lpMedia -> m_Param;
   if ( lType != GUICON_AVI && lType != GUICON_AVIS ) continue;
-  for ( i = 0; i < 2; ++i )
-   if ( SMS_ArtworkName ( lName, sizeof ( lName ), _STR( lpMedia ), i ) &&
-        !stricmp ( lName, _STR( apNode ) ) ) return 1;
+  lpDot = strrchr ( lpVideo, '.' );
+  if ( lpDot && ( unsigned int )( lpDot - lpVideo ) == lStem &&
+       SMS_ArtworkName ( lName, sizeof ( lName ), lpVideo, lJPEG ) &&
+       !stricmp ( lName, lpName ) ) return 1;
  }
  return 0;
 }
@@ -451,15 +460,21 @@ static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
  lFontW = lTextH * 25 / 22 - 32;
  lFontH = lTextH - 32;
  if ( !apMenu -> m_pGSPacket ) {
-  unsigned char* lpPixels;
-  const void* lKey;
+  unsigned char* lpPixels = NULL;
+  const void* lKeys[ SMS_ARTWORK_SLOTS ];
+  unsigned int lKeyCount = 0, lSelIdx = SMS_ARTWORK_SLOTS;
   u64* lpDMA;
   int lPosterX = lSplit + ( g_GSCtx.m_Width - lSplit - SMS_POSTER_COLUMNS * lTile ) / 2;
   _artwork_position ( apMenu );
-  lKey = apMenu -> m_pCurrent;
+  lpNode = apMenu -> m_pFirst;
+  while ( lpNode && lKeyCount < SMS_ARTWORK_SLOTS ) {
+   if ( lpNode == apMenu -> m_pCurrent ) lSelIdx = lKeyCount;
+   lKeys[ lKeyCount++ ] = lpNode;
+   lpNode = lpNode -> m_pNext;
+  }
   _artwork_drain ();
-  SMS_ArtworkPage ( &apMenu -> m_Artwork, lKey ? &lKey : NULL, lKey ? 1 : 0 );
-  lpPixels = lKey ? SMS_ArtworkGet ( &apMenu -> m_Artwork, 0, _artwork_load, apMenu ) : NULL;
+  SMS_ArtworkPage ( &apMenu -> m_Artwork, lKeys, lKeyCount );
+  if ( lSelIdx < lKeyCount ) lpPixels = SMS_ArtworkGet ( &apMenu -> m_Artwork, lSelIdx, _artwork_load, apMenu );
   lpDMA = GSContext_NewList ( GS_RRT_PACKET_SIZE() );
   GS_RenderRoundRect ( ( GSRoundRectPacket* )( lpDMA - 2 ), 0, 60,
    g_GSCtx.m_Width - 1, g_GSCtx.m_Height - 101, -8, g_Palette[ *apMenu -> m_pColor - 1 ] );

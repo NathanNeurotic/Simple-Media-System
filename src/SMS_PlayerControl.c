@@ -1221,7 +1221,7 @@ int PlayerControl_ScrollBar (  void ( *InitQueues ) ( int )  ) {
  lpIPUCtx -> Suspend ();
 begin:
  lScale   = (  lTotalTime / ( g_Config.m_ScrollBarNum + 1 )  );
- lCurPos1 = (  lPassTime / lScale  );
+ lCurPos1 = ( float )lPassTime / ( float )lScale;
 
  for (  j = 0; j < ( g_Config.m_ScrollBarNum - 1 ); j += 1  )
 
@@ -1234,12 +1234,9 @@ begin:
 
  int     lCurPos = SMS_clip ( lCurPos1, 0, g_Config.m_ScrollBarNum );
  int     lDir    = 0;
+ int     lDraw   = 1;
  int64_t lTime;
  int64_t lPos;
-
- lScale = (  lTotalTime / ( g_Config.m_ScrollBarNum + 1 )  );
-
- _sc_repaint ( lPassTime + lpCont -> m_StartTime, 2, lCurPos );
 
  if ( g_CMedia & 1 ) CDVD_Stop ();
 
@@ -1266,6 +1263,10 @@ begin:
   }  /* end else */
 
   lPassTime = lTime;
+  if ( lDraw ) {
+   _sc_repaint ( lTime + lpCont -> m_StartTime, 2, lCurPos );
+   lDraw = 0;
+  }  /* end if */
   lButtons  = GUI_ReadButtons ();
 
   if ( lButtons && g_Timer > lNextTime ) {
@@ -1283,13 +1284,13 @@ begin:
 
     lCurPos = SMS_clip (  ( lCurPos + 1 ), 0, g_Config.m_ScrollBarNum  );
     lResume = 0;
-    _sc_repaint ( lTime + lpCont -> m_StartTime, 2, lCurPos );
+    lDraw   = 1;
 
    } else if (  ( lButtons == SMS_PAD_LEFT || lButtons == RC_SCAN_LEFT ) && lCurPos > 0  ) {
 
     lCurPos = SMS_clip (  ( lCurPos - 1 ), 0, g_Config.m_ScrollBarNum  );
     lResume = 0;
-    _sc_repaint ( lTime + lpCont -> m_StartTime, 2, lCurPos );
+    lDraw   = 1;
 
    } else if ( lButtons == SMS_PAD_TRIANGLE || lButtons == RC_RESET || lButtons == RC_RETURN || lButtons == RC_STOP ) {
 
@@ -1325,6 +1326,10 @@ redo:
 
   SMS_CodecContext* lpVideoCtx = lpStm -> m_pCodec;
 
+  /* Pause only parks the renderers; decoders can still own MPEG state and
+   * input packets. Stop all workers before resetting or seeking (#24). */
+  InitQueues ( 0 );
+
   SMS_Codec_MPEG12_Reset (
    SMS_MPEG12_RESET_QUEUE   |
    SMS_MPEG12_RESET_DECODER |
@@ -1338,10 +1343,7 @@ redo:
 
    lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, 0 );
 
-   lDir = ( lTime - lPassTime );
-
-   if ( lDir >  0 ) lDir =  1;
-   if ( lDir <= 0 ) lDir = -1;
+   lDir = lTime > ( s_Player.m_VideoTime - lpCont -> m_StartTime ) ? 1 : -1;
 
    lPos = SMS_Rescale (  lTime, lpStm -> m_TimeBase.m_Den, SMS_TIME_BASE * ( int64_t )lpStm -> m_TimeBase.m_Num  );
  
@@ -1354,11 +1356,14 @@ redo:
 
     retVal = -1;
 
-   }  /* end if */
+   } else {
+
+    retVal = 0;  /* workers are stopped: a failed seek cannot resume */
+
+   }  /* end else */
 
   }  /* end if */
 
-  InitQueues ( 0 );
   lpVideoCtx -> HWCtl ( lpVideoCtx, SMS_HWC_Reset );
 
  }  /* end if */
