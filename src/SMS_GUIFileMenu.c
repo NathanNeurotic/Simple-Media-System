@@ -232,6 +232,29 @@ static void _artwork_packet ( u64* apDMA, unsigned char* apPixels, int aX, int a
  apDMA[ 31 ] = GS_XYZ ( aX + aSide, aY + aSide, 0 );
 }
 
+/* Hide video sidecars only in the presentation list. Keep g_pFileList intact:
+ * _artwork_load resolves the same names there, including case-sensitive paths.
+ * Ordinary photographs and audio/playlist artwork remain browseable. */
+static int _is_video_artwork ( SMS_ListNode* apNode ) {
+ SMS_ListNode* lpMedia;
+ const char* lpExt;
+ char lName[ 320 ];
+ int i;
+
+ if ( !g_pFileList || ( int )apNode -> m_Param != GUICON_PICTURE ) return 0;
+ lpExt = strrchr ( _STR( apNode ), '.' );
+ if ( !lpExt || ( stricmp ( lpExt, ".jpg" ) && stricmp ( lpExt, ".jpeg" ) ) ) return 0;
+
+ for ( lpMedia = g_pFileList -> m_pHead; lpMedia; lpMedia = lpMedia -> m_pNext ) {
+  int lType = ( int )lpMedia -> m_Param;
+  if ( lType != GUICON_AVI && lType != GUICON_AVIS ) continue;
+  for ( i = 0; i < 2; ++i )
+   if ( SMS_ArtworkName ( lName, sizeof ( lName ), _STR( lpMedia ), i ) &&
+        !stricmp ( lName, _STR( apNode ) ) ) return 1;
+ }
+ return 0;
+}
+
 static int _filter_item ( SMS_ListNode* apNode ) {
 
  int lType = ( int )apNode -> m_Param;
@@ -250,6 +273,8 @@ static int _filter_item ( SMS_ListNode* apNode ) {
  ) return 1;
 
  if ( lType == GUICON_PARTITION || lType == GUICON_FOLDER || lType == GUICON_SHARE ) return 0;
+
+ if ( _is_video_artwork ( apNode ) ) return 1;
 
  if (  ( g_Config.m_BrowserFlags & SMS_BF_AVIF ) &&
        !(  lType == GUICON_AVI     ||
