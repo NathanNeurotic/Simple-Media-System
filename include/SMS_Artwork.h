@@ -8,6 +8,12 @@
 #define SMS_ARTWORK_BYTES   ( SMS_ARTWORK_SIDE * SMS_ARTWORK_SIDE * 4 )
 #define SMS_ARTWORK_MAX_FILE ( 256U * 1024U )
 #define SMS_ARTWORK_MAX_SIDE 512U
+#define SMS_POSTER_COLUMNS 2
+#define SMS_POSTER_ROWS 3
+#define SMS_POSTER_TILES ( SMS_POSTER_COLUMNS * SMS_POSTER_ROWS )
+#define SMS_POSTER_WIDTH ( SMS_POSTER_COLUMNS * SMS_ARTWORK_SIDE )
+#define SMS_POSTER_HEIGHT ( SMS_POSTER_ROWS * SMS_ARTWORK_SIDE )
+#define SMS_POSTER_BYTES ( SMS_POSTER_TILES * SMS_ARTWORK_BYTES )
 
 typedef struct SMS_ArtworkSlot {
  const void*    m_pKey;
@@ -28,6 +34,7 @@ unsigned char* SMS_ArtworkGet ( SMS_ArtworkCache*, unsigned int,
 int SMS_ArtworkName ( char*, unsigned int, const char*, int );
 int SMS_ArtworkJPEGSize ( const unsigned char*, unsigned int );
 int SMS_ArtworkThumbnail ( unsigned char*, const unsigned char*, unsigned int, unsigned int );
+int SMS_ArtworkPoster ( unsigned char*, const unsigned char*, unsigned int, unsigned int );
 unsigned int SMS_ArtworkMove ( unsigned int, unsigned int, int );
 
 #endif

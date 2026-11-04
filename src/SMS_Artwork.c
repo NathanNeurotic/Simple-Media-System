@@ -108,3 +108,34 @@ unsigned int SMS_ArtworkMove ( unsigned int aCount, unsigned int anIndex, int aD
  }
  return ( unsigned int )aDelta >= aCount - anIndex ? aCount - 1 : anIndex + aDelta;
 }
+
+/* Six contiguous 64x64 RGBA tiles, not a large GS texture. Each tile can reuse
+ * the existing 16 KiB transient icon VRAM without reserving more GS memory. */
+int SMS_ArtworkPoster ( unsigned char* apOut, const unsigned char* apRGB, unsigned int aWidth, unsigned int aHeight ) {
+ unsigned int lWidth, lHeight, x, y;
+ if ( !apOut || !apRGB || !aWidth || !aHeight || aWidth > SMS_ARTWORK_MAX_SIDE || aHeight > SMS_ARTWORK_MAX_SIDE ) return 0;
+ if ( aWidth * SMS_POSTER_HEIGHT >= aHeight * SMS_POSTER_WIDTH ) {
+  lWidth = SMS_POSTER_WIDTH;
+  lHeight = aHeight * SMS_POSTER_WIDTH / aWidth;
+ } else {
+  lHeight = SMS_POSTER_HEIGHT;
+  lWidth = aWidth * SMS_POSTER_HEIGHT / aHeight;
+ }
+ if ( !lWidth ) lWidth = 1;
+ if ( !lHeight ) lHeight = 1;
+ memset ( apOut, 0, SMS_POSTER_BYTES );
+ for ( y = 0; y < SMS_POSTER_HEIGHT; ++y )
+  for ( x = 0; x < SMS_POSTER_WIDTH; ++x ) {
+   unsigned int lTile = ( y / SMS_ARTWORK_SIDE ) * SMS_POSTER_COLUMNS + x / SMS_ARTWORK_SIDE;
+   unsigned int lDst = lTile * SMS_ARTWORK_BYTES + ( ( y % SMS_ARTWORK_SIDE ) * SMS_ARTWORK_SIDE + x % SMS_ARTWORK_SIDE ) * 4;
+   unsigned int lLeft = ( SMS_POSTER_WIDTH - lWidth ) / 2;
+   unsigned int lTop = ( SMS_POSTER_HEIGHT - lHeight ) / 2;
+   apOut[ lDst + 3 ] = 0x80;
+   if ( x >= lLeft && x < lLeft + lWidth && y >= lTop && y < lTop + lHeight ) {
+    unsigned int lSX = ( x - lLeft ) * aWidth / lWidth;
+    unsigned int lSY = ( y - lTop ) * aHeight / lHeight;
+    memcpy ( apOut + lDst, apRGB + ( lSY * aWidth + lSX ) * 3, 3 );
+   }
+  }
+ return 1;
+}
