@@ -395,9 +395,14 @@ static _FileMenuItem* GUIFileMenu_RenderItem ( SMS_ListNode* apNode, int anY, in
 static void _poster_names ( SMS_ListNode* apNode, char aLines[ 2 ][ 320 ], int aWidth, int aFont ) {
  char lName[ 320 ];
  const char* lpName = _STR( apNode );
+ const char* lpDot;
  int lLen, lFirst, lRest, lSkip = 0;
  if ( _is_utf8 ( lpName ) && TranslateUTF8 ( g_GSCtx.m_CodePage, lName, sizeof ( lName ) - 1, lpName ) > 0 ) lpName = lName;
  lLen = strlen ( lpName );
+ /* Captions only: preserve extensions in the actual list nodes/file paths. */
+ lpDot = strrchr ( lpName, '.' );
+ if ( ( ( int )apNode -> m_Param == GUICON_AVI || ( int )apNode -> m_Param == GUICON_AVIS ) &&
+      lpDot && lpDot > lpName ) lLen = lpDot - lpName;
  if ( lLen > 319 ) lLen = 319;
  memcpy ( aLines[ 0 ], lpName, lLen ); aLines[ 0 ][ lLen ] = 0;
  aLines[ 1 ][ 0 ] = 0;
@@ -419,6 +424,11 @@ static void _poster_names ( SMS_ListNode* apNode, char aLines[ 2 ][ 320 ], int a
  if ( lSkip ) memmove ( aLines[ 1 ], aLines[ 1 ] + lSkip, lLen - lSkip + 1 );
 }
 
+static int _poster_text_offset ( int aRowH, int aTextH, int aTwoLines ) {
+ int lOffset = ( aRowH - aTextH * ( aTwoLines ? 2 : 1 ) ) / 2;
+ return lOffset > 0 ? lOffset : 0;
+}
+
 static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
  SMS_ListNode* lpNode;
  _FileMenuItem* lpPack;
@@ -428,10 +438,16 @@ static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
  int lRowH = lAreaH / SMS_ARTWORK_SLOTS;
  int lTile = lAreaH / SMS_POSTER_ROWS;
  int lAvailable = ( g_GSCtx.m_Width - lSplit - 24 ) / SMS_POSTER_COLUMNS;
+ int lTextH, lFontW, lFontH;
  if ( lTile > lAvailable ) lTile = lAvailable;
  if ( lTile > 128 ) lTile = 128;
  if ( lTile < 8 ) lTile = 8;
  if ( lRowH < 20 ) lRowH = 20;
+ /* 25x22 instead of 20x18 on standard SD displays; retain two-line capacity. */
+ lTextH = lRowH / 2;
+ if ( lTextH > 22 ) lTextH = 22;
+ lFontW = lTextH * 25 / 22 - 32;
+ lFontH = lTextH - 32;
  if ( !apMenu -> m_pGSPacket ) {
   unsigned char* lpPixels;
   const void* lKey;
@@ -457,14 +473,17 @@ static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
   while ( lpNode && lCount < SMS_ARTWORK_SLOTS ) {
    char lLines[ 2 ][ 320 ];
    int lY = 70 + lCount * lRowH;
+   int lTextY, lIconY = ( lRowH - 32 ) / 2;
    lpPack = ( _FileMenuItem* )SMS_SyncMalloc ( sizeof ( _FileMenuItem ) );
    if ( !lpPack ) break;
-   GUI_DrawIcon ( ( int )lpNode -> m_Param, 8, lY + 3, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
-   _poster_names ( lpNode, lLines, lSplit - 54, -12 );
+   if ( lIconY < 0 ) lIconY = 0;
+   GUI_DrawIcon ( ( int )lpNode -> m_Param, 8, lY + lIconY, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
+   _poster_names ( lpNode, lLines, lSplit - 54, lFontW );
+   lTextY = lY + _poster_text_offset ( lRowH, lTextH, lLines[ 1 ][ 0 ] != 0 );
    lpPack -> m_pTxtPack = GSContext_NewList ( GS_TXT_PACKET_SIZE( strlen ( lLines[ 0 ] ) ) );
-   GSFont_RenderEx ( lLines[ 0 ], strlen ( lLines[ 0 ] ), 46, lY, lpPack -> m_pTxtPack, -12, -14 );
+   GSFont_RenderEx ( lLines[ 0 ], strlen ( lLines[ 0 ] ), 46, lTextY, lpPack -> m_pTxtPack, lFontW, lFontH );
    apMenu -> m_pPosterText[ lCount ] = GSContext_NewList ( GS_TXT_PACKET_SIZE( strlen ( lLines[ 1 ] ) ) );
-   GSFont_RenderEx ( lLines[ 1 ], strlen ( lLines[ 1 ] ), 46, lY + 20, apMenu -> m_pPosterText[ lCount ], -12, -14 );
+   GSFont_RenderEx ( lLines[ 1 ], strlen ( lLines[ 1 ] ), 46, lTextY + lTextH, apMenu -> m_pPosterText[ lCount ], lFontW, lFontH );
    SMS_ListPushBack ( apMenu -> m_pFileList, _STR( lpNode ) ) -> m_Param = ( unsigned int )lpPack;
    if ( lpNode == apMenu -> m_pCurrent ) {
     u64 lColor = g_Palette[ g_Config.m_BrowserSCIdx - 1 ];
