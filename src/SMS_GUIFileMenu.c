@@ -1408,7 +1408,8 @@ static int GUIFileMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
 
   if ( lBtn == SMS_PAD_R2 ) {
    GUIFileMenu_Cleanup ( apObj );
-   lpMenu -> m_ArtworkMode = lpMenu -> m_ArtworkMode == 0 ? 2 : lpMenu -> m_ArtworkMode == 2 ? 1 : 0;
+   /* R2: ordinary list -> artwork grid -> selected poster -> ordinary list. */
+   lpMenu -> m_ArtworkMode = ( lpMenu -> m_ArtworkMode + 1 ) % 3;
    if ( lpMenu -> m_ArtworkMode ) _artwork_position ( lpMenu );
    else { lpMenu -> m_pFirst = lpMenu -> m_pCurrent; lpMenu -> m_YOffset = 0; }
    _redraw ( lpMenu, 0 );

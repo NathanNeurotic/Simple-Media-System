@@ -164,8 +164,9 @@ int main(int argc,char **argv) {
  expect_names(after_reload,"keep.avi");
  for(unsigned i=0;i<3;++i) {
   int previous=menu.m_ArtworkMode;
+  SMS_ListNode *selected=menu.m_pCurrent;
   GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);
-  assert(menu.m_ArtworkMode==(previous==0?2:previous==2?1:0));
+  assert(menu.m_ArtworkMode==(previous+1)%3 && menu.m_pCurrent==selected);
   expect_names(after_reload,"keep.avi");
  }
  /* A plain Render reuses its cached packet; it cannot repair an empty cached
@@ -177,11 +178,33 @@ int main(int argc,char **argv) {
  phase=2;GUIFileMenu_HandleEvent((GUIObject *)&menu,GUI_MSG_RELOAD_BROWSER);
  expect_names(0,NULL);
  assert(!filtered.m_Size&&!menu.m_pCurrent&&!menu.m_pFirst&&!menu.m_pLast&&!menu.m_Artwork.m_Count);
+ for(unsigned i=0;i<3;++i) {
+  int previous=menu.m_ArtworkMode;
+  GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);
+  assert(menu.m_ArtworkMode==(previous+1)%3 && !menu.m_pCurrent);
+  expect_names(0,NULL);
+ }
  phase=3;GUIFileMenu_HandleEvent((GUIObject *)&menu,GUI_MSG_RELOAD_BROWSER);
  assert(filtered.m_Size==1&&!strcmp(_STR(menu.m_pCurrent),"new.avi"));
  expect_names(after_reload?1:0,"new.avi");
  phase=1;GUIFileMenu_HandleEvent((GUIObject *)&menu,GUI_MSG_RELOAD_BROWSER);
  expect_names(after_reload,"keep.avi");
+ /* A selected item on a later page must remain selected and visible in every
+  * mode, not just when switching from the first item of a short folder. */
+ for(unsigned i=0;i<8;++i) {
+  char name[24];sprintf(name,"extra%u.avi",i);
+  SMS_ListPushBack(&listing,name)->m_Param=2;
+  SMS_ListPushBack(&filtered,name)->m_Param=2;
+ }
+ menu.m_pCurrent=SMS_ListAt(&filtered,8);
+ SMS_ListNode *selected=menu.m_pCurrent;
+ for(unsigned i=0;i<12;++i) {
+  int previous=menu.m_ArtworkMode,visible=0;
+  GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);
+  assert(menu.m_ArtworkMode==(previous+1)%3 && menu.m_pCurrent==selected);
+  for(unsigned j=0;j<observed_count;++j)if(!strcmp(observed[j],_STR(selected)))visible=1;
+  assert(visible);
+ }
  GUIFileMenu_Cleanup((GUIObject *)&menu);
  GSContext_DeleteList(menu.m_pSelRect);menu.m_pSelRect=NULL;
  SMS_ListDestroy(&filtered,0);SMS_ListDestroy(&listing,0);SMS_ListDestroy(&levels,0);
@@ -219,4 +242,4 @@ with tempfile.TemporaryDirectory() as temporary:
     expected = "0" if "--observe-prior" in sys.argv else "2"
     for mode in ("list", "grid", "poster"):
         subprocess.run([str(exe), mode, expected], check=True, timeout=15)
-print("Browser reload: list/grid/poster submissions, six tile uploads, R2 modes, deletion, empty/repopulated directory and focus repair checked")
+print("Browser reload: list-grid-poster R2 cycle, later-page selection, six tile uploads, empty/repopulated directory and focus repair checked")
