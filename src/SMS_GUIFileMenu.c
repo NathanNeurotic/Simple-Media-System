@@ -424,11 +424,13 @@ static void _poster_names ( SMS_ListNode* apNode, char aLines[ 2 ][ 320 ], int a
  if ( lSkip ) memmove ( aLines[ 1 ], aLines[ 1 ] + lSkip, lLen - lSkip + 1 );
 }
 
+/* Center one or two caption lines, clamping undersized rows at their top. */
 static int _poster_text_offset ( int aRowH, int aTextH, int aTwoLines ) {
  int lOffset = ( aRowH - aTextH * ( aTwoLines ? 2 : 1 ) ) / 2;
  return lOffset > 0 ? lOffset : 0;
 }
 
+/* Build/replay a six-row list and the selected poster using shared icon VRAM. */
 static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
  SMS_ListNode* lpNode;
  _FileMenuItem* lpPack;
@@ -464,7 +466,8 @@ static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
   apMenu -> m_pGSPacket = lpDMA;
   g_GSCtx.m_TextColor = 1;
   if ( lpPixels ) {
-   apMenu -> m_pPosterPack = ( u64* )memalign ( 64, SMS_POSTER_TILES * 32 * sizeof ( u64 ) );
+   /* Written through UNCACHED_SEG: discard stale cached heap lines first. */
+   apMenu -> m_pPosterPack = ( u64* )SMS_SyncMalloc ( SMS_POSTER_TILES * 32 * sizeof ( u64 ) );
    if ( apMenu -> m_pPosterPack ) for ( i = 0; i < SMS_POSTER_TILES; ++i )
     _artwork_packet ( UNCACHED_SEG( apMenu -> m_pPosterPack + i * 32 ), lpPixels + i * SMS_ARTWORK_BYTES,
      lPosterX + ( i % SMS_POSTER_COLUMNS ) * lTile, 70 + ( i / SMS_POSTER_COLUMNS ) * lTile, lTile );

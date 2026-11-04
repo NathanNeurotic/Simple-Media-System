@@ -19,6 +19,7 @@ context = (root / "src/SMS_GUIFileCtxMenu.c").read_text()
 
 
 def function(source, name):
+    """Extract a complete production function for the host regression fixture."""
     match = re.search(r"^[^\n;{}]*\b" + re.escape(name) + r"\s*\([^;{}]*\)\s*\{", source, re.M)
     if not match:
         raise ValueError("Missing production function: " + name)
@@ -67,14 +68,22 @@ static unsigned phase,progress,reads,redraws,observed_count;
 static char observed[16][64];
 static void _artwork_drain(void) {}
 static unsigned poster_uploads;
+static u64 *synced_poster_packets;
 static unsigned char *_artwork_load(const void *key,void *arg) {
  (void)key;return arg?calloc(1,SMS_POSTER_BYTES):NULL;
 }
 static void _artwork_packet(u64 *p,unsigned char *pixels,int x,int y,int side) {
+ assert(synced_poster_packets);
+ assert((uintptr_t)p>=(uintptr_t)synced_poster_packets &&
+        (uintptr_t)p<(uintptr_t)(synced_poster_packets+SMS_POSTER_TILES*32));
  assert(p&&pixels&&x>=0&&y>=0&&side>=8);memset(p,0,32*sizeof(*p));p[0]=0xfeedcafe;
 }
 GSParams *GS_Params(void) { return &params; }
-void *SMS_SyncMalloc(int size) { return calloc(1,size); }
+void *SMS_SyncMalloc(int size) {
+ void *p=calloc(1,size);
+ if(size==SMS_POSTER_TILES*32*sizeof(u64))synced_poster_packets=p;
+ return p;
+}
 u64 *GSContext_NewList(unsigned size) { return (u64 *)calloc(size+2,sizeof(u64))+2; }
 void GSContext_DeleteList(u64 *p) { if(p)free(p-2); }
 void GSContext_CallList(int context,u64 *p) {

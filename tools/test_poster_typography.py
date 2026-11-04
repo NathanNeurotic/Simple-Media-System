@@ -12,6 +12,7 @@ icons = '\n'.join(line for line in (root / 'include/SMS_GUIcons.h').read_text().
 
 
 def function(name):
+    """Extract the production caption helper rather than testing a reimplementation."""
     match = re.search(r'^static (?:int|void) ' + name + r'\s*\([^;{}]*\)\s*\{', browser, re.M)
     assert match, name
     end, depth = match.end(), 1
