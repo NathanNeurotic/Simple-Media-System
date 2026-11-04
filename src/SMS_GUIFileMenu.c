@@ -76,6 +76,8 @@ typedef struct GUIFileMenu {
  int            m_ActiveY;
  int            m_ArtworkMode;
  SMS_ArtworkCache m_Artwork;
+ u64*           m_pPosterPack;
+ u64*           m_pPosterText[ SMS_ARTWORK_SLOTS + 2 ];
 
 } GUIFileMenu;
 
@@ -141,7 +143,7 @@ static unsigned char* _artwork_load ( const void* apKey, void* apParam ) {
  char lName[ 320 ], lPath[ 1024 ];
  unsigned int lPrefix, lLength;
  int i;
- ( void )apParam;
+ unsigned int lBytes = apParam ? SMS_POSTER_BYTES : SMS_ARTWORK_BYTES;
 
  if ( ( int )lpMedia -> m_Param != GUICON_AVI && ( int )lpMedia -> m_Param != GUICON_AVIS &&
       ( int )lpMedia -> m_Param != GUICON_MP3 && ( int )lpMedia -> m_Param != GUICON_M3U ) return NULL;
@@ -174,14 +176,16 @@ static unsigned char* _artwork_load ( const void* apKey, void* apParam ) {
  lpJPEG = SMS_JPEGInit ( NULL, NULL );
  if ( lpJPEG && SMS_JPEGLoad ( lpJPEG, lpData, lLength ) && lpJPEG -> m_pRC &&
       lpJPEG -> m_nBitmapBytes == lpJPEG -> m_pRC -> m_NewWidth * lpJPEG -> m_pRC -> m_NewHeight * 3 ) {
-  retVal = ( unsigned char* )memalign ( 64, SMS_ARTWORK_BYTES );
+  retVal = ( unsigned char* )memalign ( 64, lBytes );
   /* JPEG ProcessBuffer writes through the uncached alias. Sample that same
    * alias: cached lines from a reused heap block may still hold older data. */
-  if ( retVal && !SMS_ArtworkThumbnail ( retVal, UNCACHED_SEG( lpJPEG -> m_pBitmap ),
-       lpJPEG -> m_pRC -> m_NewWidth, lpJPEG -> m_pRC -> m_NewHeight ) ) {
+  if ( retVal && !( apParam ? SMS_ArtworkPoster ( retVal, UNCACHED_SEG( lpJPEG -> m_pBitmap ),
+       lpJPEG -> m_pRC -> m_NewWidth, lpJPEG -> m_pRC -> m_NewHeight ) :
+       SMS_ArtworkThumbnail ( retVal, UNCACHED_SEG( lpJPEG -> m_pBitmap ),
+       lpJPEG -> m_pRC -> m_NewWidth, lpJPEG -> m_pRC -> m_NewHeight ) ) ) {
    free ( retVal ); retVal = NULL;
   }
-  if ( retVal ) SyncDCache ( retVal, retVal + SMS_ARTWORK_BYTES );
+  if ( retVal ) SyncDCache ( retVal, retVal + lBytes );
  }
  DMA_Wait ( DMAC_VIF0 );
  _artwork_drain ();
@@ -386,6 +390,119 @@ static _FileMenuItem* GUIFileMenu_RenderItem ( SMS_ListNode* apNode, int anY, in
 
 }  /* end GUIFileMenu_RenderItem */
 
+/* Display-only wrapping. Keep the row head and, for unusually long names, the
+ * tail (edition/part number). File opens continue to use the untouched node. */
+static void _poster_names ( SMS_ListNode* apNode, char aLines[ 2 ][ 320 ], int aWidth, int aFont ) {
+ char lName[ 320 ];
+ const char* lpName = _STR( apNode );
+ int lLen, lFirst, lRest, lSkip = 0;
+ if ( _is_utf8 ( lpName ) && TranslateUTF8 ( g_GSCtx.m_CodePage, lName, sizeof ( lName ) - 1, lpName ) > 0 ) lpName = lName;
+ lLen = strlen ( lpName );
+ if ( lLen > 319 ) lLen = 319;
+ memcpy ( aLines[ 0 ], lpName, lLen ); aLines[ 0 ][ lLen ] = 0;
+ aLines[ 1 ][ 0 ] = 0;
+ lFirst = lLen;
+ while ( lFirst && GSFont_WidthEx ( aLines[ 0 ], lFirst, aFont ) > aWidth ) --lFirst;
+ if ( lFirst == lLen ) return;
+ while ( lFirst > 1 && aLines[ 0 ][ lFirst ] != ' ' ) --lFirst;
+ if ( lFirst < 2 ) {
+  lFirst = lLen;
+  while ( lFirst && GSFont_WidthEx ( aLines[ 0 ], lFirst, aFont ) > aWidth ) --lFirst;
+ }
+ if ( !lFirst ) { aLines[ 0 ][ 0 ] = 0; return; }
+ lRest = lFirst;
+ while ( aLines[ 0 ][ lRest ] == ' ' ) ++lRest;
+ strcpy ( aLines[ 1 ], aLines[ 0 ] + lRest );
+ aLines[ 0 ][ lFirst ] = 0;
+ lLen = strlen ( aLines[ 1 ] );
+ while ( lSkip < lLen && GSFont_WidthEx ( aLines[ 1 ] + lSkip, lLen - lSkip, aFont ) > aWidth ) ++lSkip;
+ if ( lSkip ) memmove ( aLines[ 1 ], aLines[ 1 ] + lSkip, lLen - lSkip + 1 );
+}
+
+static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
+ SMS_ListNode* lpNode;
+ _FileMenuItem* lpPack;
+ unsigned int i, lCount = 0;
+ int lSplit = g_GSCtx.m_Width * 3 / 5;
+ int lAreaH = g_GSCtx.m_Height - 174;
+ int lRowH = lAreaH / SMS_ARTWORK_SLOTS;
+ int lTile = lAreaH / SMS_POSTER_ROWS;
+ int lAvailable = ( g_GSCtx.m_Width - lSplit - 24 ) / SMS_POSTER_COLUMNS;
+ if ( lTile > lAvailable ) lTile = lAvailable;
+ if ( lTile > 128 ) lTile = 128;
+ if ( lTile < 8 ) lTile = 8;
+ if ( lRowH < 20 ) lRowH = 20;
+ if ( !apMenu -> m_pGSPacket ) {
+  unsigned char* lpPixels;
+  const void* lKey;
+  u64* lpDMA;
+  int lPosterX = lSplit + ( g_GSCtx.m_Width - lSplit - SMS_POSTER_COLUMNS * lTile ) / 2;
+  _artwork_position ( apMenu );
+  lKey = apMenu -> m_pCurrent;
+  _artwork_drain ();
+  SMS_ArtworkPage ( &apMenu -> m_Artwork, lKey ? &lKey : NULL, lKey ? 1 : 0 );
+  lpPixels = lKey ? SMS_ArtworkGet ( &apMenu -> m_Artwork, 0, _artwork_load, apMenu ) : NULL;
+  lpDMA = GSContext_NewList ( GS_RRT_PACKET_SIZE() );
+  GS_RenderRoundRect ( ( GSRoundRectPacket* )( lpDMA - 2 ), 0, 60,
+   g_GSCtx.m_Width - 1, g_GSCtx.m_Height - 101, -8, g_Palette[ *apMenu -> m_pColor - 1 ] );
+  apMenu -> m_pGSPacket = lpDMA;
+  g_GSCtx.m_TextColor = 1;
+  if ( lpPixels ) {
+   apMenu -> m_pPosterPack = ( u64* )memalign ( 64, SMS_POSTER_TILES * 32 * sizeof ( u64 ) );
+   if ( apMenu -> m_pPosterPack ) for ( i = 0; i < SMS_POSTER_TILES; ++i )
+    _artwork_packet ( UNCACHED_SEG( apMenu -> m_pPosterPack + i * 32 ), lpPixels + i * SMS_ARTWORK_BYTES,
+     lPosterX + ( i % SMS_POSTER_COLUMNS ) * lTile, 70 + ( i / SMS_POSTER_COLUMNS ) * lTile, lTile );
+  }
+  lpNode = apMenu -> m_pFirst;
+  while ( lpNode && lCount < SMS_ARTWORK_SLOTS ) {
+   char lLines[ 2 ][ 320 ];
+   int lY = 70 + lCount * lRowH;
+   lpPack = ( _FileMenuItem* )SMS_SyncMalloc ( sizeof ( _FileMenuItem ) );
+   if ( !lpPack ) break;
+   GUI_DrawIcon ( ( int )lpNode -> m_Param, 8, lY + 3, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
+   _poster_names ( lpNode, lLines, lSplit - 54, -12 );
+   lpPack -> m_pTxtPack = GSContext_NewList ( GS_TXT_PACKET_SIZE( strlen ( lLines[ 0 ] ) ) );
+   GSFont_RenderEx ( lLines[ 0 ], strlen ( lLines[ 0 ] ), 46, lY, lpPack -> m_pTxtPack, -12, -14 );
+   apMenu -> m_pPosterText[ lCount ] = GSContext_NewList ( GS_TXT_PACKET_SIZE( strlen ( lLines[ 1 ] ) ) );
+   GSFont_RenderEx ( lLines[ 1 ], strlen ( lLines[ 1 ] ), 46, lY + 20, apMenu -> m_pPosterText[ lCount ], -12, -14 );
+   SMS_ListPushBack ( apMenu -> m_pFileList, _STR( lpNode ) ) -> m_Param = ( unsigned int )lpPack;
+   if ( lpNode == apMenu -> m_pCurrent ) {
+    u64 lColor = g_Palette[ g_Config.m_BrowserSCIdx - 1 ];
+    if ( !apMenu -> m_pSelRect ) apMenu -> m_pSelRect = GSContext_NewList ( GS_RRT_PACKET_SIZE() << 1 );
+    GS_RenderRoundRect ( ( GSRoundRectPacket* )( apMenu -> m_pSelRect + GS_RRT_PACKET_SIZE() - 2 ),
+     4, lY, lSplit - 10, lRowH - 2, 8, ( lColor & 0x00FFFFFF ) | 0x18000000 );
+    GS_RenderRoundRect ( ( GSRoundRectPacket* )( apMenu -> m_pSelRect - 2 ),
+     4, lY, lSplit - 10, lRowH - 2, -8, lColor );
+    apMenu -> m_pSelRect[ -1 ] = VIF_DIRECT( GS_RRT_PACKET_SIZE() );
+    apMenu -> m_ActiveY = lY;
+   }
+   ++lCount; lpNode = lpNode -> m_pNext;
+  }
+  if ( apMenu -> m_pCurrent ) {
+   char lLines[ 2 ][ 320 ];
+   _poster_names ( apMenu -> m_pCurrent, lLines, g_GSCtx.m_Width - 24, -6 );
+   for ( i = 0; i < 2; ++i ) {
+    apMenu -> m_pPosterText[ SMS_ARTWORK_SLOTS + i ] = GSContext_NewList ( GS_TXT_PACKET_SIZE( strlen ( lLines[ i ] ) ) );
+    GSFont_RenderEx ( lLines[ i ], strlen ( lLines[ i ] ), 12, g_GSCtx.m_Height - 102 + i * 25,
+     apMenu -> m_pPosterText[ SMS_ARTWORK_SLOTS + i ], -6, -8 );
+   }
+  }
+  SMS_InitBitBlt ( s_BitBltPack, 9, 59, g_GSCtx.m_Height - 59 - 36 );
+ }
+ GSContext_CallList ( aCtx, apMenu -> m_pGSPacket );
+ if ( apMenu -> m_pSelRect && apMenu -> m_pFileList -> m_Size ) GSContext_CallList ( aCtx, apMenu -> m_pSelRect );
+ for ( lpNode = apMenu -> m_pFileList -> m_pHead; lpNode; lpNode = lpNode -> m_pNext ) {
+  lpPack = ( _FileMenuItem* )( unsigned int )lpNode -> m_Param;
+  GSContext_CallList2 ( aCtx, lpPack -> m_IconPack );
+  GSContext_CallList ( aCtx, lpPack -> m_pTxtPack );
+ }
+ for ( i = 0; i < SMS_ARTWORK_SLOTS + 2; ++i )
+  if ( apMenu -> m_pPosterText[ i ] ) GSContext_CallList ( aCtx, apMenu -> m_pPosterText[ i ] );
+ /* Draw last: ordinary row icons reuse the same transient texture scratch. */
+ if ( apMenu -> m_pPosterPack ) for ( i = 0; i < SMS_POSTER_TILES; ++i )
+  GSContext_CallList2 ( aCtx, apMenu -> m_pPosterPack + i * 32 );
+}
+
 static void _artwork_render ( GUIFileMenu* apMenu, int aCtx ) {
  SMS_ListNode* lpNode;
  _FileMenuItem* lpPack;
@@ -394,6 +511,8 @@ static void _artwork_render ( GUIFileMenu* apMenu, int aCtx ) {
  int lCellW = ( g_GSCtx.m_Width - 16 ) / SMS_ARTWORK_COLUMNS;
  int lCellH = ( g_GSCtx.m_Height - 116 ) / 2;
  int lSide = lCellH - 42;
+
+ if ( apMenu -> m_ArtworkMode == 2 ) { _poster_render ( apMenu, aCtx ); return; }
 
  if ( lSide > lCellW - 20 ) lSide = lCellW - 20;
  if ( lSide > 128 ) lSide = 128;
@@ -582,8 +701,14 @@ void GUIFileMenu_CleanupPackets ( GUIObject* apObj ) {
  GUIFileMenu*   lpMenu = ( GUIFileMenu* )apObj;
  SMS_ListNode*  lpNode = lpMenu -> m_pFileList -> m_pHead;
  _FileMenuItem* lpPack;
+ unsigned int i;
 
  _artwork_drain ();
+ free ( lpMenu -> m_pPosterPack ); lpMenu -> m_pPosterPack = NULL;
+ for ( i = 0; i < SMS_ARTWORK_SLOTS + 2; ++i ) {
+  GSContext_DeleteList ( lpMenu -> m_pPosterText[ i ] );
+  lpMenu -> m_pPosterText[ i ] = NULL;
+ }
  GUIObject_Cleanup ( apObj );
 
  while ( lpNode ) {
@@ -1283,7 +1408,7 @@ static int GUIFileMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
 
   if ( lBtn == SMS_PAD_R2 ) {
    GUIFileMenu_Cleanup ( apObj );
-   lpMenu -> m_ArtworkMode = !lpMenu -> m_ArtworkMode;
+   lpMenu -> m_ArtworkMode = lpMenu -> m_ArtworkMode == 0 ? 2 : lpMenu -> m_ArtworkMode == 2 ? 1 : 0;
    if ( lpMenu -> m_ArtworkMode ) _artwork_position ( lpMenu );
    else { lpMenu -> m_pFirst = lpMenu -> m_pCurrent; lpMenu -> m_YOffset = 0; }
    _redraw ( lpMenu, 0 );
@@ -1292,12 +1417,13 @@ static int GUIFileMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
 
   if ( lpMenu -> m_ArtworkMode ) {
    int lDelta = 0;
+   if ( lpMenu -> m_ArtworkMode == 2 && ( lBtn == SMS_PAD_LEFT || lBtn == SMS_PAD_RIGHT ) ) return GUIHResult_ChangeFocus;
    if ( lBtn == SMS_PAD_LEFT ) {
     if ( lpMenu -> m_pCurrent == lpMenu -> m_pFiltList -> m_pHead ) return GUIHResult_ChangeFocus;
     lDelta = -1;
    } else if ( lBtn == SMS_PAD_RIGHT ) lDelta = 1;
-   else if ( lBtn == SMS_PAD_UP ) lDelta = -SMS_ARTWORK_COLUMNS;
-   else if ( lBtn == SMS_PAD_DOWN ) lDelta = SMS_ARTWORK_COLUMNS;
+   else if ( lBtn == SMS_PAD_UP ) lDelta = lpMenu -> m_ArtworkMode == 2 ? -1 : -SMS_ARTWORK_COLUMNS;
+   else if ( lBtn == SMS_PAD_DOWN ) lDelta = lpMenu -> m_ArtworkMode == 2 ? 1 : SMS_ARTWORK_COLUMNS;
    else if ( lBtn == SMS_PAD_L1 || lBtn == RC_PREV ) lDelta = -SMS_ARTWORK_SLOTS;
    else if ( lBtn == SMS_PAD_L2 || lBtn == RC_NEXT ) lDelta = SMS_ARTWORK_SLOTS;
    if ( lDelta ) {

@@ -174,6 +174,9 @@ int main(void) {
  assert(((packet[14]>>28)&7)==DMATAG_ID_REF&&((packet[16]>>28)&7)==DMATAG_ID_RET);
  assert(packet[21]==GS_TEXFLUSH&&packet[23]==GS_TEX0_1&&packet[25]==GS_PRIM);
  assert(packet[29]==GS_XYZ(20,30,0)&&packet[31]==GS_XYZ(110,120,0));
+ art.m_pHead=jpg;strcpy(expected_path,"smb:/Movies/Movie.JPG");
+ image=_artwork_load(media,(void *)1);assert(image&&opens==closes);
+ assert(image[16*4]==0x40 && image[3]==0x80);free(image);
  for(int i=0;i<13;++i)free(items[i]);free(media);free(jpg);free(jpeg);return 0;
 }
 '''

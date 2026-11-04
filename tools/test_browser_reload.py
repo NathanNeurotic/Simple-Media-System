@@ -37,6 +37,7 @@ prefix = r'''
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <malloc.h>
 #include <string.h>
 #include "SMS_GUI.h"
 #include "SMS_List.h"
@@ -65,9 +66,12 @@ static struct { int m_PlayerVolume;unsigned m_BrowserFlags,m_BrowserSCIdx,m_Brow
 static unsigned phase,progress,reads,redraws,observed_count;
 static char observed[16][64];
 static void _artwork_drain(void) {}
-static unsigned char *_artwork_load(const void *key,void *arg) { (void)key;(void)arg;return NULL; }
+static unsigned poster_uploads;
+static unsigned char *_artwork_load(const void *key,void *arg) {
+ (void)key;return arg?calloc(1,SMS_POSTER_BYTES):NULL;
+}
 static void _artwork_packet(u64 *p,unsigned char *pixels,int x,int y,int side) {
- (void)p;(void)pixels;(void)x;(void)y;(void)side;assert(0);
+ assert(p&&pixels&&x>=0&&y>=0&&side>=8);memset(p,0,32*sizeof(*p));p[0]=0xfeedcafe;
 }
 GSParams *GS_Params(void) { return &params; }
 void *SMS_SyncMalloc(int size) { return calloc(1,size); }
@@ -80,7 +84,7 @@ void GSContext_CallList(int context,u64 *p) {
   if(item->m_pTxtPack==p) { assert(observed_count<16);strcpy(observed[observed_count++],_STR(n)); }
  }
 }
-void GSContext_CallList2(int context,u64 *p) { (void)context;(void)p; }
+void GSContext_CallList2(int context,u64 *p) { (void)context;if(p[0]==0xfeedcafe)++poster_uploads; }
 void GS_RenderRoundRect(GSRoundRectPacket *p,int x,int y,int w,int h,int radius,s64 color) {
  (void)p;(void)x;(void)y;(void)w;(void)h;(void)radius;(void)color;
 }
@@ -144,11 +148,12 @@ int main(int argc,char **argv) {
  g_Config.m_BrowserSCIdx=g_Config.m_BrowserABCIdx=g_Config.m_BrowserIBCIdx=1;
  menu.m_pColor=&g_Config.m_BrowserABCIdx;
  menu.m_pFiltList=&filtered;menu.m_pFileList=&packets;menu.m_pLevels=&levels;
- menu.m_ArtworkMode=!strcmp(argv[1],"grid");
+ menu.m_ArtworkMode=!strcmp(argv[1],"poster")?2:!strcmp(argv[1],"grid");
  menu.HandleEvent=GUIFileMenu_HandleEvent;
  strcpy(g_CWD,"mass0:/");
  _fill(&menu,g_DotStr,0);_redraw(&menu,0);
  expect_names(3,"removed.avi");
+ if(menu.m_ArtworkMode==2)assert(poster_uploads==SMS_POSTER_TILES && menu.m_Artwork.m_Count==1);
  unsigned previous_redraws=redraws;
  /* The production delete callback directly invokes the reload event. */
  _delete_handler(NULL,1);
@@ -157,6 +162,12 @@ int main(int argc,char **argv) {
         argv[1],filtered.m_Size,observed_count,redraws-previous_redraws);
  fflush(stdout);
  expect_names(after_reload,"keep.avi");
+ for(unsigned i=0;i<3;++i) {
+  int previous=menu.m_ArtworkMode;
+  GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);
+  assert(menu.m_ArtworkMode==(previous==0?2:previous==2?1:0));
+  expect_names(after_reload,"keep.avi");
+ }
  /* A plain Render reuses its cached packet; it cannot repair an empty cached
   * reset panel. The surrounding menu's SetFocus redraw CAN mask the defect. */
  observed_count=0;GUIFileMenu_Render((GUIObject *)&menu,0);
@@ -184,6 +195,7 @@ source += "\n".join(function(lists, name) for name in
 source += function(gui, "GUIObject_Cleanup")
 source += function(browser, "_artwork_position") + function(browser, "_artwork_move")
 source += function(browser, "_is_utf8") + function(browser, "GUIFileMenu_RenderItem")
+source += function(browser, "_poster_names") + function(browser, "_poster_render")
 source += function(browser, "_artwork_render") + function(browser, "GUIFileMenu_Render")
 source += function(browser, "GUIFileMenu_CleanupPackets") + function(browser, "GUIFileMenu_Cleanup")
 source += redraw_adapter + function(browser, "GUIFileMenu_SetFocus")
@@ -205,6 +217,6 @@ with tempfile.TemporaryDirectory() as temporary:
                     "-I", str(tmp), "-I", str(root / "include"), str(fixture),
                     str(root / "src/SMS_Artwork.c"), "-o", str(exe)], check=True)
     expected = "0" if "--observe-prior" in sys.argv else "2"
-    for mode in ("list", "grid"):
+    for mode in ("list", "grid", "poster"):
         subprocess.run([str(exe), mode, expected], check=True, timeout=15)
-print("Browser reload: actual list/grid render submissions, deletion, empty/repopulated directory and focus repair checked")
+print("Browser reload: list/grid/poster submissions, six tile uploads, R2 modes, deletion, empty/repopulated directory and focus repair checked")
