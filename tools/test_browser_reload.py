@@ -162,7 +162,7 @@ int main(int argc,char **argv) {
  strcpy(g_CWD,"mass0:/");
  _fill(&menu,g_DotStr,0);_redraw(&menu,0);
  expect_names(3,"removed.avi");
- if(menu.m_ArtworkMode==2)assert(poster_uploads==SMS_POSTER_TILES && menu.m_Artwork.m_Count==1);
+ if(menu.m_ArtworkMode==2)assert(poster_uploads==SMS_POSTER_TILES && menu.m_Artwork.m_Count==3 && menu.m_Artwork.m_Slots[0].m_Attempted && !menu.m_Artwork.m_Slots[1].m_Attempted);
  unsigned previous_redraws=redraws;
  /* The production delete callback directly invokes the reload event. */
  _delete_handler(NULL,1);

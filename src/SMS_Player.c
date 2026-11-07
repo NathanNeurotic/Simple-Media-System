@@ -1228,6 +1228,7 @@ resume:
 
       if ( s_Player.m_AudioIdx >= 0 ) s_Player.m_pAudioCodec -> Init ( s_Player.m_pCont -> m_pStm[ s_Player.m_AudioIdx ] -> m_pCodec );
 
+      s_Player.m_EOF = 0;
       _start_threads ();
 
       lSize = _fill_packet_queues ();
