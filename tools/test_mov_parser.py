@@ -126,6 +126,8 @@ int main(int argc,char **argv) {
   assert(fscanf(in,"%u",&extra)==1 && extra>0);
   assert(codec->m_ID==(codec->m_Type==SMS_CodecTypeVideo?SMS_CodecID_MPEG4:SMS_CodecID_AAC));
   assert(codec->m_BitRate>0 && codec->m_UserDataLen==(int)extra);
+  /* The MPEG-4 header scan reads up to here and needs a zero to end user data. */
+  assert(!memcmp((char *)codec->m_pUserData+extra,"\0\0\0",4));
  }
  /* FFprobe is the independent oracle for every packet's on-disk range. */
  while(fscanf(in,"%u %u %u %lld %lld",&stream,&pos,&bytes,&pts,&dts)==5) {

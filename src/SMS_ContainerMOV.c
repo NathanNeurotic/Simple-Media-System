@@ -454,9 +454,11 @@ static int _mov_read_esds ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  * DecoderSpecificInfo either reads far past the atom or, once the oversized malloc fails on a
  * 32 MB heap, reads directly into a NULL pointer. Leaving m_pUserData NULL is the documented
  * no-extradata state that both consumers already handle ( SMS_AAC.c _aac_init and the MPEG-4
- * seeding in SMS_MPEG4.c both gate on m_pUserData && m_UserDataLen > 0 ). */
+ * seeding in SMS_MPEG4.c both gate on m_pUserData && m_UserDataLen > 0 ).
+ * Four zero bytes follow the data: the MPEG-4 header scan loads a 32-bit word at its last byte,
+ * and its user-data scan ( the encoder string that ends an esds ) stops only at a zero byte. */
   if ( lTag == MP4DecSpecificDescrTag && lLen > 0 && _tbl_fits ( apAtom, lLen, 1, 0 )  ) {
-   lpCodecCtx -> m_pUserData = ( uint8_t* )malloc (  ( lLen + 15 ) & ~15  );
+   lpCodecCtx -> m_pUserData = ( uint8_t* )calloc (  1, ( lLen + 4 + 15 ) & ~15  );
    if ( lpCodecCtx -> m_pUserData ) {
     apFileCtx -> Read ( apFileCtx, lpCodecCtx -> m_pUserData, lLen );
     lpCodecCtx -> m_UserDataLen = lLen;
