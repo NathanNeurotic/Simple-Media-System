@@ -18,7 +18,7 @@ import tempfile
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
 CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts",
-         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-before-track", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
+         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-priming", "stts-zero-tail", "edit-before-track", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -175,6 +175,18 @@ def atoms(data):
     assert pos == len(data)
 
 
+def edit_starts(data):
+    """Each track's edit start in seconds: the media time shown at movie time zero."""
+    starts = []
+    for tag, body in atoms(data):
+        if tag == b"moov":
+            for tag, trak in atoms(body):
+                if tag == b"trak":
+                    scale = struct.unpack_from(">I", trak, trak.index(b"mdhd") + 16)[0]
+                    starts.append(struct.unpack_from(">i", trak, trak.index(b"elst") + 16)[0] / scale)
+    return starts
+
+
 def rewrite(data, kind, video=False):
     result = bytearray()
     for tag, body in atoms(data):
@@ -202,6 +214,9 @@ def rewrite(data, kind, video=False):
                 body = body[:4] + struct.pack(">I", 2) + body[8:20] * 2
             elif kind in ("edit-trim", "edit-tail"):
                 body = body[:4] + struct.pack(">I", 1) + struct.pack(">Iihh", 2000, 10240 if kind == "edit-trim" else 0, 1, 0)
+            elif kind == "edit-priming" and not video:
+                # FDK and CoreAudio AAC prime with more than FFmpeg's one frame.
+                body = body[:12] + struct.pack(">i", 2112) + body[16:]
             elif kind == "ctts-v0-two-frame" and video:
                 media_time = struct.unpack_from(">i", body, 12)[0]
                 body = body[:12] + struct.pack(">i", media_time + 1024) + body[16:]
@@ -209,6 +224,13 @@ def rewrite(data, kind, video=False):
             count = struct.unpack_from(">I", body, 4)[0]
             entries = [struct.unpack_from(">II", body, 8 + 8 * i) for i in range(count)]
             body = body[:8] + b"".join(struct.pack(">II", n, offset + 1024) for n, offset in entries)
+        if kind == "stts-zero-tail" and tag == b"stts":
+            # FFmpeg's variable-frame-rate output ends with a zero-duration sample.
+            count = struct.unpack_from(">I", body, 4)[0]
+            entries = [list(struct.unpack_from(">II", body, 8 + 8 * i)) for i in range(count)]
+            entries[-1][0] -= 1
+            entries = [entry for entry in entries if entry[0]] + [[1, 0]]
+            body = body[:4] + struct.pack(">I", len(entries)) + b"".join(struct.pack(">II", *entry) for entry in entries)
         if kind == "ctts-unknown" and tag == b"ctts":
             body = b"\x02" + body[1:]
         if kind == "m4a-metadata-bad-asc" and tag == b"stsd" and not video:
@@ -293,11 +315,18 @@ with tempfile.TemporaryDirectory() as temporary:
             audio = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "a:0",
                                                        "-show_streams", "-of", "json", str(fixture)], timeout=10))["streams"][0]
             manifest.write_text(f"{audio['sample_rate']} {audio['channels']}\n")
-        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail"):
+        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown"):
             mode = "reject"
         else:
             mode = "accept"
-            probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_packets", "-show_streams", "-of", "json", str(fixture)], timeout=10))
-            manifest.write_text(" ".join(str(s.get("extradata_size", 0)) for s in probe["streams"]) + "\n" + "".join(f"{p['stream_index']} {p['pos']} {p['size']} {round(float(p['pts_time']) * 1000000)} {round(float(p['dts_time']) * 1000000)}\n" for p in probe["packets"]))
+            # FFprobe drops what an edit trims; SMS plays it ahead of movie time zero,
+            # so those cases take the untrimmed packets shifted by each track's edit start.
+            trimmed = case in ("edit-trim", "edit-tail", "edit-priming")
+            shift = edit_starts(fixture.read_bytes()) if trimmed else [0, 0]
+            probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error"] + ["-ignore_editlist", "1"] * trimmed +
+                                                       ["-show_packets", "-show_streams", "-of", "json", str(fixture)], timeout=10))
+            manifest.write_text(" ".join(str(s.get("extradata_size", 0)) for s in probe["streams"]) + "\n" + "".join(
+                f"{p['stream_index']} {p['pos']} {p['size']} {round((float(p['pts_time']) - shift[p['stream_index']]) * 1000000)} "
+                f"{round((float(p['dts_time']) - shift[p['stream_index']]) * 1000000)}\n" for p in probe["packets"]))
         subprocess.run([str(exe), str(fixture), str(manifest), mode], check=True, timeout=5)
         print(f"MOV parser: {case} passed")

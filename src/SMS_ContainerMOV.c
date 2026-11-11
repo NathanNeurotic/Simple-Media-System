@@ -1056,38 +1056,6 @@ static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Str
  return 1;
 }  /* end _mov_build_index */
 
-static int _mov_edit_fits ( SMS_Stream* apStm, MOVStream* apMyStm, MOVContext* apCtx ) {
- int64_t lStart = 0, lEnd = apStm -> m_Duration;
- int64_t lLength = SMS_Rescale ( apMyStm -> m_EditDuration, apMyStm -> m_TimeScale, apCtx -> m_TimeScale );
- int lFirstDelta = apMyStm -> m_pStts[ 0 ].m_Duration;
- int lLastDelta = apMyStm -> m_pStts[ apMyStm -> m_nStts - 1 ].m_Duration;
- unsigned int i, lCTimeIdx = 0, lCTimeSample = 0;
- if ( apMyStm -> m_pCtts && apMyStm -> m_nCtts ) {
-  lStart = SMS_MAXINT64;
-  lEnd = -SMS_MAXINT64;
-  for ( i = 0; i < ( unsigned int )apMyStm -> m_nIdx; ++i ) {
-   int lOffset = 0;
-   int64_t lPTS, lDelta;
-   while ( lCTimeIdx < apMyStm -> m_nCtts && apMyStm -> m_pCtts[ lCTimeIdx ].m_Count <= 0 ) ++lCTimeIdx;
-   if ( lCTimeIdx < apMyStm -> m_nCtts ) {
-    MOVStts* lpTime = &apMyStm -> m_pCtts[ lCTimeIdx ];
-    lOffset = lpTime -> m_Duration;
-    if ( ++lCTimeSample == ( unsigned int )lpTime -> m_Count ) { ++lCTimeIdx; lCTimeSample = 0; }
-   }  /* end if */
-   lPTS = ( int64_t )apMyStm -> m_pIdx[ i ].m_DTS * apMyStm -> m_TimeRate + lOffset;
-   lDelta = i + 1 < ( unsigned int )apMyStm -> m_nIdx ?
-            ( int64_t )( apMyStm -> m_pIdx[ i + 1 ].m_DTS - apMyStm -> m_pIdx[ i ].m_DTS ) * apMyStm -> m_TimeRate : lLastDelta;
-   if ( lPTS < lStart ) lStart = lPTS;
-   if ( lPTS + lDelta > lEnd ) lEnd = lPTS + lDelta;
-  }  /* end for */
- }  /* end if */
- /* Retain at most one codec sample of priming/tail rounding. Composition
-  * reorder origin is part of the presentation coverage, not a content trim. */
- return lFirstDelta > 0 && lLastDelta > 0 && apMyStm -> m_EditStart <= lStart + lFirstDelta &&
-        lEnd >= apMyStm -> m_EditStart && lLength >= lEnd - apMyStm -> m_EditStart - lLastDelta &&
-        lLength <= lEnd - apMyStm -> m_EditStart + lLastDelta;
-}  /* end _mov_edit_fits */
-
 static int _mov_read_header ( SMS_Container* apCont ) {
 
  MOVContext*  lpMOV     = ( MOVContext* )apCont -> m_pCtx;
@@ -1150,7 +1118,6 @@ static int _mov_read_header ( SMS_Container* apCont ) {
 
   if ( !_mov_build_index ( apCont, lpMyStm, lpStm ) ) return 0;
   if ( lpMyStm -> m_HasEdit ) {
-   if ( !_mov_edit_fits ( lpStm, lpMyStm, lpMOV ) ) return 0;
    lpStm -> m_Duration = SMS_Rescale ( lpMyStm -> m_EditEmpty + lpMyStm -> m_EditDuration,
                                      lpMyStm -> m_TimeScale, lpMOV -> m_TimeScale );
   }  /* end if */
