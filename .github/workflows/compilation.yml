@@ -80,6 +80,7 @@ jobs:
         python3 tools/test_player_hardware_failure.py
         python3 tools/test_player_video_drain.py
         python3 tools/test_player_scrollbar_seek.py
+        python3 tools/test_player_pulldown.py
         python3 tools/test_container_probe.py
         python3 tools/test_m3u_probe.py
         python3 tools/test_display_limits.py
