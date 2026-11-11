@@ -27,6 +27,7 @@ extern void _check_dc_offset ( void );
 extern unsigned char g_IconSMS[ 2020 ] __attribute__(   (  section( ".data" )  )   );
 
 SMSConfig g_Config __attribute__(   (  section( ".data" )  )   );
+int       g_BootDisplayMode = GSVideoMode_Default;   /* SELECT+R1 / SELECT+R2 held at boot: outlives the late SMS_LoadConfig */
 
 static unsigned int s_DefPalette[ 16 ] __attribute__(   (  section( ".data" )  )   ) = {
  GS_SET_RGBAQ( 0x00, 0x00, 0x00, 0x80, 0x00 ),
@@ -689,6 +690,7 @@ int SMS_LoadConfig ( void  ) {
 
  g_Config.m_Version       = 14;
  g_Config.m_BrowserFlags &= ~SMS_BF_UDFL;
+ if ( g_BootDisplayMode != GSVideoMode_Default ) g_Config.m_DisplayMode = g_BootDisplayMode;
  g_Config.m_SkinName[ sizeof( g_Config.m_SkinName ) - 1 ] = '\x00';   /* guard: a corrupt config field must stay in-bounds */
 
  if ( g_Config.m_PlayerAC3RL < 1 ) g_Config.m_PlayerAC3RL = 6;

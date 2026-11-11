@@ -1,10 +1,10 @@
 """Boot-time config resolution on every boot path, compiled from the production sources.
 
 Production code: SMS_Config.c (config path selection and SMS_LoadConfig), the config block
-of SMS_IOPInit with _cfg_resolve_fallback, and main.c's re-init statement after SMS_IOPInit.
-The first GUI_Initialize is mirrored by hand. Device drivers, fio and the GUI are stubbed:
-fio is an in-memory file table with per-device mount state and GUI_Initialize records the
-config it would apply. This checks ordering and state, not console rendering.
+of SMS_IOPInit with _cfg_resolve_fallback, main.c's re-init statement after SMS_IOPInit and
+GUI_Initialize's pad-override statement. The rest of the first GUI_Initialize is mirrored by
+hand. Device drivers, fio and the GUI are stubbed: fio is an in-memory file table with
+per-device mount state and GUI_Initialize records the config it would apply. This checks ordering and state, not console rendering.
 Set SMS_BOOT_SOURCE_REF to an older Git ref to check an independent baseline.
 """
 import os
@@ -42,10 +42,11 @@ def optional(text, pattern):
     return match.group(0) if match else ""
 
 
-cfg, iop, mainc, header = (source(p) for p in ("src/SMS_Config.c", "src/SMS_IOP.c", "src/main.c", "include/SMS_Config.h"))
+cfg, iop, mainc, gui, header = (source(p) for p in ("src/SMS_Config.c", "src/SMS_IOP.c", "src/main.c", "src/SMS_GUI.c", "include/SMS_Config.h"))
 start = iop.index(' if (  SMS_ConfigOnFS () && strncmp ( SMS_ConfigPath (), "mc", 2 ) != 0  ) {')
 iop_block = iop[start:iop.index("\n }  /* end else if */\n#endif", start) + len("\n }  /* end else if */")]
 reinit = line(mainc, r"^ if \([^;]*\) GUI_Initialize \( 0 \);")
+override = line(gui, r"^  if \( lVideoMode != GSVideoMode_Default \)[^\n]*")
 
 harness = r"""
 #include <assert.h>
@@ -143,7 +144,8 @@ int main(int argc,char **argv) {
  static SMSConfig saved;
  const char *boot=argv[1], *config=argv[2];
  int expected_inits=atoi(argv[7]), expected_mode=(int)strtol(argv[8],NULL,0);
- assert(argc==9);
+ int lVideoMode=(int)strtol(argv[9],NULL,0);         /* SELECT+R1 / SELECT+R2 held at boot */
+ assert(argc==10);
  late=argv[5];
  SMS_LoadConfig();                                   /* nothing mounted: the built-in defaults */
  saved=g_Config; saved.m_Version=14; saved.m_DisplayMode=(int)strtol(argv[4],NULL,0);
@@ -156,6 +158,7 @@ int main(int argc,char **argv) {
  if(atoi(argv[6])) mount("mc0:");                    /* the card is the only device up this early */
  if(!SMS_LoadConfig()) SMS_LoadConfig();             /* GUI_Initialize ( 1 ) */
  SMS_LocaleInit(); SMS_LocaleSet();
+""" + override + r"""
  GUI_Initialize(1);
  config_block();                                     /* SMS_IOPInit */
  """ + reinit + r"""
@@ -166,8 +169,8 @@ int main(int argc,char **argv) {
 }
 """
 
-D, HD = "0xFF", "0x51"
-cases = [  # name, argv[0], SMS.cfg, saved skin, saved mode, late device, card, GUI inits, final mode
+D, HD, NTSC, PAL = "0xFF", "0x51", "0x02", "0x03"
+cases = [  # name, argv[0], SMS.cfg, saved skin, saved mode, late device, card, GUI inits, final mode[, pad override]
     ("USB, saved skin", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "SMS", D, "mass0:", 1, 2, D),
     ("USB, saved 1080i", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "-", HD, "mass0:", 1, 2, HD),
     ("USB, first boot without SMS.cfg", "mass:/SMS/SMS.ELF", "-", "-", D, "mass0:", 1, 1, D),
@@ -179,6 +182,11 @@ cases = [  # name, argv[0], SMS.cfg, saved skin, saved mode, late device, card, 
     ("memory card", "mc0:/SMS/SMS.ELF", "mc0:/SMS/SMS.cfg", "SMS", HD, "-", 1, 1, HD),
     ("host:, config on the card", "host:SMS.ELF", "mc0:/SMS/SMS.cfg", "SMS", HD, "-", 1, 1, HD),
     ("host:, no card, config on USB", "host:SMS.ELF", "mass0:/SMS.cfg", "SMS", D, "mass0:", 0, 2, D),
+    ("USB, saved 1080i, SELECT+R1", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "-", HD, "mass0:", 1, 2, NTSC, NTSC),
+    ("USB, saved auto mode, SELECT+R2", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "-", D, "mass0:", 1, 2, PAL, PAL),
+    ("HDD, 1080i on the card, SELECT+R2", "pfs0:/SMS/SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 2, PAL, PAL),
+    ("host:, 1080i on the card, SELECT+R1", "host:SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 1, NTSC, NTSC),
+    ("memory card, saved 1080i, SELECT+R1", "mc0:/SMS/SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 1, NTSC, NTSC),
 ]
 with tempfile.TemporaryDirectory() as temp:
     src = Path(temp) / "boot.c"
@@ -187,6 +195,6 @@ with tempfile.TemporaryDirectory() as temp:
     subprocess.run([os.environ.get("CC", "cc"), "-g", "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
                     "-Wall", "-Wno-unused-function", "-Wno-unused-variable", "-Werror", str(src), "-o", str(exe)], check=True)
     for name, *args in cases:
-        if subprocess.run([str(exe), *map(str, args)], timeout=10).returncode:
+        if subprocess.run([str(exe), *map(str, args + [D] * (9 - len(args)))], timeout=10).returncode:
             sys.exit(f"boot config: {name}")
-print(f"Boot config: {len(cases)} boot paths apply the saved config exactly once")
+print(f"Boot config: {len(cases)} boot paths apply the saved config exactly once and keep a pad video-mode override")
