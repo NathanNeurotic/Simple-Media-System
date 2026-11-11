@@ -34,8 +34,8 @@ Verified at `2ae66f5`: all 54 CI host tests pass (WSL Debian); `make all pack`,
 Not done, in the order I would take it:
 
 1. Dead code and binary size (last section of this note): nothing started.
-   Read the checker's objections before deleting anything; parts of #3 were
-   disputed.
+   Only #1, #2 and #6 were independently checked (the fix for #6 was
+   disputed); reproduce #3 to #5 yourself before deleting anything.
 2. `CHANGELOG.md` has no entry for any of this yet. It should also cover PRs
    #49 to #53, which never got one.
 3. One adversarial review of the whole diff (`git diff c275476..HEAD`). The
@@ -122,12 +122,12 @@ Decisions waiting on the owner:
   - Proposed fix: Keep the forward preference but fall back to the previous keyframe. In PlayerControl_ScrollBar replace `if ( lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos ) ) {` with `if ( lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos ) || ( lDir > 0 && lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, -1, lPos ) ) ) {`. AVI and MOV _Seek return before mutating any cursor on this failure, so the retry is safe.
 
 - [x] **MPEG-PS seek accepts non-I pictures: picture_coding_type is read from the wrong bits**
-  - Ref `i24-pause-seek-freeze#3`; issue none; severity low; reproduced on host: yes; independent check: diagnosis check: confirmed; defect confirmed, proposed fix disputed; status: fixed `361d2ee`
+  - Ref `i24-pause-seek-freeze#3`; issue none; severity low; reproduced on host: yes; independent check: none; status: fixed `361d2ee`
   - Files: `src/SMS_ContainerMPEG_PS.c`
   - Proposed fix: In _Seek change the picture test to `( ( File_GetUInt ( lpFileCtx ) >> 11 ) & 7 ) == 1`.
 
 - [x] **Pause semaphores can keep stale counts after a seek when a renderer was not parked**
-  - Ref `i24-pause-seek-freeze#4`; issue #24; severity low; reproduced on host: no; independent check: none; status: fixed `2dce0ce`
+  - Ref `i24-pause-seek-freeze#4`; issue #24; severity low; reproduced on host: no; independent check: diagnosis check: confirmed; defect confirmed, proposed fix disputed; status: fixed `2dce0ce`
   - Files: `src/SMS_Player.c`
   - Proposed fix: In _terminate_threads, after the `if ( lThread.status != 0x10 ) { ... }` block (all four workers are stopped there), drain both semaphores: `while ( PollSema ( s_SemaPauseAudio ) >= 0 ); while ( PollSema ( s_SemaAckPause ) >= 0 );`. This only helps the seek path; a stale ack on plain pause/resume without a seek would need the handshake itself changed.
 
@@ -158,12 +158,12 @@ Decisions waiting on the owner:
   - Proposed fix: No code change justified. Keep #20 open; request a retest on a current build with a freshly converted file (GOP 15 preset, post-PR #35 player) and a short problematic MPG attachment. Do not present PR #35 or the GOP change as a confirmed fix for #20.
 
 - [ ] **Assembly half of the PR #35 chroma fixes has no regression test; existing host tests only cover the C fields**
-  - Ref `i20-23-mpeg-colour#3`; issue #23; severity low; reproduced on host: yes; independent check: diagnosis check: refuted; fix check: confirmed; status: open
+  - Ref `i20-23-mpeg-colour#3`; issue #23; severity low; reproduced on host: yes; independent check: defect confirmed, proposed fix disputed; status: open
   - Files: `tools/test_mpeg_motion_vectors.py`, `src/libmpeg_core.S`
   - Proposed fix: Optional, only if the owner wants the assembly pinned: add the ~150-line R5900 subset interpreter and the random differential part of the harness (T1 only) as a tools/ test that runs after the EE build in CI, feeding it the .text of obj/libmpeg_core.o (ee-objcopy -O binary -j .text) and its ee-nm symbol list. Skip the FFmpeg stream oracle in CI. If that is judged too heavy for the repo, leave as is and rely on the PCSX2 probe.
 
 - [x] **Investigation note says converter GOP defaults are unchanged, but the MPEG-1/2 presets now use GOP 15**
-  - Ref `i20-23-mpeg-colour#4`; issue #23; severity low; reproduced on host: yes; independent check: defect confirmed, proposed fix disputed; status: fixed `a8fc4ac`
+  - Ref `i20-23-mpeg-colour#4`; issue #23; severity low; reproduced on host: yes; independent check: diagnosis check: refuted; fix check: confirmed; status: fixed `a8fc4ac`
   - Files: `docs/investigations/2026-10-28-playback-followup.md`, `tools/sms_converter/config.py`
   - Proposed fix: One-sentence correction in the investigation note (or a dated addendum) stating that commit 23d1693 changed the MPEG-1/2 presets to GOP 15, and that reporter retests therefore change both GOP and decoder unless the file is kept constant.
 
@@ -349,12 +349,12 @@ Decisions waiting on the owner:
   - Proposed fix: src/SMS_SPU.c:96: `#define SPU_RPC_TIMEOUT 3000 /* ms ( g_Timer counts milliseconds ) -- far beyond any healthy reply, and beyond the longest UI sound a queued one must wait for */`. One line plus the comment; matches the intent stated in c76cf00. No other change needed.
 
 - [x] **SMS_SPU.c:177-178 'assignment makes pointer from integer without a cast' warnings**
-  - Ref `hunt-player-sync#2`; issue none; severity low; reproduced on host: yes; independent check: diagnosis check: confirmed; fix check: refuted; status: fixed `adf8e59`
+  - Ref `hunt-player-sync#2`; issue none; severity low; reproduced on host: yes; independent check: none; status: fixed `adf8e59`
   - Files: `src/SMS_SPU.c`
   - Proposed fix: Replace both lines with one: `apData = ( void* )( ( unsigned int )apData & 0x0FFFFFFF );` - identical result on the 32-bit EE, no warning.
 
 - [ ] **Issue #10 audio loop is AUDSRV replaying its ring after the EE stops feeding it (inherited); the EE stall itself is not identified**
-  - Ref `hunt-player-sync#3`; issue #10; severity medium; reproduced on host: no; independent check: none; status: skipped: Listed as context only in the task; no change made.
+  - Ref `hunt-player-sync#3`; issue #10; severity medium; reproduced on host: no; independent check: diagnosis check: confirmed; fix check: refuted; status: skipped: Listed as context only in the task; no change made.
   - Files: `src/SMS_Data.c`, `src/SMS_SPU.c`, `src/SMS_Player.c`
   - Proposed fix: No code change recommended from this analysis. A reliable in-player stall detector is not available cheaply: thread-level watchdogs do not run when the EE threads are starved, issuing an RPC from interrupt context is unsafe, and the proper fix (silence on underrun) lives in the source-less AUDSRV binary.
 
@@ -488,12 +488,12 @@ Decisions waiting on the owner:
   - Proposed fix: docs-site/content/video.html lines 109-111: 'While browsing files, press R2 to cycle the normal list, a three-column, two-row poster grid, and a list with the selected item's poster beside it; a third press returns to the normal list with the same file selected.
 
 - [x] **irx/smbman.irx is a stale pre-#28 driver; the documented regen tool would silently replace the current smbman.irx.xz with it (plus three unused IRX blobs)**
-  - Ref `hunt-ci-docs-release#5`; issue none; severity low; reproduced on host: yes; independent check: diagnosis check: confirmed; fix check: confirmed; status: fixed `aa38865`
+  - Ref `hunt-ci-docs-release#5`; issue none; severity low; reproduced on host: yes; independent check: none; status: fixed `aa38865`
   - Files: `irx/smbman.irx`, `tools/compress_irx.py`, `irx/bdmfs_vfat.irx.xz`, `irx/mmcedrv.irx`, `irx/mmcedrv.irx.xz`, `Makefile`
   - Proposed fix: `git rm irx/smbman.irx` (source of truth is iop/smbman-sms + prepare_module.py). Optional, provably unused: `git rm irx/bdmfs_vfat.irx.xz irx/mmcedrv.irx irx/mmcedrv.irx.xz`. No Makefile or tool change needed.
 
 - [x] **lng/ holds 19 legacy language packs that the current build rejects (269 entries vs 311 required); unreferenced duplicate of docs/translation**
-  - Ref `hunt-ci-docs-release#6`; issue #27; severity low; reproduced on host: yes; independent check: none; status: fixed `76737ab`
+  - Ref `hunt-ci-docs-release#6`; issue #27; severity low; reproduced on host: yes; independent check: diagnosis check: confirmed; fix check: confirmed; status: fixed `76737ab`
   - Files: `lng/README.txt`, `lng/SMS.lng_ES`, `docs/translation/SMS.lng_ES`, `src/SMS_Locale.c`
   - Proposed fix: `git rm lng/SMS.lng_*` and `git mv lng/README.txt docs/translation/CREDITS.txt`, deleting its first three lines (the obsolete install steps) and keeping the 'Authors are:' list and the thanks line unchanged. Do not add CREDITS.txt to the zip command unless wanted.
 
@@ -541,7 +541,7 @@ Decisions waiting on the owner:
   - Proposed fix: Delete src/SMS_GUIcons.c lines 36-1368 (the arrays and six tables) and fix the comment at lines 25-28; delete the unused extern at src/SMS_PlayerBallSim.c:26; delete IPU_UnpackImage from src/SMS_IPU_1.c:220-324 and its prototype at include/SMS_IPU.h:140.
 
 - [ ] **Small dead-code batch: orphaned asm round-rect, unused DS3/DS4 wrappers, dead pad helpers and BDM-unused statics**
-  - Ref `hunt-bloat-deadcode#3`; issue none; severity low; reproduced on host: yes; independent check: defect confirmed, proposed fix disputed; status: open
+  - Ref `hunt-bloat-deadcode#3`; issue none; severity low; reproduced on host: yes; independent check: none; status: open
   - Files: `src/SMS_GS_0.S`, `include/SMS_GS.h`, `src/SMS_GS_1.c`, `src/libds34usb.c`, `src/libds34bt.c`, `include/libds34usb.h`, `include/libds34bt.h`, `src/SMS_PAD.c`, `src/SMS_GUI.c`, `src/SMS_GUIMenuSMS.c`, `src/SMS_Config.c`, `src/lzma2.c`, `src/SMS_IOP.c`, `src/SMS_GUIDesktop.c`
   - Proposed fix: Delete (a)-(c) and (f) with their prototypes; fix the stale comment at src/SMS_GS_1.c:608-609. Wrap s_PadBuf0/g_PadBuf1 in `#ifndef BDM`. Wrap _autonet_handler in `#ifndef BDM` including its forward declaration at src/SMS_GUIMenuSMS.c:74 (the trial wrapped only the definition and got a new "declared static but never defined" warning). Remove the unused locals in (g).
 
@@ -556,6 +556,6 @@ Decisions waiting on the owner:
   - Proposed fix: Correct or delete each comment in the same commits as the three cleanups above so the text matches the code; after the SMS_ExitCrumb macro fix the zero-cost statement becomes true and can stay.
 
 - [ ] **In-place network switch resets the IOP but restarts only the network stack; comment about dev9 reload is false (code reading only)**
-  - Ref `hunt-bloat-deadcode#6`; issue none; severity medium; reproduced on host: no; independent check: none; status: open
+  - Ref `hunt-bloat-deadcode#6`; issue none; severity medium; reproduced on host: no; independent check: defect confirmed, proposed fix disputed; status: open
   - Files: `src/SMS_IOP.c`, `src/SMS_GUIMenuSMS.c`, `src/SMS_Player.c`, `src/SMS_ContainerMPEG_PS.c`
   - Proposed fix: Do not change code on this evidence alone. First confirm what SMS_IOPRESET_SWITCH actually tears down (read SMS_IOPReset for that mode); if it is a full IOP reboot, either reload dev9/audsrv/poweroff in SMS_IOPNetSwitch the way SMS_IOPInit does, or keep those images outside the region reused for audio. At minimum correct the comment at line 1805.

@@ -192,6 +192,10 @@ src/SMS_FileContext.c, two lines.
 ### test
 Extend tools/test_stio_stream_failure.py (or test_file_skip.py) with a device stub whose lseek clamps to the file size: (a) Seek(size+1) in plain mode returns -1 and a following Read returns the correct bytes through to EOF; (b) Stream(size+1, 0) after a partial buffered read returns 0 and the following Read returns the bytes at m_CurPos. The scratch generator (investigator scratch, not kept)/hunt-file-io/stress_xio.py exercises both with the model check.
 
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
+
 ## #4 SMB share list: D-cache is flushed after the IOP DMA instead of before it
 - issue: 0
 - severity: low
@@ -225,4 +229,8 @@ Delete the post-call line 368 (`if ( lnShares > 0 ) SyncDCache ( ... );`) and co
 
 ### test
 Not testable on host. On hardware: open the SMB share list repeatedly (leave and re-enter) against a server with several shares and confirm the first entry's name stays intact.
+
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
 
