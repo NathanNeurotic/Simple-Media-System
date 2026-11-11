@@ -119,8 +119,8 @@ void _start_player ( FileContext* apFileCtx, FileContext* apSubCtx, SubtitleForm
  *
  * AUDIO ONLY, by design -- the current row must itself be GUICON_MP3. Auto-advancing videos
  * would be a surprise, and the next file after a video is usually unrelated.
- * SMS_OpenMediaFile rewrites g_LastPlayed each time, so the loop walks forward naturally and
- * cannot revisit a track. Every exit path falls through to the same GUI_Initialize( 0 ), so
+ * SMS_OpenMediaFile rewrites g_LastPlayed each time, so in folder order the loop walks forward
+ * and cannot revisit a track. Every exit path falls through to the same GUI_Initialize( 0 ), so
  * the browser is restored exactly as before whichever way the loop ends. */
   int lfUserStop = lpPlayer -> Play ( lpPlayer );
 
@@ -137,11 +137,11 @@ void _start_player ( FileContext* apFileCtx, FileContext* apSubCtx, SubtitleForm
 
    if (  !lpNode || ( int )lpNode -> m_Param != GUICON_MP3  ) break;   /* audio only */
 
-/* SHUFFLE (#25): the "Randomize playlist" toggle ( SMS_PF_RAND, the MP3
- * settings page ) already shuffles M3U playlists; extend it to continuous
- * folder playback so the next track is a random audio entry other than the
- * one that just played. Pure random per pick -- an immediate repeat becomes
- * possible late in a folder, the same tradeoff the M3U shuffle makes. */
+/* SHUFFLE (#25): with "Randomize playlist" ( SMS_PF_RAND, the MP3 settings
+ * page ) on, each next track is a random pick among the folder's OTHER audio
+ * files. There is no played-set: a track can recur before every track has
+ * been heard, and with 2+ audio files the loop only ends on a user stop or a
+ * failed open. Play all -> Audio is the each-track-once shuffle. */
    if ( g_Config.m_PlayerFlags & SMS_PF_RAND ) {
 
     unsigned int  lnCandidates = 0, lPick, lIdx = 0;
