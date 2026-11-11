@@ -29,10 +29,15 @@ struct FileContext {
 static int seek_fail, short_read;
 static unsigned seeks, reads;
 static unsigned char g_SMSounds[512];
-static int fileXioLseek(int fd,unsigned n,int whence) {
- (void)fd;(void)whence;++seeks;return seek_fail?-1:(int)n;
+static unsigned dev_size=1000000;
+/* bdmfs_fatfs sign-extends the 32-bit offset; FatFs clamps a read-only seek to the file size. */
+static int fileXioLseek(int fd,int n,int whence) {
+ (void)fd;(void)whence;++seeks;return seek_fail?-1:n<0||(unsigned)n>dev_size?(int)dev_size:n;
 }
-static int fioLseek(int fd,unsigned n,int whence) { return fileXioLseek(fd,n,whence); }
+static long long fileXioLseek64(int fd,long long n,int whence) {
+ (void)fd;(void)whence;++seeks;return seek_fail?-1:n>dev_size?dev_size:n;
+}
+static int fioLseek(int fd,unsigned n,int whence) { (void)fd;(void)whence;++seeks;return seek_fail?-1:(int)n; }
 static int read_file(FileContext *c,void *p,unsigned n) {
  (void)p;++reads;
  if(short_read) return 0;
@@ -63,6 +68,11 @@ int main(void) {
   short_read=0;seek_fail=0;seeks=reads=0;
   File_Skip(&file,513);
   assert(file.m_CurPos==523 && seeks==0 && reads==2);
+  /* Above 2 GiB: the MPEG-PS probe seeks to m_Size-0x1FFFF for its tail scan. */
+  dev_size=file.m_Size=0xC0000000U;
+  assert(STIO_Seek(&file,0xBFFE0001U)!=-1 && file.m_CurPos==0xBFFE0001U);
+  assert(STIO_Seek(&file,0x7FFFFFFFU)!=-1 && file.m_CurPos==0x7FFFFFFFU);
+  dev_size=1000000;
  }
  return 0;
 }
@@ -73,4 +83,4 @@ with tempfile.TemporaryDirectory() as tmp:
     subprocess.run([os.environ.get("CC", "cc"), "-g", "-no-pie", "-fsanitize=address,undefined",
                     "-fno-sanitize-recover=all", str(src), "-o", str(exe)], check=True)
     subprocess.run([str(exe)], check=True, timeout=15)
-print("File skip: failed fio/fileXio seek preserves buffers, read fallback, overflow clamp and short reads passed")
+print("File skip: failed fio/fileXio seek preserves buffers, read fallback, overflow clamp, short reads and seeks above 2 GiB passed")

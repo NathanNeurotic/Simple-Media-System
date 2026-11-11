@@ -102,6 +102,7 @@ static int fioRead(int fd,void *p,unsigned n) {
 }
 #ifdef BDM
 static int fileXioLseek(int fd,unsigned n,int whence) { return fioLseek(fd,n,whence); }
+static long long fileXioLseek64(int fd,long long n,int whence) { return fioLseek(fd,(unsigned)n,whence); }
 static int fileXioRead(int fd,void *p,unsigned n) { (void)fd;return native_read(p,n); }
 #endif
 #ifdef _WIN32

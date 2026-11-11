@@ -59,6 +59,7 @@ static int fileXioIoctl2(int fd,int cmd,void *in,unsigned n,void *out,unsigned m
  assert(fd==42 && cmd==3 && !in && !n && !out && !m);++queries;return driver;
 }
 static int fileXioLseek(int fd,int offset,int whence) { assert(fd==42 && !offset);return whence==SEEK_END?196608:0; }
+static long long fileXioLseek64(int fd,long long offset,int whence) { return fileXioLseek(fd,(int)offset,whence); }
 static int fioLseek(int fd,int offset,int whence) { assert(fd==86 && !offset);return whence==SEEK_END?196608:0; }
 static int fileXioClose(int fd) { assert(fd==42);++closes;return 0; }
 static int fioClose(int fd) { assert(fd==86);++closes;return 0; }

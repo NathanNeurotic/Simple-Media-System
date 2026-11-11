@@ -1384,7 +1384,10 @@ static int STIO_Seek ( FileContext* apCtx, unsigned int aPos ) {
  lPos = SetFilePointer ( lpPriv -> m_hFile, aPos, NULL, FILE_BEGIN );
 #else  /* PS2 */
 #ifdef BDM
- if ( lpPriv -> m_fXio ) lPos = fileXioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
+ /* fileXioLseek takes a signed 32-bit offset, which bdmfs_fatfs sign-extends:
+  * a position at or above 2 GiB would land on end-of-file. */
+ if ( lpPriv -> m_fXio ) lPos = aPos > 0x7FFFFFFFU ? ( unsigned int )fileXioLseek64 ( lpPriv -> m_FD, aPos, SEEK_SET )
+                                                   : ( unsigned int )fileXioLseek   ( lpPriv -> m_FD, aPos, SEEK_SET );
  else
 #endif
  lPos = fioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
@@ -1655,6 +1658,8 @@ static void STIO_PfStop ( FileContext* apCtx ) {
  apCtx -> m_pPos   = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
  apCtx -> Fill     = STIO_Fill;
  apCtx -> Seek     = STIO_Seek;
+ if ( apCtx -> m_CurPos > 0x7FFFFFFFU ) fileXioLseek64 ( (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_FD, apCtx -> m_CurPos, SEEK_SET );
+ else
  fileXioLseek ( (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_FD, apCtx -> m_CurPos, SEEK_SET );
  apCtx -> m_Pos    = apCtx -> m_CurPos;
 
