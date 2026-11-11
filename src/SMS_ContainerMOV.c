@@ -1250,6 +1250,9 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
  lpPkt -> m_StmIdx = lIdx;
  lpPkt -> m_DTS = ( int64_t )lpSample -> m_DTS + lpMyStm -> m_TimeOffset - lpMyStm -> m_DTSShift;
  lpPkt -> m_PTS = ( int64_t )lpSample -> m_DTS + lpMyStm -> m_TimeOffset + lCTime / lpMyStm -> m_TimeRate;
+/* The MPEG-4 decoder stamps the picture it outputs ( with B-frames, the previous reference )
+ * with the current packet's time, as AVI supplies it: in decode order. */
+ if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG4 ) lpPkt -> m_PTS = lpPkt -> m_DTS;
 
  lpPkt -> m_Flags |= lpSample -> m_Flags ? SMS_PKT_FLAG_KEY : 0;
 

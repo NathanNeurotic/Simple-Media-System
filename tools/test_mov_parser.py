@@ -158,6 +158,8 @@ int main(int argc,char **argv) {
   unsigned j=read_counts[selected]++;assert(j<counts[selected]);
   assert(packet.m_Size==(int)expected[selected][j].bytes);
   assert(!memcmp(packet.m_pData,data+expected[selected][j].pos,packet.m_Size));
+  /* MPEG-4 video is stamped in decode order; other codecs keep composition time. */
+  if(c.m_pStm[selected]->m_pCodec->m_ID==SMS_CodecID_MPEG4) expected[selected][j].pts=expected[selected][j].dts;
   if(llabs(packet.m_PTS-expected[selected][j].pts)>1 || llabs(packet.m_DTS-expected[selected][j].dts)>1) {
    fprintf(stderr,"stream%d packet%u PTS=%lld expected=%lld DTS=%lld expected=%lld\n",selected,j,
            (long long)packet.m_PTS,expected[selected][j].pts,(long long)packet.m_DTS,expected[selected][j].dts);
