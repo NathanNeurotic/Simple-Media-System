@@ -93,7 +93,7 @@ __asm__(
  * a polling wait there would burn the EE and starve the decoders on every console. It keeps
  * its blocking wait; it is also unreachable once a timeout has retired the server.
  */
-#define SPU_RPC_TIMEOUT 180   /* vblank ticks, ~3 s NTSC -- far beyond any healthy reply */
+#define SPU_RPC_TIMEOUT 3000   /* ms ( g_Timer units ) -- AUDSRV holds a UI-sound RPC until the previous sound ( up to ~0.9 s ) ends */
 
 static int _spu_wait ( int aSema, SifRpcClientData_t* apClient ) {
 
