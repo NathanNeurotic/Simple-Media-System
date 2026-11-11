@@ -115,6 +115,10 @@ After the min/max loop, if no tail PTS was found (lDTS still below lPTS) do not 
 ### test
 Extend tools/test_mpeg_ps_probe.py with a valid video+audio pair followed by more than 128 KiB of zero bytes and assert m_Duration >= m_StartTime (the test's input buffer is 200000 bytes, which is enough).
 
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
+
 ## #4 Files of 4 GiB or more get a wrapped size (low 32 bits of the length) on BDM devices
 - issue: 0
 - severity: low
@@ -132,4 +136,8 @@ Optional: read the size with fileXioLseek64 ( lFD, 0, SEEK_END ) on the fileXio 
 
 ### test
 tools/test_stio_device_reads.py already stubs the open path; add a case where the lseek64 stub reports 5 GiB and assert m_Size==0xFFFFFFFF.
+
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
 

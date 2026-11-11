@@ -185,23 +185,9 @@ Decompressed every irx/*.irx.xz and compared with its tracked raw .irx: 19 are I
 ### test
 Built the private tree with these four files (and builds/, lng/) removed using ps2dev/ps2dev:v1.0@sha256:da02eb08...: `make all` rc=0 and bin/SMS.elf sha256 825dd21cc1c990568a55e4659d91b79a8e18f5f9219900d4e970fc7ff0f7d50e, byte-identical to the unmodified baseline build (scratchpad/build/base/bin/SMS.elf). Also run `sh tools/build-smbman.sh --check` in the container (reads only irx/smbman.irx.xz).
 
-### VERDICT diagnosis
-{
- "real": true,
- "fix_sound": true,
- "reproduced": true,
- "reasoning": "Verdict: the defect is real (low-severity repo hygiene, no player code involved) and the proposed deletion is safe. I could not refute it, but three details in the finding need correcting.\n\n**What I read and ran (read-only, current tree at c275476):**\n- `src/SMS_Locale.c`: `s_SMStringDef` starts at line 398 and has 311 initialisers (counted by script). `s_SMStringUDF` is sized from it (line 810). The parse loop at lines 907-924 stops on an empty line, end of buffer, or a full table, and line 928 rejects the pack unless `lIdx` equals the table size.\n- I ported that loop line-for-line to Python and ran it over the actual bytes of every tracked pack. All 20 `docs/translation/SMS.lng*` parse to 311 and are accepted. All 19 `lng/SMS.lng_*` are rejected: 18 parse to 269 and `lng/SMS.lng_TR` to 270. This is a port of the loop, not the compiled C function, since `SMS_LocaleInit` is tied to PS2 file I/O.\n- Byte comparison: 17 of the 19 `lng/` packs are exact byte prefixes of the same-named `docs/translation` pack. `lng/SMS.lng_ES` differs in 197 of 269 lines (the `docs/translation` copy was updated in 266851d, 2026-10-26). `lng/SMS.lng_TR` is the other exception.\n- References: `grep -i lng Makefile README*` is empty. `git grep` for `lng/` outside `lng/` hits only `docs/investigations/2026-11-11-open-issues-triage.md`. Nothing under `tools/` or `docs-site/build.py` mentions it. `.github/workflows/compilation.yml:133` zips `docs/translation` only. Removing `lng/` therefore cannot change the ELF; I did not run the PS2 build, as there is no reference to break.\n- Credits: the per-pack author list (GogLoid+NuClear, Quant/Jones23, Dean Kasabow, and so on) exists only in `lng/README.txt`. `CHANGELOG.md` has only incidental thanks to a few of the same names.\n- Upstream 2.9rev4 (existing clone in the scratchpad): 269 table entries and the same strict count check (lines 742/751). There is no `lng/` directory at that tag. So the packs were valid for the 269-entry upstream table and went stale when the fork grew it to 311 (efd93a0, 2026-07-20, and later). This is fork staleness, not an upstream bug.\n\n**Corrections to the finding:**\n1. **The refusal is no longer silent.** `src/SMS_GUIMenuSMS.c:1176-1193` (`_lang_handler`) raises a `GUI_Error` using `s_pBadLng`: \"The language file was found but has %d lines; this version needs %d ... Use the SMS.lng that came with this build.\" A user following `lng/README.txt` gets an explicit 269-vs-311 dialog. The harm is a misleading README plus 19 dead files, not the silent failure described in the `compilation.yml` comment.\n2. **`lng/SMS.lng_TR` is more than a UTF-8 re-encode.** It is a 2022 contributor update (9c7eccf, Serdar Sa\u011flam). After normalising UTF-8 against cp1254, only 204 of its 269 lines match `docs/translation/SMS.lng_TR`; 65 lines have different wording. Deleting it removes the only in-tree copy of that revision, though it stays in git history. It is unusable on SMS as-is: it is UTF-8 and `TRANSLATING.txt` rule 5 says SMS renders single-byte encodings.\n3. **`lng/` post-dates the 2.9rev4 tag.** It arrived in b0b16da (2021 \"Code cleanup\"), so \"works in 2.9rev4\" does not apply to this directory.\n\n**Fix assessment:** `git rm lng/SMS.lng_*` plus moving the README to `docs/translation/CREDITS.txt` is minimal and has zero PS2 risk. Two things to get right when applying it:\n- Keep everything from \"Authors are:\" to the end of the file, including the closing \"Sorry, but author's information is incomplete...\" paragraph. Drop only the three numbered install steps and the blank line after them.\n- Name 9c7eccf in the commit message so the 2022 Turkish revision stays discoverable. Do not merge it into `docs/translation/SMS.lng_TR` as part of this change; that would alter shipped Turkish text without testing.\n\n**Related, outside this finding:** `wiki/Releases.md:98` still links a legacy `SMS_lng09.rar` pack download, which is another source of 269-line packs.",
- "corrected_fix": ""
-}
+### VERDICT
 
-### VERDICT fix
-{
- "real": true,
- "fix_sound": true,
- "reproduced": true,
- "reasoning": "Verdict: the defect is real (low severity, cleanup only) and the proposed fix is safe. I could not refute it. Two of the finding's supporting claims are wrong and one detail of the fix needs tightening; none of that changes the fix.\n\n**What I ran**\n\n1. Loader simulation. I ported the parse loop from `src/SMS_Locale.c` (the `while (1)` loop ending at the check `lIdx != sizeof ( s_SMStringUDF ) / sizeof ( s_SMStringUDF[ 0 ] )`, about line 928) to Python and ran it over every pack. Script: `(investigator scratch, not kept)/verify-fix-hunt-ci-docs-release/cmp.py`.\n   - `s_SMStringDef` has 311 entries, and `s_SMStringUDF` is sized from it.\n   - All 20 `docs/translation/SMS.lng*` files parse to exactly 311.\n   - 18 of the 19 `lng/SMS.lng_*` files parse to 269; `lng/SMS.lng_TR` parses to 270 (the finding says 269 for all).\n   - So all 19 take the `free ( lpAlloc ); m_BrowserFlags &= ~SMS_BF_UDFL` reject branch.\n   - 17 of the 19 are byte-exact prefixes of the `docs/translation` pack; ES and TR differ.\n\n2. Fix applied in a private tree (`.../scratchpad/verify-fix-hunt-ci-docs-release/tree`): `git rm lng/SMS.lng_*`, `git mv lng/README.txt docs/translation/CREDITS.txt`, install steps stripped.\n   - Git records it as a rename (`R lng/README.txt -> docs/translation/CREDITS.txt`), so `git log --follow` keeps the credit file's history.\n   - `python3 docs-site/build.py --check` in WSL printed \"Checked 30 pages, 380 search entries and 32 wiki files; local links and anchors validated\", rc=0.\n   - The CI zip line (`zip SMS.lng SMS.lng_* TRANSLATING.txt` in `docs/translation`) still produces 21 files; `CREDITS.txt` is not picked up by the glob.\n\n3. PS2 build of the patched tree with the pinned toolchain (`make all`, rc=0). `bin/SMS.elf` sha256 is `825dd21cc1c990568a55e4659d91b79a8e18f5f9219900d4e970fc7ff0f7d50e`, byte-identical to the existing baseline build at `scratchpad/build/base/bin/SMS.elf`.\n\n4. Reference search. Nothing in `Makefile`, `tools/`, `.github/`, `docs-site/`, `wiki/` or the READMEs references `lng/`. No host test or workflow globs `docs/translation/*`. The player is unaffected in every build variant (BDM=0, SMS_DIAG=1) because `lng/` is not a build input.\n\n5. Credit list. Grepping the translator names outside `lng/` finds only two unrelated CHANGELOG mentions, so `lng/README.txt` is the only tracked copy of the per-language credits. The earlier triage note saying the credits are \"already carried in CHANGELOG.md\" is false; the file must be kept, as this fix does.\n\n6. Install steps. `docs/translation/TRANSLATING.txt` lines 48-51 already carry them (\"INSTALLING A FINISHED TRANSLATION (from the legacy pack's own readme)\"), so dropping them from the moved file loses nothing.\n\n**Corrections to the finding**\n\n- **`lng/SMS.lng_TR` is not a duplicate or a mere \"UTF-8 variant\".** It is a separate 2022 retranslation (upstream commit `9c7eccf`, \"Update SMS.lng_TR\", author Serdar Sa\u011flam, 194 insertions / 196 deletions). Transcoded to cp1254 it still differs from the previous revision in 35 hunks. `docs/translation/SMS.lng_TR` descends from the pre-2022 cp1254 revision, with a duplicate \"32 bit\" line removed and the tail extended. Deleting `lng/` therefore removes the only working-tree copy of that contributor's wording. It stays in git history and upstream, it is unloadable by this build (270 entries, UTF-8), and the README credit \"SMS.lng_TR - LaptoniC\" remains accurate for the pack that ships. This is acceptable, but the commit message should say so explicitly (for example: \"lng/SMS.lng_TR was the 2022 UTF-8 Turkish revision from upstream 9c7eccf; not ported, remains in history\").\n- **The \"silent refusal\" is no longer current.** `SMS_Locale.c:926` sets `g_LngLines`, and `SMS_GUIMenuSMS.c:1189-1190` formats a \"bad lng\" message with parsed and expected counts. A user who installs a pack from `lng/` now gets a rejection message, not a dead row. That makes the user impact lower than stated; the stale README is still misleading.\n- **The proposed test \"`git grep -n 'lng/'` stays empty\" is wrong.** `docs/investigations/2026-11-11-open-issues-triage.md` (lines 186-189 and 440-443) mentions `lng/` before and after the change. Scope the grep to `Makefile tools .github docs-site wiki README*`.\n\n**Detail to tighten when applying**\n\n- Delete the first four lines of the moved file (the three steps plus the blank line after them), not three, so `CREDITS.txt` starts at \"Authors are:\".\n- Keep everything else byte-for-byte, including the closing \"Sorry, but author's information is incomplete...\" paragraph and the CRLF working-tree endings (`.gitattributes` has `* text=auto`; the index stores LF).\n\n**Alternative considered and rejected**\n\nAppending the credit block to `TRANSLATING.txt` would ship the credits inside the languages zip, but it edits a 373-line reference file and loses the rename history. The proposed `git mv` is the smaller change.\n\n**Regression risk on real PS2 hardware:** none. The ELF is byte-identical.",
- "corrected_fix": ""
-}
+Not independently checked (below the verification cut-off, or its checker did not finish).
 
 ## #6 lng/ holds 19 legacy language packs that the current build rejects (269 entries vs 311 required); unreferenced duplicate of docs/translation
 - issue: 27
@@ -221,6 +207,24 @@ src/SMS_Locale.c:928 rejects a pack unless `lIdx == sizeof ( s_SMStringUDF ) / s
 ### test
 PS2 build with lng/ removed is byte-identical to baseline (same build as the IRX finding, sha256 825dd21c...). `git grep -n 'lng/'` stays empty; python3 docs-site/build.py --check unaffected.
 
+### VERDICT diagnosis
+{
+ "real": true,
+ "fix_sound": true,
+ "reproduced": true,
+ "reasoning": "Verdict: the defect is real (low-severity repo hygiene, no player code involved) and the proposed deletion is safe. I could not refute it, but three details in the finding need correcting.\n\n**What I read and ran (read-only, current tree at c275476):**\n- `src/SMS_Locale.c`: `s_SMStringDef` starts at line 398 and has 311 initialisers (counted by script). `s_SMStringUDF` is sized from it (line 810). The parse loop at lines 907-924 stops on an empty line, end of buffer, or a full table, and line 928 rejects the pack unless `lIdx` equals the table size.\n- I ported that loop line-for-line to Python and ran it over the actual bytes of every tracked pack. All 20 `docs/translation/SMS.lng*` parse to 311 and are accepted. All 19 `lng/SMS.lng_*` are rejected: 18 parse to 269 and `lng/SMS.lng_TR` to 270. This is a port of the loop, not the compiled C function, since `SMS_LocaleInit` is tied to PS2 file I/O.\n- Byte comparison: 17 of the 19 `lng/` packs are exact byte prefixes of the same-named `docs/translation` pack. `lng/SMS.lng_ES` differs in 197 of 269 lines (the `docs/translation` copy was updated in 266851d, 2026-10-26). `lng/SMS.lng_TR` is the other exception.\n- References: `grep -i lng Makefile README*` is empty. `git grep` for `lng/` outside `lng/` hits only `docs/investigations/2026-11-11-open-issues-triage.md`. Nothing under `tools/` or `docs-site/build.py` mentions it. `.github/workflows/compilation.yml:133` zips `docs/translation` only. Removing `lng/` therefore cannot change the ELF; I did not run the PS2 build, as there is no reference to break.\n- Credits: the per-pack author list (GogLoid+NuClear, Quant/Jones23, Dean Kasabow, and so on) exists only in `lng/README.txt`. `CHANGELOG.md` has only incidental thanks to a few of the same names.\n- Upstream 2.9rev4 (existing clone in the scratchpad): 269 table entries and the same strict count check (lines 742/751). There is no `lng/` directory at that tag. So the packs were valid for the 269-entry upstream table and went stale when the fork grew it to 311 (efd93a0, 2026-07-20, and later). This is fork staleness, not an upstream bug.\n\n**Corrections to the finding:**\n1. **The refusal is no longer silent.** `src/SMS_GUIMenuSMS.c:1176-1193` (`_lang_handler`) raises a `GUI_Error` using `s_pBadLng`: \"The language file was found but has %d lines; this version needs %d ... Use the SMS.lng that came with this build.\" A user following `lng/README.txt` gets an explicit 269-vs-311 dialog. The harm is a misleading README plus 19 dead files, not the silent failure described in the `compilation.yml` comment.\n2. **`lng/SMS.lng_TR` is more than a UTF-8 re-encode.** It is a 2022 contributor update (9c7eccf, Serdar Sa\u011flam). After normalising UTF-8 against cp1254, only 204 of its 269 lines match `docs/translation/SMS.lng_TR`; 65 lines have different wording. Deleting it removes the only in-tree copy of that revision, though it stays in git history. It is unusable on SMS as-is: it is UTF-8 and `TRANSLATING.txt` rule 5 says SMS renders single-byte encodings.\n3. **`lng/` post-dates the 2.9rev4 tag.** It arrived in b0b16da (2021 \"Code cleanup\"), so \"works in 2.9rev4\" does not apply to this directory.\n\n**Fix assessment:** `git rm lng/SMS.lng_*` plus moving the README to `docs/translation/CREDITS.txt` is minimal and has zero PS2 risk. Two things to get right when applying it:\n- Keep everything from \"Authors are:\" to the end of the file, including the closing \"Sorry, but author's information is incomplete...\" paragraph. Drop only the three numbered install steps and the blank line after them.\n- Name 9c7eccf in the commit message so the 2022 Turkish revision stays discoverable. Do not merge it into `docs/translation/SMS.lng_TR` as part of this change; that would alter shipped Turkish text without testing.\n\n**Related, outside this finding:** `wiki/Releases.md:98` still links a legacy `SMS_lng09.rar` pack download, which is another source of 269-line packs.",
+ "corrected_fix": ""
+}
+
+### VERDICT fix
+{
+ "real": true,
+ "fix_sound": true,
+ "reproduced": true,
+ "reasoning": "Verdict: the defect is real (low severity, cleanup only) and the proposed fix is safe. I could not refute it. Two of the finding's supporting claims are wrong and one detail of the fix needs tightening; none of that changes the fix.\n\n**What I ran**\n\n1. Loader simulation. I ported the parse loop from `src/SMS_Locale.c` (the `while (1)` loop ending at the check `lIdx != sizeof ( s_SMStringUDF ) / sizeof ( s_SMStringUDF[ 0 ] )`, about line 928) to Python and ran it over every pack. Script: `(investigator scratch, not kept)/verify-fix-hunt-ci-docs-release/cmp.py`.\n   - `s_SMStringDef` has 311 entries, and `s_SMStringUDF` is sized from it.\n   - All 20 `docs/translation/SMS.lng*` files parse to exactly 311.\n   - 18 of the 19 `lng/SMS.lng_*` files parse to 269; `lng/SMS.lng_TR` parses to 270 (the finding says 269 for all).\n   - So all 19 take the `free ( lpAlloc ); m_BrowserFlags &= ~SMS_BF_UDFL` reject branch.\n   - 17 of the 19 are byte-exact prefixes of the `docs/translation` pack; ES and TR differ.\n\n2. Fix applied in a private tree (`.../scratchpad/verify-fix-hunt-ci-docs-release/tree`): `git rm lng/SMS.lng_*`, `git mv lng/README.txt docs/translation/CREDITS.txt`, install steps stripped.\n   - Git records it as a rename (`R lng/README.txt -> docs/translation/CREDITS.txt`), so `git log --follow` keeps the credit file's history.\n   - `python3 docs-site/build.py --check` in WSL printed \"Checked 30 pages, 380 search entries and 32 wiki files; local links and anchors validated\", rc=0.\n   - The CI zip line (`zip SMS.lng SMS.lng_* TRANSLATING.txt` in `docs/translation`) still produces 21 files; `CREDITS.txt` is not picked up by the glob.\n\n3. PS2 build of the patched tree with the pinned toolchain (`make all`, rc=0). `bin/SMS.elf` sha256 is `825dd21cc1c990568a55e4659d91b79a8e18f5f9219900d4e970fc7ff0f7d50e`, byte-identical to the existing baseline build at `scratchpad/build/base/bin/SMS.elf`.\n\n4. Reference search. Nothing in `Makefile`, `tools/`, `.github/`, `docs-site/`, `wiki/` or the READMEs references `lng/`. No host test or workflow globs `docs/translation/*`. The player is unaffected in every build variant (BDM=0, SMS_DIAG=1) because `lng/` is not a build input.\n\n5. Credit list. Grepping the translator names outside `lng/` finds only two unrelated CHANGELOG mentions, so `lng/README.txt` is the only tracked copy of the per-language credits. The earlier triage note saying the credits are \"already carried in CHANGELOG.md\" is false; the file must be kept, as this fix does.\n\n6. Install steps. `docs/translation/TRANSLATING.txt` lines 48-51 already carry them (\"INSTALLING A FINISHED TRANSLATION (from the legacy pack's own readme)\"), so dropping them from the moved file loses nothing.\n\n**Corrections to the finding**\n\n- **`lng/SMS.lng_TR` is not a duplicate or a mere \"UTF-8 variant\".** It is a separate 2022 retranslation (upstream commit `9c7eccf`, \"Update SMS.lng_TR\", author Serdar Sa\u011flam, 194 insertions / 196 deletions). Transcoded to cp1254 it still differs from the previous revision in 35 hunks. `docs/translation/SMS.lng_TR` descends from the pre-2022 cp1254 revision, with a duplicate \"32 bit\" line removed and the tail extended. Deleting `lng/` therefore removes the only working-tree copy of that contributor's wording. It stays in git history and upstream, it is unloadable by this build (270 entries, UTF-8), and the README credit \"SMS.lng_TR - LaptoniC\" remains accurate for the pack that ships. This is acceptable, but the commit message should say so explicitly (for example: \"lng/SMS.lng_TR was the 2022 UTF-8 Turkish revision from upstream 9c7eccf; not ported, remains in history\").\n- **The \"silent refusal\" is no longer current.** `SMS_Locale.c:926` sets `g_LngLines`, and `SMS_GUIMenuSMS.c:1189-1190` formats a \"bad lng\" message with parsed and expected counts. A user who installs a pack from `lng/` now gets a rejection message, not a dead row. That makes the user impact lower than stated; the stale README is still misleading.\n- **The proposed test \"`git grep -n 'lng/'` stays empty\" is wrong.** `docs/investigations/2026-11-11-open-issues-triage.md` (lines 186-189 and 440-443) mentions `lng/` before and after the change. Scope the grep to `Makefile tools .github docs-site wiki README*`.\n\n**Detail to tighten when applying**\n\n- Delete the first four lines of the moved file (the three steps plus the blank line after them), not three, so `CREDITS.txt` starts at \"Authors are:\".\n- Keep everything else byte-for-byte, including the closing \"Sorry, but author's information is incomplete...\" paragraph and the CRLF working-tree endings (`.gitattributes` has `* text=auto`; the index stores LF).\n\n**Alternative considered and rejected**\n\nAppending the credit block to `TRANSLATING.txt` would ship the credits inside the languages zip, but it edits a 373-line reference file and loses the rename history. The proposed `git mv` is the smaller change.\n\n**Regression risk on real PS2 hardware:** none. The ELF is byte-identical.",
+ "corrected_fix": ""
+}
+
 ## #7 builds/SMS-mx4sio-full.elf.pre-smbman.bak: 1.7 MB backup ELF tracked by accident
 - issue: 0
 - severity: low
@@ -238,6 +242,10 @@ PS2 build with lng/ removed is byte-identical to baseline (same build as the IRX
 
 ### test
 PS2 build with builds/ removed is byte-identical to baseline (sha256 825dd21c...); `git ls-files builds` empty.
+
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
 
 ## #8 Linux converter zip is built with `cp -r tools/sms_converter/*` after the tests ran: ships test byproducts and tests, and the docs promise instructions it does not contain
 - issue: 0
@@ -261,6 +269,10 @@ sms-converter.yml lines 77-78: replace the cp with
 ### test
 After the next master run, `unzip -l SMS-Media-Converter-Linux.zip` should show no __pycache__, no sms-converter-crash.log and no test_*.py, and include README.txt. Locally: the git archive command above in a clone after running the converter tests.
 
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
+
 ## #9 tools/check_devmenu.py (s_DevMenu index cross-check) is not run by any workflow
 - issue: 0
 - severity: low
@@ -278,6 +290,10 @@ compilation.yml, 'Host playback and file I/O regression checks' block: add `pyth
 
 ### test
 python3 tools/check_devmenu.py exits 0 today; swapping two s_DevMenu row indices in a scratch copy of src/SMS_GUIMenuSMS.c should make it exit 1.
+
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
 
 ## #10 developers page says the compilation workflow lists 'all 17 current host regressions'; it lists 44
 - issue: 0
@@ -297,6 +313,10 @@ Line 23: drop the number and widen the FFmpeg remark: '...; the MOV, JPEG and AA
 ### test
 python3 docs-site/build.py --check passes.
 
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
+
 ## #11 Release-publishing workflows: mutable toolchain tag, write token granted to non-publishing jobs, persisted checkout credentials
 - issue: 0
 - severity: low
@@ -315,6 +335,10 @@ compilation.yml: append `@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c734
 ### test
 tools/test_rolling_release.py and tools/test_converter_publication.py are unaffected (they parse step bodies and concurrency blocks only). After merge, confirm one master run still updates the rolling release and that a PR run's build-legacy job succeeds with a read-only token.
 
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
+
 ## #12 Every push to a same-repo PR branch runs build, sms-converter and smbman twice (push + pull_request)
 - issue: 0
 - severity: low
@@ -332,4 +356,8 @@ In the three workflows change the push filter to `branches: [master]` (keep `tag
 
 ### test
 Open a PR from a same-repo branch and confirm each workflow runs once; push to master and confirm the rolling publish still runs (its condition is `github.event_name == 'push' && github.ref == 'refs/heads/master'`, unchanged).
+
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
 

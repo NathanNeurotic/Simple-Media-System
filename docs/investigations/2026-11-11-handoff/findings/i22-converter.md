@@ -173,3 +173,7 @@ Delete items 1, 3, 5, 6, 7 outright; drop the unused parameter in 2 (update its 
 ### test
 Existing suite must stay green: test_converter (35), test_multitrack (12), test_geometry (7), test_file_size (6), test_end_to_end (10 presets). Grep for `passes"`, `item_selected`, `destination_changed`, `is_custom_mode` returns nothing outside tests afterwards.
 
+### VERDICT
+
+Not independently checked (below the verification cut-off, or its checker did not finish).
+
