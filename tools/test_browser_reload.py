@@ -50,6 +50,8 @@ prefix = r'''
 #define UNCACHED_SEG(p) (p)
 #define VIF_DIRECT(n) ((u64)(0x50000000U | (n)) << 32)
 #define SMS_BF_AVIF 1
+#define SMS_FA_FLAGS_SUB 2
+#define SMS_FA_FLAGS_MSG 4
 '''
 adapters = cwd + r'''
 static GUIFileMenu menu;
@@ -67,10 +69,10 @@ static struct { int m_PlayerVolume;unsigned m_BrowserFlags,m_BrowserSCIdx,m_Brow
 static unsigned phase,extras,progress,reads,redraws,observed_count;
 static char observed[16][64];
 static void _artwork_drain(void) {}
-static unsigned poster_uploads;
+static unsigned poster_uploads,loads,open_ok;
 static u64 *synced_poster_packets;
 static unsigned char *_artwork_load(const void *key,void *arg) {
- (void)key;return arg?calloc(1,SMS_POSTER_BYTES):NULL;
+ (void)key;++loads;return arg?calloc(1,SMS_POSTER_BYTES):NULL;
 }
 static void _artwork_packet(u64 *p,unsigned char *pixels,int x,int y,int side) {
  assert(synced_poster_packets);
@@ -146,6 +148,13 @@ static void _redraw(GUIFileMenu *p,int all) {
  GUIFileMenu_CleanupPackets((GUIObject *)p);
  observed_count=0;
  GUIFileMenu_Render((GUIObject *)p,0);
+}
+/* The subtitle picker repaints every GUI object while the media file is open. */
+static void **SMS_OpenMediaFile(const char *name,int flags) {
+ static void *handoff[3];
+ assert(!strcmp(name,_STR(menu.m_pCurrent)) && flags==(SMS_FA_FLAGS_SUB|SMS_FA_FLAGS_MSG));
+ observed_count=0;GUIFileMenu_Render((GUIObject *)&menu,0);
+ return open_ok?handoff:NULL;
 }
 '''
 post = r'''
@@ -232,6 +241,16 @@ int main(int argc,char **argv) {
  GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_TRIANGLE);
  assert(!levels.m_Size && !strcmp(_STR(menu.m_pCurrent),"extra4.avi"));
  list_up();
+ /* Opening from an artwork view reads no artwork again: a failed open leaves
+  * the page as drawn and a successful one releases it for playback. */
+ for(unsigned i=0;i<2;++i) {
+  GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);
+  unsigned before=loads;u64 *page=menu.m_pGSPacket;
+  _perform_file_action(&menu,SMS_FA_FLAGS_SUB);
+  assert(loads==before && menu.m_pGSPacket==page && menu.m_Artwork.m_Count);
+  open_ok=1;_perform_file_action(&menu,SMS_FA_FLAGS_SUB);open_ok=0;
+  assert(loads==before && !menu.m_pGSPacket && !menu.m_Artwork.m_Count);
+ }
  GUIFileMenu_Cleanup((GUIObject *)&menu);
  GSContext_DeleteList(menu.m_pSelRect);menu.m_pSelRect=NULL;
  SMS_ListDestroy(&filtered,0);SMS_ListDestroy(&listing,0);SMS_ListDestroy(&levels,0);
@@ -248,7 +267,7 @@ source += function(browser, "_is_utf8") + function(browser, "GUIFileMenu_RenderI
 source += function(browser, "_poster_names") + function(browser, "_poster_text_offset") + function(browser, "_poster_render")
 source += function(browser, "_artwork_render") + function(browser, "GUIFileMenu_Render")
 source += function(browser, "GUIFileMenu_CleanupPackets") + function(browser, "GUIFileMenu_Cleanup")
-source += redraw_adapter + function(browser, "GUIFileMenu_SetFocus")
+source += redraw_adapter + function(browser, "GUIFileMenu_SetFocus") + function(browser, "_perform_file_action")
 source += function(browser, "_reset") + function(browser, "_push_state") + function(browser, "_pop_state")
 source += function(browser, "_fill") + function(browser, "_step_down") + function(browser, "_step_up")
 source += function(browser, "_page_scroll")
@@ -272,4 +291,4 @@ with tempfile.TemporaryDirectory() as temporary:
     expected = "0" if "--observe-prior" in sys.argv else "2"
     for mode in ("list", "grid", "poster"):
         subprocess.run([str(exe), mode, expected], check=True, timeout=15)
-print("Browser reload: list-grid-poster R2 cycle, later-page selection, list window after R2 and Back, six tile uploads, empty/repopulated directory and focus repair checked")
+print("Browser reload: list-grid-poster R2 cycle, later-page selection, list window after R2 and Back, artwork release on open, six tile uploads, empty/repopulated directory and focus repair checked")

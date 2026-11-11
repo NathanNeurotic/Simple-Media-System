@@ -1042,8 +1042,10 @@ void** SMS_OpenMediaFile ( const char* apName, int aFlags ) {
 
 static void _perform_file_action ( GUIFileMenu* apMenu, int aFlags ) {
 
- if ( apMenu -> m_ArtworkMode ) GUIFileMenu_Cleanup ( ( GUIObject* )apMenu );
- if ( !SMS_OpenMediaFile ( _STR( apMenu -> m_pCurrent ), aFlags | SMS_FA_FLAGS_MSG ) && apMenu -> m_ArtworkMode ) _redraw ( apMenu, 0 );
+ /* Release artwork only once the file is open: the subtitle picker repaints
+  * the page from the cache and a failed open leaves it as drawn. */
+ if ( SMS_OpenMediaFile ( _STR( apMenu -> m_pCurrent ), aFlags | SMS_FA_FLAGS_MSG ) && apMenu -> m_ArtworkMode )
+  GUIFileMenu_Cleanup ( ( GUIObject* )apMenu );
 
 }  /* end _perform_file_action */
 
