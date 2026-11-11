@@ -421,7 +421,7 @@ int SMS_GetContainerM3U ( SMS_Container* apCont ) {
    SMS_List*    lpNewList = SMS_ListInit ();
    unsigned int lSize     = lpList -> m_Size;
 
-   g_RandSeed = ( int )g_Timer;
+   g_RandSeed = ( int )( g_Timer >> 3 );   /* g_Timer advances by 8 per tick */
 
    while ( lSize ) {
 

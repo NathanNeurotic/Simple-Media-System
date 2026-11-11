@@ -148,7 +148,7 @@ void _start_player ( FileContext* apFileCtx, FileContext* apSubCtx, SubtitleForm
     SMS_ListNode* lpCurrent = lpNode;
     SMS_ListNode* lpScan;
 
-    g_RandSeed = ( int )g_Timer;
+    g_RandSeed = ( int )( g_Timer >> 3 );   /* g_Timer advances by 8 per tick */
 
     for ( lpScan = g_pFileList -> m_pHead; lpScan; lpScan = lpScan -> m_pNext )
      if (  ( int )lpScan -> m_Param == GUICON_MP3 && lpScan != lpCurrent  ) ++lnCandidates;
@@ -222,7 +222,7 @@ static void _start_playlist ( SMS_List* apList ) {
 
   if ( lpNodes ) {
 
-   g_RandSeed = ( int )g_Timer;
+   g_RandSeed = ( int )( g_Timer >> 3 );   /* g_Timer advances by 8 per tick */
 
    SMS_ListNode* lpScan = apList -> m_pHead;
    for ( i = 0; i < lnStm; ++i ) {
