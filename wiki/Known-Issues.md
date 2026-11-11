@@ -1,6 +1,6 @@
 # Known Issues & Testing
 
-Status reviewed 2026-11-01 against merged master `4147f0a` (the current rolling build), including the converter size cap, GOP wording, browser reload redraw and AVI/AAC follow-ups through [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46). No reporter has posted a console result since 2026-10-27, so all nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
+Status reviewed 2026-11-11 against merged master `c275476`, including USB read-ahead ([PR #49](https://github.com/NathanNeurotic/Simple-Media-System/pull/49)), the 720p display-width limit (PR #50), the scrollbar-seek worker stop ([PR #51](https://github.com/NathanNeurotic/Simple-Media-System/pull/51)) and the poster-browser changes (PR #52, PR #53). The newest console result is the #24 reporter's 2026-11-02 test of `8a25e22`; all nine reports below remain open. Consult the linked issue for newer reports; this page is a dated evidence summary.
 
 ## MPEG-2/AC3 opening freeze — #29
 
@@ -8,7 +8,7 @@ Status reviewed 2026-11-01 against merged master `4147f0a` (the current rolling 
 
 ## High-bitrate USB stutter — #24
 
-[USB stutter remained in the reporter's later test; MX4SIO reduced it and 2.9rev4 played the same USB video smoothly.](https://github.com/NathanNeurotic/Simple-Media-System/issues/24) PR #35 adds driver-confirmed USB reads with a 64 KiB synchronous refill bound. Unknown/non-USB mass devices retain 4 KiB reads and 32 KiB refills; the MX4SIO workaround is preserved. Host controls establish routing, byte continuity and bounds; console throughput is unmeasured. Compare the identical file, source and settings with matched DIAG read/refill and queue measurements before calling the stutter resolved.
+[On 2026-11-02 the reporter tested 8a25e22 : USB stutter became a slight slowdown at about 0:10–0:16, MX4SIO still stuttered, and seeking backward after pausing froze playback. 2.9rev4 played the same USB video smoothly.](https://github.com/NathanNeurotic/Simple-Media-System/issues/24) That build has PR #49, which reads confirmed-USB files ahead on a helper thread in up to four 64 KiB slots. PR #51 (`c275476`) stops the playback workers before a scrollbar seek; it has not been retested on a console. Unknown/non-USB mass devices retain 4 KiB reads and 32 KiB refills; the MX4SIO workaround is preserved. Host controls establish routing, byte continuity and bounds; console throughput is unmeasured. Compare the identical file, source and settings with matched DIAG read/refill and queue measurements before calling the stutter resolved.
 
 ## Green or red video color — #20 / #23
 
@@ -34,7 +34,7 @@ The MPEG RGB ownership fix removes a reproduced held-buffer overwrite. Longer co
 
 ## Poster / cover-art grid — #26
 
-[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Merged follow-ups through PR #40 also cover long browser/HOST/M3U paths, navigation allocation failures and failed device entry, and [PR #45](https://github.com/NathanNeurotic/Simple-Media-System/pull/45) redraws rebuilt entries during reload. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
+[PR #34 merged an optional R2 JPEG cover grid for #26 into master at 3eab0ee.](https://github.com/NathanNeurotic/Simple-Media-System/pull/34) Same-directory, same-basename JPEGs supply covers through a six-thumbnail cache; missing or unsupported artwork uses normal icons. See [setup, limits and controls](https://nathanneurotic.github.io/Simple-Media-System/video.html#artwork-browser). Lookup, cache, navigation, packet and lifecycle behavior have host controls. Merged follow-ups through PR #40 also cover long browser/HOST/M3U paths, navigation allocation failures and failed device entry, and [PR #45](https://github.com/NathanNeurotic/Simple-Media-System/pull/45) redraws rebuilt entries during reload. PR #52 hides a video's same-name JPEG from the list and PR #53 adds a selected-poster view to the R2 cycle. Master includes PR #35's playback fixes; console rendering, device removal, repeated navigation/playback transitions and resource-stability acceptance remain pending. #26 remains open.
 
 ## How to read validation claims
 
