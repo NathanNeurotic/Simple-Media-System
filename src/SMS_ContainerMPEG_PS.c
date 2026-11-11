@@ -916,8 +916,14 @@ error:
     if (  ( int64_t )lSEPTS[ i ] > ( int64_t )lDTS  ) lDTS = lSEPTS[ i ];
    }  /* end for */
 
-   apCont -> m_StartTime = ( int )SMS_Rescale ( lPTS, SMS_TIME_BASE, 90000 );
-   apCont -> m_Duration  = ( int )SMS_Rescale ( lDTS, SMS_TIME_BASE, 90000 );
+   /* SMS_Rescale recurses without end on SMS_NOPTS_VALUE. Without a start PTS
+    * the stream starts at 0; without a PTS in the last 128 KiB the duration
+    * stays unknown and seeking, which is derived from it, is disabled. */
+   apCont -> m_StartTime = lPTS == SMS_NOPTS_VALUE ? 0 : ( int )SMS_Rescale ( lPTS, SMS_TIME_BASE, 90000 );
+
+   if ( lDTS == SMS_NOPTS_VALUE )
+    apCont -> m_Flags &= ~SMS_CONT_FLAGS_SEEKABLE;
+   else apCont -> m_Duration = ( int )SMS_Rescale ( lDTS, SMS_TIME_BASE, 90000 );
 
   }  /* end block */
 
