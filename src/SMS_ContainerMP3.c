@@ -55,7 +55,11 @@ uint64_t SMS_MP3Probe ( FileContext* apFileCtx, SMS_AudioInfo* apInfo ) {
      apFileCtx -> Seek ( apFileCtx, apFileCtx -> m_CurPos + lInfo.m_FrameSize - 4 );
      apFileCtx -> Read ( apFileCtx, lBuf, 4 );
 
-     if (  FILE_EOF( apFileCtx )  ) break;
+     if (  FILE_EOF( apFileCtx )  ) {
+/* A header-like word with no second frame after it is not taken as MPEG audio. */
+      if ( !i ) lVal = 0;
+      break;
+     }  /* end if */
 
      lVal = SMS_bswap32 (  *( uint32_t* )lBuf  );
 

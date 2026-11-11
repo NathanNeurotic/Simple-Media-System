@@ -1,13 +1,15 @@
-"""Sanitized host tests of the actual ADTS (AAC) container over a memory-backed file.
+"""Sanitized host tests of the actual ADTS (AAC) and MP3 containers over a memory-backed file.
 
-The packet allocator, STIO_Read and File_Skip are the production functions; the
-packet ring is malloc, so an oversized packet write is an ASan error. This checks
-probing and packet framing, not PS2 decoding, device behaviour or reporter acceptance.
+The packet allocator, ID3 skip, MPEG audio header decoder, STIO_Read and File_Skip
+are the production functions; the packet ring is malloc, so an oversized packet
+write is an ASan error. This checks probing and packet framing, not PS2 decoding,
+device behaviour or reporter acceptance.
 """
 import argparse
 import os
 from pathlib import Path
 import re
+import struct
 import subprocess
 import tempfile
 
@@ -34,6 +36,7 @@ def between(source, first, last):
 
 container, stio = read("src/SMS_Container.c"), read("src/SMS_FileContext.c")
 bitio, filectx = read("include/SMS_Bitio.h"), read("include/SMS_FileContext.h")
+mp123, mp123h = read("src/SMS_MP123.c"), read("include/SMS_MP123.h")
 production = "\n".join((
     between(filectx, "static INLINE int File_GetByte", "static INLINE unsigned int File_GetUShort"),
     extract(stio, "static int STIO_Read (", "STIO_Read"),
@@ -43,6 +46,14 @@ production = "\n".join((
     extract(bitio, "static SMS_INLINE void SMS_InitGetBits (", "SMS_InitGetBits"),
     extract(container, "static SMS_AVPacket* _AllocPacket (", "_AllocPacket"),
     read("src/SMS_ContainerAAC.c"),
+    extract(container, "int SMSContainer_DefReadPacket (", "SMSContainer_DefReadPacket"),
+    extract(container, "static int SMS_INLINE _id3_match (", "_id3_match"),
+    extract(container, "int SMSContainer_SkipID3 (", "SMSContainer_SkipID3"),
+    between(mp123h, "typedef struct SMS_MPAInfo {", "typedef struct SMS_Codec_MPAContext"),
+    between(mp123, "const uint16_t g_mpa_freq_tab", "_BandInfo s_BandInfo"),
+    extract(mp123, "int MP123_CheckHeader (", "MP123_CheckHeader"),
+    extract(mp123, "int MP123_DecodeHeader (", "MP123_DecodeHeader"),
+    read("src/SMS_ContainerMP3.c"),
 ))
 
 prefix = r"""
@@ -53,7 +64,11 @@ prefix = r"""
 #include <stdio.h>
 #define INLINE inline
 #define SMS_INLINE inline
+#define SMS_ALIGN(d,a) d __attribute__((aligned(a)))
 #define SMS_MAX_STREAMS 8
+#define SMS_MPA_MONO 3
+#define SMS_AUD_SPR NULL
+#define ID3_HEADER_SIZE 10
 #define SMS_NOPTS_VALUE INT64_MIN
 #define SMS_MKTAG(a,b,c,d) ((a)|((b)<<8)|((c)<<16)|((d)<<24))
 #define SMS_STRM_FLAGS_AUDIO 1
@@ -61,7 +76,7 @@ prefix = r"""
 #define SMS_bswap32 __builtin_bswap32
 #define FILE_EOF(f) ((f)->m_CurPos >= (f)->m_Size)
 enum { SMS_CodecTypeAudio=1 };
-enum { SMS_CodecID_AAC=1 };
+enum { SMS_CodecID_AAC=1, SMS_CodecID_MP3 };
 typedef struct { int m_SampleRate,m_nChannels,m_BitRate; } SMS_AudioInfo;
 typedef struct { int m_Type,m_Tag,m_ID,m_SampleRate,m_BitRate; void *m_pUserData;
                  short m_UserDataLen,m_Channels,m_BitsPerSample; } SMS_CodecContext;
@@ -79,6 +94,7 @@ struct FileContext {
 typedef struct SMS_Container SMS_Container;
 struct SMS_Container {
  SMS_Stream *m_pStm[SMS_MAX_STREAMS]; uint32_t m_nStm; FileContext *m_pFileCtx; char *m_pName;
+ int m_DefPackSize,m_DefPackIdx;
  SMS_AVPacket *(*AllocPacket)(SMS_RingBuffer *,int); int (*ReadPacket)(SMS_Container *,int *);
 };
 static uint32_t SMS_unaligned32(const void *p) { uint32_t v; memcpy(&v,p,4); return v; }
@@ -99,6 +115,10 @@ static int seek_file(FileContext *c,unsigned p) {
 /* One live packet, exactly as large as the reader asked for. */
 static void *packet;
 static void *SMS_RingBufferAlloc(SMS_RingBuffer *ring,int n) { (void)ring;free(packet);return packet=malloc(n); }
+static void SMS_RingBufferUnalloc(SMS_RingBuffer *ring,int n) { (void)ring;(void)n; }
+static struct { unsigned char m_MP3AutoPar; } g_Config={5};
+static char g_pMP3Str[]="MP3";
+static void *g_pSynthBuffer;
 static int SMSContainer_SetName(SMS_Container *c,FileContext *f) { (void)c;(void)f;return 1; }
 """
 
@@ -113,7 +133,7 @@ int main(int argc,char **argv) {
  strict=atoi(argv[3]);
  file=(FileContext){n,0,0,image,image,STIO_Read,seek_file,fill_file};
  cont.m_pFileCtx=&file;cont.AllocPacket=_AllocPacket;
- open=SMS_GetContainerAAC(&cont);
+ open=strcmp(argv[1],"mp3")?SMS_GetContainerAAC(&cont):SMS_GetContainerMP3(&cont);
  start=file.m_CurPos;
  if(open) {
   SMS_CodecContext *codec=cont.m_pStm[0]->m_pCodec;
@@ -159,7 +179,23 @@ def case_aac(run):
         run("aac", b"".join(frames), open=1, pkts=7, bytes=7 * 128)
 
 
-cases = {"aac": case_aac}
+def mpa(index, pad=0):
+    """One 44.1 kHz stereo MPEG-1 Layer III frame at the given bitrate table index."""
+    kbps = (0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320)[index]
+    return struct.pack(">I", 0xFFFB0000 | index << 12 | pad << 9) + bytes(144000 * kbps // 44100 + pad - 4)
+
+
+def case_mp3(run):
+    tag = b"ID3\x03\0\0\0\0\x02\x2c" + bytes(300)
+    run("mp3", tag + mpa(9) * 8, open=1, start=310, sr=44100, ch=2)
+    run("mp3", b"".join(mpa(i, i & 1) for i in (5, 9, 11, 14, 7, 12, 9, 10)), open=1, start=0)
+    for frames in (2, 3):
+        run("mp3", mpa(9) * frames, open=1, start=0, pkts=-(-417 * frames // 1024))
+    # One header-like word with less than a frame of data after it is not MPEG audio.
+    run("mp3", b"\x89PNG\r\n\x1a\n" + bytes(56) + mpa(9)[:300], open=0)
+
+
+cases = {"aac": case_aac, "mp3": case_mp3}
 with tempfile.TemporaryDirectory() as tmp:
     cfile, exe = Path(tmp) / "audio.c", Path(tmp) / "audio"
     cfile.write_text(prefix + production + tests)
@@ -174,4 +210,4 @@ with tempfile.TemporaryDirectory() as tmp:
     for name, case in cases.items():
         if args.case in ("all", name):
             case(lambda kind, data, **want: probe(exe, tmp, kind, data, **want))
-print("Audio formats: ADTS framing and damaged frame lengths passed")
+print("Audio formats: ADTS framing and damaged frame lengths, MP3 probing passed")
