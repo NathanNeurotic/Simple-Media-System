@@ -1448,7 +1448,12 @@ static int GUIFileMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
    /* R2: ordinary list -> artwork grid -> selected poster -> ordinary list. */
    lpMenu -> m_ArtworkMode = ( lpMenu -> m_ArtworkMode + 1 ) % 3;
    if ( lpMenu -> m_ArtworkMode ) _artwork_position ( lpMenu );
-   else { lpMenu -> m_pFirst = lpMenu -> m_pCurrent; lpMenu -> m_YOffset = 0; }
+   else {
+    /* List rows: the selection is never the dimmed "more above" first row. */
+    SMS_ListNode* lpPrev = lpMenu -> m_pCurrent ? lpMenu -> m_pCurrent -> m_pPrev : NULL;
+    lpMenu -> m_pFirst  = lpPrev ? lpPrev : lpMenu -> m_pCurrent;
+    lpMenu -> m_YOffset = lpPrev != NULL;
+   }
    _redraw ( lpMenu, 0 );
    return GUIHResult_Handled;
   }
@@ -1566,6 +1571,11 @@ redraw:
      lpMenu -> m_pFirst   = lpNode;
      lpMenu -> m_pCurrent = SMS_ListFind ( lpMenu -> m_pFiltList, lpInfo -> m_pCurrent );
      lpMenu -> m_YOffset  = lpInfo -> m_YOffset;
+     /* A level saved in a grid/poster view can start its page on the selection. */
+     if ( !lpMenu -> m_ArtworkMode && lpMenu -> m_pCurrent == lpNode && lpNode -> m_pPrev ) {
+      lpMenu -> m_pFirst  = lpNode -> m_pPrev;
+      lpMenu -> m_YOffset = 1;
+     }
 
     } else {
 

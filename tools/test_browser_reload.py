@@ -1,7 +1,7 @@
 """Observe actual list/grid render submissions after normal browser reload.
 
-Runs production delete/reload/fill/reset/render/cleanup functions and the artwork
-cache. GS/DMA/device calls are host adapters; observations are submitted caption
+Runs production delete/reload/fill/reset/render/cleanup functions, list
+navigation, level save/restore and the artwork cache. GS/DMA/device calls are host adapters; observations are submitted caption
 packets, not console pixels. Only EE pointer transport is widened on the host.
 """
 import os
@@ -64,7 +64,7 @@ static u64 s_BitBltPack[32];
 static char g_EmptyStr[]="",g_DotStr[]=".";
 static int g_CMedia,g_PD,g_SMBU;
 static struct { int m_PlayerVolume;unsigned m_BrowserFlags,m_BrowserSCIdx,m_BrowserABCIdx,m_BrowserIBCIdx;char m_Partition[64]; } g_Config;
-static unsigned phase,progress,reads,redraws,observed_count;
+static unsigned phase,extras,progress,reads,redraws,observed_count;
 static char observed[16][64];
 static void _artwork_drain(void) {}
 static unsigned poster_uploads;
@@ -112,24 +112,26 @@ static void SMS_PgIndStart(void) { assert(!progress);progress=1; }
 static void SMS_PgIndStop(void) { assert(progress);progress=0; }
 static int _filter_item(SMS_ListNode *p) { (void)p;return 0; }
 static void SMS_FileDirInit(char *path) {
- assert(progress && !strcmp(path,"."));++reads;
+ assert(progress && (!*path || !strcmp(path,".")));++reads;
  SMS_ListDestroy(&listing,0);
  if(!phase)SMS_ListPushBack(&listing,"removed.avi")->m_Param=2;
  if(phase<2) {
   SMS_ListPushBack(&listing,"keep.avi")->m_Param=2;
   SMS_ListPushBack(&listing,"another.avi")->m_Param=2;
+  for(unsigned i=0;i<extras;++i) {
+   char name[24];sprintf(name,"extra%u.avi",i);
+   SMS_ListPushBack(&listing,name)->m_Param=2;
+  }
  } else if(phase==3)SMS_ListPushBack(&listing,"new.avi")->m_Param=2;
 }
 #define SMSound_PAD 0
 static void SPU_PlaySound(int sound,int volume) { (void)sound;(void)volume; }
 static void CDVD_FlushCache(void) {}
 void GUI_PostMessage(u64 event) { (void)event; }
-static int _step_up(GUIFileMenu *p,int roll) { (void)p;(void)roll;assert(0);return 0; }
-static int _step_down(GUIFileMenu *p,int roll) { (void)p;(void)roll;assert(0);return 0; }
-static int _page_scroll(int (*step)(GUIFileMenu *,int),GUIFileMenu *p) { (void)step;(void)p;assert(0);return 0; }
+static int _step_up(GUIFileMenu *,int);
+static int _page_scroll(int (*)(GUIFileMenu *,int),GUIFileMenu *);
 static void _context_action_file(GUIFileMenu *p,int popup) { (void)p;(void)popup;assert(0); }
 static void _action_partition(GUIFileMenu *p,int popup) { (void)p;(void)popup;assert(0); }
-static void _pop_state(GUIFileMenu *p) { (void)p;assert(0); }
 static void (*Action[9])(GUIFileMenu *,int);
 static void (*ContextAction[9])(GUIFileMenu *,int);
 typedef struct GUIMenu GUIMenu;
@@ -150,6 +152,12 @@ post = r'''
 static void expect_names(unsigned count,const char *first) {
  assert(observed_count==count && packets.m_Size==count);
  if(count)assert(!strcmp(observed[0],first));
+}
+/* UP in the ordinary list keeps the highlight on the rendered selected row. */
+static void list_up(void) {
+ GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_UP);
+ assert(menu.m_YOffset>=0 && (unsigned)menu.m_YOffset<observed_count);
+ assert(!strcmp(observed[menu.m_YOffset],_STR(menu.m_pCurrent)));
 }
 int main(int argc,char **argv) {
  assert(argc==3);
@@ -213,7 +221,17 @@ int main(int argc,char **argv) {
   assert(menu.m_ArtworkMode==(previous+1)%3 && menu.m_pCurrent==selected);
   for(unsigned j=0;j<observed_count;++j)if(!strcmp(observed[j],_STR(selected)))visible=1;
   assert(visible);
+  if(!menu.m_ArtworkMode) { list_up();selected=menu.m_pCurrent; }
  }
+ /* Back to a level that was entered from the first tile of a later grid page
+  * and is restored in the ordinary list. */
+ extras=8;menu.m_pCurrent=SMS_ListAt(&filtered,6);
+ do GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);while(menu.m_ArtworkMode!=1);
+ assert(menu.m_pFirst==menu.m_pCurrent && _push_state(&menu,0));
+ while(menu.m_ArtworkMode)GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_R2);
+ GUIFileMenu_HandleEvent((GUIObject *)&menu,SMS_PAD_TRIANGLE);
+ assert(!levels.m_Size && !strcmp(_STR(menu.m_pCurrent),"extra4.avi"));
+ list_up();
  GUIFileMenu_Cleanup((GUIObject *)&menu);
  GSContext_DeleteList(menu.m_pSelRect);menu.m_pSelRect=NULL;
  SMS_ListDestroy(&filtered,0);SMS_ListDestroy(&listing,0);SMS_ListDestroy(&levels,0);
@@ -223,7 +241,7 @@ int main(int argc,char **argv) {
 
 source = prefix + types + adapters
 source += "\n".join(function(lists, name) for name in
-                    ("SMS_ListPushBack", "SMS_ListDestroy", "SMS_ListAt", "_find", "SMS_ListFind"))
+                    ("SMS_ListPushBack", "SMS_ListPopBack", "SMS_ListDestroy", "SMS_ListAt", "_find", "SMS_ListFind"))
 source += function(gui, "GUIObject_Cleanup")
 source += function(browser, "_artwork_position") + function(browser, "_artwork_move")
 source += function(browser, "_is_utf8") + function(browser, "GUIFileMenu_RenderItem")
@@ -231,11 +249,14 @@ source += function(browser, "_poster_names") + function(browser, "_poster_text_o
 source += function(browser, "_artwork_render") + function(browser, "GUIFileMenu_Render")
 source += function(browser, "GUIFileMenu_CleanupPackets") + function(browser, "GUIFileMenu_Cleanup")
 source += redraw_adapter + function(browser, "GUIFileMenu_SetFocus")
-source += function(browser, "_reset") + function(browser, "_fill")
+source += function(browser, "_reset") + function(browser, "_push_state") + function(browser, "_pop_state")
+source += function(browser, "_fill") + function(browser, "_step_down") + function(browser, "_step_up")
+source += function(browser, "_page_scroll")
 source += function(browser, "GUIFileMenu_HandleEvent") + function(context, "_delete_handler") + post
 # EE addresses travel through m_Param as unsigned int. Widen only this transport
 # so production heap objects retain their addresses on a 64-bit host.
 source = source.replace("( unsigned int )lpPack", "( uintptr_t )lpPack")
+source = source.replace("( unsigned int )lpInfo", "( uintptr_t )lpInfo")
 source = source.replace("( _FileMenuItem* )( unsigned int )", "( _FileMenuItem* )( uintptr_t )")
 source = source.replace("( _LevelInfo* )( unsigned int )", "( _LevelInfo* )( uintptr_t )")
 with tempfile.TemporaryDirectory() as temporary:
@@ -251,4 +272,4 @@ with tempfile.TemporaryDirectory() as temporary:
     expected = "0" if "--observe-prior" in sys.argv else "2"
     for mode in ("list", "grid", "poster"):
         subprocess.run([str(exe), mode, expected], check=True, timeout=15)
-print("Browser reload: list-grid-poster R2 cycle, later-page selection, six tile uploads, empty/repopulated directory and focus repair checked")
+print("Browser reload: list-grid-poster R2 cycle, later-page selection, list window after R2 and Back, six tile uploads, empty/repopulated directory and focus repair checked")
