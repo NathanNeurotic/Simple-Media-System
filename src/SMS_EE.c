@@ -762,7 +762,7 @@ void SMS_EEScanDir ( const char* apPath, const char* apExt, SMS_List* apList ) {
 
    int lLen = strlen ( lEntry.name );
 
-   if ( lLen > 4 ) {
+   if ( lLen > 4 && lLen < 68 ) {   /* listed names are strcpy'd into the 64-byte m_SkinName / m_MBFName */
 
     char* lpPtr = &lEntry.name[ lLen - 4 ];
 
