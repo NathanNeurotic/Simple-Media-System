@@ -132,6 +132,7 @@ build_ffmpeg_cmd emits no colour options (the earlier `out_color_matrix=bt601:ou
 
 ### fix
 Optional and separable; do not bundle with a #20/#23 fix. If wanted: when the source is HD/BT.709 (probe color_space == bt709, or unspecified with height > 576) append `:in_color_matrix=bt709:out_color_matrix=bt601` to the existing scale filter built by build_scale_filter. Do not add out_range (range conversion is already correct). Otherwise leave as-is and document.
+> Review note: REJECTED. The untagged-HD heuristic increases colour error for untagged BT.601 HD sources (see the fix verdict below); use only the tag-based alternative described there, and do not bundle it with a #20/#23 fix.
 
 ### test
 If implemented: unit test that the scale filter for a bt709 1080p source_info contains `out_color_matrix=bt601` and for a 576p/bt601 source does not; host check with the scratch px.py patch sampler that red decodes within +/-4 of (254,0,0) under a BT.601 decode.

@@ -1202,10 +1202,14 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  do {
 
-  int64_t lBestDTS = SMS_MAXINT64;
+  int64_t lMinDTS  = SMS_MAXINT64;
+  int     lPass;
   lpSample = NULL;
 
-  for ( i = 0; i < apCont -> m_nStm; ++i ) {
+/* Streams within one second of the earliest DTS are read in file order, so an interleaved file
+ * is read front to back and never seeks backwards; later ones wait. The window stays fixed on
+ * the earliest DTS so the choice does not depend on stream order. */
+  for ( lPass = 0; lPass < 2; ++lPass ) for ( i = 0; i < apCont -> m_nStm; ++i ) {
    SMS_Stream* lpCurStm   = apCont -> m_pStm[ i ];
    MOVStream*  lpMyCurStm = ( MOVStream* )lpCurStm -> m_pCtx;
    if ( lpMyCurStm -> m_pIdx && lpMyCurStm -> m_TimeScale > 0 && lpMyCurStm -> m_TimeRate > 0 &&
@@ -1213,12 +1217,12 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
         lpMyCurStm -> m_CurSample < ( unsigned int )lpMyCurStm -> m_nIdx ) {
     MOVIndex* lpCurSample = &lpMyCurStm -> m_pIdx[ lpMyCurStm -> m_CurSample ];
     int64_t   lDTS = SMS_Rescale ( ( ( int64_t )lpCurSample -> m_DTS + lpMyCurStm -> m_TimeOffset - lpMyCurStm -> m_DTSShift ) * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
-/* Streams within one second of each other are read in file order, so an interleaved file is
- * read front to back and never seeks backwards; further apart, the earlier DTS goes first. */
-    if (  !lpSample || ( lDTS - lBestDTS < SMS_TIME_BASE && lBestDTS - lDTS < SMS_TIME_BASE ?
-                         lpCurSample -> m_Pos < lpSample -> m_Pos : lDTS < lBestDTS )  ) {
+    if ( !lPass ) {
+     if ( lDTS < lMinDTS ) lMinDTS = lDTS;
+    } else if ( lDTS - lMinDTS < SMS_TIME_BASE &&
+                ( !lpSample || lpCurSample -> m_Pos < lpSample -> m_Pos )
+    ) {
      lpSample = lpCurSample;
-     lBestDTS = lDTS;
      lpStm    = lpCurStm;
      lpMyStm  = lpMyCurStm;
      lIdx     = i;

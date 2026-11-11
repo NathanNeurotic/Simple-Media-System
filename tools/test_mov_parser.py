@@ -132,6 +132,7 @@ int main(int argc,char **argv) {
   assert(fscanf(in,"%u",&extra)==1 && extra>0);
   assert(codec->m_ID==(codec->m_Type==SMS_CodecTypeVideo?SMS_CodecID_MPEG4:SMS_CodecID_AAC));
   assert(codec->m_BitRate>0 && codec->m_UserDataLen==(int)extra);
+  if(codec->m_Type==SMS_CodecTypeVideo) assert(codec->m_FrameRate>0 && codec->m_FrameRateBase>0);
   /* The MPEG-4 header scan reads up to here and needs a zero to end user data. */
   assert(!memcmp((char *)codec->m_pUserData+extra,"\0\0\0",4));
  }

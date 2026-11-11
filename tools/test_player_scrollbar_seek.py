@@ -54,7 +54,7 @@ typedef struct FileContext FileContext;
 struct FileContext { unsigned m_CurPos,m_StreamSize; int (*Stream)(FileContext *,unsigned,unsigned); };
 typedef struct SMS_Container SMS_Container;
 struct SMS_Container {
- SMS_Stream **m_pStm; FileContext *m_pFileCtx; int64_t m_Duration,m_StartTime;
+ SMS_Stream **m_pStm; FileContext *m_pFileCtx; int64_t m_Duration,m_StartTime; char *m_pName;
  int (*Seek)(SMS_Container *,int,int,int64_t);
 };
 typedef struct { void (*Suspend)(void),(*Resume)(void); } IPUContext;
@@ -100,6 +100,7 @@ static void _sc_repaint(int64_t time,int mode,int pos) {
  ++repaints;
 }
 static void _sb_init(void) {}
+static char g_pMPEGPS[]="MPEG(PS)";
 static void CDVD_Stop(void) {}
 static void CDDA_Standby(void) {}
 static void CDDA_Synchronize(void) {}
@@ -108,7 +109,7 @@ static void SMS_TimerWait(int ms) { (void)ms; }
 static void scenario(const char *name,int subtitles) {
  SMS_CodecContext codec={hwctl}; SMS_Stream video={&codec,{1000,1}};
  SMS_Stream *streams_table[]={&video}; FileContext file={12345,384,stream};
- SMS_Container container={streams_table,&file,331000,1000,seek_container};
+ SMS_Container container={streams_table,&file,331000,1000,0,seek_container};
  IPUContext ipu={suspend_ipu,resume_ipu}; SubContext subs={reset_subs};
  int subscale=!strcmp(name,"subscale-back");
  int fallback=!strcmp(name,"forward-fallback");
@@ -281,6 +282,5 @@ if args.case != "rewind":
     run("scrollbar", harness, args.case)
     print("Scrollbar seek: worker teardown before reset/storage, successful restart status, forward seek fallback, failed seek, plain resume and cancel passed")
 if args.case in ("all", "rewind"):
-    # The scan scales its negative step with a left shift (lIncr <<= 3).
-    run("rewind", rewind_harness, flags=["-fno-sanitize=shift"])
+    run("rewind", rewind_harness)
     print("Rewind scan: steps clamp to the stream start and reaching it restarts playback there")

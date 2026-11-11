@@ -17,6 +17,7 @@ RULED OUT / NOT REPRODUCED
 CHANGES ON MASTER AFTER THE REPORTER'S TEST (all await reporter retest; none hardware-verified by me): 234c787 File_Skip seeks for skips >= 64 KiB (the slow-open fix, PR #30); 2a9a578 MOV table bounds; d1b7291 deeper BDM stream buffer; 3c2fcba and 1422165 bounded synchronous BDM/USB refills; 0033b80 async read validation; 8a25e22 read-ahead on confirmed USB; 2a3dadf, 4cfc776, 5f4fcb5, db210e1 MOV packet timing/index/co64/stts hardening; 59d0ed1 edit-list timeline (m_TimeOffset/m_DTSShift), which is what removed the per-frame backward seek; 632c990 sample-size payload checks; c275476 scrollbar seek. Note 99b1b5f (MPEG-4 esds seed) was already in rev1 but is dead code until finding 1 is fixed.
 
 Suggested order: finding 1 and finding 2 are one-line changes in src/SMS_ContainerMOV.c that pass the four existing MOV host tests unchanged; finding 3 is an owner decision; 4 and 5 are low priority. Then ask the reporter to retest and, if it still fails, to attach the file or a MediaInfo dump (frame rate, audio rate, B-frames, encoder).
+> Review note: the first proposed fix (skip the two-byte colour-table ID) is historical: src/SMS_ContainerMOV.c on the branch head already does it, so do not add it again. The same applies to the matching note in i22-converter.md.
 
 ## #1 MP4 video esds is never parsed: stsd video entry is read 2 bytes short, so the MPEG-4 VOL seed never runs
 - issue: 10
@@ -125,6 +126,7 @@ Measured on host: for B-frame fixtures the real reader emits video PTS that go b
 
 ### fix
 In _ReadPacket, after m_DTS and m_PTS are set, for video use the decode timestamp: `if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) lpPkt -> m_PTS = lpPkt -> m_DTS;`. With the usual one-frame reorder delay the frame output at packet k has presentation time equal to that packet's edit-adjusted DTS, so stamps become exact; for files without B-frames DTS equals PTS already. Not trialled.
+> Review note: SUPERSEDED. Applying this video-wide timestamp rule breaks MPEG-1/2 timestamp handling; use the codec-gated variant in the next proposal.
 
 ### test
 tools/test_mov_packets.py composition-timing case: assert video packet timestamps are non-decreasing in read order for a ctts stream and equal DTS + edit offset; audio expectations unchanged. Hardware: B-frame MP4 should play without periodic judder and with correct OSD time.

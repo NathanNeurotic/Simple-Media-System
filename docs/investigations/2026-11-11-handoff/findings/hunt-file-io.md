@@ -57,6 +57,7 @@ src/SMS_CopyTree.c:337-365:
   if ( lnWrite != lnRead ) goto error;
 
 lnWrite is assigned only by fioSync. Disassembly of fio_sync.o from libkernel.a in docker ps2dev/ps2dev:v1.0 shows fioSync loads _fio_block_mode, compares it with 1 (FIO_NOWAIT) and otherwise returns 0xFFFF29FB (lui v1,0xffff / ori v1,v1,0x29fb / jr ra) before the only store through the result pointer (sw a0,0(s1)).
+> Review note: this describes the baseline c275476, where only fioSync assigns lnWrite. The branch head already assigns fioWrite to lnWrite (src/SMS_CopyTree.c), so the proposed assignment is applied there.
 
 fio is put in NOWAIT mode only by STIO_Stream for a legacy-fio source larger than one 384 KiB buffer (SMS_FileContext.c:1915). So for every fileXio source (mass/USB, MX4SIO, mmce, smb, udpfs: STIO_Stream returns at lines 1873-1879 without touching the block mode), for any fio file of 384 KiB or less, and by the same logic for CDDA sources, lnWrite is stack garbage and the copy takes the error path after the first chunk.
 

@@ -26,6 +26,7 @@ CHANGES ON MASTER AFTER THE REPORTER'S LAST TEST (2026-10-27, converter+player c
 - b8f0998 (2026-10-28) weave field-predicted chroma rows in put_block_fl (PR #35 fix 3; cannot affect progressive converter output)
 - 23d1693 converter MPEG-1/2 presets now GOP 15 instead of the generic 50 (shortens how long any residual drift can accumulate)
 Both issues must stay open until the reporter replays the same source re-converted with a current converter on a current player build. Suggested reply: the 2.9rev4 recording shows the same fluctuating chroma artefact, so this is an inherited decoder bug rather than a fork regression; two chroma motion-compensation defects were fixed after the tested build and verified bit-exact against FFmpeg on host for prediction-only macroblocks; please retest with the current build and attach the short converted MPG if the artefact remains.
+> Review note: retest in two steps. First replay the unchanged MPG on the current player to isolate the player fixes, then test a newly converted MPG separately; do not change the player and the converter GOP in the same comparison.
 
 Scratch artefacts (all outside the repo): (investigator scratch, not kept)/i20-23-mpeg-colour\emu\emu.h, (investigator scratch, not kept)/i20-23-mpeg-colour\emu\mc_harness.c, (investigator scratch, not kept)/i20-23-mpeg-colour\emu\gen.py, (investigator scratch, not kept)/i20-23-mpeg-colour\emu\t1.sh, (investigator scratch, not kept)/i20-23-mpeg-colour\emu\t2.sh, upstream clone at (investigator scratch, not kept)/i20-23-mpeg-colour\upstream.
 

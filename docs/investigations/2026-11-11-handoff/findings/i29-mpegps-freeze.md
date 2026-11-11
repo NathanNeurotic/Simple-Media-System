@@ -74,6 +74,7 @@ src/SMS_ContainerMPEG_PS.c:807-822: when _fill_video_parameters fails the stream
 
 ### fix
 Walk a video stream ID once. In SMS_GetContainerMPEG_PS add `int lBadVideo = 0;`; right after the known-stream loop (after line 711) add `if ( lStartCode == lBadVideo ) goto next;`; after the `_fill_video_parameters` call (line 807) add `if ( !lfParams ) lBadVideo = lStartCode;`. Audio retry is untouched. Probe I/O and accept/reject results then match 7b172d0 on every test file. Optional, not recommended without hardware: also raising the walk limit at line 331 from 1024 to 2048 accepts mid-stream-cut files (5 of 7 cut samples) at about 11 MB of probe I/O; HEAD accepts only one of those, after 2.5 GB.
+> Review note: the branch implements this as a bitmask (lBadVideo, one bit per video stream id), not the single id described here, so alternating failing ids do not overwrite each other.
 
 ### test
 tools/test_mpeg_ps_probe.py new case `probe-video-walk`: 300 video PES packets with no sequence header followed by one AC3 packet; assert the probe returns 0 with m_pCtx==NULL and m_nStm==0 and `read_calls<20000`. Verified: aborts on current source (read budget exceeded), passes with the fix; the whole file's other cases still pass. Harness table for all 34 media files at old/current/patched is in scratch fix2.log.

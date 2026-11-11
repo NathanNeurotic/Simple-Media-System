@@ -647,7 +647,7 @@ static int PlayerControl_Scroll ( int aDir ) {
 
  if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG1 ||
       lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG2
- ) lIncr <<= 3;
+ ) lIncr *= 8;
 
  lTime += lIncr;
 
@@ -1351,9 +1351,10 @@ redo:
 
    lPos = SMS_Rescale (  lTime, lpStm -> m_TimeBase.m_Den, SMS_TIME_BASE * ( int64_t )lpStm -> m_TimeBase.m_Num  );
  
-   /* A forward seek fails when no keyframe follows the target: use the one before it. */
+   /* A forward seek fails when no keyframe follows the target: use the one before it.
+    * The MPEG-PS seek ignores the direction, so repeating it would only rescan. */
    if (  lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos ) ||
-         (  lDir > 0 && lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, -1, lPos )  )
+         (  lDir > 0 && lpCont -> m_pName != g_pMPEGPS && lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, -1, lPos )  )
    ) {
 
     lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, lpFileCtx -> m_StreamSize >> 3 );
