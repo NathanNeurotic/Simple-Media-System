@@ -193,6 +193,15 @@ static void test_video(void) {
   assert(file.m_CurPos==0);
  }
  assert(codec.m_Width==640 && codec.m_Height==480 && codec.m_fWS==1);
+ /* Zero-size sequence headers are skipped, but count toward the 1024-step scan bound. */
+ for(n=1;n<=1025;n+=(n==1?1023:1)) {
+  reset(8*n+8);
+  for(unsigned k=0;k<n;++k) memcpy(input+8*k,"\0\0\1\xb3\0\0\0\0",8);
+  memcpy(input+8*n,"\0\0\1\xb3\x28\x01\xe0\x34",8);
+  codec.m_Width=codec.m_Height=0;
+  assert(_fill_video_parameters(&c,&stream,2000,0x1e0)==(n<=1024));
+  assert(file.m_CurPos==0 && (n>1024 || codec.m_Width==640));
+ }
 }
 static SMS_AVPacket *packet_alloc(void *unused,int n) {
  (void)unused;assert(n>0 && n<=sizeof(packet_data));

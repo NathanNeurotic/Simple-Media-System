@@ -320,6 +320,7 @@ static int _fill_video_parameters ( SMS_Container* apCont, SMS_Stream* apStm, in
 
    retVal = apStm -> m_pCodec -> m_Width && apStm -> m_pCodec -> m_Height;
    if ( retVal ) break;   /* an invalid (zero-size) header: keep looking for a later valid one */
+   if ( i++ >= 1024 ) goto end;   /* within the same bound as the packet walk below */
    continue;
 
   }  /* end if */
