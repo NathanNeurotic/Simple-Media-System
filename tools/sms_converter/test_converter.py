@@ -721,6 +721,19 @@ class TestPacketValidation(unittest.TestCase):
         self.assertIn("ffprobe missing", result.warnings[0])
         self.assertEqual(self.validate_probe().status, "WARN")
 
+    def test_mpeg1_bitrate_is_measured_not_read_from_the_header(self):
+        # ffprobe's MPEG-1 stream bit_rate is the peak declared in the sequence header.
+        self.media = Path(self.tmp.name) / "output.mpg.partial"
+        self.metadata["streams"][0]["codec_name"] = "mpeg1video"
+        self.metadata["streams"][1]["codec_name"] = "mp2"
+        records = ["codec_type=video|size=100\n", "codec_type=audio|size=20\n"]
+        for size, declared, expected in ((250000, "3125000", ("PASS", 2000)),
+                                         (500000, "1437200", ("WARN", 4000))):
+            self.media.write_bytes(bytes(size))
+            self.metadata["streams"][0]["bit_rate"] = declared
+            result = self.validate_probe(records)
+            self.assertEqual((result.status, result.vbitrate_kbps), expected, result.warnings)
+
     def test_malformed_packet_records_warn_and_stop_the_process(self):
         for record in ("not a packet\n", "codec_type=video\n", "codec_type=video|size=-1\n",
                        "codec_type=audio|size=N/A\n", "x" * 4097):

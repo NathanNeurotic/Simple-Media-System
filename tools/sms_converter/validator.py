@@ -204,7 +204,8 @@ def validate_converted_file(ffprobe_path: str, file_path: str) -> ValidationResu
 
         duration_sec = float(fmt.get("duration", 0.0))
         v_bitrate = int(video_stream.get("bit_rate", 0)) // 1000
-        if v_bitrate <= 0 or v_bitrate > 50000:
+        # MPEG-1 reports the peak declared in its sequence header (-maxrate), not a measurement.
+        if v_name == "mpeg1video" or v_bitrate <= 0 or v_bitrate > 50000:
             if duration_sec > 0:
                 v_bitrate = int((file_size_bytes * 8) / (duration_sec * 1000))
             else:
