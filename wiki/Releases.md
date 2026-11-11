@@ -23,7 +23,7 @@ The [latest stable release link](https://github.com/NathanNeurotic/Simple-Media-
 | [Simple-Media-System-languages.zip](https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/Simple-Media-System-languages.zip) | Language variants matching this build's string table, including Spanish. See [installation](https://nathanneurotic.github.io/Simple-Media-System/languages.html). |
 | [SMS-Media-Converter.exe](https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter.exe) | Windows 10/11 converter. |
 | [SMS-Media-Converter-Win7.exe](https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter-Win7.exe) | Python 3.8 / Qt5 build for Windows 7. Packaging CI runs on a current Windows runner; it is not live Win7 acceptance. |
-| [SMS-Media-Converter-Linux.zip](https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter-Linux.zip) | Linux source/application package; follow the included Python/PySide instructions. FFmpeg/FFprobe are separate tools. |
+| [SMS-Media-Converter-Linux.zip](https://github.com/NathanNeurotic/Simple-Media-System/releases/download/rolling/SMS-Media-Converter-Linux.zip) | Linux source package. It needs Python 3 with PySide6 (`pip install PySide6`); run `python3 main.py` in the extracted folder. FFmpeg/FFprobe are separate tools. |
 
 Embedded IOP modules are carried inside the player ELF; normal installation does not require copying loose IRX files. Keep matching translations with each build you compare.
 

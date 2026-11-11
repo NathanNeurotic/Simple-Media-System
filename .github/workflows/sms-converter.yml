@@ -73,9 +73,11 @@ jobs:
 
     - name: Build Portable Package (Linux)
       if: runner.os == 'Linux'
+      shell: bash
       run: |
         mkdir -p dist-artifact/SMS-Media-Converter-Linux
-        cp -r tools/sms_converter/* dist-artifact/SMS-Media-Converter-Linux/
+        # Tracked files only: the tests above leave __pycache__ and a crash log beside them.
+        git archive HEAD:tools/sms_converter | tar -x -C dist-artifact/SMS-Media-Converter-Linux
         # Stable filename, NOT commit-stamped: the rolling release is updated in place rather
         # than recreated, so a per-commit name would add a new zip on every push and never
         # remove the old ones. The commit is already recorded in the release notes.

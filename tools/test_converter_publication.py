@@ -180,3 +180,24 @@ for family in STEPS:
     run_tag_case(family, 2, True, 3)
     run_tag_case(family, 12, False, 12)
 print("Converter version-tag publication: 9 shell controls passed")
+
+# The Linux package is built after the tests ran in the same checkout, so it must
+# take the tracked converter files only, not what the tests left beside them.
+with tempfile.TemporaryDirectory(prefix="sms-converter-package-") as td:
+    tmp = Path(td)
+    source = tmp / "tools" / "sms_converter"
+    (source / "__pycache__").mkdir(parents=True)
+    for leaf in ("main.py", "sms-converter-crash.log", "__pycache__/main.cpython-312.pyc"):
+        (source / leaf).write_bytes(b"fixture")
+    git = ["git", "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid",
+           "-c", "commit.gpgsign=false"]
+    for command in (["init", "-q"], ["add", "tools/sms_converter/main.py"], ["commit", "-q", "-m", "fixture"]):
+        subprocess.run(git + command, cwd=tmp, check=True, capture_output=True, timeout=30)
+    body = shell_body("Build Portable Package (Linux)", "runner.os == 'Linux'")
+    (tmp / "step.sh").write_bytes(("zip() { :; }\n" + body + "\n").encode("utf-8"))
+    subprocess.run([bash, "--noprofile", "--norc", "-eo", "pipefail", "step.sh"],
+                   cwd=tmp, check=True, capture_output=True, timeout=30)
+    package = tmp / "dist-artifact" / "SMS-Media-Converter-Linux"
+    packaged = sorted(path.relative_to(package).as_posix() for path in package.rglob("*"))
+    assert packaged == ["main.py"], packaged
+print("Converter Linux package: tracked files only")
