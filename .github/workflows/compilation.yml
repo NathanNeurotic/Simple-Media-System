@@ -108,6 +108,9 @@ jobs:
         python3 tools/test_mov_parser.py
         python3 tools/test_mov_sample_sizes.py
         python3 tools/test_avi_parser.py
+        python3 tools/test_asf_parser.py
+        python3 tools/test_boot_config.py
+        python3 tools/test_ipconfig.py
         python3 tools/test_skin_loading.py
 
     - name: IRX ABI gate (dev9 v1.1 bindings)
