@@ -77,11 +77,13 @@ Highlight the video file and press `✕`. SMS reads the file straight from the d
 
 This feature is included in current master for [#26](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#posters); console acceptance is pending.
 
-While browsing files, press **R2** to switch between the normal list and a three-column, two-row poster grid. The list is the default at startup; the grid choice is not saved. Press **R2** again to return to the list with the same file selected. This shortcut applies to the browser; R2 keeps its existing function during playback.
+While browsing files, **R2** cycles through three views: the normal list, a three-column, two-row poster grid, and a six-row list with a larger poster of the selected file beside it. A third press returns to the normal list. The same file stays selected. The list is the default at startup; the view choice is not saved. This shortcut applies to the browser; R2 keeps its existing function during playback.
 
 Place a baseline, three-component JPEG next to a media file using the same basename: `Movie.avi` with `Movie.jpg` or `Movie.jpeg`. The lookup is case-insensitive against the directory listing and opens the actual filename, so `MOVIE.JPG` also works on a case-sensitive share. If both extensions are present, `.jpg` takes precedence. Folder tiles retain their folder icons. Artwork in a separate `ART` directory and PNG images are not supported.
 
-Use JPEGs no larger than **256 KiB**, with width and height each no greater than **512 pixels**. Each visible cover is fitted into a 64×64 thumbnail with its aspect ratio preserved and black padding. Missing, unsupported, malformed, oversized or unreadable artwork falls back to the file's normal icon. Only the six visible tiles are cached; changing pages, folders or devices releases the old images. Artwork is read synchronously when a page first appears, so slow or disconnected storage can delay that page.
+A `.jpg` or `.jpeg` with the same basename as a video in the same folder is treated as that video's cover and is not listed as a separate picture in any view, even when it is too large or otherwise unusable as artwork. Give unrelated photos a different name. Pictures named after audio files or playlists stay listed.
+
+Use JPEGs no larger than **256 KiB**, with width and height each no greater than **512 pixels**. In the grid, each visible cover is fitted into a 64×64 thumbnail with its aspect ratio preserved and black padding; the selected-poster view fits the selected cover into 128×192 the same way. Missing, unsupported, malformed, oversized or unreadable artwork falls back to the file's normal icon. Only the six visible tiles are cached; changing pages, folders or devices releases the old images. Artwork is read synchronously when a page first appears, so slow or disconnected storage can delay that page.
 
 | Button in the grid | Action |
 | --- | --- |
@@ -91,7 +93,9 @@ Use JPEGs no larger than **256 KiB**, with width and height each no greater than
 | **Cross / Triangle** | Open or play the selection / go back, as in the list. |
 | **Circle / Square** | Keep the existing alternate-play and file-context actions. |
 
-The grid still needs console acceptance for display modes, selection, slow storage and returning from playback. It depends on the JPEG parser hardening in the companion player fixes.
+In the selected-poster view, **Up / Down** move one item, **L1 / L2** move six, and **Left / Right** return focus to the device menu as in the normal list; the other buttons act as in the grid.
+
+Both artwork views still need console acceptance for display modes, selection, slow storage and returning from playback. They depend on the JPEG parser hardening in the companion player fixes.
 
 ## Player controls
 
