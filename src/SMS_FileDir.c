@@ -356,16 +356,14 @@ void SMS_FileDirInit ( char* apPath ) {
      * So pass NULL/0 for buf/buflen -- a non-NULL buf would trigger fileXio's
      * return-buffer path and memcpy a stale IOP rwbuf over the first entries. */
 #ifdef BDM
+    /* The DMA bypasses the EE D-cache. Write back and invalidate the block
+     * BEFORE the synchronous devctl: recycled heap memory can still have dirty
+     * lines, and a flush after the DMA would write them over the entries. */
+    SyncDCache (  lpShare, ( char* )lpShare + lMaxEnt * sizeof ( ShareEntry_t )  );
     lnShares = fileXioDevctl (  g_pSMBS, SMB_DEVCTL_GETSHARELIST, &lIn, sizeof ( lIn ), NULL, 0  );
 #else
     lnShares = 0;   /* smbman SMB is BDM-only -> no shares in the legacy build */
 #endif
-
-    /* The IOP DMA'd straight to RAM, bypassing the EE D-cache. Invalidate the
-     * region AFTER the synchronous devctl so the reads below fetch the fresh
-     * data ( SyncDCache = writeback+invalidate; the EE wrote nothing here so the
-     * writeback half is a no-op ). */
-    if ( lnShares > 0 ) SyncDCache (  lpShare, ( char* )lpShare + lMaxEnt * sizeof ( ShareEntry_t )  );
 
     for ( i = 0; i < lnShares; ++i ) {
 
