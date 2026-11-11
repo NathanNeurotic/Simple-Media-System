@@ -324,7 +324,7 @@ static int asf_read_header ( SMS_Container* apCont ) {
    for ( j = 0; j < lnStm; ++j ) {
     int lFlags   = File_GetUShort ( lpFileCtx );
     int lBitRate = File_GetUInt   ( lpFileCtx );
-    int lStmID   = lFlags * 0x7F;
+    int lStmID   = lFlags & 0x7F;
     lpASF -> stream_bitrates[ lStmID ] = lBitRate;
    }  /* end for */
 
