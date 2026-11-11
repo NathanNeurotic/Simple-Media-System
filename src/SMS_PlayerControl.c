@@ -1347,7 +1347,10 @@ redo:
 
    lPos = SMS_Rescale (  lTime, lpStm -> m_TimeBase.m_Den, SMS_TIME_BASE * ( int64_t )lpStm -> m_TimeBase.m_Num  );
  
-   if (  lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos )  ) {
+   /* A forward seek fails when no keyframe follows the target: use the one before it. */
+   if (  lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos ) ||
+         (  lDir > 0 && lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, -1, lPos )  )
+   ) {
 
     lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, lpFileCtx -> m_StreamSize >> 3 );
 
