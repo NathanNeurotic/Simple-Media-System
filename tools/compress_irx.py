@@ -11,6 +11,9 @@ standard .xz, LZMA2 filter only (no BCJ/delta), CRC32 check (xz_crc64 is NOT
 linked). This is byte-for-byte the same format SMS's existing SMS_Data modules
 use, so it is known to decode on real hardware.
 
+Every irx/*.irx found is recompressed over its .xz. smbman.irx.xz is written by
+iop/smbman-sms/prepare_module.py instead, so no raw irx/smbman.irx is kept here.
+
   docker run --rm -v <repo>:/work sms-ipu-tools python3 /work/SMS-v1/tools/compress_irx.py
 """
 import glob, os, lzma
