@@ -143,45 +143,47 @@ static void _delete_handler ( GUIMenu* apMenu, int aDir ) {
 static int _copy_file_to_mc ( const char* apDst, const char* apSrc ) {
 
  int retVal = 0;
- int lFDSrc = fioOpen ( apSrc, O_RDONLY );
+ int lFD    = fioOpen ( apSrc, O_RDONLY );
 
- if ( lFDSrc >= 0 ) {
+ if ( lFD >= 0 ) {
 
-/* O_TRUNC: this is the import path ( skin / SMS.lng / SMS.pal / server list ), and it writes
- * exactly lSize bytes of the SOURCE over whatever is already at apDst. Importing a SHORTER
- * file over a longer one left the old tail behind, and the readers size themselves off the
- * FILE ( fioLseek SEEK_END ) rather than the record -- SMS_LocaleInit and DrawSkin both do --
- * so they read the stale tail back as real data and the imported asset came out corrupt. */
-  int lFDDst = fioOpen ( apDst, O_CREAT | O_WRONLY | O_TRUNC );
+  s64   lSize  = fioLseek ( lFD, 0, SEEK_END );
+  char* lpBuf  = lSize > 0 ? ( char* )malloc ( lSize ) : NULL;
+  int   lfRead = 0;
 
-  if ( lFDDst >= 0 ) {
+  if ( lpBuf ) {
 
-   s64   lSize = fioLseek ( lFDSrc, 0, SEEK_END );
-   char* lpBuf = ( char* )malloc ( lSize );
-
-   if ( lpBuf ) {
-
-    fioLseek ( lFDSrc, 0, SEEK_SET );
-
-    if (  fioRead  ( lFDSrc, lpBuf, lSize ) == lSize &&
-          fioWrite ( lFDDst, lpBuf, lSize ) == lSize
-    ) retVal = 1;
-
-    free ( lpBuf );
-
-   }  /* end if */
-
-   fioClose ( lFDDst );
+   fioLseek ( lFD, 0, SEEK_SET );
+   lfRead = fioRead ( lFD, lpBuf, lSize ) == lSize;
 
   }  /* end if */
 
-  fioClose ( lFDSrc );
+/* Read and close the source before the destination is truncated: an asset that
+ * already sits in its install folder is its own destination. */
+  fioClose ( lFD );
 
- }  /* end if */
+  if ( lfRead ) {
 
- if ( !retVal ) {
-  fioRemove ( apDst );
-  fioRmdir  ( apDst );
+/* O_TRUNC: the readers size an asset off the file, so a shorter import must not
+ * leave the tail of a longer old file behind. */
+   lFD = fioOpen ( apDst, O_CREAT | O_WRONLY | O_TRUNC );
+
+   if ( lFD >= 0 ) {
+
+    retVal = fioWrite ( lFD, lpBuf, lSize ) == lSize;
+    fioClose ( lFD );
+
+    if ( !retVal ) {
+     fioRemove ( apDst );
+     fioRmdir  ( apDst );
+    }  /* end if */
+
+   }  /* end if */
+
+  }  /* end if */
+
+  free ( lpBuf );
+
  }  /* end if */
 
  return retVal;
