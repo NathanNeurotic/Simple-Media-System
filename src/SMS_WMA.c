@@ -1238,6 +1238,9 @@ static void wma_init ( SMS_CodecContext* apCtx, int aFlags ) {
  int               sample_rate1;
  int               coef_vlc_table;
 
+/* The channel count comes from the file; the tables and PCM output here are mono or stereo. */
+ if ( apCtx -> m_Channels != 1 ) apCtx -> m_Channels = MAX_CHANNELS;
+
  lpCtx -> sample_rate = apCtx -> m_SampleRate;
  lpCtx -> nb_channels = apCtx -> m_Channels;
  lpCtx -> bit_rate    = apCtx -> m_BitRate;

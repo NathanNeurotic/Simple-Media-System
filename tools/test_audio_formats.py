@@ -1,9 +1,11 @@
-"""Sanitized host tests of the actual ADTS (AAC) and MP3 containers over a memory-backed file.
+"""Sanitized host tests of the actual ADTS (AAC) and MP3 containers and the WMA decoder entry.
 
 The packet allocator, ID3 skip, MPEG audio header decoder, STIO_Read and File_Skip
-are the production functions; the packet ring is malloc, so an oversized packet
-write is an ASan error. This checks probing and packet framing, not PS2 decoding,
-device behaviour or reporter acceptance.
+are the production functions over a memory-backed file; the packet ring is malloc,
+so an oversized packet write is an ASan error. The WMA decoder runs its real init
+and block header parsing; Huffman tables, the MDCT and the PCM kernels are stand-ins
+(every VLC read fails, PCM output is only sized). This checks probing, packet framing
+and channel bounds, not PS2 decoding, device behaviour or reporter acceptance.
 """
 import argparse
 import os
@@ -42,8 +44,7 @@ production = "\n".join((
     extract(stio, "static int STIO_Read (", "STIO_Read"),
     extract(stio, "void File_Skip (", "File_Skip"),
     between(bitio, "#define SMS_MIN_CACHE_BITS", "#ifdef __cplusplus"),
-    between(bitio, "static SMS_INLINE int SMS_unaligned32_be", "static SMS_INLINE uint32_t SMS_GetBits"),
-    extract(bitio, "static SMS_INLINE void SMS_InitGetBits (", "SMS_InitGetBits"),
+    between(bitio, "static SMS_INLINE int SMS_unaligned32_be", "#endif  /* __SMS_Bitio_H */"),
     extract(container, "static SMS_AVPacket* _AllocPacket (", "_AllocPacket"),
     read("src/SMS_ContainerAAC.c"),
     extract(container, "int SMSContainer_DefReadPacket (", "SMSContainer_DefReadPacket"),
@@ -54,16 +55,18 @@ production = "\n".join((
     extract(mp123, "int MP123_CheckHeader (", "MP123_CheckHeader"),
     extract(mp123, "int MP123_DecodeHeader (", "MP123_DecodeHeader"),
     read("src/SMS_ContainerMP3.c"),
+    read("src/SMS_WMA.c"),
 ))
 
 prefix = r"""
 #include <assert.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #define INLINE inline
-#define SMS_INLINE inline
+#define SMS_INLINE
 #define SMS_ALIGN(d,a) d __attribute__((aligned(a)))
 #define SMS_MAX_STREAMS 8
 #define SMS_MPA_MONO 3
@@ -73,14 +76,22 @@ prefix = r"""
 #define SMS_MKTAG(a,b,c,d) ((a)|((b)<<8)|((c)<<16)|((d)<<24))
 #define SMS_STRM_FLAGS_AUDIO 1
 #define SMS_NEG_USR32(a,s) (((uint32_t)(a))>>(32-(s)))
+#define SMS_NEG_SSR32(a,s) (((int32_t)(a))>>(32-(s)))
+#define SMS_INT64(x) x##LL
+#define SMS_THREAD_PRIORITY 0
 #define SMS_bswap32 __builtin_bswap32
 #define FILE_EOF(f) ((f)->m_CurPos >= (f)->m_Size)
 enum { SMS_CodecTypeAudio=1 };
-enum { SMS_CodecID_AAC=1, SMS_CodecID_MP3 };
+enum { SMS_CodecID_AAC=1, SMS_CodecID_MP3, SMS_CodecID_WMA_V1, SMS_CodecID_WMA_V2 };
 typedef struct { int m_SampleRate,m_nChannels,m_BitRate; } SMS_AudioInfo;
-typedef struct { int m_Type,m_Tag,m_ID,m_SampleRate,m_BitRate; void *m_pUserData;
-                 short m_UserDataLen,m_Channels,m_BitsPerSample; } SMS_CodecContext;
+typedef struct SMS_CodecContext SMS_CodecContext;
 typedef struct SMS_RingBuffer SMS_RingBuffer;
+struct SMS_RingBuffer { void *m_pOut; void (*UserCB)(SMS_RingBuffer *); };
+typedef struct { const char *m_pName; void *m_pCtx; int32_t (*Init)(SMS_CodecContext *);
+                 int32_t (*Decode)(SMS_CodecContext *,SMS_RingBuffer *,SMS_RingBuffer *);
+                 void (*Destroy)(SMS_CodecContext *); } SMS_Codec;
+struct SMS_CodecContext { int m_Type,m_Tag,m_ID,m_SampleRate,m_BitRate; SMS_Codec *m_pCodec; void *m_pUserData;
+                          short m_UserDataLen,m_Channels,m_BitsPerSample,m_BlockAlign; };
 typedef struct { int64_t m_PTS,m_DTS; uint8_t *m_pData;
                  uint32_t m_Size,m_AllocSize,m_StmIdx,m_Flags; int32_t m_Duration; } SMS_AVPacket;
 typedef struct { int64_t m_CurDTS; int32_t m_SampleRate; uint32_t m_Flags;
@@ -119,16 +130,54 @@ static void SMS_RingBufferUnalloc(SMS_RingBuffer *ring,int n) { (void)ring;(void
 static struct { unsigned char m_MP3AutoPar; } g_Config={5};
 static char g_pMP3Str[]="MP3";
 static void *g_pSynthBuffer;
+typedef struct { int16_t (*m_pTable)[2]; } SMS_VLC;
+typedef struct { int unused; } SMS_MDCTContext;
+static char g_pWMA[]="WMA";
+static int SMS_VLC_Init(SMS_VLC *v,int a,int b,const void *c,int d,int e,const void *f,int g,int h) { return 0; }
+static void SMS_VLC_Free(SMS_VLC *v) { (void)v; }
+static int SMS_GetVLC2(void *bits,int16_t (*table)[2],int n,int depth) { return -1; }
+static int DSP_MDCTInit(SMS_MDCTContext *c,int n,float scale) { return 0; }
+static void DSP_MDCTDestroy(SMS_MDCTContext *c) { (void)c; }
+static void DSP_IMDCT(SMS_MDCTContext *c,float *out,const float *in) {}
+static void DSP_VecMULA(float *d,const float *a,const float *b,const float *c,int n) {}
+static void DSP_VecMULR(float *d,const float *a,const float *b,int n) {}
+static void RotateThreadReadyQueue(int priority) { (void)priority; }
+static int SMS_log2(unsigned v) { int n=0; while(v>>=1) ++n; return n; }
+static float SMS_sqrtf(float v) { return __builtin_sqrtf(v); }
+float PowF(float a,float b) { return powf(a,b); }
+/* The EE kernels store 16-bit samples: one per frame for mono, two for stereo. */
+void pcm_syn1(short *out,float **pcm,int n) { (void)pcm;memset(out,0,2*n); }
+void pcm_syn2(short *out,float **pcm,int n) { (void)pcm;memset(out,0,4*n); }
 static int SMSContainer_SetName(SMS_Container *c,FileContext *f) { (void)c;(void)f;return 1; }
 """
 
 tests = r"""
 static FileContext file;
 static SMS_Container cont;
+static void pcm_ready(SMS_RingBuffer *ring) { (void)ring; }
+/* Init and one superframe of a 44.1 kHz 128 kbit/s WMA v2 stream whose header claims the given
+ * channel count; the packet codes every channel it is asked for. */
+static int wma(int channels) {
+ static int extra[2]={0,1};
+ static uint8_t data[4096]={0xFC};
+ SMS_AVPacket pkt={0,0,data,743};
+ SMS_RingBuffer in={&pkt},out={NULL,pcm_ready};
+ SMS_CodecContext codec={0,0,SMS_CodecID_WMA_V2,44100,128000,NULL,extra,6,channels,16,743};
+ SMS_Codec_WMA_Open(&codec);
+ codec.m_pCodec->Init(&codec);
+ codec.m_pCodec->Decode(&codec,&out,&in);
+ codec.m_pCodec->Destroy(&codec);
+ printf("ch=%d\n",codec.m_Channels);
+ free(codec.m_pCodec);free(packet);
+ return 0;
+}
 int main(int argc,char **argv) {
- FILE *f=fopen(argv[2],"rb");
+ FILE *f;
  long n;unsigned pkts=0,bytes=0,start;int open,idx,got;
- assert(argc==4 && f);fseek(f,0,SEEK_END);n=ftell(f);rewind(f);
+ assert(argc==4);
+ if(!strcmp(argv[1],"wma")) return wma(atoi(argv[2]));
+ f=fopen(argv[2],"rb");
+ assert(f);fseek(f,0,SEEK_END);n=ftell(f);rewind(f);
  image=malloc(n+1);assert(fread(image,1,n,f)==(size_t)n);fclose(f);
  strict=atoi(argv[3]);
  file=(FileContext){n,0,0,image,image,STIO_Read,seek_file,fill_file};
@@ -195,13 +244,19 @@ def case_mp3(run):
     run("mp3", b"\x89PNG\r\n\x1a\n" + bytes(56) + mpa(9)[:300], open=0)
 
 
+def case_wma(exe):
+    # Only mono and stereo exist in the decoder; any other header value is decoded as stereo.
+    for channels, used in ((1, 1), (2, 2), (6, 2), (0, 2), (-1, 2)):
+        assert summary(exe, "wma", channels, 0) == f"ch={used}", channels
+
+
 cases = {"aac": case_aac, "mp3": case_mp3}
 with tempfile.TemporaryDirectory() as tmp:
     cfile, exe = Path(tmp) / "audio.c", Path(tmp) / "audio"
     cfile.write_text(prefix + production + tests)
     subprocess.run([os.environ.get("CC", "cc"), "-std=gnu99", "-g", "-w", "-no-pie",
                     "-fsanitize=address,undefined", "-fno-sanitize=shift", "-fno-sanitize-recover=all",
-                    str(cfile), "-o", str(exe)], check=True)
+                    str(cfile), "-o", str(exe), "-lm"], check=True)
     if args.file:
         for path in args.file:
             for kind in cases:
@@ -210,4 +265,6 @@ with tempfile.TemporaryDirectory() as tmp:
     for name, case in cases.items():
         if args.case in ("all", name):
             case(lambda kind, data, **want: probe(exe, tmp, kind, data, **want))
-print("Audio formats: ADTS framing and damaged frame lengths, MP3 probing passed")
+    if args.case in ("all", "wma"):
+        case_wma(exe)
+print("Audio formats: ADTS framing and damaged frame lengths, MP3 probing, WMA channel counts passed")
