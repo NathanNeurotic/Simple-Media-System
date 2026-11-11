@@ -49,6 +49,25 @@ class TestSMSConverter(unittest.TestCase):
                     "gop": preset.gop, "fps": preset.fps, "ext": preset.ext})
                 self.assertEqual(cmd[cmd.index("-g") + 1], str(preset.gop))
 
+    def test_flac_output_is_16_bit_mono_or_stereo(self):
+        # SMS's FLAC reader rejects more than two channels and renders 16-bit samples.
+        import subprocess
+        import tempfile
+        ff, fp = find_ffmpeg_binaries()
+        settings = {"acodec": "flac", "sample_rate": None, "channels": None}
+        cmd = build_ffmpeg_cmd(ff, "in.ac3", "out.flac", dict(settings, normalize_audio=True), has_video_stream=False)
+        self.assertNotIn("-filter:a", cmd)
+        self.assertEqual(cmd[cmd.index("-af") + 1], "loudnorm,aformat=sample_fmts=s16:channel_layouts=mono|stereo")
+        with tempfile.TemporaryDirectory() as tmp:
+            source, output = str(Path(tmp) / "surround.wav"), str(Path(tmp) / "out.flac")
+            subprocess.run([ff, "-v", "error", "-f", "lavfi", "-i", "sine=duration=1", "-ac", "6",
+                            "-c:a", "pcm_f32le", source], check=True, capture_output=True)
+            result = subprocess.run(build_ffmpeg_cmd(ff, source, output, settings, has_video_stream=False),
+                                    capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            audio = get_media_info(fp, output)["streams"][0]
+            self.assertEqual((audio["channels"], audio["sample_fmt"]), (2, "s16"))
+
     def test_fps_mapping(self):
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["23.976"], "24000/1001")
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["29.97"], "30000/1001")

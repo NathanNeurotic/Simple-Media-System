@@ -222,7 +222,7 @@ PRESETS: Dict[str, Preset] = {
         sample_rate=None,
         channels=None,
         ext=".flac",
-        description="Keeps every bit of the original - no quality is thrown away. Files are roughly 4x an MP3, so use it when you have the space and care about the difference."
+        description="Keeps every bit of a 16-bit mono or stereo original. Surround and 24-bit sources are reduced to 16-bit stereo, which is all SMS plays. Files are roughly 4x an MP3, so use it when you have the space and care about the difference."
     ),
     "Ogg Vorbis Audio [Open format]": Preset(
         name="Ogg Vorbis Audio [Open format]",

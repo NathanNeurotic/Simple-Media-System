@@ -479,11 +479,12 @@ def build_ffmpeg_cmd(
         if channels:
             cmd.extend(["-ac", str(channels)])
 
-        # Audio resampling parameters
-        pass
-
-        if settings.get("normalize_audio", False):
-            cmd.extend(["-filter:a", "loudnorm"])
+        audio_filters = ["loudnorm"] if settings.get("normalize_audio", False) else []
+        if acodec == "flac":
+            # SMS opens only mono/stereo FLAC and renders 16-bit samples.
+            audio_filters.append("aformat=sample_fmts=s16:channel_layouts=mono|stereo")
+        if audio_filters:
+            cmd.extend(["-af", ",".join(audio_filters)])
     else:
         cmd.append("-an")
 
