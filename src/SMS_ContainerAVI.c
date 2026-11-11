@@ -788,18 +788,18 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
    "dsrl    $at, $at, 8\n\t"
    "or      $at, $at, %2\n\t"
    "sd      $at, %0\n\t"
-   "dsrl32  %1, $at, 0\n\t"
+   "dsra32  %1, $at, 0\n\t"
    ".set at\n\t"
    : "=m"( lData ), "=r"( lSize ) : "r"( lSize ): "at"
   );
 
   lCount = (  ( int )lData[ 2 ] - '0' ) * 10 + (  ( int )lData[ 3 ] - '0'  );
-  lCond  = (  lCount < ( int32_t )apCont -> m_nStm  ) + (  i + lSize <= ( uint32_t )lpAVICont -> m_MoviEnd  );
+  lCond  = lSize >= 0 && i + lSize <= ( uint32_t )lpAVICont -> m_MoviEnd;
 
   if ( lData[ 2 ] >= '0' && lData[ 2 ] <= '9' &&
        lData[ 3 ] >= '0' && lData[ 3 ] <= '9' &&
        *( uint16_t* )&lData[ 0 ] == 0x7869    &&  /* ix */
-       lCond
+       lCond && lCount < ( int32_t )apCont -> m_nStm
   ) File_Skip ( lpBuf, lSize );
             
   lCount   = (  ( int )lData[ 0 ] - '0'  ) * 10 + (  ( int )lData[ 1 ] - '0'  );
@@ -812,7 +812,7 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
           lChunkID == 0x6273 ||  /* sb */
           lChunkID == 0x6264 ||  /* db */
           lChunkID == 0x5F5F     /* __ */
-       ) && lCond
+       ) && lCond && lCount < ( int32_t )apCont -> m_nStm
   ) {
 
    SMS_Stream* lpStm = apCont -> m_pStm[ lCount ];
