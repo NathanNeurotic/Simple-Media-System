@@ -117,6 +117,59 @@ static void _free ( void* apPtr ) {
  if ( apPtr ) free ( apPtr );
 }  /* end _free */
 
+/* BULK SAMPLE-TABLE LOADING.
+ *
+ * Every sample table below used to be assembled one entry at a time through _read_int_be --
+ * a call, a buffer bounds check and a 64-bit register dance for every four bytes. That is
+ * where an .mp4's startup cost lives: these tables are proportional to the SAMPLE count, so a
+ * two-hour 30 fps file carries ~216,000 stsz entries on top of its chunk offsets and stts,
+ * and each one was an individual trip through the reader before a single frame could be
+ * decoded. Testers describe it as SMS "reading the whole file" -- it is really SMS reading
+ * the whole INDEX, four bytes at a time.
+ *
+ * FileContext::Read is the same path File_GetUInt already falls back to whenever its buffer
+ * runs short, so it maintains m_pPos / m_Pos / m_CurPos exactly as the word-at-a-time reads
+ * did and the cursor lands in an identical place. Only the NUMBER of trips changes. A short
+ * read is reported rather than swallowed, so a truncated table degrades to "absent" instead
+ * of leaving the caller walking half-filled memory -- and the degrade path deliberately does
+ * NOT skip anything, because _mov_read_dflt re-syncs to the end of the atom from wherever the
+ * handler left the cursor.
+ *
+ * The swap is done in place, through the UNSIGNED COUNTERPART of the destination's own type.
+ * That is a correctness requirement, not a shortcut: this file is built at -O2 without
+ * -fno-strict-aliasing, and C permits access through a signed/unsigned variant of the same
+ * type. uint32_t over int is therefore legal for stsz, stss and the int members of MOVStts /
+ * MOVStsc, and uint64_t over int64_t is legal for co64. stco is the sole exception -- its
+ * on-disk width ( 4 ) is not its in-memory width ( 8 ), so it cannot be swapped in place at
+ * all and uses a small fixed scratch; see _mov_read_stco.
+ *
+ * Every caller is already bounded by _tbl_fits and by its own UINT_MAX / sizeof guard, so the
+ * byte count below cannot wrap.
+ */
+static int _read_be32_tbl ( FileContext* apFileCtx, uint32_t* apDst, unsigned int aWords ) {
+ unsigned int i;
+ unsigned int lBytes = aWords * sizeof ( uint32_t );
+ if ( !aWords ) return 1;
+ if (  ( unsigned int )apFileCtx -> Read ( apFileCtx, apDst, lBytes ) != lBytes  ) return 0;
+ for ( i = 0; i < aWords; ++i ) apDst[ i ] = SMS_bswap32 ( apDst[ i ] );
+ return 1;
+}  /* end _read_be32_tbl */
+
+/* co64 only, and it runs AFTER _read_be32_tbl -- which has already put each 32-bit half into
+ * host byte order. All that is left is that the halves sit on the wrong sides of the word:
+ * the MOST significant one came first on disk, so on this little-endian core it landed in the
+ * LOW half. Swapping them is the whole job, and byte-swapping again here would undo the work
+ * _read_be32_tbl just did. Together the two steps reproduce _read_long_be exactly --
+ * ( bswap32( first ) << 32 ) | bswap32( second ).
+ */
+static void _be64_tbl_join ( int64_t* apDst, unsigned int aCount ) {
+ unsigned int i;
+ for ( i = 0; i < aCount; ++i ) {
+  uint64_t lVal = ( uint64_t )apDst[ i ];
+  apDst[ i ] = ( int64_t )(  ( lVal & 0xFFFFFFFFU ) << 32 | ( lVal >> 32 )  );
+ }  /* end for */
+}  /* end _be64_tbl_join */
+
 /* A sample-table entry count comes straight out of the file. The UINT_MAX / sizeof tests in the
  * readers below only stop the multiply from wrapping -- a crafted or merely corrupt count of a
  * few hundred million still asks malloc for hundreds of megabytes on a 32 MB heap, and most of
@@ -426,11 +479,17 @@ static int _mov_read_stts ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   lpMyStm -> m_pStts    = ( MOVStts* )malloc ( lnEntries * sizeof ( MOVStts )  );
   if ( !lpMyStm -> m_pStts ) return 0;   /* 32MB heap: a large ( or bogus ) entry count can fail */
   lpMyStm -> m_nStts    = lnEntries;
+/* Both members are int and the on-disk pair is ( count, duration ) in that order, so the
+ * table loads as one run of 2 x lnEntries big-endian words straight into the struct array.
+ * The arithmetic that used to share the read loop is now its own pass over memory that is
+ * already resident -- same values, same order, no I/O in it. */
+  if (   !_read_be32_tbl (  apFileCtx, ( uint32_t* )lpMyStm -> m_pStts, lnEntries * 2  )   ) {
+   lpMyStm -> m_nStts = 0;
+   return 0;
+  }  /* end if */
   for ( i = 0; i < lnEntries; ++i ) {
-   int lSampleCount    = _read_int_be ( apFileCtx );
-   int lSampleDuration = _read_int_be ( apFileCtx );
-   lpMyStm -> m_pStts[ i ].m_Count    = lSampleCount;
-   lpMyStm -> m_pStts[ i ].m_Duration = lSampleDuration;
+   int lSampleCount    = lpMyStm -> m_pStts[ i ].m_Count;
+   int lSampleDuration = lpMyStm -> m_pStts[ i ].m_Duration;
    lpMyStm -> m_TimeRate = _gcd ( lpMyStm -> m_TimeRate, lSampleDuration );
    lDuration  += ( int64_t )lSampleDuration * lSampleCount;
   }  /* end for */
@@ -468,7 +527,7 @@ static int _mov_read_stsc ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  SMS_Stream* lpStm   = apCtx -> m_pBase -> m_pStm[ apCtx -> m_pBase -> m_nStm - 1 ];
  if ( lpStm ) {
   MOVStream*   lpMyStm = ( MOVStream* )lpStm -> m_pCtx;
-  unsigned int i, lnEntries;
+  unsigned int lnEntries;
   File_Skip ( apFileCtx, 4 );
   lnEntries = _read_int_be ( apFileCtx );
   if (  lnEntries >= UINT_MAX / sizeof ( MOVStsc )  ) return -1;
@@ -477,11 +536,12 @@ static int _mov_read_stsc ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   lpMyStm -> m_pSample2Chunk = ( MOVStsc* )malloc (  lnEntries * sizeof ( MOVStsc )  );
   if ( !lpMyStm -> m_pSample2Chunk ) return 0;
   lpMyStm -> m_nSample2Chunk = lnEntries;
-  for ( i = 0; i < lnEntries; ++i ) {
-   lpMyStm -> m_pSample2Chunk[ i ].m_First = _read_int_be ( apFileCtx );
-   lpMyStm -> m_pSample2Chunk[ i ].m_Count = _read_int_be ( apFileCtx );
-   lpMyStm -> m_pSample2Chunk[ i ].m_ID    = _read_int_be ( apFileCtx );
-  }  /* end for */
+/* Three int members, and the on-disk triple is ( first, count, id ) in that order, so the
+ * whole table is 3 x lnEntries consecutive big-endian words. */
+  if (   !_read_be32_tbl (
+           apFileCtx, ( uint32_t* )lpMyStm -> m_pSample2Chunk, lnEntries * 3
+          )
+  ) lpMyStm -> m_nSample2Chunk = 0;
  } else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
  return 0;
 }  /* end _mov_read_stsc */
@@ -490,7 +550,7 @@ static int _mov_read_stsz ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  SMS_Stream* lpStm = apCtx -> m_pBase -> m_pStm[ apCtx -> m_pBase -> m_nStm - 1 ];
  if ( lpStm ) {
   MOVStream* lpMyStm = ( MOVStream* )lpStm -> m_pCtx;
-  unsigned int i, lnEntries, lSampleSize;
+  unsigned int lnEntries, lSampleSize;
   File_Skip ( apFileCtx, 4 );
   lSampleSize = _read_int_be ( apFileCtx );
   if ( !lpMyStm -> m_SampleSize ) lpMyStm -> m_SampleSize = lSampleSize;
@@ -509,7 +569,10 @@ static int _mov_read_stsz ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
    lpMyStm -> m_nSamples = 0;
    return 0;
   }  /* end if */
-  for ( i = 0; i < lnEntries; ++i ) lpMyStm -> m_pSampleSize[ i ] = _read_int_be ( apFileCtx );
+/* The largest table in the file by some margin -- one entry PER SAMPLE, so one per frame on a
+ * video trak. This single call is most of the .mp4 startup win. */
+  if (   !_read_be32_tbl (  apFileCtx, ( uint32_t* )lpMyStm -> m_pSampleSize, lnEntries  )   )
+   lpMyStm -> m_nSamples = 0;
  } else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
  return 0;
 }  /* end mov_read_stsz */
@@ -532,10 +595,37 @@ static int _mov_read_stco ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   ) return 0;
   lpMyStm -> m_pChunkOffsets = ( int64_t* )malloc (  lnEntries * sizeof ( int64_t )  );
   if ( !lpMyStm -> m_pChunkOffsets ) return 0;
-  if (  apAtom -> m_Type == SMS_MKTAG( 's', 't', 'c', 'o' )  )
-   for ( i = 0; i < lnEntries; ++i ) lpMyStm -> m_pChunkOffsets[ i ] = _read_int_be ( apFileCtx );
-  else if (  apAtom -> m_Type == SMS_MKTAG( 'c', 'o', '6', '4' )  )
-   for ( i = 0; i < lnEntries; ++i ) lpMyStm -> m_pChunkOffsets[ i ] = _read_long_be( apFileCtx );
+  if (  apAtom -> m_Type == SMS_MKTAG( 's', 't', 'c', 'o' )  ) {
+/* THE ONE TABLE THAT CANNOT BE SWAPPED IN PLACE: stco stores 4-byte offsets and this array
+ * holds 8-byte ones, so source and destination cells are different sizes and reading the raw
+ * bytes into the destination would need a uint32_t view of an int64_t object -- which -O2
+ * without -fno-strict-aliasing does not permit. A transient full-size buffer is also the
+ * wrong answer on a 32 MB heap ( it would be exactly the allocation this change exists to
+ * make cheaper ), so widen through a small fixed window instead: 256 entries per trip is a
+ * 1 KB stack frame and still collapses the trip count by that factor.
+ * ( uint32_t ) before the store preserves the ZERO-extension the old _read_int_be assignment
+ * produced -- a 32-bit offset is unsigned, and sign-extending one past 2 GiB would point the
+ * reader at a negative file position. */
+   uint32_t     lWnd[ 256 ];
+   unsigned int lDone = 0;
+   while ( lDone < lnEntries ) {
+    unsigned int lStep = lnEntries - lDone;
+    if (  lStep > sizeof ( lWnd ) / sizeof ( lWnd[ 0 ] )  )
+     lStep = sizeof ( lWnd ) / sizeof ( lWnd[ 0 ] );
+    if (  !_read_be32_tbl ( apFileCtx, lWnd, lStep )  ) return 0;
+    for ( i = 0; i < lStep; ++i )
+     lpMyStm -> m_pChunkOffsets[ lDone + i ] = ( uint32_t )lWnd[ i ];
+    lDone += lStep;
+   }  /* end while */
+  } else if (  apAtom -> m_Type == SMS_MKTAG( 'c', 'o', '6', '4' )  ) {
+/* Same width on disk and in memory, so this one loads straight in and is fixed up in place
+ * through uint64_t -- the signed/unsigned variant of the destination's own type. */
+   if (   !_read_be32_tbl (
+            apFileCtx, ( uint32_t* )lpMyStm -> m_pChunkOffsets, lnEntries * 2
+           )
+   ) return 0;
+   _be64_tbl_join ( lpMyStm -> m_pChunkOffsets, lnEntries );
+  }
 /* Count is published only once the table is actually FILLED. The dispatcher turns a -1 into a
  * stop, not an abort -- _mov_read_header still indexes whatever traks it has -- so publishing
  * the count before this branch would have handed _mov_build_index a malloc'd-but-unwritten
@@ -568,16 +658,23 @@ static int _mov_read_ctts ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   lpMyStm -> m_pCtts = ( MOVStts* )malloc (  lnEntries * sizeof ( MOVStts )  );
   if ( !lpMyStm -> m_pCtts ) return 0;
   lpMyStm -> m_nCtts = lnEntries;
+/* Same ( count, duration ) int pair as stts, so it loads the same way. */
+  if (   !_read_be32_tbl (  apFileCtx, ( uint32_t* )lpMyStm -> m_pCtts, lnEntries * 2  )   ) {
+   lpMyStm -> m_nCtts = 0;
+   return 0;
+  }  /* end if */
+/* A negative composition offset still disables the table wholesale. The File_Skip that used
+ * to accompany this is gone because it no longer has anything to do: the read above already
+ * consumed all 8 x lnEntries bytes, so the cursor is at the end of the atom either way --
+ * whereas the old loop bailed part-way through and had to skip the remainder by hand to stay
+ * byte-synced. Entries past the offending one are left unwritten exactly as before; nothing
+ * reads them once m_nCtts is 0. */
   for ( i = 0; i < lnEntries; ++i ) {
-   int lCount    = _read_int_be ( apFileCtx );
-   int lDuration = _read_int_be ( apFileCtx );
+   int lDuration = lpMyStm -> m_pCtts[ i ].m_Duration;
    if ( lDuration < 0 ) {
     lpMyStm -> m_nCtts = 0;
-    File_Skip (  apFileCtx, 8 * ( lnEntries - i - 1 )  );
     break;
    }  /* end if */
-   lpMyStm -> m_pCtts[ i ].m_Count    = lCount;
-   lpMyStm -> m_pCtts[ i ].m_Duration = lDuration;
    lpMyStm -> m_TimeRate = _gcd ( lpMyStm -> m_TimeRate, lDuration );
   }  /* end for */
  } else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
@@ -588,19 +685,21 @@ static int _mov_read_stss ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  SMS_Stream* lpStm = apCtx -> m_pBase -> m_pStm[ apCtx -> m_pBase -> m_nStm - 1 ];
  if ( lpStm ) {
   MOVStream*   lpMyStm = ( MOVStream* )lpStm -> m_pCtx;
-  unsigned int i, lnEntries;
+  unsigned int lnEntries;
   File_Skip ( apFileCtx, 4 );
   lnEntries = _read_int_be ( apFileCtx );
   if (  lnEntries >= UINT_MAX / sizeof ( int )  ) return -1;
 /* Same paranoia as _mov_read_stts: a bogus entry count can make a 32MB heap fail the
  * malloc. Falling back to m_nKeyFrames == 0 is safe -- ISO-BMFF says that without stss
- * EVERY sample is a sync sample, which is exactly how _mov_build_index treats it. */
+ * EVERY sample is a sync sample, which is exactly how _mov_build_index treats it. A short
+ * read degrades the same way and for the same reason. */
   lpMyStm -> m_nKeyFrames = 0;
   if (  !_tbl_fits ( apAtom, lnEntries, 4, 8 )  ) return 0;
   lpMyStm -> m_pKeyFrames = ( int* )malloc (  lnEntries * sizeof ( int )  );
   if ( !lpMyStm -> m_pKeyFrames ) return 0;
   lpMyStm -> m_nKeyFrames = lnEntries;
-  for ( i = 0; i < lnEntries; ++i ) lpMyStm -> m_pKeyFrames[ i ] = _read_int_be ( apFileCtx );
+  if (   !_read_be32_tbl (  apFileCtx, ( uint32_t* )lpMyStm -> m_pKeyFrames, lnEntries  )   )
+   lpMyStm -> m_nKeyFrames = 0;
  } else File_Skip (  apFileCtx, ( uint32_t )apAtom -> m_Size  );
  return 0;
 }  /* end _mov_read_stss */
