@@ -62,10 +62,17 @@ Decisions waiting on the owner:
 
 - Status values: `open` (not started), `fixed <sha>` (committed on the branch),
   `skipped: <reason>`. Entries are ticked when fixed.
+- Supporting material is in `2026-11-11-handoff/`: the full investigation
+  findings with the checkers' verdicts (`findings/`, read these before acting on
+  an entry here), sample media for the hardware tests (`samples/`) and the two
+  scripts used to verify every push (`scripts/`). Delete that folder before
+  merging to `master`; it is working material, not documentation.
+- This note was generated during the run; edit it by hand from now on.
 - Host tests need Linux (the sources take `_WIN32` paths under mingw). On
   Windows run them in WSL Debian: `setarch -R python3 tools/test_x.py`
   (`setarch -R` is needed for the ThreadSanitizer test). The CI list is in
-  `.github/workflows/compilation.yml`.
+  `.github/workflows/compilation.yml`;
+  `2026-11-11-handoff/scripts/host-tests.sh` runs the whole list.
 - PS2 builds: `ps2dev/ps2dev:v1.0` in Docker, `make all pack`, `make BDM=0 all`
   and `make SMS_DIAG=1 all`, as CI does.
 - Baseline at `c275476`: all 44 CI host tests pass; `make all pack` gives a
@@ -362,7 +369,7 @@ Decisions waiting on the owner:
 - [x] **ASF header: Stream Bitrate Properties uses 'flags * 0x7F' as array index (heap out-of-bounds write on ordinary multi-stream WMV)**
   - Ref `hunt-containers-codecs#1`; issue none; severity high; reproduced on host: yes; independent check: diagnosis check: confirmed; fix check: confirmed; status: fixed `c77798b`
   - Files: `src/SMS_ContainerASF.c`
-  - Proposed fix: One character. Before: 'int lStmID = lFlags * 0x7F;' After: 'int lStmID = lFlags & 0x7F;'. Trialled in private tree: crafted/wmv_bitrate_1_2.wmv then reports 'RESULT ASF nstm=2 ...' and reads 50 packets with no sanitizer report; all 4 valid ASF corpus files unchanged. (The shadowed, never-filled outer lBitRate[] fallback is a separate dead-code matter; leave it.)
+  - Proposed fix: One character. Before: 'int lStmID = lFlags * 0x7F;' After: 'int lStmID = lFlags & 0x7F;'. Trialled in private tree: docs/investigations/2026-11-11-handoff/samples/wmv_bitrate_1_2.wmv then reports 'RESULT ASF nstm=2 ...' and reads 50 packets with no sanitizer report; all 4 valid ASF corpus files unchanged. (The shadowed, never-filled outer lBitRate[] fallback is a separate dead-code matter; leave it.)
 
 - [x] **AVI _ReadPacket: stream number and chunk size are never both validated (lCond uses '+' and the wrong digits) -> m_pStm[] out-of-bounds and unbounded read into the packet buffer**
   - Ref `hunt-containers-codecs#2`; issue none; severity high; reproduced on host: yes; independent check: defect confirmed, proposed fix disputed; status: fixed `6cb2537`
@@ -372,7 +379,7 @@ Decisions waiting on the owner:
 - [x] **ASF _ReadPacket: negative fragment offset/size from the file pass the bounds test and drive a wild Read() into the heap**
   - Ref `hunt-containers-codecs#3`; issue none; severity medium; reproduced on host: yes; independent check: diagnosis check: confirmed; status: fixed `a26ea3e`
   - Files: `src/SMS_ContainerASF.c`
-  - Proposed fix: Extend the existing guard at line 552. Before: ' if ( lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||' After: ' if ( lpASF -> packet_frag_size <= 0 || lpASF -> packet_frag_offset < 0 || !lpASFStm -> pkt.data ||\n lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||' (rest of the condition and the 'continue' unchanged). Trialled: crafted/asf_frag_crash.asf then reads 252 packets to EOF;
+  - Proposed fix: Extend the existing guard at line 552. Before: ' if ( lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||' After: ' if ( lpASF -> packet_frag_size <= 0 || lpASF -> packet_frag_offset < 0 || !lpASFStm -> pkt.data ||\n lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||' (rest of the condition and the 'continue' unchanged). Trialled: docs/investigations/2026-11-11-handoff/samples/asf_frag_crash.asf then reads 252 packets to EOF;
 
 - [x] **AAC (ADTS) _ReadPacket: frame_length < 8 underflows 'lSize - 8' and copies the rest of the file over the packet buffer / static data**
   - Ref `hunt-containers-codecs#4`; issue none; severity medium; reproduced on host: yes; independent check: diagnosis check: confirmed; status: fixed `37e0e8c`

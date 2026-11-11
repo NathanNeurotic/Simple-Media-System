@@ -1,6 +1,7 @@
 # Review notes and hardware test list (2026-11-11)
 
-Companion to `2026-11-11-open-issues-triage.md`. Generated from the implementer
+Companion to `2026-11-11-open-issues-triage.md`. Sample files named below are in
+`2026-11-11-handoff/samples/`. Generated from the implementer
 and reviewer reports for the commits on `fix/open-issues-2026-11`. Nothing here
 was run on a console.
 
@@ -103,11 +104,11 @@ What each implementer said must be checked on a PS2 before its fix is called don
 ### audiofmt
 
 - [ ] AAC regression: play an ordinary ADTS .aac file (e.g. ffmpeg -c:a aac -f adts, 128 kbit/s stereo) from USB and from one other device (HDD or SMB). Expected: plays start to end exactly as before the change.
-- [ ] AAC damaged frame: copy (investigator scratch, not in the repo) hunt-containers-codecs/crafted/adts_len0.aac and adts_len4.aac to USB and play each. Expected: playback continues past the damaged frame (a short glitch is acceptable) and reaches the end; no freeze, crash or return to the browser with corrupted GUI. On the pre-fix build the same files are ...
-- [ ] MP3 regression: from USB, HDD and SMB play (a) a CBR MP3 with an ID3v2 tag, (b) a VBR MP3 with a Xing header, (c) a very short jingle of well under one second, (d) a 22.05 kHz mono MP3, (e) an .mp2 file. Expected: all are recognised and play as before. Files to use are in (investigator scratch, not in the repo) audiofmt/real/ and .../hunt-containers-co ...
-- [ ] MP3 false positive: copy .../hunt-containers-codecs/crafted/png512.bin (512 bytes, not audio) to HDD or SMB (a device that may accept a seek past end-of-file) and open it. Expected: reported as an unsupported file; it must not start the MP3 player. On USB/FAT it was already rejected.
+- [ ] AAC damaged frame: copy `docs/investigations/2026-11-11-handoff/samples/adts_len0.aac` and adts_len4.aac to USB and play each. Expected: playback continues past the damaged frame (a short glitch is acceptable) and reaches the end; no freeze, crash or return to the browser with corrupted GUI. On the pre-fix build the same files are ...
+- [ ] MP3 regression: from USB, HDD and SMB play (a) a CBR MP3 with an ID3v2 tag, (b) a VBR MP3 with a Xing header, (c) a very short jingle of well under one second, (d) a 22.05 kHz mono MP3, (e) an .mp2 file. Expected: all are recognised and play as before. Files to use: `docs/investigations/2026-11-11-handoff/samples/` (`t*.mp3`, `t50ms.mp2`, `short*.mp3`).
+- [ ] MP3 false positive: copy `docs/investigations/2026-11-11-handoff/samples/png512.bin` (512 bytes, not audio) to HDD or SMB (a device that may accept a seek past end-of-file) and open it. Expected: reported as an unsupported file; it must not start the MP3 player. On USB/FAT it was already rejected.
 - [ ] WMA regression: play a normal stereo .wma (WMA v2) and a mono .wma, plus a .wmv with WMA audio. Expected: unchanged playback and correct channel layout.
-- [ ] WMA crafted header: play .../hunt-containers-codecs/crafted/wmav2_ch6.wma, wmav2_ch0.wma and wmav2_ch65535.wma (valid stereo streams whose header channel field was edited). Expected: each plays as stereo without freeze or crash; pre-fix builds are expected to corrupt memory or produce garbage.
+- [ ] WMA crafted header: play `docs/investigations/2026-11-11-handoff/samples/wmav2_ch6.wma`, wmav2_ch0.wma and wmav2_ch65535.wma (valid stereo streams whose header channel field was edited). Expected: each plays as stereo without freeze or crash; pre-fix builds are expected to corrupt memory or produce garbage.
 
 ## Review notes not acted on
 
