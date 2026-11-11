@@ -1302,6 +1302,8 @@ int   GSFont_UnpackChr ( GSMTKFontHeader*, unsigned int, void*                  
 void* GSFont_Load      ( const char*                                             );
 void  GSFont_Unload    ( void                                                    );
 
+const char* DisplayUTF8 ( const char*, char*, int );   /* SMS_InverseCodePages.c: UTF-8 name -> font codepage, display only */
+
 static int inline GSFont_CharWidth ( GSMTKFontHeader* apHdr, unsigned int aChr ) {
  return (   (  ( unsigned char* )apHdr  ) + 11   )[ aChr ];
 }  /* end GSFont_CharWidth */

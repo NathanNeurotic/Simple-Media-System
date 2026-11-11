@@ -85,6 +85,7 @@ jobs:
         python3 tools/test_artwork_sidecar_filter.py
         python3 tools/test_artwork_poster.py
         python3 tools/test_poster_typography.py
+        python3 tools/test_utf8_display.py
         python3 tools/test_browser_artwork_lifecycle.py
         python3 tools/test_browser_reload.py
         python3 tools/test_browser_path_bounds.py

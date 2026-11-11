@@ -28,9 +28,8 @@ prefix = r'''
 #include <string.h>
 #include <stdio.h>
 #include "SMS_List.h"
-static struct { int m_CodePage; } g_GSCtx;
-static int TranslateUTF8(int cp,char *dst,int capacity,const char *src) {
- (void)cp;(void)dst;(void)capacity;(void)src;return 0;
+static const char *DisplayUTF8(const char *src,char *dst,int capacity) {
+ (void)dst;(void)capacity;return src;
 }
 static int GSFont_WidthEx(char *text,int count,int font) {
  (void)text;return count*(32+font)/2;
@@ -87,7 +86,7 @@ with tempfile.TemporaryDirectory() as temporary:
     tmp = Path(temporary)
     (tmp / 'tamtypes.h').write_text('#include <stdint.h>\ntypedef uint64_t u64;typedef int64_t s64;\n')
     fixture = tmp / 'typography.c'
-    fixture.write_text(prefix + icons + '\n' + function('_is_utf8') + function('_poster_names')
+    fixture.write_text(prefix + icons + '\n' + function('_poster_names')
                        + function('_poster_text_offset') + post)
     exe = tmp / 'typography'
     subprocess.run([os.environ.get('CC', 'cc'), '-std=c99', '-g', '-no-pie',

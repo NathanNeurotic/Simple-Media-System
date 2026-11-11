@@ -74,6 +74,8 @@ static void GUIMenu_Render ( GUIObject* apObj, int aCtx ) {
   int            lWidth = lpMenu -> m_Width - 16;
   u64*           lpDMA;
   int            lLen;
+  char           lName[ 320 ];
+  char*          lpName;
 
   if ( lpItem -> m_Type & MENU_ITEM_HIDDEN ) continue;
 
@@ -93,14 +95,23 @@ static void GUIMenu_Render ( GUIObject* apObj, int aCtx ) {
 
   g_GSCtx.m_TextColor = ( lpItem == lpState -> m_pFirst && lpItem != lpState -> m_pItems ) || ( lY >= lLastY - 34 && lpItem != lpState -> m_pLast ) ? 2 : 1;
 
-  lLen = lpItem -> m_pOptionName -> m_Len;
+  lLen   = lpItem -> m_pOptionName -> m_Len;
+  lpName = lpItem -> m_pOptionName -> m_pStr;
+
+  /* File-name menus only: locale strings are already in the font codepage, and a few
+   * ( Polish CP1250 0xD3 0xA3 ) would pass for UTF-8 and be mangled. Name menus point
+   * m_pStr at the NUL-terminated node name. */
+  if ( lpState -> m_Flags & MENU_FLAGS_NAMES ) {
+   lpName = ( char* )DisplayUTF8 ( lpName, lName, sizeof ( lName ) );
+   if ( lpName == lName ) lLen = strlen ( lName );
+  }  /* end if */
 
   if (  lpItem -> m_IconRight && ( lpItem -> m_Type & 0x00FFFFFF )  ) lWidth -= lpMenu -> m_Width / 3;
 
-  while (  GSFont_WidthEx ( lpItem -> m_pOptionName -> m_pStr, lLen, -7 ) > lWidth  ) --lLen;
+  while (  GSFont_WidthEx ( lpName, lLen, -7 ) > lWidth  ) --lLen;
 
   lpDMA = GSContext_NewPacket (  aCtx, GS_TXT_PACKET_SIZE( lLen ), GSPaintMethod_Continue  );
-  GSFont_RenderEx ( lpItem -> m_pOptionName -> m_pStr, lLen, lX, lY, lpDMA, -7, 0 );
+  GSFont_RenderEx ( lpName, lLen, lX, lY, lpDMA, -7, 0 );
 
   if (  lpItem == lpState -> m_pCurr && !( lpState -> m_Flags & MENU_FLAGS_TEXT )  ) {
 

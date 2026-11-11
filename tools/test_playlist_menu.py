@@ -25,7 +25,8 @@ typedef struct { int m_Len;char *m_pStr; } SMString;
 typedef struct GUIMenu GUIMenu;
 typedef GUIMenu GUIObject;
 typedef struct { SMString *m_pOptionName;int m_IconLeft;void (*Handler)(GUIMenu *,int); } GUIMenuItem;
-typedef struct { SMString *m_pTitle;GUIMenuItem *m_pItems,*m_pFirst,*m_pCurr,*m_pLast; } GUIMenuState;
+#define MENU_FLAGS_NAMES 2
+typedef struct { SMString *m_pTitle;unsigned m_Flags;GUIMenuItem *m_pItems,*m_pFirst,*m_pCurr,*m_pLast; } GUIMenuState;
 struct GUIMenu { int (*HandleEvent)(GUIObject *,u64);void (*Cleanup)(GUIObject *);unsigned m_Color;
  int m_X,m_Y,m_Width,m_Height,m_IGroup;SMS_ListNode *m_pActiveObj;SMS_List *m_pState;
  void (*Redraw)(GUIMenu *);void *m_pUserData;GUIMenuState *state; };
@@ -58,6 +59,7 @@ static void GUI_AddObject(const char *name,GUIObject *obj) {
 static int menu_result, choose_last, expected_selection;
 static void GUI_Run(void) {
  assert(s_pMenu->state->m_pCurr == s_pMenu->state->m_pFirst + expected_selection);
+ assert(s_pMenu->state->m_Flags == MENU_FLAGS_NAMES);
  if(choose_last) s_pMenu->state->m_pCurr=s_pMenu->state->m_pLast;
  s_pMenu->m_pUserData=(void *)(uintptr_t)menu_result;
 }

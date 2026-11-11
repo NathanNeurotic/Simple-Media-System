@@ -1041,7 +1041,9 @@ unsigned int PlayerControl_GSPacket ( int anY, SMS_List* apList, uint64_t* apDMA
 
   if ( anY >= -32 ) {
 
-   unsigned int lLen   = strlen (  _STR( lpNode )  );
+   char         lName[ 320 ];   /* never longer than the node, so PlayerControl_GSPLen still bounds it */
+   const char*  lpName = DisplayUTF8 (  _STR( lpNode ), lName, sizeof ( lName )  );
+   unsigned int lLen   = strlen ( lpName );
    int          lH     = 32;
    int          lDTY   = 0;
    int          lY     = anY;
@@ -1049,12 +1051,12 @@ unsigned int PlayerControl_GSPacket ( int anY, SMS_List* apList, uint64_t* apDMA
    int          lDW;
    float        lAR;
 
-   while (   GSFont_WidthEx (  _STR( lpNode ), lLen, lDelta  ) > lDispW && lDelta > -16   ) --lDelta;
-   while (   GSFont_WidthEx (  _STR( lpNode ), lLen, lDelta  ) > lDispW                   ) --lLen;
+   while (   GSFont_WidthEx (  ( char* )lpName, lLen, lDelta  ) > lDispW && lDelta > -16   ) --lDelta;
+   while (   GSFont_WidthEx (  ( char* )lpName, lLen, lDelta  ) > lDispW                   ) --lLen;
 
    lAR      = ( 32.0F + lDelta ) / 32.0F;
    lDW      = lDelta << 4;
-   lCurX    = (   g_GSCtx.m_Width - GSFont_WidthEx (  _STR( lpNode ), lLen, lDelta  )   ) >> 1;
+   lCurX    = (   g_GSCtx.m_Width - GSFont_WidthEx (  ( char* )lpName, lLen, lDelta  )   ) >> 1;
    lDelta >>= lShift;
 
    if ( lCurX > g_GSCtx.m_Width ) lCurX = 0;
@@ -1090,7 +1092,7 @@ unsigned int PlayerControl_GSPacket ( int anY, SMS_List* apList, uint64_t* apDMA
 
    for ( j = 0; j < lLen; ++j, k += 4 ) {
 
-    unsigned char lChr = _STR( lpNode )[ j ] - ' ';
+    unsigned char lChr = lpName[ j ] - ' ';
 
     lX     = lCurX << 4;
     lCurX += ( int )(  ( float )g_GSCharWidth[ lChr ] * lAR + 0.5F  );

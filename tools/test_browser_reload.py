@@ -101,8 +101,8 @@ int GSFont_WidthEx(char *text,int length,int width) { (void)text;(void)width;ret
 void GSFont_RenderEx(char *text,int length,int x,int y,u64 *p,int width,int height) {
  (void)text;(void)length;(void)x;(void)y;(void)p;(void)width;(void)height;
 }
-int TranslateUTF8(int codepage,char *dst,int length,const char *src) {
- (void)codepage;(void)dst;(void)length;(void)src;return 0;
+const char *DisplayUTF8(const char *src,char *dst,int length) {
+ (void)dst;(void)length;return src;
 }
 void GUI_DrawIcon(unsigned icon,int x,int y,GUIcon type,u64 *p) {
  (void)icon;(void)x;(void)y;(void)type;(void)p;
@@ -226,7 +226,7 @@ source += "\n".join(function(lists, name) for name in
                     ("SMS_ListPushBack", "SMS_ListDestroy", "SMS_ListAt", "_find", "SMS_ListFind"))
 source += function(gui, "GUIObject_Cleanup")
 source += function(browser, "_artwork_position") + function(browser, "_artwork_move")
-source += function(browser, "_is_utf8") + function(browser, "GUIFileMenu_RenderItem")
+source += function(browser, "GUIFileMenu_RenderItem")
 source += function(browser, "_poster_names") + function(browser, "_poster_text_offset") + function(browser, "_poster_render")
 source += function(browser, "_artwork_render") + function(browser, "GUIFileMenu_Render")
 source += function(browser, "GUIFileMenu_CleanupPackets") + function(browser, "GUIFileMenu_Cleanup")

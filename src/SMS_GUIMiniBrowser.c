@@ -172,6 +172,7 @@ FileContext* GUI_MiniBrowser ( FileContext* apCtx, char* apPath, void** appType 
 
  lpState = GUI_MenuPushState ( lpMenu );
  lpState -> m_pTitle = &STR_SELECT_SUBTITLES;
+ lpState -> m_Flags  = MENU_FLAGS_NAMES;
  lpState -> m_pItems =
  lpState -> m_pFirst =
  lpState -> m_pCurr  = lpMenuItems;

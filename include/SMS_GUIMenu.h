@@ -27,7 +27,8 @@
 #define MENU_ITEM_TYPE_PALIDX 0x00000002
 #define MENU_ITEM_HIDDEN      0x00800000
 
-#define MENU_FLAGS_TEXT 0x00000001
+#define MENU_FLAGS_TEXT  0x00000001
+#define MENU_FLAGS_NAMES 0x00000002   /* items are file names: drawn through DisplayUTF8 */
 
 struct GUIMenu;
 
