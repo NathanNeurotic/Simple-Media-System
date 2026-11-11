@@ -92,10 +92,10 @@ int main ( int argc, char** argv ) {
 /* SMS_IOPInit loaded the config only after the first GUI_Initialize had painted with
  * defaults: the boot device ( or the memory card it fell back to ) was not readable
  * that early. The loading spinner is stopped now, so re-init the GUI ( same call as
- * returning from the player ) to apply the saved display mode and skin. An mc boot,
- * and a cdrom / host / SMB boot with a card, read their config early and never set
- * g_CfgLate. */
- if (  g_CfgLate && ( g_Config.m_DisplayMode != GSVideoMode_Default || g_Config.m_SkinName[ 0 ] )  ) GUI_Initialize ( 0 );
+ * returning from the player ) to apply the saved display mode, picture position and
+ * size, charset and skin. An mc boot, and a cdrom / host / SMB boot with a card, read
+ * their config early and never set g_CfgLate. */
+ if ( g_CfgLate ) GUI_Initialize ( 0 );
 #endif
 
  GUI_Run ();

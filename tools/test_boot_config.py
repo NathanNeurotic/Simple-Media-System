@@ -50,6 +50,7 @@ override = line(gui, r"^  if \( lVideoMode != GSVideoMode_Default \)[^\n]*")
 
 harness = r"""
 #include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -150,6 +151,7 @@ int main(int argc,char **argv) {
  SMS_LoadConfig();                                   /* nothing mounted: the built-in defaults */
  saved=g_Config; saved.m_Version=14; saved.m_DisplayMode=(int)strtol(argv[4],NULL,0);
  if(strcmp(argv[3],"-")) strcpy(saved.m_SkinName,argv[3]);
+ saved.m_DispDXDY[0][0]=8;                           /* the user moved the picture */
  memset(&g_Config,0,sizeof(g_Config));
  if(strcmp(config,"-")) add(config,&saved,896);
 
@@ -164,7 +166,7 @@ int main(int argc,char **argv) {
  """ + reinit + r"""
  assert(inits==expected_inits);
  assert(applied.m_DisplayMode==expected_mode && g_Config.m_DisplayMode==expected_mode);
- assert(!strcmp(applied.m_SkinName,g_Config.m_SkinName));
+ assert(!memcmp(&applied,&g_Config,offsetof(SMSConfig,m_ImgOffs)+sizeof(short)));   /* nothing loaded late is left unapplied */
  assert(g_Config.m_BrowserFlags&SMS_BF_UDFL);        /* the installed SMS.lng is still accepted */
  return 0;
 }
@@ -174,6 +176,7 @@ D, HD, NTSC, PAL = "0xFF", "0x51", "0x02", "0x03"
 cases = [  # name, argv[0], SMS.cfg, saved skin, saved mode, late device, card, GUI inits, final mode[, pad override]
     ("USB, saved skin", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "SMS", D, "mass0:", 1, 2, D),
     ("USB, saved 1080i", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "-", HD, "mass0:", 1, 2, HD),
+    ("USB, saved picture position only", "mass:/SMS/SMS.ELF", "mass0:/SMS/SMS.cfg", "-", D, "mass0:", 1, 2, D),
     ("USB, first boot without SMS.cfg", "mass:/SMS/SMS.ELF", "-", "-", D, "mass0:", 1, 1, D),
     ("MMCE, saved skin", "mmce0:/APPS/SMS.ELF", "mmce0:/APPS/SMS.cfg", "SMS", D, "mmce0:", 1, 2, D),
     ("HDD pfs0:, config on the card", "pfs0:/SMS/SMS.ELF", "mc0:/SMS/SMS.cfg", "SMS", D, "-", 1, 2, D),
