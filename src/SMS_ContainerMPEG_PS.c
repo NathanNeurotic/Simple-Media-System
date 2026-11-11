@@ -319,7 +319,8 @@ static int _fill_video_parameters ( SMS_Container* apCont, SMS_Stream* apStm, in
    apStm -> m_pCodec -> m_fWS    = ( lHeader[ 3 ] >> 4 ) == 3;
 
    retVal = apStm -> m_pCodec -> m_Width && apStm -> m_pCodec -> m_Height;
-   break;
+   if ( retVal ) break;   /* an invalid (zero-size) header: keep looking for a later valid one */
+   continue;
 
   }  /* end if */
 

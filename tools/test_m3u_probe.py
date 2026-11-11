@@ -91,7 +91,8 @@ static char g_pExtM3UStr[]="#EXTM3U",g_pExtInfStr[]="#EXTINF",g_pPercDStr[]="%u"
 static struct { unsigned m_PlayerFlags; } g_Config;
 static int g_CMedia,g_RandSeed,g_Timer;
 static void *g_pCDDACtx;
-static unsigned SMS_rand(void) { return 0; }
+static unsigned g_RandSeq[]={2,0,0},g_RandIdx;
+static unsigned SMS_rand(void) { return g_RandIdx<3?g_RandSeq[g_RandIdx++]:0; }
 static unsigned allocations,fail_at,original_closes,child_closes,original_seeks,mov_probes;
 static int child_kind;
 static void *test_calloc(size_t n,size_t size) {
@@ -212,7 +213,7 @@ int main(int argc,char **argv) {
  input->m_pPath=strdup("mass0:/music/list.m3u");
  int shuffle=strstr(name,"shuffle")!=NULL;
  if(shuffle) g_Config.m_PlayerFlags=SMS_PF_RAND;
- input->data=selecting?"track.mp3\nnext.mp3\n":shuffle?"a.mp3\nb.mp3\na.mp3\n":"track.mp3\n";
+ input->data=selecting?"track.mp3\nnext.mp3\n":shuffle?"a.mp3\nb.mp3\nc.mp3\n":"track.mp3\n";
  input->m_Size=strlen(input->data);input->Seek=seek_file;input->Destroy=close_file;
  input->Open=STIO_InitFileContext;input->original=1;
  if(overlong && !selecting) { memset(g_CWD,'d',1023);g_CWD[1023]=0; }
@@ -223,7 +224,12 @@ int main(int argc,char **argv) {
   assert(original_closes==1 && !child_closes && result->m_pFileCtx);
   assert(result->m_pCtx && result->m_pPlayList && result->m_pPlayItem);
   assert(result->m_nStm==1 && result->m_pStm[0] && result->Destroy==_Destroy);
-  if(shuffle) assert(result->m_pPlayList->m_Size==3);
+  if(shuffle) {
+  SMS_ListNode *n=result->m_pPlayList->m_pHead;
+  assert(result->m_pPlayList->m_Size==3);
+  /* fixed rand sequence 2,0,0 over [a,b,c] must give c,a,b */
+  assert(!strcmp(_STR(n),"c"));n=n->m_pNext;assert(!strcmp(_STR(n),"a"));n=n->m_pNext;assert(!strcmp(_STR(n),"b"));
+ }
   if(selecting) {
    FileContext *old=result->m_pFileCtx;_M3UContainer *m=MYCONT(result);
    result->m_pPlayItem=result->m_pPlayItem->m_pNext;assert(result->m_pPlayItem);

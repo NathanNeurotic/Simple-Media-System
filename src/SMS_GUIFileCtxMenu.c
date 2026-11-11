@@ -162,7 +162,12 @@ static int _copy_file_to_mc ( const char* apDst, const char* apSrc ) {
  * already sits in its install folder is its own destination. */
   fioClose ( lFD );
 
-  if ( lfRead ) {
+  if ( lfRead && !strcmp ( apSrc, apDst ) ) {
+
+/* Already in place: rewriting would truncate the only copy, and a failed write would then delete it. */
+   retVal = 1;
+
+  } else if ( lfRead ) {
 
 /* O_TRUNC: the readers size an asset off the file, so a shorter import must not
  * leave the tail of a longer old file behind. */
