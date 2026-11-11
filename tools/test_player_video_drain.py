@@ -1,7 +1,8 @@
 """Actual player shutdown/renderer with the actual 64-byte-slot ring buffer.
 
 Kernel waits and IPU handoffs are controlled stubs. This checks ownership when
-threads stop, including a consumed notification, not GS or console playback.
+threads stop, including a consumed notification and the pause handshake
+semaphores, not GS or console playback.
 """
 import argparse
 import os
@@ -12,7 +13,7 @@ import tempfile
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
 parser.add_argument("--case", default="all", choices=(
-    "all", "queued", "sync", "pause", "freed", "transferred", "unposted", "wrap", "audio", "empty"))
+    "all", "queued", "sync", "pause", "freed", "transferred", "unposted", "wrap", "audio", "empty", "starved-pause"))
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
 source = (args.source or root / "src/SMS_Player.c").read_text()
@@ -40,6 +41,7 @@ int ChangeThreadPriority(int,int);
 int TerminateThread(int);
 int ReferThreadStatus(int,ee_thread_status_t *);
 int SleepThread(void);
+int WakeupThread(int);
 int DeleteThread(int);
 #endif
 """
@@ -66,6 +68,7 @@ typedef void SMS_MacroBlock;
 #define SMS_FLAGS_DYNMSK 31
 #define SMS_STRM_FLAGS_AUDIO 1
 #define SMS_PKT_FLAG_NWC 4
+#define SMS_NOPTS_VALUE ((s64)0x8000000000000000LL)
 #define THREAD_ID_VR s_ThreadIDs[0]
 #define THREAD_ID_VD s_ThreadIDs[1]
 #define THREAD_ID_AD s_ThreadIDs[2]
@@ -74,7 +77,7 @@ typedef void SMS_MacroBlock;
 static unsigned char audio_bytes[192];
 #define SMS_AUDIO_BUFFER audio_bytes
 #define SMS_AUDIO_BUFFER_SIZE sizeof(audio_bytes)
-typedef struct { int unused; } SMS_CodecContext;
+typedef struct { int m_BitsPerSample; } SMS_CodecContext;
 typedef struct { int m_Flags,m_Size; uint64_t m_DTS; } SMS_AVPacket;
 typedef struct {
     SMS_RingBuffer *m_pPktBuf; int m_Flags; SMS_CodecContext *m_pCodec;
@@ -86,11 +89,13 @@ typedef struct {
     void (*QueueSubtitle)(void *);
 } IPUContext;
 typedef struct { void (*Display)(s64); } SubContext;
+typedef struct { void (*Silence)(void); void (*SetVolume)(int); void (*PlayPCM)(void *); } SPUContext;
 static struct {
-    IPUContext *m_pIPUCtx; SubContext *m_pSubCtx; SMS_Container *m_pCont;
-    int m_Flags,m_VideoIdx,m_OSD,m_OSDQWC[10];
-    void *m_OSDPackets[10]; s64 m_SVDelta,m_VideoTime;
+    IPUContext *m_pIPUCtx; SubContext *m_pSubCtx; SMS_Container *m_pCont; SPUContext *m_pSPUCtx;
+    int m_Flags,m_VideoIdx,m_AudioIdx,m_AudioChannels,m_AudioSampleRate,m_OSD,m_OSDQWC[10];
+    void *m_OSDPackets[10]; s64 m_SVDelta,m_VideoTime,m_AudioTime,m_AVDelta;
 } s_Player;
+static struct { int m_PlayerVolume; } g_Config;
 static int s_MainThreadID=1,s_ThreadIDs[4]={2,3,4,5};
 static int s_SemaPauseAudio,s_SemaPauseVideo,s_SemaAckPause;
 static SMS_RingBuffer *s_pAudioBuffer,*s_pVideoBuffer;
@@ -98,6 +103,8 @@ static unsigned char s_VideoBuffer[192] __attribute__((aligned(64)));
 static struct { const char *m_pStr; } STR_PAUSE={"pause"};
 static int semas[64],nsemas,rendering,sync_calls,sync_stop_at,pause_stop;
 static int free_stop,transfer_stop,terminated,deletes,queue_clears;
+static int audio_live,wakeups,played;
+static void render_audio(void);
 static SMS_FrameBuffer rgb[3],*subtitles[4],*ipu_subtitle;
 static jmp_buf stopped;
 int CreateSema(ee_sema_t *s) {
@@ -109,6 +116,8 @@ int WaitSema(int s) {
     if(rendering && pause_stop && s==s_SemaPauseVideo) longjmp(stopped,1);
     /* An empty producer queue is the renderer's next normal blocking point. */
     if(rendering && s==s_pVideoBuffer->m_Sema[1] && !semas[s]) longjmp(stopped,1);
+    /* The audio renderer parks here until resume or shutdown signals it. */
+    if(rendering && s==s_SemaPauseAudio && !semas[s]) longjmp(stopped,1);
     assert(semas[s]>0 && "unexpected blocking kernel wait");--semas[s];return 0;
 }
 int SignalSema(int s) { assert(s>0 && s<=nsemas);++semas[s];return 0; }
@@ -116,8 +125,13 @@ int PollSema(int s) { if(!semas[s]) return -1;--semas[s];return 0; }
 int ReferSemaStatus(int s,ee_sema_t *out) { out->count=semas[s];return 0; }
 int ChangeThreadPriority(int t,int p) { assert(t==1 && (p==61 || p==64));return 0; }
 int TerminateThread(int t) { assert(t>=2 && t<=4);++terminated;return 0; }
-int ReferThreadStatus(int t,ee_thread_status_t *out) { assert(t==5);out->status=0x10;return 0; }
-int SleepThread(void) { assert(0 && "audio renderer should be dormant");return 0; }
+int ReferThreadStatus(int t,ee_thread_status_t *out) { assert(t==5);out->status=audio_live?1:0x10;return 0; }
+int SleepThread(void) {
+    assert(audio_live && "audio renderer should be dormant");
+    /* The renderer was blocked on its empty queue: run its wake-up path. */
+    render_audio();audio_live=0;assert(wakeups==1);return 0;
+}
+int WakeupThread(int t) { assert(t==1);++wakeups;return 0; }
 int DeleteThread(int t) { assert(t>=2 && t<=5);++deletes;return 0; }
 static void checked_free(void *p) {
     for(int i=0;i<4;++i) if(subtitles[i]==p && p) {
@@ -143,20 +157,28 @@ static void queue_subtitle(void *p) {
     if(transfer_stop) longjmp(stopped,1);
 }
 static void _draw_text(const char *p) { assert(p==STR_PAUSE.m_pStr); }
+static void silence(void) {}
+static void set_volume(int v) { (void)v; }
+static void play_pcm(void *p) {
+    (void)p;assert(!(s_Player.m_Flags&SMS_FLAGS_PAUSE) && "audio played through a pause");++played;
+}
+static int SPU_Index2Volume(int i) { return i; }
+static void _init_spu(void) { assert(0); }
 static void SMS_CodecDestroy(SMS_CodecContext *p) { (void)p;assert(0); }
 static void _clear_packet_queues(void) { ++queue_clears; }
 #define free checked_free
-""" + function("_terminate_threads") + function("_init_queues") + function("_sms_video_renderer") + r"""
+""" + function("_terminate_threads") + function("_init_queues") + function("_sms_video_renderer") + function("_sms_audio_renderer") + r"""
 #undef free
 static IPUContext ipu={stop_sync,sync_ipu,queue_packet,display,queue_subtitle};
+static SPUContext spu={silence,set_volume,play_pcm};
 static SMS_Container container;
 static void init(void) {
     memset(semas,0,sizeof(semas));nsemas=0;
     memset(&s_Player,0,sizeof(s_Player));memset(rgb,0,sizeof(rgb));
     memset(subtitles,0,sizeof(subtitles));ipu_subtitle=NULL;
     rendering=sync_calls=sync_stop_at=pause_stop=free_stop=transfer_stop=0;
-    terminated=deletes=queue_clears=0;
-    s_Player.m_pIPUCtx=&ipu;s_Player.m_pCont=&container;
+    terminated=deletes=queue_clears=audio_live=wakeups=played=0;
+    s_Player.m_pIPUCtx=&ipu;s_Player.m_pCont=&container;s_Player.m_pSPUCtx=&spu;
     /* Reopening a player must discard stale slot contents. */
     memset(s_VideoBuffer,0xa5,sizeof(s_VideoBuffer));
     _init_queues(1);
@@ -174,9 +196,18 @@ static void render(void) {
     if(!setjmp(stopped)) _sms_video_renderer(NULL);
     rendering=0;
 }
+static void render_audio(void) {
+    rendering=1;
+    if(!setjmp(stopped)) _sms_audio_renderer(NULL);
+    rendering=0;
+}
+static void no_stale_pause_handshake(void) {
+    assert(!semas[s_SemaPauseAudio] && !semas[s_SemaPauseVideo] && !semas[s_SemaAckPause]);
+}
 static void finish(int remove) {
     _terminate_threads(remove);
     assert(terminated==3 && deletes==(remove?4:0));
+    no_stale_pause_handshake();
     assert(s_pVideoBuffer->m_Size==s_pVideoBuffer->m_Capacity);
     assert(SMS_RingBufferCount(s_pVideoBuffer)==0);
     for(int i=0;i<4;++i) assert(!subtitles[i] && "queued subtitle was leaked");
@@ -192,6 +223,20 @@ static void scenario(const char *which,int remove) {
         finish(remove);return;
     }
     if(!strcmp(which,"empty")) { finish(remove);return; }
+    if(!strcmp(which,"starved-pause")) {
+        /* A seek while paused, with the audio renderer blocked on its empty queue. */
+        s_Player.m_AudioIdx=-1;s_Player.m_Flags=SMS_FLAGS_PAUSE;audio_live=1;
+        _init_queues(0);
+        assert(terminated==3 && queue_clears==1 && !s_Player.m_Flags);
+        no_stale_pause_handshake();
+        /* On the next pause the restarted renderer acknowledges once and parks. */
+        unsigned char *packet=SMS_RingBufferAlloc(s_pAudioBuffer,80);
+        assert(packet);memset(packet,0,80);SMS_RingBufferPost(s_pAudioBuffer);
+        s_Player.m_Flags=SMS_FLAGS_PAUSE;render_audio();
+        assert(semas[s_SemaAckPause]==1 && !played);
+        SMS_RingBufferDestroy(s_pVideoBuffer);SMS_RingBufferDestroy(s_pAudioBuffer);
+        return;
+    }
     if(!strcmp(which,"unposted")) {
         push(rgb,1);SMS_RingBufferWait(s_pVideoBuffer);
         push(subtitle(0),0);
@@ -221,7 +266,7 @@ static void scenario(const char *which,int remove) {
     if(!strcmp(which,"wrap")) assert(rgb[2].m_FrameType==-1);
 }
 int main(int argc,char **argv) {
-    const char *cases[]={"queued","sync","pause","freed","transferred","unposted","wrap","audio","empty"};
+    const char *cases[]={"queued","sync","pause","freed","transferred","unposted","wrap","audio","empty","starved-pause"};
     assert(argc==2);
     for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);++i)
         if(!strcmp(argv[1],"all") || !strcmp(argv[1],cases[i]))
@@ -238,4 +283,4 @@ with tempfile.TemporaryDirectory() as temp:
                     "-fno-sanitize-recover=all", "-I" + str(temp), "-I" + str(root / "include"),
                     "-I" + str(root / "src"), str(c), "-o", str(exe)], check=True)
     subprocess.run([str(exe), args.case], check=True, timeout=5)
-print("Player video drain: queued/consumed/unposted slots, pause, subtitle handoffs, wrap, audio notifications and stop/delete passed")
+print("Player video drain: queued/consumed/unposted slots, pause, subtitle handoffs, wrap, audio notifications, pause handshake reset and stop/delete passed")
