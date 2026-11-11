@@ -240,7 +240,7 @@ static int _LoadODMLIdx ( SMS_Container* apCont, int* apNum ) {
  _AVIdxEntry* lpIndices;
  _AVIdxEntry* lpIndex;
 
- if (  ( uint32_t )lStID > apCont -> m_nStm || lStID < 0  ) return 0;
+ if (  ( uint32_t )lStID >= apCont -> m_nStm  ) return 0;
 
  lpStm = apCont -> m_pStm[ lStID ];
 
@@ -700,7 +700,7 @@ static int _ReadHeader ( SMS_Container* apCtx ) {
 
   } else goto error;
 endOfHeader:
- if ( lStmIdx != apCtx -> m_nStm - 1 )
+ if ( !apCtx -> m_nStm || lStmIdx != apCtx -> m_nStm - 1 )
 error: retVal = 0;
  if ( retVal ) {
 

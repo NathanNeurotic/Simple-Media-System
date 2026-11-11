@@ -256,7 +256,14 @@ def case_idx1(run):
     # Nothing left after the idx1 header: no index, as for a file without one.
     run(data[:cut - 16 * 5 - 6], open=1, seekable=0, idx="0,0", pkts=len(parts), bytes=total)
 
-cases = {"valid": case_valid, "packets": case_packets, "idx1": case_idx1}
+def case_header(run):
+    run(build(streams=0, idx1=False)[0], open=0)
+    # An OpenDML index naming stream number m_nStm is ignored.
+    data, where, parts = build(idx1=False, indx=chunk(
+        b"indx", struct.pack("<HBBI4sQI", 2, 0, 1, 1, b"02dc", 0, 0) + bytes(8)))
+    run(data, open=1, seekable=0, idx="0,0", pkts=len(parts))
+
+cases = {"valid": case_valid, "packets": case_packets, "idx1": case_idx1, "header": case_header}
 with tempfile.TemporaryDirectory() as tmp:
     cfile, exe = Path(tmp) / "avi.c", Path(tmp) / "avi"
     cfile.write_text(prefix + source + tests)
@@ -269,4 +276,4 @@ with tempfile.TemporaryDirectory() as tmp:
     for name, case in cases.items():
         if args.case in ("all", name):
             case(lambda data, **want: probe(exe, tmp, data, **want))
-print("AVI: unindexed, idx1 and OpenDML parsing and damaged media chunks passed")
+print("AVI: unindexed, idx1 and OpenDML parsing, damaged chunks, cut idx1 and bad headers passed")
