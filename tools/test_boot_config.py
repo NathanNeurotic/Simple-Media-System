@@ -165,6 +165,7 @@ int main(int argc,char **argv) {
  assert(inits==expected_inits);
  assert(applied.m_DisplayMode==expected_mode && g_Config.m_DisplayMode==expected_mode);
  assert(!strcmp(applied.m_SkinName,g_Config.m_SkinName));
+ assert(g_Config.m_BrowserFlags&SMS_BF_UDFL);        /* the installed SMS.lng is still accepted */
  return 0;
 }
 """

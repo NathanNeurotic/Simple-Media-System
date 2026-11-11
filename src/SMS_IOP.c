@@ -1592,6 +1592,8 @@ void SMS_IOPInit ( void ) {
   _cfg_resolve_fallback ();
   g_CfgLate = SMS_LoadConfig () && SMS_ConfigOnFS ();   /* a card config was already read ( and painted ) early */
   GUI_SetColors  ();
+  SMS_LocaleInit ();   /* SMS_LoadConfig dropped SMS_BF_UDFL and may have brought a new m_Language */
+  SMS_LocaleSet  ();
 
  }  /* end else if */
 #endif
