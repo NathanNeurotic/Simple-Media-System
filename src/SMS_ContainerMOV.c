@@ -1103,6 +1103,11 @@ static int _mov_read_header ( SMS_Container* apCont ) {
    if ( lpMOV -> m_TimeScale <= 0 || lpMyStm -> m_TimeScale <= 0 ||
         lpMyStm -> m_EditEmpty + lpMyStm -> m_EditDuration > UINT_MAX ) return 0;
    lOffset = SMS_Rescale ( lpMyStm -> m_EditEmpty, lpMyStm -> m_TimeScale, lpMOV -> m_TimeScale ) - lpMyStm -> m_EditStart;
+/* The player has no position before time zero, so video that an edit starts more than one
+ * frame into the track ( a trimmed copy ) is refused; _ReadPacket holds the rest at zero. */
+   if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo &&
+        lOffset + lpMyStm -> m_pStts[ 0 ].m_Duration +
+        ( lpMyStm -> m_nCtts ? lpMyStm -> m_pCtts[ 0 ].m_Duration : 0 ) < 0 ) return 0;
    lpMyStm -> m_TimeRate = _gcd ( lpMyStm -> m_TimeRate, ( int32_t )( lOffset % lpMyStm -> m_TimeRate ) );
    lpMyStm -> m_TimeOffset = lOffset / lpMyStm -> m_TimeRate;
    if ( lpMyStm -> m_TimeOffset < INT_MIN || lpMyStm -> m_TimeOffset > UINT_MAX ) return 0;
@@ -1253,6 +1258,7 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 /* The MPEG-4 decoder stamps the picture it outputs ( with B-frames, the previous reference )
  * with the current packet's time, as AVI supplies it: in decode order. */
  if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG4 ) lpPkt -> m_PTS = lpPkt -> m_DTS;
+ if ( lpPkt -> m_PTS < 0 && lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) lpPkt -> m_PTS = 0;
 
  lpPkt -> m_Flags |= lpSample -> m_Flags ? SMS_PKT_FLAG_KEY : 0;
 

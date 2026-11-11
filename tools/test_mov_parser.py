@@ -18,7 +18,7 @@ import tempfile
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
 CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts",
-         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-priming", "stts-zero-tail", "edit-before-track", "stsd-count", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
+         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-priming", "edit-sub-frame", "stts-zero-tail", "edit-before-track", "stsd-count", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -160,6 +160,11 @@ int main(int argc,char **argv) {
   assert(!memcmp(packet.m_pData,data+expected[selected][j].pos,packet.m_Size));
   /* MPEG-4 video is stamped in decode order; other codecs keep composition time. */
   if(c.m_pStm[selected]->m_pCodec->m_ID==SMS_CodecID_MPEG4) expected[selected][j].pts=expected[selected][j].dts;
+  /* The player has no position before time zero, so video is never stamped there. */
+  if(c.m_pStm[selected]->m_pCodec->m_Type==SMS_CodecTypeVideo) {
+   assert(packet.m_PTS>=0);
+   if(expected[selected][j].pts<0) expected[selected][j].pts=0;
+  }
   if(llabs(packet.m_PTS-expected[selected][j].pts)>1 || llabs(packet.m_DTS-expected[selected][j].dts)>1) {
    fprintf(stderr,"stream%d packet%u PTS=%lld expected=%lld DTS=%lld expected=%lld\n",selected,j,
            (long long)packet.m_PTS,expected[selected][j].pts,(long long)packet.m_DTS,expected[selected][j].dts);
@@ -225,6 +230,9 @@ def rewrite(data, kind, video=False):
             elif kind == "edit-priming" and not video:
                 # FDK and CoreAudio AAC prime with more than FFmpeg's one frame.
                 body = body[:12] + struct.pack(">i", 2112) + body[16:]
+            elif kind == "edit-sub-frame" and video:
+                # Half of one 10 fps frame: the first frame is still on screen at time zero.
+                body = body[:12] + struct.pack(">i", 512) + body[16:]
             elif kind == "ctts-v0-two-frame" and video:
                 media_time = struct.unpack_from(">i", body, 12)[0]
                 body = body[:12] + struct.pack(">i", media_time + 1024) + body[16:]
@@ -300,7 +308,7 @@ with tempfile.TemporaryDirectory() as temporary:
         elif case == "faststart":
             subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(media), "-c", "copy",
                             "-movflags", "+faststart", str(fixture)], check=True, timeout=20)
-        elif case in ("ctts-v0", "ctts-v0-two-frame", "ctts-v1", "ctts-unknown", "edit-delay", "edit-v1", "no-edits", "edit-trim", "edit-tail"):
+        elif case in ("ctts-v0", "ctts-v0-two-frame", "ctts-v1", "ctts-unknown", "edit-delay", "edit-v1", "no-edits", "edit-trim", "edit-tail", "edit-sub-frame"):
             generated = tmp / "generated.mp4"
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"]
             delayed = case in ("edit-delay", "edit-v1")
@@ -328,13 +336,15 @@ with tempfile.TemporaryDirectory() as temporary:
             audio = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "a:0",
                                                        "-show_streams", "-of", "json", str(fixture)], timeout=10))["streams"][0]
             manifest.write_text(f"{audio['sample_rate']} {audio['channels']}\n")
-        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown"):
+        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim"):
+            # edit-trim cuts ten video frames: that lead-in would play before time zero.
             mode = "reject"
         else:
             mode = "accept"
-            # FFprobe drops what an edit trims; SMS plays it ahead of movie time zero,
-            # so those cases take the untrimmed packets shifted by each track's edit start.
-            trimmed = case in ("edit-trim", "edit-tail", "edit-priming")
+            # FFprobe drops what an edit trims; SMS plays audio priming, a trimmed tail and a first
+            # video frame that straddles time zero, so those cases take the untrimmed packets
+            # shifted by each track's edit start.
+            trimmed = case in ("edit-tail", "edit-priming", "edit-sub-frame")
             shift = edit_starts(fixture.read_bytes()) if trimmed else [0, 0]
             probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error"] + ["-ignore_editlist", "1"] * trimmed +
                                                        ["-show_packets", "-show_streams", "-of", "json", str(fixture)], timeout=10))

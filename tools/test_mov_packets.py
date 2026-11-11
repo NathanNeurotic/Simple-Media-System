@@ -41,8 +41,8 @@ struct FileContext {
  int (*Read)(FileContext *,void *,unsigned);
  int (*Seek)(FileContext *,unsigned);
 };
-enum { SMS_CodecID_MPEG4=1 };
-typedef struct { int m_ID; } SMS_CodecContext;
+enum { SMS_CodecID_MPEG4=1,SMS_CodecTypeVideo=1 };
+typedef struct { int m_ID,m_Type; } SMS_CodecContext;
 typedef struct { void *m_pCtx,*m_pPktBuf;SMS_CodecContext *m_pCodec; } SMS_Stream;
 typedef struct { unsigned char *m_pData;int m_Size,m_StmIdx,m_Flags;int64_t m_DTS,m_PTS; } SMS_AVPacket;
 typedef struct {
@@ -81,7 +81,7 @@ static SMS_CodecContext codec;
 static SMS_Container container;
 static void reset(void) {
  memset(&container,0,sizeof(container));memset(streams,0,sizeof(streams));
- memset(index_data,0,sizeof(index_data));codec.m_ID=0;
+ memset(index_data,0,sizeof(index_data));codec=(SMS_CodecContext){0};
  file=(FileContext){1000,0,read_file,seek_file};
  container.m_pFileCtx=&file;container.m_nStm=2;container.AllocPacket=allocate;
  short_read=seek_fail=seek_wrong=allocations=reserved=0;
@@ -114,6 +114,12 @@ static void composition(void) {
  streams[0].m_CurSample=0;_mov_sync_ctime(streams);codec.m_ID=SMS_CodecID_MPEG4;
  assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0);
  assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==1);
+ /* An edit can start a track before time zero; only video is held at zero. */
+ streams[0].m_CurSample=0;_mov_sync_ctime(streams);streams[0].m_TimeOffset=-1;
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==-1);
+ streams[0].m_CurSample=0;_mov_sync_ctime(streams);codec.m_Type=SMS_CodecTypeVideo;
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0 && packet.m_DTS==-1);
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0);
  free(streams[0].m_pCtts);
  reset();container.m_nStm=1;streams[0].m_pCtts=times;streams[0].m_nCtts=0;
  assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0);
