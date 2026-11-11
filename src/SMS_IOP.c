@@ -48,6 +48,7 @@ extern char g_pBootDir[];   /* SMS_Config.c: "<dev>/path/" on a non-mc boot, emp
 extern void* _gp;
 
 unsigned int g_IOPFlags;
+int          g_CfgLate;   /* 1 = SMS_IOPInit loaded a config the first GUI_Initialize could not read */
 
 /* Which network personality owns the single EMAC3 NIC this boot: 0 = free, 1 = SMS
  * SMB/host ( PS2SMAP + SMSTCPIP ), 2 = udpfs ( udpfs_smap, its own SMAP ). Both register
@@ -1556,7 +1557,7 @@ void SMS_IOPInit ( void ) {
    _cfg_resolve_fallback ();
   }  /* end if */
 
-  SMS_LoadConfig ();
+  g_CfgLate = SMS_LoadConfig ();
   GUI_SetColors  ();
   SMS_LocaleInit ();   /* re-read SMS.lng now the boot device is mounted ( CWD-first ) */
   SMS_LocaleSet  ();
@@ -1578,7 +1579,7 @@ void SMS_IOPInit ( void ) {
  * is attached. Same post-GUI slot as the re-mountable branch, before AUTO_* reads
  * m_NetworkFlags. */
   _cfg_resolve_fallback ();
-  SMS_LoadConfig ();
+  g_CfgLate = SMS_LoadConfig () && SMS_ConfigOnFS ();   /* a card config was already read ( and painted ) early */
   GUI_SetColors  ();
 
  }  /* end else if */

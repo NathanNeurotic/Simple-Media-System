@@ -56,6 +56,7 @@ int SMS_IOPNetSwitch ( unsigned int );
 #define SMS_SIF_CMD_POWEROFF       5
 
 extern unsigned int g_IOPFlags;
+extern int          g_CfgLate;
 extern unsigned int g_Mx4sioMask;
 extern unsigned int g_AtaMask;
 extern unsigned int g_IlinkMask;
