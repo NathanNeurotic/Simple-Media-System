@@ -346,6 +346,7 @@ static int _mov_read_stsd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
     lpCodecCtx -> m_Height = File_GetShortBE ( apFileCtx );
     File_Skip ( apFileCtx, 46 );
     lpCodecCtx -> m_BitsPerSample = File_GetShortBE ( apFileCtx );
+    File_Skip ( apFileCtx, 2 );  /* colour table id; child atoms ( esds ) start after it */
    } else if ( lpCodecCtx -> m_Type == SMS_CodecTypeAudio ) {
     uint16_t lVer = File_GetShortBE ( apFileCtx );
     File_Skip ( apFileCtx, 6 );

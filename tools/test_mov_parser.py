@@ -120,6 +120,13 @@ int main(int argc,char **argv) {
  struct { unsigned pos,bytes;long long pts,dts; } expected[SMS_MAX_STREAMS][256];
  long long pts,dts;
  in=fopen(argv[2],"r");assert(in);
+ /* FFprobe's extradata sizes prove each stream's esds reached its codec context. */
+ for(unsigned i=0;i<c.m_nStm;++i) {
+  SMS_CodecContext *codec=c.m_pStm[i]->m_pCodec;unsigned extra;
+  assert(fscanf(in,"%u",&extra)==1 && extra>0);
+  assert(codec->m_ID==(codec->m_Type==SMS_CodecTypeVideo?SMS_CodecID_MPEG4:SMS_CodecID_AAC));
+  assert(codec->m_BitRate>0 && codec->m_UserDataLen==(int)extra);
+ }
  /* FFprobe is the independent oracle for every packet's on-disk range. */
  while(fscanf(in,"%u %u %u %lld %lld",&stream,&pos,&bytes,&pts,&dts)==5) {
   assert(stream<c.m_nStm);
@@ -288,7 +295,7 @@ with tempfile.TemporaryDirectory() as temporary:
             mode = "reject"
         else:
             mode = "accept"
-            probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_packets", "-of", "json", str(fixture)], timeout=10))
-            manifest.write_text("".join(f"{p['stream_index']} {p['pos']} {p['size']} {round(float(p['pts_time']) * 1000000)} {round(float(p['dts_time']) * 1000000)}\n" for p in probe["packets"]))
+            probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_packets", "-show_streams", "-of", "json", str(fixture)], timeout=10))
+            manifest.write_text(" ".join(str(s.get("extradata_size", 0)) for s in probe["streams"]) + "\n" + "".join(f"{p['stream_index']} {p['pos']} {p['size']} {round(float(p['pts_time']) * 1000000)} {round(float(p['dts_time']) * 1000000)}\n" for p in probe["packets"]))
         subprocess.run([str(exe), str(fixture), str(manifest), mode], check=True, timeout=5)
         print(f"MOV parser: {case} passed")
