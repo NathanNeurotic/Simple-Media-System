@@ -145,10 +145,10 @@ extern void PowerOf2 ( int, int, int*, int* );
 /* lands on top of the framebuffer in VRAM and corrupts the desktop. Until mode-    */
 /* appropriate background assets exist, skip the full-screen background image in    */
 /* those modes and let the cleared background show through. Every SD-class mode     */
-/* (NTSC/PAL/480p/576p/VESA) is exactly 640 wide and fits, so it is unaffected.     */
+/* (NTSC/PAL/480p/576p/VESA) is 640..720 wide ( Display menu ) and fits.            */
 static int _bgTexUnsafe ( void ) {
 
- return g_GSCtx.m_Width > 640;   /* only 720p (1216) / 1080i (1820) exceed 640 -> collide */
+ return g_GSCtx.m_Width > 720;   /* only 720p ( >= 1090 ) / 1080i ( >= 1400 ) collide */
 
 }  /* end _bgTexUnsafe */
 

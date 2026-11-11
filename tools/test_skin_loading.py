@@ -171,8 +171,10 @@ int main(int argc,char **argv) {
  else if(!strcmp(argv[1],"max-dma-size")) file_size=0xFFFF0;
  else if(!strcmp(argv[1],"too-large")) file_size=0x100000;
  else if(!strcmp(argv[1],"card-fallback")) missing_cwd=1;
+ else if(!strcmp(argv[1],"sd-width-720")) g_GSCtx.m_Width=720;      /* widest picture the Display menu allows in an SD mode */
+ else if(!strcmp(argv[1],"hd-width-1090")) g_GSCtx.m_Width=1090;    /* narrowest 720p picture: the texture would overlap the framebuffer */
  else assert(!strcmp(argv[1],"valid"));
- int expected=(!strcmp(argv[1],"valid")||!strcmp(argv[1],"cache-range")||!strcmp(argv[1],"dma-tail")||!strcmp(argv[1],"card-fallback")||!strcmp(argv[1],"max-dma-size")||!strcmp(argv[1],"cwd-short-read"));
+ int expected=(!strcmp(argv[1],"valid")||!strcmp(argv[1],"cache-range")||!strcmp(argv[1],"dma-tail")||!strcmp(argv[1],"card-fallback")||!strcmp(argv[1],"sd-width-720")||!strcmp(argv[1],"max-dma-size")||!strcmp(argv[1],"cwd-short-read"));
  unsigned char old_gs[sizeof(g_GSCtx)];
  memcpy(old_gs,&g_GSCtx,sizeof(g_GSCtx));
  assert(DrawSkin()==expected);
@@ -190,7 +192,8 @@ int main(int argc,char **argv) {
 
 cases = sys.argv[1:] or ["valid", "short-header", "cache-range", "negative-size", "dma-tail", "width-1", "width-17", "width-0", "height-0",
                          "large-width", "large-height", "overflow-dimensions", "data-allocation", "packet-allocation",
-                         "short-read", "cwd-short-read", "card-short-read", "failed-rewind", "max-dma-size", "too-large", "card-fallback"] + [f"short-{size}" for size in range(8)]
+                         "short-read", "cwd-short-read", "card-short-read", "failed-rewind", "max-dma-size", "too-large", "card-fallback",
+                         "sd-width-720", "hd-width-1090"] + [f"short-{size}" for size in range(8)]
 with tempfile.TemporaryDirectory() as temp:
     src = Path(temp) / "skin.c"
     src.write_text(harness)
@@ -203,4 +206,4 @@ with tempfile.TemporaryDirectory() as temp:
         subprocess.run(cmd, check=True)
         for case in cases:
             subprocess.run([str(exe), case], check=True, timeout=10)
-print(f"Skin loading: {len(cases)} cases passed with BDM on/off (CWD/card paths, header/dimensions, DMA padding and allocation/read failures)")
+print(f"Skin loading: {len(cases)} cases passed with BDM on/off (CWD/card paths, canvas width, header/dimensions, DMA padding and allocation/read failures)")
