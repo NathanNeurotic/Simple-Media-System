@@ -185,4 +185,52 @@ int TranslateUTF8( GSCodePage codePage, char* outBuff, int bufSize, const char* 
 	return length < bufSize ? length : -1;
 }
 
+/* File names reach SMS as UTF-8 ( bdmfs_fatfs.irx encodes them so ), but the font is a
+ * single-byte codepage. Drawn raw, every accented letter is two wrong glyphs ( o-acute is
+ * 0xC3 0xB3: A-tilde and superscript-3 ), and the extra width makes the fit-to-width
+ * loops shrink the text or cut the name short.
+ *
+ * DisplayUTF8 returns apStr itself when it is plain ASCII or not valid UTF-8 ( a legacy
+ * CP1252 name, where a lone 0xF3 is no lead byte, already draws right ), otherwise apBuf
+ * holding it in the active codepage, one byte per character. Unmappable characters become
+ * '?', never NUL, and the result is never longer than apStr.
+ *
+ * DISPLAY ONLY: the original string is what fioOpen needs; a converted name would not open. */
+static int _is_utf8 ( const char* apStr ) {
+
+ int lfAny = 0;
+
+ while ( *apStr ) {
+
+  unsigned char c = ( unsigned char )*apStr++;
+
+  if ( c < 0x80 ) continue;
+
+  if ( c >= 0xC2 && c <= 0xDF ) {                       /* 2-byte */
+   if (  (  ( unsigned char )*apStr & 0xC0  ) != 0x80  ) return 0;
+   ++apStr;
+  } else if ( c >= 0xE0 && c <= 0xEF ) {                /* 3-byte */
+   if (  (  ( unsigned char )apStr[ 0 ] & 0xC0  ) != 0x80 ||
+         (  ( unsigned char )apStr[ 1 ] & 0xC0  ) != 0x80  ) return 0;
+   apStr += 2;
+  } else return 0;                                      /* stray continuation or 4-byte */
+
+  lfAny = 1;
+
+ }  /* end while */
+
+ return lfAny;   /* pure ASCII -> 0: nothing to convert, leave it alone */
+
+}  /* end _is_utf8 */
+
+const char* DisplayUTF8 ( const char* apStr, char* apBuf, int aSize ) {
+
+ if (  !_is_utf8 ( apStr )  ) return apStr;
+
+ TranslateUTF8 (  g_GSCtx.m_CodePage, apBuf, aSize - 1, apStr  );   /* NUL-terminated even if cut */
+
+ return apBuf;
+
+}  /* end DisplayUTF8 */
+
 

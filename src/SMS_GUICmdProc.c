@@ -378,6 +378,7 @@ static int _playlist_menu ( SMS_List* apList, SMS_ListNode** appNode ) {
 
  lpState = GUI_MenuPushState ( lpMenu );
  lpState -> m_pTitle = &STR_SELECT_FILE;
+ lpState -> m_Flags  = MENU_FLAGS_NAMES;
  lpState -> m_pItems =
  lpState -> m_pFirst =
  lpState -> m_pCurr  = lpItems;

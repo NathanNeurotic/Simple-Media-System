@@ -43,7 +43,6 @@
 static char s_pPPHDL[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "PP.HDL.";
 static char s_pHDLdr[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "HDLoade";
 
-extern int  TranslateUTF8 ( int, char*, int, const char* );   /* SMS_InverseCodePages.c */
 extern char g_SMSLng[ 12 ] __attribute__(   (  aligned( 1 ), section( ".data" )  )   );
 extern char g_SMSPal[ 13 ] __attribute__(   (  aligned( 1 ), section( ".data" )  )   );
 extern char g_SMSSMB[ 128 ] __attribute__(   (  aligned( 1 ), section( ".data" )  )   );
@@ -302,63 +301,16 @@ static int _filter_item ( SMS_ListNode* apNode ) {
 
 }  /* end _filter_item */
 
-/* Filenames arrive as UTF-8 and the font is a single-byte codepage, so an accented letter
- * is TWO bytes and gets drawn as TWO glyphs -- "Canción" measures 30px where "Cancion"
- * measures 15px for the same letter. That extra width is what pushes an accented name past
- * the column and makes the fit loop below chop the tail, which is what a Spanish tester
- * reported: remove the accents and the name shows in full.
- *
- * ( The signed-char width lookup fixed in adf377e was a genuine out-of-bounds read on the
- *   same bytes and had to go, but it is not the whole story: correcting it leaves each
- *   accent still costing two glyphs. )
- *
- * bdmfs_fatfs.irx is the module SMS loads, and it really does emit UTF-8 -- its code carries
- * the encoder signature ( the < 0x80 / < 0x800 range tests, the 0x3F continuation mask and
- * the 0xC0 lead-byte construction ); the unused bdmfs_vfat.irx has none of it.
- *
- * TranslateUTF8 already does this conversion for subtitles, and collapses each sequence to
- * one codepage byte -- so the name both measures and DRAWS correctly. Unmappable characters
- * become '?' ( NOT_AVAILABLE_CHAR ), never NUL, so a name can never be cut short by this.
- *
- * DISPLAY ONLY. The node's own string stays untouched and is what every fioOpen uses; a
- * transcoded name would not open. */
-static int _is_utf8 ( const char* apStr ) {
-
- int lfAny = 0;
-
- while ( *apStr ) {
-
-  unsigned char c = ( unsigned char )*apStr++;
-
-  if ( c < 0x80 ) continue;
-
-  if ( c >= 0xC2 && c <= 0xDF ) {                       /* 2-byte */
-   if (  (  ( unsigned char )*apStr & 0xC0  ) != 0x80  ) return 0;
-   ++apStr;
-  } else if ( c >= 0xE0 && c <= 0xEF ) {                /* 3-byte */
-   if (  (  ( unsigned char )apStr[ 0 ] & 0xC0  ) != 0x80 ||
-         (  ( unsigned char )apStr[ 1 ] & 0xC0  ) != 0x80  ) return 0;
-   apStr += 2;
-  } else return 0;                                      /* stray continuation or 4-byte */
-
-  lfAny = 1;
-
- }  /* end while */
-
- return lfAny;   /* pure ASCII -> 0: nothing to convert, leave it alone */
-
-}  /* end _is_utf8 */
+/* Names are drawn through DisplayUTF8 ( SMS_InverseCodePages.c ): USB names arrive as UTF-8,
+ * and drawn raw each accented letter costs two glyphs, which made the fit loop below chop
+ * the tail of the name. Display only -- the node keeps the real name for fioOpen. */
 
 static _FileMenuItem* GUIFileMenu_RenderItem ( SMS_ListNode* apNode, int anY, int aWidth, int afDim ) {
 
  int            lLen;
  _FileMenuItem* retVal;
  char           lName[ 320 ];
- const char*    lpName = _STR( apNode );
-
- if (  _is_utf8 ( lpName )  &&
-       TranslateUTF8 (  g_GSCtx.m_CodePage, lName, sizeof ( lName ) - 1, lpName  ) > 0
- ) lpName = lName;
+ const char*    lpName = DisplayUTF8 (  _STR( apNode ), lName, sizeof ( lName )  );
 
  lLen = strlen ( lpName );
 
@@ -406,7 +358,7 @@ static void _poster_names ( SMS_ListNode* apNode, char aLines[ 2 ][ 320 ], int a
  const char* lpName = _STR( apNode );
  const char* lpDot;
  int lLen, lFirst, lRest, lSkip = 0;
- if ( _is_utf8 ( lpName ) && TranslateUTF8 ( g_GSCtx.m_CodePage, lName, sizeof ( lName ) - 1, lpName ) > 0 ) lpName = lName;
+ lpName = DisplayUTF8 ( lpName, lName, sizeof ( lName ) );
  lLen = strlen ( lpName );
  /* Captions only: preserve extensions in the actual list nodes/file paths. */
  lpDot = strrchr ( lpName, '.' );
@@ -587,7 +539,7 @@ static void _artwork_render ( GUIFileMenu* apMenu, int aCtx ) {
    else GUI_DrawIcon ( ( int )lpNode -> m_Param, lX + ( lCellW - 32 ) / 2,
     lY + 5 + ( lSide - 32 ) / 2, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
 
-   if ( _is_utf8 ( lpName ) && TranslateUTF8 ( g_GSCtx.m_CodePage, lName, sizeof ( lName ) - 1, lpName ) > 0 ) lpName = lName;
+   lpName = DisplayUTF8 ( lpName, lName, sizeof ( lName ) );
    lLen = strlen ( lpName );
    while ( lLen > 0 && GSFont_WidthEx ( ( char* )lpName, lLen, -6 ) > lCellW - 12 ) --lLen;
    lpPack -> m_pTxtPack = GSContext_NewList ( GS_TXT_PACKET_SIZE( lLen ) );

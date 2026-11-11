@@ -804,11 +804,18 @@ GUIObject* GUI_CreateStatusLine ( void ) {
 
 void GUI_Status ( char* apMsg ) {
 
- int lLen   = strlen ( apMsg );
+ char lName[ 320 ];
+ int lLen;
  int lWidth = g_GSCtx.m_Width - 96;
  int lDX    = -2;
  int lQWC;
  unsigned int lWidthOld;
+
+ /* The current path can hold accented folder names. Only the path: locale messages are
+  * already in the font codepage, and some happen to look like UTF-8 ( in SMS.lng_PL the
+  * CP1250 bytes 0xD3 0xA3, O-acute L-stroke, form a valid two-byte sequence ). */
+ if ( apMsg == g_CWD ) apMsg = ( char* )DisplayUTF8 ( apMsg, lName, sizeof ( lName ) );
+ lLen = strlen ( apMsg );
 
  while (  GSFont_WidthEx ( apMsg, lLen, lDX ) > lWidth && lDX >= -12  ) --lDX;
  while (  GSFont_WidthEx ( apMsg, lLen, lDX ) > lWidth                ) --lLen;

@@ -1546,12 +1546,15 @@ static void _display_picture ( SMS_JPEGViewer* apViewer ) {
 
 static void _display_text ( SMS_JPEGViewer* apViewer, const char* apFileName ) {
 
+ char         lName[ 320 ];
  char         lBuf[ 1024 ];
  char*        lpPtr;
  int          lLen;
  int          lDW     = 0;
  unsigned int lW      = apViewer -> m_StsW - 24;
  int          lfTrunc = 0;
+
+ apFileName = DisplayUTF8 ( apFileName, lName, sizeof ( lName ) );
 
  strcpy ( lBuf, STR_LOADING.m_pStr );
 
