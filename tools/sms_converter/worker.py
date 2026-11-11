@@ -209,11 +209,7 @@ class ConversionWorker(QThread):
             # Validation stage
             crash_log.breadcrumb("encode finished; validating")
             self.progress_signal.emit(self.item_id, 100.0, f"Validating {Path(self.input_file).name}...")
-            val_result = validate_converted_file(
-                self.ffprobe_path,
-                self.partial_file,
-                self.settings.get("preset_name")
-            )
+            val_result = validate_converted_file(self.ffprobe_path, self.partial_file)
 
             crash_log.breadcrumb(f"validation: {val_result.status}")
 

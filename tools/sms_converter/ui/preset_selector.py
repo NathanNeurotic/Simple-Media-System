@@ -11,7 +11,6 @@ from config import PRESETS, LABEL_PRESET_DEFAULTS, LABEL_CUSTOM_SETTINGS
 
 class PresetSelectorWidget(QWidget):
     preset_changed = Signal(str, object)   # preset_name, Preset object or None
-    destination_changed = Signal(str, str) # mode ("same" or "custom"), custom_path
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -152,12 +151,9 @@ class PresetSelectorWidget(QWidget):
                 self.custom_dir_path = folder
                 self.label_custom_dir.setText(folder)
                 self.label_custom_dir.show()
-                self.destination_changed.emit("custom", folder)
             else:
                 # Revert to same if cancelled
                 self.combo_save.setCurrentIndex(0)
-                self.destination_changed.emit("same", "")
         else:
             self.custom_dir_path = None
             self.label_custom_dir.hide()
-            self.destination_changed.emit("same", "")

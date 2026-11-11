@@ -19,7 +19,6 @@ class AdvancedSettingsWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.is_custom_mode = False
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 5, 0, 5)
@@ -213,26 +212,7 @@ class AdvancedSettingsWidget(QWidget):
             "On a PS2 an overshoot is not just a larger file: it is dropped frames over USB or "
             "a network share. Cost is roughly double the conversion time."
         )
-        self.chk_two_pass.stateChanged.connect(self._on_two_pass_toggled)
-
-        self.spin_passes = QSpinBox()
-        self.spin_passes.setRange(2, 2)
-        self.spin_passes.setValue(2)
-        self.spin_passes.setEnabled(False)
-        self.spin_passes.setToolTip(
-            "Number of passes.\n\n"
-            "Fixed at 2 -- a limitation of FFMPEG, not of the codec.\n\n"
-            "MPEG-4 Part 2 (DivX / Xvid) itself supports as many passes as you like, and the "
-            "commercial DivX encoder does exactly that. But this app encodes through ffmpeg, "
-            "and ffmpeg's pass 2 never writes back to the statistics log -- verified: the log "
-            "is byte-for-byte identical before and after it runs. With nothing new written, a "
-            "third pass has nothing to refine.\n\n"
-            "Worse, ffmpeg treats -pass as a bitmask, so asking for 3 means pass 1 AND pass 2 "
-            "together and the encoder falls back to first-pass behaviour. Measured at a 700 "
-            "kbps target: pass 1 gave 5022 kbps, pass 2 gave 712, pass 3 gave 5022 again -- "
-            "seven times over target, which on a PS2 means dropped frames.\n\n"
-            "So 2 is what is achievable here, not what the format is capable of."
-        )
+        self.chk_two_pass.stateChanged.connect(self._on_control_changed)
 
         self.chk_gmc = QCheckBox("GMC (Global Motion Comp, default off)")
         self.chk_gmc.setChecked(False)
@@ -250,7 +230,6 @@ class AdvancedSettingsWidget(QWidget):
         v_layout.addRow("Keyframe interval:", self.spin_gop)
         v_layout.addRow("B-Frames (not keyframes):", self.spin_bframes)
         v_layout.addRow("", self.chk_two_pass)
-        v_layout.addRow("Passes:", self.spin_passes)
         v_layout.addRow("", self.chk_qpel)
         v_layout.addRow("", self.chk_gmc)
 
@@ -571,7 +550,6 @@ class AdvancedSettingsWidget(QWidget):
             "bframes": self.spin_bframes.value(),
             "gop": self.spin_gop.value(),
             "two_pass": self.chk_two_pass.isChecked(),
-            "passes": self.spin_passes.value() if self.chk_two_pass.isChecked() else 1,
             "qpel": self.chk_qpel.isChecked(),
             "gmc": self.chk_gmc.isChecked(),
             "acodec": ff_acodec,
@@ -612,11 +590,6 @@ class AdvancedSettingsWidget(QWidget):
             self.subtitle_path = path
             self.lbl_subtitle.setText(Path(path).name)
             self._on_control_changed()
-
-    def _on_two_pass_toggled(self):
-        """The pass count is only meaningful when multi-pass is on."""
-        self.spin_passes.setEnabled(self.chk_two_pass.isChecked())
-        self._on_control_changed()
 
     def _toggle_collapse(self):
         # Toggle the SCROLL AREA, not the container: the container now lives inside it, so

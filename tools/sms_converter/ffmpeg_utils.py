@@ -308,7 +308,7 @@ def build_ffmpeg_cmd(
     pass has nothing new to work from. And because -pass is a bitmask, asking for 3 sets
     PASS1|PASS2 and the encoder reverts to first-pass behaviour: measured at a 700 kbps
     target, pass 1 gave 5022 kbps, pass 2 gave 712, pass 3 gave 5022 again. Exposing 3+ would
-    hand the user a file seven times over target, so the UI caps at 2 and explains itself.
+    hand the user a file seven times over target, so the UI offers two passes and no more.
     """
     cmd = [ffmpeg_path, "-y", "-i", input_file]
 
