@@ -1428,8 +1428,6 @@ static int _read_ipconfig ( void ) {
 
 void SMS_IOPInit ( void ) {
 
- int         i, lFD;
- char        lBuff[ 64 ];
  ee_thread_t lThreadParam;
 
 /* IPCONFIG.DAT, first attempt. Reads the memory card, plus a CWD probe that will only

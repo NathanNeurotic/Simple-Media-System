@@ -587,7 +587,7 @@ static void Desktop_Render ( GUIObject* apObj, int aCtx ) {
 
  if ( !apObj -> m_pGSPacket ) {
 
-  int            i, lW, lH;
+  int            lW, lH;
   u64            lXYXY;
   int            lX    = ( g_GSCtx.m_Width  - LOGO_W * 32 ) >> 1;
   int            lY    = ( g_GSCtx.m_Height - LOGO_H * 32 ) >> 1;
