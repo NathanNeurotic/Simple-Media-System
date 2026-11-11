@@ -49,6 +49,31 @@ class TestSMSConverter(unittest.TestCase):
                     "gop": preset.gop, "fps": preset.fps, "ext": preset.ext})
                 self.assertEqual(cmd[cmd.index("-g") + 1], str(preset.gop))
 
+    def test_mpeg_ps_peak_bitrate_is_capped(self):
+        # Uncapped, FFmpeg spends the bits saved on a quiet opening in the seconds after it:
+        # six times the target for this source.
+        import subprocess
+        import tempfile
+        ff, fp = find_ffmpeg_binaries()
+        settings = {"vcodec": "mpeg2video", "acodec": "mp2", "vbitrate_kbps": 300, "fps": "30",
+                    "gop": 15, "width": 320, "height": 240}
+        self.assertNotIn("-maxrate", build_ffmpeg_cmd(ff, "in.mkv", "out.avi", dict(settings, vcodec="mpeg4")))
+        with tempfile.TemporaryDirectory() as tmp:
+            source, output = str(Path(tmp) / "source.mkv"), str(Path(tmp) / "out.mpg")
+            subprocess.run([ff, "-v", "error", "-f", "lavfi", "-i",
+                            "testsrc2=size=320x240:rate=30:duration=8,drawbox=enable='lt(t,5)':color=black:t=fill",
+                            "-c:v", "ffv1", source], check=True, capture_output=True)
+            cmd = build_ffmpeg_cmd(ff, source, output, settings)
+            self.assertEqual(cmd[cmd.index("-maxrate") + 1], "375k")
+            self.assertIn("-muxrate", cmd)
+            result = subprocess.run(cmd, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            sizes = [int(size) for size in subprocess.run(
+                [fp, "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=size",
+                 "-of", "default=nw=1:nk=1", output], check=True, capture_output=True, text=True).stdout.split()]
+        seconds = [sum(sizes[i:i + 30]) * 8 for i in range(0, len(sizes), 30)]
+        self.assertLess(max(seconds), 2 * 300000, seconds)
+
     def test_flac_output_is_16_bit_mono_or_stereo(self):
         # SMS's FLAC reader rejects more than two channels and renders 16-bit samples.
         import subprocess

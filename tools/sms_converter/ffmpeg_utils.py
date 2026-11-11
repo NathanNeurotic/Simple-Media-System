@@ -377,6 +377,13 @@ def build_ffmpeg_cmd(
         vbitrate = settings.get("vbitrate_kbps")
         if vbitrate:
             cmd.extend(["-b:v", f"{vbitrate}k"])
+            if out_ext in (".mpg", ".mpeg"):
+                # Uncapped, FFmpeg repays a quiet stretch with seconds at several times the
+                # target. The buffer is 0.5 s of the peak, matching the MPEG muxer's preload.
+                # -muxrate keeps the muxer unpaced, as it is without -maxrate; a paced muxer
+                # holds video back behind audio whenever the encoder exceeds the peak.
+                peak = int(vbitrate) * 5 // 4
+                cmd.extend(["-maxrate", f"{peak}k", "-bufsize", f"{peak // 2}k", "-muxrate", "400000k"])
 
         # Scaling and Filters
         src_w = settings.get("src_width", 0)
