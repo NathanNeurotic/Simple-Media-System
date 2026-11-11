@@ -174,8 +174,7 @@ static void SPU_PlayPCM ( void* apData ) {
   (    (   (  ( lSize + 15 ) >> 4  ) + 1  ) >> 1   ) << 1
  ) - 2;
 
- apData = ( unsigned int )apData << 4;
- apData = ( unsigned int )apData >> 4;
+ apData = ( void* )(  ( unsigned int )apData & 0x0FFFFFFF  );
 
 /* Same hang, one layer lower: this path does not use RPC at all, it hands the buffer to the
  * IOP over SIF2 and waits for AUDSRV to raise the SBUS interrupt that signals s_SemaPCM. No
