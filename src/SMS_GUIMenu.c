@@ -99,12 +99,11 @@ static void GUIMenu_Render ( GUIObject* apObj, int aCtx ) {
   lpName = lpItem -> m_pOptionName -> m_pStr;
 
   /* File-name menus only: locale strings are already in the font codepage, and a few
-   * ( Polish CP1250 0xD3 0xA3 ) would pass for UTF-8 and be mangled. */
-  if (  ( lpState -> m_Flags & MENU_FLAGS_NAMES ) && lLen < ( int )sizeof ( lName )  ) {
-   memcpy ( lName, lpName, lLen );
-   lName[ lLen ] = '\0';
-   lpName = ( char* )DisplayUTF8 ( lName, lName, sizeof ( lName ) );   /* in place: output never outruns input */
-   lLen   = strlen ( lpName );
+   * ( Polish CP1250 0xD3 0xA3 ) would pass for UTF-8 and be mangled. Name menus point
+   * m_pStr at the NUL-terminated node name. */
+  if ( lpState -> m_Flags & MENU_FLAGS_NAMES ) {
+   lpName = ( char* )DisplayUTF8 ( lpName, lName, sizeof ( lName ) );
+   if ( lpName == lName ) lLen = strlen ( lName );
   }  /* end if */
 
   if (  lpItem -> m_IconRight && ( lpItem -> m_Type & 0x00FFFFFF )  ) lWidth -= lpMenu -> m_Width / 3;

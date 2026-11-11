@@ -1554,6 +1554,10 @@ static void _display_text ( SMS_JPEGViewer* apViewer, const char* apFileName ) {
  unsigned int lW      = apViewer -> m_StsW - 24;
  int          lfTrunc = 0;
 
+ /* A path too long for lName keeps just the file name: the caption is trimmed from the
+  * front anyway, and converting the whole path would cut the name off its end. */
+ if (  strlen ( apFileName ) >= sizeof ( lName ) && ( lpPtr = strrchr ( apFileName, '/' ) )  ) apFileName = lpPtr + 1;
+
  apFileName = DisplayUTF8 ( apFileName, lName, sizeof ( lName ) );
 
  strcpy ( lBuf, STR_LOADING.m_pStr );

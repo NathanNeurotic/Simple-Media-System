@@ -5,7 +5,7 @@ accented letter is two bytes. Any display site that draws the raw bytes shows tw
 wrong glyphs per letter ("CanciÃ³n"), and the extra width makes the fit-to-width
 loops shrink the text or cut the tail off the name.
 
-This builds the production status line, player OSD title/playlist, browser row,
+This builds the production status line, player OSD title/playlist, browser row, poster caption,
 picture-viewer caption and DisplayUTF8 itself against the real font widths (SMS_GSFont.c) and the real
 TranslateUTF8, and requires each UTF-8 name to draw exactly like the same name
 already in Windows-1252. ASCII and legacy 1252 names must pass through untouched.
@@ -233,6 +233,22 @@ int main ( void ) {
   g_Config.m_BrowserFlags = 0;
   lGot = _viewer ( lpU ); lWant = _viewer ( lpL ); _check ( "viewer", lpL, &lGot, &lWant );
 
+  /* Poster/artwork captions: the name wrapped onto two lines, extension dropped for video. */
+  {
+   static const int lIcon[ 2 ] = { GUICON_FILE, GUICON_AVI };
+   char lGL[ 2 ][ 320 ], lWL[ 2 ][ 320 ];
+   SMS_ListNode *lpGN = _node ( lpU ), *lpWN = _node ( lpL );
+   for ( j = 0; j < 2; ++j ) {
+    lpGN -> m_Param = lpWN -> m_Param = lIcon[ j ];
+    _poster_names ( lpGN, lGL, 220, -6 ); _poster_names ( lpWN, lWL, 220, -6 );
+    if ( strcmp ( lGL[ 0 ], lWL[ 0 ] ) || strcmp ( lGL[ 1 ], lWL[ 1 ] ) ) {
+     printf ( "FAIL poster   %s\n     drawn  [%s|%s]\n     wanted [%s|%s]\n", lpL, lGL[ 0 ], lGL[ 1 ], lWL[ 0 ], lWL[ 1 ] );
+     ++s_nFail;
+    }
+   }
+   free ( lpGN ); free ( lpWN );
+  }
+
   /* Menu items convert a bounded copy in place ( the subtitle mini-browser ). */
   {
    char lBuf[ 320 ];
@@ -267,6 +283,15 @@ int main ( void ) {
   if ( strcmp ( s_Drawn, lMsg ) ) { printf ( "FAIL status converted a locale message\n" ); ++s_nFail; }
  }
 
+ /* A picture path longer than the conversion buffer still shows its file name. */
+ {
+  char lPath[ 1024 ] = "mass:/";
+  while ( strlen ( lPath ) < 400 ) strcat ( lPath, "Carpeta de m\303\272sica/" );
+  strcat ( lPath, "Canci\303\263n \303\221and\303\272.jpg" );
+  _viewer ( lPath );
+  if (  !strstr ( s_Drawn, "Canci\363n \321and\372.jpg" )  ) { printf ( "FAIL long viewer path lost the name [%s]\n", s_Drawn ); ++s_nFail; }
+ }
+
  /* Overlong 3-byte forms ( 1252 "a-grave euro ..." in an M3U line ) and surrogates are not
   * UTF-8: decoding them would give NUL or a control byte that indexes outside the width table. */
  {
@@ -294,6 +319,7 @@ with tempfile.TemporaryDirectory() as temporary:
               + function(src['SMS_GUIDesktop.c'], 'GUI_Status')
               + function(src['SMS_PlayerControl.c'], 'PlayerControl_GSPLen') + osd
               + function(src['SMS_GUIFileMenu.c'], 'GUIFileMenu_RenderItem')
+              + function(src['SMS_GUIFileMenu.c'], '_poster_names')
               + function(src['SMS_JPEG.c'], '_display_text') + post)
     fixture = tmp / 'utf8_display.c'
     fixture.write_text(source, encoding='latin-1')
