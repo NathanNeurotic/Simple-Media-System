@@ -184,7 +184,14 @@ static void seeking(void) {
  assert(_Seek(&container,0,1,15)==1 && streams[0].m_CurSample==2);
  assert(_Seek(&container,0,-1,15)==1 && streams[0].m_CurSample==0);
  assert(_Seek(&container,0,0,15)==1 && streams[0].m_CurSample==0);
- assert(_Seek(&container,0,1,21)==0 && streams[0].m_CurSample==0);
+ /* A target past the last sample is clamped to it: a keyframe there is taken. */
+ assert(_Seek(&container,0,1,21)==1 && streams[0].m_CurSample==2);
+ assert(_Seek(&container,0,-1,500)==1 && streams[0].m_CurSample==2);
+ /* No keyframe at or after the last sample: forward fails, the caller's backward retry works. */
+ index_data[0][2].m_Flags=0;
+ assert(_Seek(&container,0,1,21)==0);
+ assert(_Seek(&container,0,-1,21)==1 && streams[0].m_CurSample==0);
+ index_data[0][2].m_Flags=1;
  /* A movie-time offset must affect both the video target and other streams. */
  streams[0].m_TimeOffset=20;
  assert(_Seek(&container,0,-1,25)==1 && streams[0].m_CurSample==0 && streams[1].m_CurSample==2);

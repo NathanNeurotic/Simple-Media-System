@@ -48,7 +48,7 @@ typedef struct IPULoadImage {
  unsigned short m_Width, m_Height, m_QWC, m_fPal;
  unsigned m_Pal[16]; void (*Destroy)(struct IPULoadImage *);
 } IPULoadImage;
-static struct { unsigned m_Width,m_Height,m_TBW,m_VRAMTexPtr,m_TW,m_TH; } g_GSCtx;
+static struct { unsigned m_Width,m_Height,m_TBW,m_VRAMTexPtr,m_TW,m_TH,m_VRAMPtr; } g_GSCtx;
 static struct { char m_SkinName[64]; } g_Config;
 static char g_pBootDir[128], *g_SlashStr="/", *g_pSMI=".smi", *g_pSMSSkn="mc0:/SMS/Skins";
 static int g_MCSlot;
@@ -147,7 +147,7 @@ harness += r"""
 int main(int argc,char **argv) {
  assert(argc==2);
  int numeric_short=!strncmp(argv[1],"short-",6) && argv[1][6]>='0' && argv[1][6]<='9';
- g_GSCtx.m_Width=640;g_GSCtx.m_Height=512;
+ g_GSCtx.m_Width=640;g_GSCtx.m_Height=512;g_GSCtx.m_VRAMPtr=0x1400;   /* PAL 640x512 framebuffer ends here */
  strcpy(g_pBootDir,"mass0:/SMS/");strcpy(g_Config.m_SkinName,"sample");
  file_size=32;
  if(!strcmp(argv[1],"short-header")) file_size=4;
@@ -173,8 +173,10 @@ int main(int argc,char **argv) {
  else if(!strcmp(argv[1],"card-fallback")) missing_cwd=1;
  else if(!strcmp(argv[1],"sd-width-720")) g_GSCtx.m_Width=720;      /* widest picture the Display menu allows in an SD mode */
  else if(!strcmp(argv[1],"hd-width-1090")) g_GSCtx.m_Width=1090;    /* narrowest 720p picture: the texture would overlap the framebuffer */
+ else if(!strcmp(argv[1],"tall-skin-overlap")) { width=1024;height=768; }   /* would start at 0x1000, inside the framebuffer */
+ else if(!strcmp(argv[1],"skin-exact-fit")) { width=1024;height=704; }     /* starts exactly at 0x1400 */
  else assert(!strcmp(argv[1],"valid"));
- int expected=(!strcmp(argv[1],"valid")||!strcmp(argv[1],"cache-range")||!strcmp(argv[1],"dma-tail")||!strcmp(argv[1],"card-fallback")||!strcmp(argv[1],"sd-width-720")||!strcmp(argv[1],"max-dma-size")||!strcmp(argv[1],"cwd-short-read"));
+ int expected=(!strcmp(argv[1],"valid")||!strcmp(argv[1],"cache-range")||!strcmp(argv[1],"dma-tail")||!strcmp(argv[1],"card-fallback")||!strcmp(argv[1],"sd-width-720")||!strcmp(argv[1],"skin-exact-fit")||!strcmp(argv[1],"max-dma-size")||!strcmp(argv[1],"cwd-short-read"));
  unsigned char old_gs[sizeof(g_GSCtx)];
  memcpy(old_gs,&g_GSCtx,sizeof(g_GSCtx));
  assert(DrawSkin()==expected);
@@ -193,7 +195,7 @@ int main(int argc,char **argv) {
 cases = sys.argv[1:] or ["valid", "short-header", "cache-range", "negative-size", "dma-tail", "width-1", "width-17", "width-0", "height-0",
                          "large-width", "large-height", "overflow-dimensions", "data-allocation", "packet-allocation",
                          "short-read", "cwd-short-read", "card-short-read", "failed-rewind", "max-dma-size", "too-large", "card-fallback",
-                         "sd-width-720", "hd-width-1090"] + [f"short-{size}" for size in range(8)]
+                         "sd-width-720", "hd-width-1090", "tall-skin-overlap", "skin-exact-fit"] + [f"short-{size}" for size in range(8)]
 with tempfile.TemporaryDirectory() as temp:
     src = Path(temp) / "skin.c"
     src.write_text(harness)

@@ -258,7 +258,10 @@ static int DrawSkin ( void ) {
 
    lTexSize = (   ( lTBW << 6 ) * (  ( lHeight + 31 ) & ~31  ) * 4   ) >> 8;
 
-   if ( lTexSize >= 0x4000 ) {   /* skin texture too large for VRAM -> fall back to default */
+/* The texture sits at the top of VRAM; m_VRAMPtr is the first block past the framebuffer
+ * ( and Z buffer, when on ) and the font. A tall skin ( 1024x768 starts at 0x1000, a PAL
+ * 640x512 framebuffer ends at 0x1400 ) would overlap them, so refuse it as too large. */
+   if ( lTexSize >= 0x4000 || 0x4000 - lTexSize < g_GSCtx.m_VRAMPtr ) {   /* skin texture too large for VRAM -> fall back to default */
     free ( lpData );
     return 0;
    }  /* end if */

@@ -1351,10 +1351,10 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
  * treat it as backward instead of walking "in direction 0" forever. */
  aDir = aDir > 0 ? 1 : -1;
 
-/* Same range check AVI does ( target past the last frame fails ). */
+/* Same clamp AVI does ( a target past the last frame lands on the last frame ). */
  lTarget = ( int64_t )aPos - lpMyStm -> m_TimeOffset;
  if ( lTarget < 0 ) lTarget = 0;
- if (  lTarget > lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS  ) return 0;
+ if (  lTarget > lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS  ) lTarget = lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS;   /* past the end: use the last frame */
 
  lSample = _mov_locate_sample ( lpMyStm -> m_pIdx, lpMyStm -> m_nIdx, ( uint32_t )lTarget );
  if ( aDir > 0 && lpMyStm -> m_pIdx[ lSample ].m_DTS < lTarget ) ++lSample;

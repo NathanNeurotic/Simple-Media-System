@@ -64,7 +64,7 @@ src/SMS_GUIDesktop.c:149-153 'return g_GSCtx.m_Width > 640;' with the comment 'E
 
 ### fix
 src/SMS_GUIDesktop.c:151: 'return g_GSCtx.m_Width > 720;   /* SD modes are user-adjustable 640..720 ( _dispw_handler ); only 720p ( >= 1090 ) / 1080i ( >= 1400 ) collide */' and correct the sentence in the comment at 147-148. One token.
-> Review note: the gate shipped on the branch is width only. A wider SD skin may still overlap the framebuffer; the bound from finding 8 was skipped as not airtight. Treat wider SD skins as unverified until the SD width check on the hardware list passes.
+> Review note (updated at merge): DrawSkin now also rejects any skin whose texture would start below g_GSCtx.m_VRAMPtr (the first free block after the framebuffer and font), the exact bound from finding 8. The skin loading test pins it (tall-skin-overlap rejected, skin-exact-fit accepted). Still not run on hardware.
 
 ### test
 Add to tools/test_skin_loading.py: after the card-fallback line 'else if(!strcmp(argv[1],"sd-width-720")) g_GSCtx.m_Width=720;' and 'else if(!strcmp(argv[1],"hd-width-1090")) g_GSCtx.m_Width=1090;'; add sd-width-720 to the 'expected' list and both names to 'cases'. Run in scratch: FAILS on master sources (sd-width-720 SIGABRT), PASSES on the patched copy with BDM on and off (25+8 cases). Simulation G/H become VISIBLE.

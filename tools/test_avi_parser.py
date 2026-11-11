@@ -164,7 +164,9 @@ int main(int argc,char **argv) {
   ++pkts;bytes+=got;mix(&idx,sizeof(idx));
   if(pkt) { mix(&pkt->m_DTS,8);mix(&pkt->m_Size,12);mix(pkt->m_pData,pkt->m_Size); }
  }
- printf(" empty=%u pkts=%u bytes=%u sig=%016llx\n",empty,pkts,bytes,(unsigned long long)sig);
+ /* A target past the last frame must land on the last frame, not fail. */
+ int past=open?cont.Seek(&cont,0,1,MYSTRM(cont.m_pStm[0])->m_nIdx+50):-1;
+ printf(" seekpast=%d empty=%u pkts=%u bytes=%u sig=%016llx\n",past,empty,pkts,bytes,(unsigned long long)sig);
  return 0;
 }
 """
@@ -226,7 +228,7 @@ def probe(exe, tmp, data, **want):
 def case_valid(run):
     data, where, parts = build(idx1=False)
     total = sum(len(d) + (len(d) & 1) for _, d in parts)
-    run(data, open=1, nstm=2, seekable=0, idx="0,0", pkts=len(parts), bytes=total)
+    run(data, open=1, nstm=2, seekable=0, idx="0,0", pkts=len(parts), bytes=total, seekpast=0)
     # OpenDML: the super index names both streams and movi carries ix## chunks to skip.
     run(build(odml=True)[0], open=1, seekable=1, idx=f"{FRAMES},{FRAMES}", pkts=len(parts), bytes=total)
 
@@ -247,7 +249,7 @@ def case_packets(run):
 def case_idx1(run):
     data, where, parts = build()
     total = sum(len(d) + (len(d) & 1) for _, d in parts)
-    full = run(data, open=1, seekable=1, idx=f"{FRAMES},{FRAMES}", pkts=len(parts), bytes=total)
+    full = run(data, open=1, seekable=1, idx=f"{FRAMES},{FRAMES}", pkts=len(parts), bytes=total, seekpast=1)
     # A file cut inside the sixth index entry yields the five whole entries and
     # no reads past the end of the file for the missing ones.
     cut = data.rindex(b"idx1") + 8 + 16 * 5 + 6
