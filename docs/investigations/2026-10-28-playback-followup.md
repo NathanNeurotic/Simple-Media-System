@@ -125,6 +125,11 @@ to preserve the current compression/seek tradeoff. These measurements do not
 prove that every reporter color symptom has the same cause, and cannot validate
 the player's full GS path, device timing or physical-console behavior.
 
+Later change: PR #41 (`23d1693`, merged 2026-10-30) set the MPEG-1/2 converter
+presets to GOP 15. A file converted after that differs from an earlier
+conversion in GOP as well as in the decoder that plays it; compare decoder
+builds on unchanged file bytes.
+
 ### Additional MPEG-1, B-frame and interlaced controls
 
 Four additional 150-frame streams use the same baseline/candidate source and
