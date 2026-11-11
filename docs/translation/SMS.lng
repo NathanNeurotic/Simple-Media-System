@@ -37,7 +37,7 @@ Autostart USB
 Autostart HDD APA
 Device settings
 Start network support
-Start HDD support
+Start HDD APA support
 Start USB support
 Edit IPCONFIG.DAT...
 Edit IPCONFIG.DAT
@@ -270,7 +270,7 @@ DTV 576p
 Autostart MX4SIO
 Start MX4SIO support
 Autostart HDD BDM
-Start HDD BDM
+Start HDD BDM support
 Autostart i.LINK
 Start i.LINK support
 Autostart MMCE
