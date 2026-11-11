@@ -131,6 +131,9 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
  _AVIdxEntry* lpIndices;
  _AVIdxEntry* lpIndex;
  FileContext* lpFileCtx = apCtx -> m_pFileCtx;
+ int          lnMax     = ( lpFileCtx -> m_Size - lpFileCtx -> m_CurPos ) / 16;
+
+ if ( lnIdx > lnMax ) lnIdx = lnMax;  /* only the entries the file still holds */
 
  if ( lnIdx <= 0 ) return 0;
 

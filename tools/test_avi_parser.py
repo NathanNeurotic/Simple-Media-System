@@ -247,7 +247,14 @@ def case_packets(run):
 def case_idx1(run):
     data, where, parts = build()
     total = sum(len(d) + (len(d) & 1) for _, d in parts)
-    run(data, open=1, seekable=1, idx=f"{FRAMES},{FRAMES}", pkts=len(parts), bytes=total)
+    full = run(data, open=1, seekable=1, idx=f"{FRAMES},{FRAMES}", pkts=len(parts), bytes=total)
+    # A file cut inside the sixth index entry yields the five whole entries and
+    # no reads past the end of the file for the missing ones.
+    cut = data.rindex(b"idx1") + 8 + 16 * 5 + 6
+    got = run(data[:cut], open=1, seekable=1, idx="3,2", pkts=len(parts), bytes=total)
+    assert int(got["empty"]) <= int(full["empty"]), (got, full)
+    # Nothing left after the idx1 header: no index, as for a file without one.
+    run(data[:cut - 16 * 5 - 6], open=1, seekable=0, idx="0,0", pkts=len(parts), bytes=total)
 
 cases = {"valid": case_valid, "packets": case_packets, "idx1": case_idx1}
 with tempfile.TemporaryDirectory() as tmp:
