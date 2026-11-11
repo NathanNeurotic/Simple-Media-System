@@ -18,7 +18,7 @@ import tempfile
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
 CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts",
-         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-priming", "stts-zero-tail", "edit-before-track", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
+         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-priming", "stts-zero-tail", "edit-before-track", "stsd-count", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -109,6 +109,12 @@ int main(int argc,char **argv) {
           info.m_SampleRate,info.m_nChannels,info.m_BitRate,f.m_CurPos);
   assert(info.m_SampleRate==rate);assert(info.m_nChannels==channels);
   assert(info.m_BitRate>0);assert(f.m_CurPos==0);
+  free(data);return 0;
+ }
+ if(!strcmp(argv[3],"bounded")) {
+  /* Both readers only have to return; the caller's timeout catches a runaway loop. */
+  SMS_AudioInfo info={0};SMS_M4AProbe(&f,&info);
+  if(_GetContainerMOV(&c,s_MOVParseTbl)) SMS_DestroyContainer(&c,0);
   free(data);return 0;
  }
  int result=_GetContainerMOV(&c,s_MOVParseTbl);
@@ -224,6 +230,9 @@ def rewrite(data, kind, video=False):
             count = struct.unpack_from(">I", body, 4)[0]
             entries = [struct.unpack_from(">II", body, 8 + 8 * i) for i in range(count)]
             body = body[:8] + b"".join(struct.pack(">II", n, offset + 1024) for n, offset in entries)
+        if kind == "stsd-count" and tag == b"stsd":
+            # One negative and one huge sample-entry count: neither is backed by data.
+            body = body[:4] + struct.pack(">I", 0xA2000001 if video else 0x7FFFFFFF) + body[8:]
         if kind == "stts-zero-tail" and tag == b"stts":
             # FFmpeg's variable-frame-rate output ends with a zero-duration sample.
             count = struct.unpack_from(">I", body, 4)[0]
@@ -308,7 +317,9 @@ with tempfile.TemporaryDirectory() as temporary:
         else:
             fixture.write_bytes(original if case == "standard" else rewrite(original, case))
         manifest = tmp / "packets.txt"
-        if case == "m4a-metadata-bad-asc":
+        if case == "stsd-count":
+            mode = "bounded"
+        elif case == "m4a-metadata-bad-asc":
             mode = "probe-reject"
         elif case in ("m4a-metadata", "m4a-metadata-stereo"):
             mode = "probe"

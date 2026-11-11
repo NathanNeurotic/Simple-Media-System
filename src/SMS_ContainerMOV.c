@@ -328,7 +328,7 @@ static int _mov_read_stsd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   uint32_t          lFmt;
   File_Skip ( apFileCtx, 4 );
   lnEntries = _read_int_be ( apFileCtx );
-  while ( lnEntries-- ) {
+  while (  lnEntries-- > 0 && !FILE_EOF( apFileCtx )  ) {
    MOVAtom     lAtom     = { 0, 0, 0 };
    uint32_t    lStartPos = apFileCtx -> m_CurPos;
    int         lSize     = _read_int_be ( apFileCtx );
@@ -726,7 +726,7 @@ static int _mov_read_stsd_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVA
   uint32_t lFmt;
   File_Skip ( apFileCtx, 4 );
   lnEntries = _read_int_be ( apFileCtx );
-  while ( lnEntries-- ) {
+  while (  lnEntries-- > 0 && !FILE_EOF( apFileCtx )  ) {
    MOVAtom     lAtom     = { 0, 0, 0 };
    uint32_t    lStartPos = apFileCtx -> m_CurPos;
    int         lSize     = _read_int_be ( apFileCtx );
