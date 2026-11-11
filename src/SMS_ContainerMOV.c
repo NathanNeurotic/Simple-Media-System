@@ -1241,7 +1241,10 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
         lpMyCurStm -> m_CurSample < ( unsigned int )lpMyCurStm -> m_nIdx ) {
     MOVIndex* lpCurSample = &lpMyCurStm -> m_pIdx[ lpMyCurStm -> m_CurSample ];
     int64_t   lDTS = SMS_Rescale ( ( ( int64_t )lpCurSample -> m_DTS + lpMyCurStm -> m_TimeOffset - lpMyCurStm -> m_DTSShift ) * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
-    if ( lDTS < lBestDTS ) {
+/* Streams within one second of each other are read in file order, so an interleaved file is
+ * read front to back and never seeks backwards; further apart, the earlier DTS goes first. */
+    if (  !lpSample || ( lDTS - lBestDTS < SMS_TIME_BASE && lBestDTS - lDTS < SMS_TIME_BASE ?
+                         lpCurSample -> m_Pos < lpSample -> m_Pos : lDTS < lBestDTS )  ) {
      lpSample = lpCurSample;
      lBestDTS = lDTS;
      lpStm    = lpCurStm;
@@ -1381,8 +1384,8 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
  if (  lSample == ( uint32_t )lpMyStm -> m_nIdx || !lpMyStm -> m_pIdx[ lSample ].m_Flags  ) return 0;
 
-/* The keyframe's timestamp in the neutral SMS_TIME_BASE units _ReadPacket uses to pick the
- * lowest-DTS stream. The other streams' cursors are placed on that same instant so the
+/* The keyframe's timestamp in the neutral SMS_TIME_BASE units _ReadPacket uses to order the
+ * streams. The other streams' cursors are placed on that same instant so the
  * interleave resumes consistently -- audio typically lands a few frames BEFORE the video
  * keyframe, which is exactly what the decoders expect after a seek. */
  lTime = SMS_Rescale (

@@ -120,6 +120,14 @@ static void ordering(void) {
  streams[0].m_TimeRate=streams[0].m_TimeScale=16;index_data[1][0].m_DTS=100;
  assert(_ReadPacket(&container,&selected)==4 && selected==1);
  assert(_ReadPacket(&container,&selected)==4 && selected==0);
+ /* Inside the interleave window the sample stored first is read first, so the
+  * file position only moves forward; at the window's edge DTS order applies. */
+ reset();index_data[0][0].m_Pos=8;
+ assert(_ReadPacket(&container,&selected)==4 && selected==1 && file.m_CurPos==4);
+ assert(_ReadPacket(&container,&selected)==4 && selected==0 && file.m_CurPos==12);
+ reset();index_data[0][0].m_DTS=SMS_TIME_BASE;index_data[1][0].m_Pos=8;
+ assert(_ReadPacket(&container,&selected)==4 && selected==1);
+ assert(_ReadPacket(&container,&selected)==4 && selected==0);
 }
 static void failures(void) {
  int selected;
