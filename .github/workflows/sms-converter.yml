@@ -26,6 +26,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v7
@@ -217,6 +219,8 @@ jobs:
       cancel-in-progress: false
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     # setup-python's OWN major version is not one of the pins described above -- it only
     # selects an interpreter. "3.8" still resolves to 3.8.10 here, which is python.org's last

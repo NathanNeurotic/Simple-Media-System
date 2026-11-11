@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write        # needed to publish the rolling / stable releases
+  contents: read
 
 jobs:
   # Legacy non-BDM build. Separate job so it runs in PARALLEL and its failure shows a
@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
     - name: Verify non-BDM (BDM=0) build links
       run: |
         docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
@@ -27,6 +29,8 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # needed to publish the rolling / stable releases
     # Only one master publisher may upload player assets and advance rolling.
     # Keep queued builds: a historical rerun must not cancel the latest master.
     concurrency:
@@ -35,6 +39,8 @@ jobs:
       queue: max
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     # IRX ABI gate. IOP loadcore binds a client module to a library provider by NAME +
     # MAJOR version only, then resolves every stub BY ORDINAL -- so a module built
