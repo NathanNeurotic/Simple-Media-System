@@ -549,7 +549,8 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
   if ( lpASF -> packet_size_left < 0 ) continue;
 
-  if ( lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||
+  if ( lpASF -> packet_frag_offset < 0 || lpASF -> packet_frag_size < 0 || !lpASFStm -> pkt.data ||
+       lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||
        lpASF -> packet_frag_size   >  lpASFStm -> pkt.size - lpASF -> packet_frag_offset
   ) continue;
 

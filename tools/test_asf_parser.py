@@ -206,7 +206,23 @@ def case_valid(run):
     # Stream Bitrate Properties, as Microsoft encoders write it, names every stream number.
     run(build(packets, bitrates=(1, 2))[0], **expect(objects))
 
-cases = {"valid": case_valid}
+def case_payloads(run):
+    packets, objects = media()
+    data, first = build(packets)
+    # A negative offset into the media object, or an object too large to allocate,
+    # costs that one object.
+    for at, value in ((14, -16), (19, 0xFFFFFF)):
+        bad = bytearray(data)
+        struct.pack_into("<i", bad, first + at, value)
+        run(bad, **expect(objects[1:]))
+    # A negative payload length leaves the packet accounting unusable: the stream ends there.
+    packets[6] = packet((1, 6, 0, len(objects[6][1]), objects[6][1]), wide=True)
+    bad, first = build(packets)
+    run(bad, **expect(objects))
+    struct.pack_into("<i", bad, first + 6 * PACKET + 28, -1 << 30)
+    run(bad, **expect(objects[:6]))
+
+cases = {"valid": case_valid, "payloads": case_payloads}
 with tempfile.TemporaryDirectory() as tmp:
     cfile, exe = Path(tmp) / "asf.c", Path(tmp) / "asf"
     cfile.write_text(prefix + source + tests)
