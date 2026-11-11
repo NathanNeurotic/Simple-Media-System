@@ -30,11 +30,14 @@ STEPS = {
 }
 
 
-def shell_body(name):
+MASTER_PUSH = "github.event_name == 'push' && github.ref == 'refs/heads/master'"
+
+
+def shell_body(name, condition=MASTER_PUSH):
     step = workflow.split("    - name: " + name + "\n", 1)[1]
     header, body = step.split("      run: |\n", 1)
     assert "      shell: bash\n" in header, (name, "publication must use Bash")
-    assert "github.event_name == 'push' && github.ref == 'refs/heads/master'" in header
+    assert condition in header, (name, condition)
     lines = []
     for line in body.splitlines():
         if line and not line.startswith("        "):
@@ -150,3 +153,30 @@ for family in STEPS:
     run_case(family, "superseded-while-waiting", True, 1, release_exists=False, supersede_after=1)
     run_case(family, "api-failure-while-waiting", False, 1, release_exists=False, api_error_at=2)
 print("Converter rolling publication: 33 shell controls and asset-family concurrency configuration passed")
+
+
+def run_tag_case(family, failures, expected, attempts):
+    """A version-tag upload must fail the job when the asset never reaches the release."""
+    name, asset = STEPS[family][0].replace("Rolling", "Version"), STEPS[family][1]
+    with tempfile.TemporaryDirectory(prefix="sms-converter-publish-") as td:
+        tmp = Path(td)
+        (tmp / "dist-artifact").mkdir()
+        (tmp / "dist-artifact" / asset).write_bytes(b"fixture")
+        prefix = 'gh() { echo "$*" >> calls; [ "$(wc -l < calls)" -gt "$FAILURES" ]; }\n'
+        prefix += 'sleep() { :; }\n'
+        body = shell_body(name, "startsWith(github.ref, 'refs/tags/v')")
+        (tmp / "step.sh").write_bytes((prefix + body + "\n").encode("utf-8"))
+        env = dict(os.environ, GITHUB_REF_NAME="v9.9.9", FAILURES=str(failures))
+        result = subprocess.run([bash, "--noprofile", "--norc", "-eo", "pipefail", "step.sh"],
+                                cwd=tmp, env=env, text=True, capture_output=True, timeout=30)
+        calls = (tmp / "calls").read_text().splitlines()
+        assert (result.returncode == 0) == expected, (name, failures, result.returncode, result.stdout, result.stderr)
+        assert calls == ["release upload v9.9.9 dist-artifact/%s --clobber" % asset] * attempts, (name, failures, calls)
+        print("PASS", family, "version-release", failures, "failed uploads")
+
+
+for family in STEPS:
+    run_tag_case(family, 0, True, 1)
+    run_tag_case(family, 2, True, 3)
+    run_tag_case(family, 12, False, 12)
+print("Converter version-tag publication: 9 shell controls passed")

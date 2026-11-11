@@ -163,25 +163,30 @@ jobs:
         for i in {1..12}; do
           if gh release upload "$GITHUB_REF_NAME" dist-artifact/SMS-Media-Converter.exe --clobber; then
             echo "Uploaded SMS-Media-Converter.exe to release $GITHUB_REF_NAME!"
-            break
+            exit 0
           fi
           echo "Waiting for release $GITHUB_REF_NAME..."
           sleep 10
         done
+        echo "Failed to publish SMS-Media-Converter.exe to release $GITHUB_REF_NAME after 12 attempts" >&2
+        exit 1
 
     - name: Upload Linux Package to Version Release
       if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/v')
       env:
         GH_TOKEN: ${{ github.token }}
+      shell: bash
       run: |
         for i in {1..12}; do
           if gh release upload "$GITHUB_REF_NAME" dist-artifact/*.zip --clobber; then
             echo "Uploaded SMS-Media-Converter-Linux.zip to release $GITHUB_REF_NAME!"
-            break
+            exit 0
           fi
           echo "Waiting for release $GITHUB_REF_NAME..."
           sleep 10
         done
+        echo "Failed to publish SMS-Media-Converter-Linux.zip to release $GITHUB_REF_NAME after 12 attempts" >&2
+        exit 1
 
   # ---------------------------------------------------------------------------------------
   # Windows 7 build.
@@ -307,8 +312,10 @@ jobs:
         for i in {1..12}; do
           if gh release upload "$GITHUB_REF_NAME" dist-artifact/SMS-Media-Converter-Win7.exe --clobber; then
             echo "Uploaded SMS-Media-Converter-Win7.exe to release $GITHUB_REF_NAME!"
-            break
+            exit 0
           fi
           echo "Waiting for release $GITHUB_REF_NAME..."
           sleep 10
         done
+        echo "Failed to publish SMS-Media-Converter-Win7.exe to release $GITHUB_REF_NAME after 12 attempts" >&2
+        exit 1
