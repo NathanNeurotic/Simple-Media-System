@@ -210,7 +210,9 @@ int main(int argc,char **argv) {
  if(strstr(name,"allocation")) fail_at=4;
  FileContext *input=malloc(sizeof(*input));assert(input);memset(input,0,sizeof(*input));
  input->m_pPath=strdup("mass0:/music/list.m3u");
- input->data=selecting?"track.mp3\nnext.mp3\n":"track.mp3\n";
+ int shuffle=strstr(name,"shuffle")!=NULL;
+ if(shuffle) g_Config.m_PlayerFlags=SMS_PF_RAND;
+ input->data=selecting?"track.mp3\nnext.mp3\n":shuffle?"a.mp3\nb.mp3\na.mp3\n":"track.mp3\n";
  input->m_Size=strlen(input->data);input->Seek=seek_file;input->Destroy=close_file;
  input->Open=STIO_InitFileContext;input->original=1;
  if(overlong && !selecting) { memset(g_CWD,'d',1023);g_CWD[1023]=0; }
@@ -221,6 +223,7 @@ int main(int argc,char **argv) {
   assert(original_closes==1 && !child_closes && result->m_pFileCtx);
   assert(result->m_pCtx && result->m_pPlayList && result->m_pPlayItem);
   assert(result->m_nStm==1 && result->m_pStm[0] && result->Destroy==_Destroy);
+  if(shuffle) assert(result->m_pPlayList->m_Size==3);
   if(selecting) {
    FileContext *old=result->m_pFileCtx;_M3UContainer *m=MYCONT(result);
    result->m_pPlayItem=result->m_pPlayItem->m_pNext;assert(result->m_pPlayItem);
@@ -258,7 +261,7 @@ adapted_types, adapted_functions = adapted[:types_end], adapted[types_end:]
 cases = ("automatic-missing", "automatic-unsupported", "explicit-missing", "explicit-unsupported",
          "automatic-allocation", "explicit-allocation", "automatic-success", "explicit-success",
          "select-missing", "select-success", "automatic-overlong", "explicit-overlong",
-         "select-overlong", "path-bounds")
+         "select-overlong", "path-bounds", "explicit-shuffle-success")
 with tempfile.TemporaryDirectory() as temporary:
     src, exe = Path(temporary) / "m3u.c", Path(temporary) / "m3u"
     src.write_text("\n".join((prefix, list_helpers, stub_creators, table, destroy, adapted_types, adapted_functions, test)))

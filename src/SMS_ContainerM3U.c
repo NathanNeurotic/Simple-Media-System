@@ -428,7 +428,7 @@ int SMS_GetContainerM3U ( SMS_Container* apCont ) {
     unsigned int  lIdx   = SMS_rand () % lSize;
     SMS_ListNode* lpNode = SMS_ListAt ( lpList, lIdx );
 
-    if (   !lpNode || SMS_ListFind (  lpNewList, _STR( lpNode )  )   ) continue;
+    if ( !lpNode ) break;
 
     SMS_ListPushBack (  lpNewList, _STR( lpNode )  ) -> m_Param = lpNode -> m_Param;
     SMS_ListRemove ( lpList, lpNode );
