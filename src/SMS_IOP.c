@@ -1396,7 +1396,9 @@ static int _read_ipconfig ( void ) {
  if ( i <= 0 ) return 0;
 
  {
+  static char* const s_lpDst[ 3 ] = { g_pDefIP, g_pDefMask, g_pDefGW };
   char lChr;
+  int  lLen, k;
 
   lBuff[ i ] = '\x00';
 
@@ -1404,11 +1406,20 @@ static int _read_ipconfig ( void ) {
 
    if (  lChr == ' ' || lChr == '\r' || lChr == '\n' ) lBuff[ i ] = '\x00';
 
-  strncpy ( g_pDefIP, lBuff, 15 );
-  i = strlen ( g_pDefIP ) + 1;
-  strncpy ( g_pDefMask, lBuff + i, 15 );
-  i += strlen ( g_pDefMask ) + 1;
-  strncpy ( g_pDefGW, lBuff + i, 15 );
+  lLen = i;
+
+/* A run of separators ( CRLF line ends, doubled spaces ) counts as one; a field the
+ * file lacks keeps its current value. */
+  for ( i = k = 0; k < 3; ++k ) {
+
+   while ( i < lLen && !lBuff[ i ] ) ++i;
+
+   if ( i == lLen ) break;
+
+   strncpy ( s_lpDst[ k ], lBuff + i, 15 );
+   i += strlen ( lBuff + i );
+
+  }  /* end for */
  }
 
  return 1;
