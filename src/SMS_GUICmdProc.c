@@ -179,7 +179,7 @@ void _start_player ( FileContext* apFileCtx, FileContext* apSubCtx, SubtitleForm
 
    GUI_Initialize ( -1 );
 
-   lpParam = SMS_OpenMediaFile (  _STR( lpNode ), SMS_FA_FLAGS_AVI  );
+   lpParam = SMS_OpenMediaFile (  _STR( lpNode ), 0  );   /* no subtitle autoload for audio */
 
    if ( !lpParam ) break;
 
