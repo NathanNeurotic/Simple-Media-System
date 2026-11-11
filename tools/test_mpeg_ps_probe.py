@@ -322,6 +322,15 @@ static void test_probe_retry(int secondary) {
  assert(c.m_pStm[1]->m_Flags & SMS_STRM_FLAGS_AUDIO);
  SMS_DestroyContainer(&c,0);
 }
+static void test_probe_video_walk(unsigned ids) {
+ const unsigned char ac3[]={0x80,1,0,0,0x0b,0x77,0,0,0,0x40,0x40};
+ SMS_Container c={0};
+ /* Video without a sequence header gets one header walk per stream ID. */
+ reset(0);for(unsigned i=0;i<300;++i) pes(0xe0+i%ids,(const unsigned char *)"x",1);
+ pes(0xbd,ac3,sizeof(ac3));file.m_Size=input_size;c.m_pFileCtx=&file;
+ assert(SMS_GetContainerMPEG_PS(&c)==0 && c.m_pCtx==NULL && c.m_nStm==0);
+ assert(read_calls<20000);
+}
 int main(int argc,char **argv) {
  const char *cases[]={"packet-allocation","tail-allocation","short-video","short-video-with-tail","short-video-tail",
                       "short-video-buffer","short-audio","short-pcm"};
@@ -332,6 +341,9 @@ int main(int argc,char **argv) {
  if(!strcmp(which,"all") || !strcmp(which,"alignment")) test_packet_alignment();
  if(!strcmp(which,"all") || !strcmp(which,"probe-retry")) test_probe_retry(0);
  if(!strcmp(which,"all") || !strcmp(which,"probe-secondary")) test_probe_retry(1);
+ if(!strcmp(which,"all") || !strcmp(which,"probe-video-walk")) {
+  test_probe_video_walk(1);test_probe_video_walk(2);
+ }
  for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);++i)
   if(!strcmp(which,"all") || !strcmp(which,cases[i])) test_packet_failure(cases[i]);
  puts("MPEG-PS: bounded probes, packet alignment, allocation and read failures passed");
