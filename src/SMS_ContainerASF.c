@@ -158,7 +158,7 @@ static int asf_read_header ( SMS_Container* apCont ) {
 
  memset ( lpASF -> asfid2avid, -1, sizeof ( lpASF -> asfid2avid )  );
 
- while ( 1 ) {
+ while (  !FILE_EOF( lpFileCtx )  ) {
 
   get_guid ( lpFileCtx, lGUID );
 

@@ -31,6 +31,10 @@ def function(path, name, signature):
 
 header = (root / "include/SMS_FileContext.h").read_text()
 getters = header[header.index("static INLINE int File_GetByte"):header.index("void File_Skip")]
+# A read that fails at EOF leaves the getter's result untouched. In the EE build that
+# is a stack slot of the calling function, still holding the value read there before.
+getters, slots = re.subn(r"^ (?=(?:unsigned int|u64) +retVal;)", " static ", getters, flags=re.M)
+assert slots == 2
 
 prefix = r"""
 #include <assert.h>
@@ -222,7 +226,13 @@ def case_payloads(run):
     struct.pack_into("<i", bad, first + 6 * PACKET + 28, -1 << 30)
     run(bad, **expect(objects[:6]))
 
-cases = {"valid": case_valid, "payloads": case_payloads}
+def case_truncated(run):
+    data, first = build(media()[0], bitrates=(1, 2))
+    # A file that ends anywhere before its first data packet is rejected, not parsed forever.
+    for size in range(30, first + 1, 4):
+        run(data[:size], open=0)
+
+cases = {"valid": case_valid, "payloads": case_payloads, "truncated": case_truncated}
 with tempfile.TemporaryDirectory() as tmp:
     cfile, exe = Path(tmp) / "asf.c", Path(tmp) / "asf"
     cfile.write_text(prefix + source + tests)
