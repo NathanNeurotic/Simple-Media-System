@@ -287,7 +287,10 @@ AUDIO_CODECS_MAP = {
 #            Video is MPEG-4 Part 2 and MS-MPEG4v3 ONLY -- there is no MPEG-1 or MPEG-2
 #            FourCC. AAC's 0x00FF tag and WAVE extra data reach SMS's AAC config decoder.
 #            FFmpeg Vorbis uses 0x566F, which does not match SMS's legacy 0x674F entry.
-#   MP4/M4A  SMS-v1/src/SMS_ContainerMOV.c:346-356, by MPEG-4 object type id.
+#   MP4/M4A  src/SMS_ContainerMOV.c, by the audio esds object type id. FFmpeg writes AC-3 as
+#            an 'ac-3' sample entry with no esds, which SMS maps to no codec, and FFmpeg 9
+#            fails to mux Vorbis. SMS never reads the video esds, so MPEG-1/2 video (tagged
+#            'mp4v' like MPEG-4) reaches the MPEG-4 decoder.
 #   MPEG-PS  SMS-v1/src/SMS_ContainerMPEG_PS.c:673-718, by stream id.
 #
 # Used two ways: Advanced Settings will not OFFER a combination that lands outside this, and
@@ -309,12 +312,12 @@ SMS_CONTAINER_CODECS = {
         "audio": {"mp2", "mp3", "ac3", "dts", "pcm_s16be"},
     },
     ".mp4": {
-        "video": {"mpeg4", "mpeg1video", "mpeg2video"},
-        "audio": {"aac", "mp3", "ac3", "vorbis"},
+        "video": {"mpeg4"},
+        "audio": {"aac", "mp3"},
     },
     ".m4a": {
         "video": set(),
-        "audio": {"aac", "mp3", "ac3", "vorbis"},
+        "audio": {"aac", "mp3"},
     },
     # Audio-only containers, each with its own reader in SMS.
     ".mp3":  {"video": set(), "audio": {"mp3"}},

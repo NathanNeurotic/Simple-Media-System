@@ -248,6 +248,11 @@ class TestOnlyPlayableCombinationsAreOffered(unittest.TestCase):
         # MPEG-PS carries MPEG-1/2 video; MP4 has no msmpeg4v3 object type.
         self.assertTrue(sms_supports(".mpg", "video", "mpeg2video"))
         self.assertFalse(sms_supports(".mp4", "video", "msmpeg4v3"))
+        # MP4/M4A: FFmpeg's 'ac-3' sample entry has no esds, so SMS finds no codec for it;
+        # FFmpeg 9 cannot mux Vorbis into MP4; MPEG-1/2 video is tagged 'mp4v' like MPEG-4.
+        from config import SMS_CONTAINER_CODECS
+        self.assertEqual(SMS_CONTAINER_CODECS[".mp4"], {"video": {"mpeg4"}, "audio": {"aac", "mp3"}})
+        self.assertEqual(SMS_CONTAINER_CODECS[".m4a"], {"video": set(), "audio": {"aac", "mp3"}})
         # An unlisted container means "no information", never "unsupported".
         self.assertTrue(sms_supports(".mkv", "video", "anything"))
 
