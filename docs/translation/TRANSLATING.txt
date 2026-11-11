@@ -56,6 +56,10 @@ they load as-is (new-feature lines show English until translated). They are the
 best reference for tone/length. (TR had a pre-existing duplicate line that was
 removed to realign it.)
 
+The original 269-entry SMS 2.9 packs (the lng/ folder of the source tree, and
+any SMS.lng from an older release) do NOT load in this build: the loader
+refuses a file that does not have exactly 311 entries.
+
 ==============================================================================
   LINE-BY-LINE REFERENCE  (line# | flags | English)
   The editable file SMS.lng has NO line numbers -- this is just a key.

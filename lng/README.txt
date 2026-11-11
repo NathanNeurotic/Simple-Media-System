@@ -1,6 +1,10 @@
-1. Rename your favorite file to SMS.lng (case sensitive!!!);
-2. Copy it to mc0:/SMS;
-3. Select it in the SMS menu;
+These are the original SMS 2.9 language packs (269 entries each), kept
+unchanged as their authors' work. They do NOT load in this build: its
+loader accepts only packs with exactly 311 entries and refuses these.
+
+Use the 311-entry packs in docs/translation/ instead (also published with
+every build as Simple-Media-System-languages.zip). Installation is
+described in docs/translation/TRANSLATING.txt.
 
 Authors are:
 
