@@ -651,6 +651,8 @@ static int PlayerControl_Scroll ( int aDir ) {
 
  lTime += lIncr;
 
+ if ( lTime < lpCont -> m_StartTime ) lTime = lpCont -> m_StartTime;
+
  lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos,  0 );
  lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, 10 );
 
@@ -672,7 +674,11 @@ static int PlayerControl_Scroll ( int aDir ) {
    retVal = 0;
    break;
 
-  } else if ( lTime == 0LL ) {
+  }  /* end if */
+
+  lFilePos = lpFileCtx -> m_CurPos;
+
+  if ( lTime == lpCont -> m_StartTime ) {
 
    s_Player.m_VideoTime = 0;
    s_Player.m_AudioTime = 0;
@@ -682,8 +688,6 @@ static int PlayerControl_Scroll ( int aDir ) {
    break;
 
   }  /* end if */
-
-  lFilePos = lpFileCtx -> m_CurPos;
 
   if (  s_Player.m_pVideoCodec -> Decode (
          lpStm -> m_pCodec, lpDispBuff, lpBuff
@@ -784,7 +788,7 @@ static int PlayerControl_Scroll ( int aDir ) {
 
   lTime += lIncr;
 
-  if ( lTime < 0 ) lTime = 0;
+  if ( lTime < lpCont -> m_StartTime ) lTime = lpCont -> m_StartTime;
 
   SMS_Codec_MPEG12_Reset ( SMS_MPEG12_RESET_DECODER );
 
