@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v7
     - name: Verify non-BDM (BDM=0) build links
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
           sh -c 'apk add --no-cache build-base git zip && make BDM=0 all'
 
   build:
@@ -114,7 +114,7 @@ jobs:
     # toolchain the project builds with locally).
     - name: Build (ps2dev v1.0 toolchain)
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
           sh -c 'apk add --no-cache build-base git zip && make all pack && make -C tools/mpeg_motion_probe'
 
     - name: Package
@@ -146,7 +146,7 @@ jobs:
     # blocking call. Shipped ALONGSIDE the release ELF, never instead of it.
     - name: Build diagnostic ELF (SMS_DIAG=1)
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_DIAG=1 all'
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_DIAG=1 all'
         cp bin/SMS.elf dist/Simple-Media-System-DIAG.elf
         ls -la dist
 
