@@ -1852,7 +1852,12 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
   apCtx -> Fill     = STIO_Fill;
 
   apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
-  if ( aStartPos > apCtx -> m_Size ) return 0;
+  if ( aStartPos > apCtx -> m_Size ) {
+   /* Refused, but the buffer is gone and read-ahead moved the descriptor:
+    * put it back at the cursor the caller keeps reading from. */
+   apCtx -> Seek ( apCtx, apCtx -> m_CurPos );
+   return 0;
+  }  /* end if */
 
   return apCtx -> Seek ( apCtx, aStartPos ) != -1;
 
