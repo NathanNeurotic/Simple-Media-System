@@ -607,9 +607,9 @@ static void Desktop_Render ( GUIObject* apObj, int aCtx ) {
  * shows as a black gap before the desktop lands. */
    _DecodeJellyfish ();
 
-/* Boot splash: fades in, holds ~1s, fades out to black ( all inside
- * _DrawSplash ). */
-   _DrawSplash ();
+/* Boot splash, first render only: fades in, holds ~1s, fades out to black ( all
+ * inside _DrawSplash ). */
+   if ( !s_Init ) _DrawSplash ();
 
    if (  _bgTexUnsafe ()  ) {
 /* HD DTV (720p/1080i): do NOT upload the full-screen background texture. At
