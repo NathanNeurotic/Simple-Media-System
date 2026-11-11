@@ -127,14 +127,10 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
 
  int          i, lnIdx = aSize / 16;
  uint32_t     lIdx, lTag, lFlags, lPos, lLen, lPerc;
- SMS_Stream*  lpBaseStm;
  _AVIStream*  lpStm;
  _AVIdxEntry* lpIndices;
  _AVIdxEntry* lpIndex;
- FileContext* lpFileCtx    = apCtx -> m_pFileCtx;
- int          lPrevIdx     = -1;
- int          lnSameIdx    =  1;
- int          lnMaxSameIdx = -1;
+ FileContext* lpFileCtx = apCtx -> m_pFileCtx;
 
  if ( lnIdx <= 0 ) return 0;
 
@@ -165,21 +161,6 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
 
   if ( lIdx >= apCtx -> m_nStm ) continue;
 
-  lpBaseStm = apCtx -> m_pStm[ lIdx ];
-
-  if ( lIdx == lPrevIdx )
-
-   lnSameIdx += 1;
-
-  else {
-
-   if ( lnMaxSameIdx < lnSameIdx && !( apCtx -> m_pStm[ lPrevIdx ] -> m_Flags & SMS_STRM_FLAGS_AUDIO ) ) lnMaxSameIdx = lnSameIdx;
-
-   lnSameIdx = 1;
-   lPrevIdx  = lIdx;
-
-  }  /* end else */
-
   lpStm = MYSTRM( apCtx -> m_pStm[ lIdx ] );
 
   lpIndices = SMS_Realloc (
@@ -198,14 +179,12 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
 
  }  /* end for */
 
- if ( lnMaxSameIdx < lnSameIdx ) lnMaxSameIdx = lnSameIdx;
-
  lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, 0 );
 
  GUI_UpdateStatus ();
  SMS_GUIClockResume ();
 
- return 1;//lnMaxSameIdx > 256 ? -1 : 1;
+ return 1;
 
 }  /* end _Load_idx1 */
 

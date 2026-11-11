@@ -162,7 +162,7 @@ int main(int argc,char **argv) {
  }
  if(open) while((got=cont.ReadPacket(&cont,&idx))>=0) {
   ++pkts;bytes+=got;mix(&idx,sizeof(idx));
-  if(pkt) { mix(&pkt->m_DTS,20);mix(pkt->m_pData,pkt->m_Size); }
+  if(pkt) { mix(&pkt->m_DTS,8);mix(&pkt->m_Size,12);mix(pkt->m_pData,pkt->m_Size); }
  }
  printf(" empty=%u pkts=%u bytes=%u sig=%016llx\n",empty,pkts,bytes,(unsigned long long)sig);
  return 0;
@@ -244,7 +244,12 @@ def case_packets(run):
         bad[where[6]:where[6] + len(patch)] = patch
         run(bad, open=1, pkts=len(parts) - 1, bytes=total - lost)
 
-cases = {"valid": case_valid, "packets": case_packets}
+def case_idx1(run):
+    data, where, parts = build()
+    total = sum(len(d) + (len(d) & 1) for _, d in parts)
+    run(data, open=1, seekable=1, idx=f"{FRAMES},{FRAMES}", pkts=len(parts), bytes=total)
+
+cases = {"valid": case_valid, "packets": case_packets, "idx1": case_idx1}
 with tempfile.TemporaryDirectory() as tmp:
     cfile, exe = Path(tmp) / "avi.c", Path(tmp) / "avi"
     cfile.write_text(prefix + source + tests)
@@ -257,4 +262,4 @@ with tempfile.TemporaryDirectory() as tmp:
     for name, case in cases.items():
         if args.case in ("all", name):
             case(lambda data, **want: probe(exe, tmp, data, **want))
-print("AVI: unindexed and OpenDML parsing and damaged media chunks passed")
+print("AVI: unindexed, idx1 and OpenDML parsing and damaged media chunks passed")
