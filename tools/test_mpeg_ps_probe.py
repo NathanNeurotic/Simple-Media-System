@@ -330,6 +330,15 @@ static void test_probe_retry(int secondary) {
  assert(c.m_pStm[1]->m_Flags & SMS_STRM_FLAGS_AUDIO);
  SMS_DestroyContainer(&c,0);
 }
+static void test_seek_picture_type(void) {
+ SMS_Container c={0};_MPEGPSContainer private={0};SMS_Stream stream={0};SMS_CodecContext codec={0};
+ /* A B picture whose vbv_delay bits 9:8 are 01, then an I picture with vbv_delay 0xffff. */
+ reset(0);pes(0xe0,(const unsigned char *)"\0\0\1\0\0\x18\x08\0",8);
+ pes(0xe0,(const unsigned char *)"\0\0\1\0\0\x0f\xff\xf8",8);file.m_Size=input_size;
+ c.m_pFileCtx=&file;c.m_pCtx=&private;c.m_Duration=1000;c.m_nStm=1;c.m_pStm[0]=&stream;
+ stream.m_pCodec=&codec;stream.m_pPktBuf=&codec;stream.m_ID=0x1e0;codec.m_Type=SMS_CodecTypeVideo;
+ assert(_Seek(&c,0,0,0)==8 && file.m_CurPos==15);
+}
 static void pes_pts(unsigned sid, unsigned pts, const unsigned char *p, unsigned n) {
  unsigned char b[32]={0x21|(pts>>29&0xe),pts>>22,pts>>14|1,pts>>7,pts<<1|1};
  unsigned at=input_size;
@@ -372,6 +381,7 @@ int main(int argc,char **argv) {
  if(!strcmp(which,"all") || !strcmp(which,"alignment")) test_packet_alignment();
  if(!strcmp(which,"all") || !strcmp(which,"probe-retry")) test_probe_retry(0);
  if(!strcmp(which,"all") || !strcmp(which,"probe-secondary")) test_probe_retry(1);
+ if(!strcmp(which,"all") || !strcmp(which,"seek-picture-type")) test_seek_picture_type();
  if(!strcmp(which,"all") || !strcmp(which,"probe-times")) test_probe_times();
  if(!strcmp(which,"all") || !strcmp(which,"probe-video-walk")) {
   test_probe_video_walk(1);test_probe_video_walk(2);

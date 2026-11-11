@@ -654,9 +654,11 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
     if ( lCode < 0 ) break;
 
+    /* picture_coding_type follows the 10-bit temporal reference; the four
+     * header bytes are read in little-endian order. */
     if ( lCode == 0x000001B8 || lCode == 0x000001B3 || (
           lCode == 0x00000100 && (
-           (  File_GetUInt ( lpFileCtx ) >> 19  ) & 3
+           (  File_GetUInt ( lpFileCtx ) >> 11  ) & 7
           ) == 1
          )
     ) {
