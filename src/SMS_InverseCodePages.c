@@ -212,6 +212,9 @@ static int _is_utf8 ( const char* apStr ) {
   } else if ( c >= 0xE0 && c <= 0xEF ) {                /* 3-byte */
    if (  (  ( unsigned char )apStr[ 0 ] & 0xC0  ) != 0x80 ||
          (  ( unsigned char )apStr[ 1 ] & 0xC0  ) != 0x80  ) return 0;
+   /* overlong ( would decode to NUL or a control byte ) or a UTF-16 surrogate */
+   if (  ( c == 0xE0 && ( unsigned char )apStr[ 0 ] < 0xA0  ) ||
+         ( c == 0xED && ( unsigned char )apStr[ 0 ] >= 0xA0 )  ) return 0;
    apStr += 2;
   } else return 0;                                      /* stray continuation or 4-byte */
 

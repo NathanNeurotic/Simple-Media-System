@@ -267,6 +267,15 @@ int main ( void ) {
   if ( strcmp ( s_Drawn, lMsg ) ) { printf ( "FAIL status converted a locale message\n" ); ++s_nFail; }
  }
 
+ /* Overlong 3-byte forms ( 1252 "a-grave euro ..." in an M3U line ) and surrogates are not
+  * UTF-8: decoding them would give NUL or a control byte that indexes outside the width table. */
+ {
+  static const char* lBad[] = { "x\340\200\200y.mp3", "x\340\200\205y.mp3", "x\355\240\200y.mp3" };
+  char lBuf[ 320 ];
+  for ( i = 0; i < 3; ++i )
+   if ( DisplayUTF8 ( lBad[ i ], lBuf, sizeof ( lBuf ) ) != lBad[ i ] ) { printf ( "FAIL invalid UTF-8 %d converted\n", i ); ++s_nFail; }
+ }
+
  free ( s_pDMASL );
  if ( s_nFail ) { printf ( "%d UTF-8 display mismatches\n", s_nFail ); return 1; }
  puts ( "UTF-8 display: status line, browser row, picture caption, menu items and player OSD draw accented UTF-8 names exactly like their 1252 form; ASCII and 1252 untouched" );
