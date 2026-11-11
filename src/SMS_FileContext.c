@@ -1758,6 +1758,9 @@ static int STIO_FillStm ( FileContext* apCtx ) {
     apCtx -> m_pPos = apCtx -> m_pEnd;
     return 0;
    }
+   /* fio keeps one result word for all calls, so this can be the count of a
+    * later call ( a copy's destination write ). Never publish past the file. */
+   if ( ( unsigned int )lnRead > apCtx -> m_Size - apCtx -> m_CurPos ) lnRead = apCtx -> m_Size - apCtx -> m_CurPos;
    lOldBuf            = apCtx -> m_CurBuf;
    apCtx -> m_CurBuf  = !apCtx -> m_CurBuf;
    apCtx -> m_pPos    = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
