@@ -30,7 +30,7 @@ Circle on a folder opens **Play all**.
 | Triangle | Stop and return to the browser. |
 | Left / Right | Rewind / fast-forward; within a normal audio track, seek. Playlist transport can change entries. |
 | Up / Down | Volume. |
-| Cross (video) | Toggle on-screen timer; exit fast-forward/rewind preview. |
+| Cross (video) | Cycle the on-screen display: elapsed time, time remaining, then a panel with the codecs, picture size, audio and free memory, then off. For a file that does not report its length, Cross only switches the elapsed time on and off. Also exits fast-forward/rewind preview. |
 | Square (video) | Cycle pan-scan/aspect modes. |
 | L1 / R1 (video) | Pan left / right; together reset pan/zoom. |
 | Circle (video) | Select V/A audio/video or S/V subtitle/video sync adjustment. |

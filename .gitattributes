@@ -15,6 +15,9 @@ docs-site/static/assets/ui/*.png binary
 docs/assets/ui/*.png binary
 wiki/*.md text eol=lf
 
+# Berion's SAS icons: exact bytes, never line-ending converted.
+ship/APP_SMS3/* binary
+
 # Custom for Visual Studio
 *.cs     diff=csharp
 

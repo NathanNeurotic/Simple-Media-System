@@ -72,7 +72,7 @@ static char g_SMSSMB[128]="mc0:/SMS/SMS.smb", s_pMC0SMC[128]="mc0:/SMS/SMS.cfg",
 static int g_MCSlot, s_CfgOnFS, s_CfgFallback, inits;
 
 /* fio: a file is reachable only while its device is mounted; "mass:" is unit 0 */
-static struct { char path[64]; const void *data; int size; } files[4];
+static struct { char path[160]; const void *data; int size; } files[4];
 static char mounted[4][8];
 static int nfiles, nmounted, position;
 static void mount(const char *device) { strcpy(mounted[nmounted++],device); }
@@ -135,6 +135,8 @@ static int checkConnectedMassDev(int unit) { char name[8]; sprintf(name,"mass%d:
 """ + "\n".join([
     optional(cfg, r"^int +g_BootDisplayMode[^\n]*"), optional(iop, r"^int +g_CfgLate;"),
     function(cfg, "_derive_smb_path"), function(cfg, "SMS_ConfigSetCWD"), function(cfg, "_mc_get_info"),
+    optional(cfg, r"^static int +s_CfgPtr [^\n]*"), optional(cfg, r"^static char s_CfgPtrName\[[^\n]*"),
+    function(cfg, "_follow_cfg_pointer") if "_follow_cfg_pointer" in cfg else "",
     line(cfg, r"^int SMS_MCPresent \([^\n]*\}"), line(cfg, r"^int SMS_ConfigOnFS \([^\n]*\}"),
     line(cfg, r"^const char\* SMS_ConfigPath \([^\n]*\}"), line(cfg, r"^int SMS_ConfigFallback \([^\n]*\}"),
     line(cfg, r"^void SMS_ConfigUseFSPath \([^\n]*\}"), function(cfg, "SMS_ConfigClearFS"),
@@ -146,7 +148,8 @@ int main(int argc,char **argv) {
  const char *boot=argv[1], *config=argv[2];
  int expected_inits=atoi(argv[7]), expected_mode=(int)strtol(argv[8],NULL,0);
  int lVideoMode=(int)strtol(argv[9],NULL,0);         /* SELECT+R1 / SELECT+R2 held at boot */
- assert(argc==10);
+ static char pointer_path[96];
+ assert(argc==10||argc==11);
  late=argv[5];
  SMS_LoadConfig();                                   /* nothing mounted: the built-in defaults */
  saved=g_Config; saved.m_Version=14; saved.m_DisplayMode=(int)strtol(argv[4],NULL,0);
@@ -154,10 +157,14 @@ int main(int argc,char **argv) {
  saved.m_DispDXDY[0][0]=8;                           /* the user moved the picture */
  memset(&g_Config,0,sizeof(g_Config));
  if(strcmp(config,"-")) add(config,&saved,896);
+ if(argc==11) {                                      /* SMSPATH.TXT next to the ELF */
+  normal(boot,pointer_path); strcpy(strrchr(pointer_path,'/')+1,"SMSPATH.TXT");
+  add(pointer_path,argv[10],(int)strlen(argv[10]));
+ }
 
  if(boot[0]=='m'&&boot[1]=='c') g_MCSlot=boot[2]-'0';
  SMS_ConfigSetCWD(boot);
- if(atoi(argv[6])) mount("mc0:");                    /* the card is the only device up this early */
+ if(atoi(argv[6])) mount(boot[0]=='m'&&boot[1]=='c'&&boot[2]=='1' ? "mc1:" : "mc0:");   /* the card is the only device up this early */
  if(!SMS_LoadConfig()) SMS_LoadConfig();             /* GUI_Initialize ( 1 ) */
  SMS_LocaleInit(); SMS_LocaleSet();
 """ + override + r"""
@@ -168,6 +175,8 @@ int main(int argc,char **argv) {
  assert(applied.m_DisplayMode==expected_mode && g_Config.m_DisplayMode==expected_mode);
  assert(!memcmp(&applied,&g_Config,offsetof(SMSConfig,m_ImgOffs)+sizeof(short)));   /* nothing loaded late is left unapplied */
  assert(g_Config.m_BrowserFlags&SMS_BF_UDFL);        /* the installed SMS.lng is still accepted */
+ { const char *c=SMS_ConfigPath(); size_t n=strlen(c)-7;   /* SMS.smb sits in the same folder as SMS.cfg */
+   assert(!strcmp(c+n,"SMS.cfg") && !strncmp(g_SMSSMB,c,n) && !strcmp(g_SMSSMB+n,"SMS.smb")); }
  return 0;
 }
 """
@@ -192,6 +201,29 @@ cases = [  # name, argv[0], SMS.cfg, saved skin, saved mode, late device, card, 
     ("host:, 1080i on the card, SELECT+R1", "host:SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 1, NTSC, NTSC),
     ("memory card, saved 1080i, SELECT+R1", "mc0:/SMS/SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 1, NTSC, NTSC),
 ]
+# SMSPATH.TXT next to the ELF ( the last argument is the file's text ).
+pointer_cases = [
+    ("APP_SMS3 on the card, SMSPATH.TXT names mc0:/SMS3/", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc0:/SMS3/\n"),
+    ("SMSPATH.TXT 'mc:' is the boot card ( mc1 )", "mc1:/APP_SMS3/SMS3.ELF", "mc1:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/SMS3"),
+    ("SMSPATH.TXT from a PC editor ( BOM, CRLF, spaces )", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "\ufeff  mc0:/SMS3  \r\nsecond line"),
+    ("USB, SMSPATH.TXT read again after the late mount", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/SMSCFG/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mass:/SMSCFG/"),
+    ("SMSPATH.TXT without a device is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "SMS3/"),
+    ("SMSPATH.TXT naming a card root is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc0:/"),
+    ("empty SMSPATH.TXT is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, " "),
+    ("USB, SMSPATH.TXT names a memory card", "mass:/APPS/APP_SMS3/SMS3.ELF", "mc0:/SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mc0:/SMS3/"),
+    # Only the cards and the boot device are up when the pointer is read: another device is ignored.
+    ("USB, SMSPATH.TXT naming mmce0: is ignored", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/APPS/APP_SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mmce0:/SMS/"),
+    ("card, SMSPATH.TXT naming mass0: is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mass0:/SMS/"),
+    # A memory card is mc:, mc0: or mc1: only, even when SMS started from a card.
+    ("card 1, SMSPATH.TXT names mc1:", "mc1:/APP_SMS3/SMS3.ELF", "mc1:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc1:/SMS3/"),
+    ("card, SMSPATH.TXT naming mc2: is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc2:/SMS3/"),
+    ("USB, SMSPATH.TXT naming mce0: is ignored", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/APPS/APP_SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mce0:/SMS/"),
+    # "mc:" grows by one character: the longest accepted line still keeps SMS.smb beside SMS.cfg.
+    ("117-character mc: line", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/" + "A" * 113 + "/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/" + "A" * 113),
+    ("118-character mc: line is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/" + "A" * 114),
+]
+if "_follow_cfg_pointer" in cfg:
+    cases += pointer_cases
 with tempfile.TemporaryDirectory() as temp:
     src = Path(temp) / "boot.c"
     src.write_text(harness)

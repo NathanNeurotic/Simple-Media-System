@@ -29,6 +29,10 @@ You need one file: the compiled `SMS.elf`. Grab it from the project's builds —
 
 The IOP driver modules SMS needs (USB, MX4SIO, HDD, MMCE, network and the rest) are **embedded inside the ELF**, so a single file is genuinely all you copy — there are no loose `.irx` files to place beside it.
 
+ℹ App packages for OPL, OSDMenu and memory cards
+
+ Each release also ships SMS as an app package, with icons by Berion. `Simple-Media-System-kit.zip` copies to the root of a USB drive, MX4SIO, MMCE or exFAT hard drive: SMS then appears in app lists that read `APPS/` (OPL, OSDMenu and others) as `APPS/APP_SMS3/SMS3.ELF`, and the kit includes the language packs. `APP_SMS3.zip` holds the same app folder alone. `APP_SMS3.psu` is the same folder as a memory-card save: install it with wLaunchELF's or Launchstation's PSU paste and it becomes `mc?:/APP_SMS3/`. To keep the settings out of the app folder, see [SMSPATH.TXT](https://nathanneurotic.github.io/Simple-Media-System/configuration.html#smspath).
+
 ℹ One file, many names
 
  You can rename the ELF to suit your loader (some setups expect `BOOT.ELF` on a memory card, for example). The program is the same regardless of the filename.

@@ -116,6 +116,7 @@ jobs:
         python3 tools/test_audio_formats.py
         python3 tools/test_ee_helpers.py
         python3 tools/test_skin_loading.py
+        python3 tools/test_sas_package.py
 
     - name: IRX ABI gate (dev9 v1.1 bindings)
       run: |
@@ -151,6 +152,13 @@ jobs:
         # an older release. Publishing them here means the packs a user downloads are always
         # the ones that match the ELF sitting next to them.
         ( cd docs/translation && zip -9 "$OLDPWD/dist/Simple-Media-System-languages.zip" SMS.lng SMS.lng_* TRANSLATING.txt )
+
+        # SAS app packages ( APP_SMS3.psu / .zip and the install kit ), built from the packed
+        # ELF as in Berion's package. title.cfg carries the tag name on a release and the
+        # same "Build <sha>" the About screen shows otherwise.
+        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then SAS_VERSION="$GITHUB_REF_NAME"; else SAS_VERSION="Build ${GITHUB_SHA:0:7}"; fi
+        python3 tools/package_sas.py --elf bin/SMS-packed.elf --output dist \
+          --version "$SAS_VERSION" --epoch "$(git log -1 --format=%ct HEAD)"
         ls -la dist
 
     # Diagnostic build, made AFTER the release one is already copied into dist/ so the
@@ -236,6 +244,15 @@ jobs:
           Python 3.9+ both dropped Windows 7), so this is a Qt5 / Python 3.8 build of the same app.
         - SMS-Media-Converter-Linux.zip -- Linux.
 
+        SAS APP PACKAGES (icons by Berion)
+
+        - Simple-Media-System-kit.zip -- full install kit: APPS/APP_SMS3/, APP_SMS3.psu, the
+          language packs and KIT-README.txt. Copy it to the root of a USB drive, MX4SIO, MMCE
+          or HDD.
+        - APP_SMS3.zip -- just the APP_SMS3 folder (SMS3.ELF, title.cfg and icons).
+        - APP_SMS3.psu -- the same folder as a memory-card save, for "Extract PSU" in
+          wLaunchELF or Launchstation.
+
         LANGUAGES
 
         - Simple-Media-System-languages.zip -- translations for this exact build. Pick your
@@ -268,7 +285,7 @@ jobs:
           dist/Simple-Media-System.elf \
           dist/Simple-Media-System-packed.elf \
           dist/Simple-Media-System-DIAG.elf \
-          dist/*.zip --clobber
+          dist/*.psu dist/*.zip --clobber
 
         # Advance the lightweight rolling tag explicitly, without allowing a
         # rewind or divergent update. Stable version tags are never touched.
@@ -286,5 +303,5 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release create "$GITHUB_REF_NAME" dist/Simple-Media-System.elf dist/Simple-Media-System-packed.elf dist/*.zip \
+        gh release create "$GITHUB_REF_NAME" dist/Simple-Media-System.elf dist/Simple-Media-System-packed.elf dist/*.psu dist/*.zip \
           --title "Simple-Media-System $GITHUB_REF_NAME" --generate-notes

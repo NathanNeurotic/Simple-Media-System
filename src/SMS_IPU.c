@@ -26,10 +26,13 @@
 #include "SMS_DXSB.h"
 #include "SMS_MPEG12.h"
 #include "SMS_VSync.h"
+#include "SMS_Player.h"
 
 #define IPUF_WS 0x00000001
 #define IPUF_PG 0x00000002
 #define IPUF_FL 0x00000040
+
+extern SMS_Player s_Player;
 
 IPUContext        g_IPUCtx;
 u64               s_DMAVIFDraw[ 16 ] __attribute__(   (  aligned( 64 )  )   );
@@ -748,19 +751,32 @@ retry:
 
   }  /* end else */
 
-  lImgSize = (   ( lTBW << 6 ) * (  ( aHeight + 31 ) & ~31  ) * ( 4 >> lf16 )   ) >> 8;
+/* Height rounds to a whole page row: 32 lines at 32-bit, 64 at 16-bit. Rounding 16-bit to 32
+ * under-counted heights such as 272 or 480: the last page row ran past the end of GS memory,
+ * wrapped onto the top of the screen buffer and was drawn over before the bottom rows were
+ * read ( lower-right corruption ), and with an odd TBW the texture also missed a page boundary. */
+  lImgSize = (   ( lTBW << 6 ) * (  ( aHeight + ( 32 << lf16 ) - 1 ) & -( 32 << lf16 )  ) * ( 4 >> lf16 )   ) >> 8;
   lVRAM    = 0x4000 - lImgSize;
-   
-  if ( !lf16 && g_GSCtx.m_VRAMFontPtr && lVRAM < g_GSCtx.m_VRAMPtr ) {
-   lf16 = 1;
-   goto retry;
-  }  /* end if */
 
-  if (  !lf16 && !g_GSCtx.m_VRAMFontPtr && (
-          lCRTMode == GSVideoMode_DTV_1920x1080I ||
-          lCRTMode == GSVideoMode_DTV_1280x720P
-         )
-  ) lVRAM = ( g_GSCtx.m_VRAMPtr2 << 5 ) - lImgSize + 352;
+/* Only when the texture does not fit above the screen buffer: Auto drops to 16-bit, in 720p and
+ * 1080i too ( before, those two always took the shared placement below, even when 32-bit fit ).
+ * That placement overlaps the bottom of the visible screen buffer, which flickers as each frame
+ * uploads, so it is left only for an explicit 32 bit choice and for a file with DXSB picture
+ * subtitles: IPU_DrawSub uploads those into the top 4 bits of the texture ( PSMT4HH ), which a
+ * 24-bit texture leaves free and a 16-bit one shows as picture. SMS_FLAGS_DXSB is settled before
+ * this runs ( set when the file opens, cleared when a subtitle file replaces DXSB ) and does not
+ * change during playback. */
+  if ( !lf16 && lVRAM < g_GSCtx.m_VRAMPtr ) {
+
+   if (  g_GSCtx.m_VRAMFontPtr || !(  ( g_Config.m_PlayerFlags & SMS_PF_C32 ) || ( s_Player.m_Flags & SMS_FLAGS_DXSB )  )  ) {
+    lf16 = 1;
+    goto retry;
+   }  /* end if */
+
+   if ( lCRTMode == GSVideoMode_DTV_1920x1080I || lCRTMode == GSVideoMode_DTV_1280x720P )
+    lVRAM = ( g_GSCtx.m_VRAMPtr2 << 5 ) - lImgSize + 352;
+
+  }  /* end if */
 
   if ( !g_GSCtx.m_DrawDelay )
    lVSync = SMS_EstimateVSync ( lf16, aWidth, aHeight );

@@ -19,8 +19,13 @@ through these in order.</p>
   open or may play only its supported audio track. Supported video is <b>AVI</b> (DivX / Xvid / MPEG-4 Part 2),
   <b>MP4</b> (<code>mp4v</code>, MPEG-4 Part 2), and <b>MPEG program streams</b> (MPEG-1/2,
   <code>.mpg</code>/<code>.mpeg</code>). H.264/AVC, H.265/HEVC, VP9, AV1 and WMV video are <b>not</b> supported —
-  re-encode those to MPEG-4 Part 2 first. See
-  <a href="video.html">Video Playback</a> for the full format table.</p></div>
+  re-encode those to MPEG-4 Part 2 first. An MP4 that plays sound with no picture usually holds H.264 (<code>avc1</code>)
+  video, so that result is expected. See <a href="video.html">Video Playback</a> for the full format table.</p>
+  <p>To see what a file holds, open it in <a href="https://mediaarea.net/en/MediaInfo">MediaInfo</a> on a PC (a tip from
+  TnA): <i>MPEG-4 Visual</i> is the supported MPEG-4 Part 2, <i>AVC</i> is H.264, and the details list QPel, GMC and
+  B-frames. On the PS2, press Cross during playback: the first press shows the elapsed time, the second the time
+  remaining and the third a panel with the video and audio codecs, picture size, audio rate and free memory. A file that
+  does not report its length skips the last two, so Cross only switches the elapsed time on and off.</p></div>
 
   <div class="step"><h3>Lower the bitrate and resolution</h3>
   <p>SMS rejects either video dimension above <b>1024 pixels</b>, but passing that check does not guarantee real-time
@@ -169,6 +174,13 @@ desktop artwork; the result can be a corrupted or garbled background on the desk
 the current theme at HD resolutions. Standard-definition output (480i) is not affected and is the recommended mode
 until this is resolved. If you do use an HD mode and the desktop looks wrong, switch the video/output mode back to
 480i.</p>
+<p id="hd-movie">Movies in 720p and 1080i: from this build, <b>Player settings → Color resolution: Auto</b> stores a
+movie frame in 16-bit colour whenever a 32-bit frame would not fit beside the screen image, and the frame is
+sized in whole video-memory pages. Before, a frame could overlap the bottom of the screen image and corrupt the
+lower right of the picture. Choosing <b>32 bit</b> keeps the old shared placement, which can still flicker there,
+so use Auto or 16 bit in HD. 1080i is now centred instead of leaving an unpainted band at the right and bottom.
+A large movie frame can still overlap in 1080i even at 16 bit. These changes have not been checked on a PS2
+yet.</p>
 
 <div class="callout info"><div class="h">ℹ Still stuck?</div>
 If none of the above matches your symptom, note exactly what you did, which device and file were involved, and what

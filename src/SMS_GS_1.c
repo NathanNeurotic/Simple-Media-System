@@ -50,23 +50,35 @@ static unsigned int s_CLUT[ 16 ]    __attribute__(  (  aligned( 64 )  )   );
  * Never shifts left or up -- a canvas at or beyond the raster gets no adjustment at all. The
  * user's own m_OffsetX / m_OffsetY still apply on top, so "Adjust image" behaves as before, and
  * since this is derived at init rather than stored, nothing is written into their config.
- * SD modes take the aMode test and come out byte-identical. 1080i is deliberately excluded: its
- * text is unreadable because the canvas is scanned out at half width ( g_XShift ), and moving
- * the canvas does nothing for that. */
+ * SD modes take the aMode test and come out byte-identical.
+ * 1080i has the same shortfall ( 1820x1018 in 1920x1080, anchored by DX 238 / DY 40 ): a 100
+ * column band on the right and 62 rows at the bottom. The player draws it at half width and
+ * the GS doubles it, so the width it covers is taken from GS_InitDC's DW ( w << ( 1920 / w - 1 ) ),
+ * and the vertical pad is kept even like every other DY change here, so the fields keep their order. */
 void GS_DisplayOffsets ( GSVideoMode aMode, int* apDX, int* apDY ) {
+
+ int lPadX = 0;
+ int lPadY = 0;
 
  *apDX = g_GSCtx.m_OffsetX;
  *apDY = g_GSCtx.m_OffsetY;
 
  if ( aMode == GSVideoMode_DTV_1280x720P ) {
 
-  int lPadX = (  1280 - ( int )g_GSCtx.m_PWidth   ) >> 1;
-  int lPadY = (   720 - ( int )g_GSCtx.m_PHeight  ) >> 1;
+  lPadX = (  1280 - ( int )g_GSCtx.m_PWidth   ) >> 1;
+  lPadY = (   720 - ( int )g_GSCtx.m_PHeight  ) >> 1;
 
-  if ( lPadX > 0 ) *apDX += lPadX;
-  if ( lPadY > 0 ) *apDY += lPadY;
+ } else if ( aMode == GSVideoMode_DTV_1920x1080I ) {
+
+  int lW = g_GSCtx.m_PWidth;
+
+  lPadX =    (  1920 - ( lW << ( 1920 / lW - 1 ) )  ) >> 1;
+  lPadY = (  (  1080 - ( int )g_GSCtx.m_PHeight  ) >> 1  ) & ~1;
 
  }  /* end if */
+
+ if ( lPadX > 0 ) *apDX += lPadX;
+ if ( lPadY > 0 ) *apDY += lPadY;
 
 }  /* end GS_DisplayOffsets */
 
