@@ -214,6 +214,10 @@ pointer_cases = [
     # Only the cards and the boot device are up when the pointer is read: another device is ignored.
     ("USB, SMSPATH.TXT naming mmce0: is ignored", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/APPS/APP_SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mmce0:/SMS/"),
     ("card, SMSPATH.TXT naming mass0: is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mass0:/SMS/"),
+    # A memory card is mc:, mc0: or mc1: only, even when SMS started from a card.
+    ("card 1, SMSPATH.TXT names mc1:", "mc1:/APP_SMS3/SMS3.ELF", "mc1:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc1:/SMS3/"),
+    ("card, SMSPATH.TXT naming mc2: is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc2:/SMS3/"),
+    ("USB, SMSPATH.TXT naming mce0: is ignored", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/APPS/APP_SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mce0:/SMS/"),
     # "mc:" grows by one character: the longest accepted line still keeps SMS.smb beside SMS.cfg.
     ("117-character mc: line", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/" + "A" * 113 + "/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/" + "A" * 113),
     ("118-character mc: line is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/" + "A" * 114),
