@@ -22,7 +22,12 @@
 
 extern char g_AboutData[] __attribute__(   (  section( ".text" )  )   );
 
-static char* s_About[ NSTR ] __attribute__(   (  section( ".bss" )  )   );
+#ifndef SMS_BUILD_ID
+# define SMS_BUILD_ID "local"
+#endif
+
+static char  s_BuildStr[] __attribute__(   (  aligned( 1 ), section( ".data" )  )   ) = "Build " SMS_BUILD_ID;   /* explicit section: keeps it out of the GP-relative window, which is full */
+static char* s_About[ NSTR + 1 ] __attribute__(   (  section( ".bss" )  )   );
 static int   s_Unhash;
 
 static void UnHash ( void ) {
@@ -53,6 +58,8 @@ static void UnHash ( void ) {
 
  }  /* end for */
 
+ s_About[ NSTR ] = s_BuildStr;   /* last line: which build this is */
+
 }  /* end UnHash */
 
 void About ( void ) {
@@ -79,7 +86,7 @@ void About ( void ) {
 
   GSContext_NewPacket ( 1, 0, GSPaintMethod_InitClear );
 
-  for ( i = 0; i < NSTR; ++i, lYY += 32 ) {
+  for ( i = 0; i <= NSTR; ++i, lYY += 32 ) {
 
    int lDW = 0;
 
@@ -121,7 +128,7 @@ void About ( void ) {
 
   lBtnCode = GUI_ReadButtons ();
 
-  if (  lY < NSTR * -32 || lBtnCode == SMS_PAD_TRIANGLE
+  if (  lY < ( NSTR + 1 ) * -32 || lBtnCode == SMS_PAD_TRIANGLE
                         || lBtnCode == RC_RESET
                         || lBtnCode == RC_STOP
                         || lBtnCode == RC_RETURN

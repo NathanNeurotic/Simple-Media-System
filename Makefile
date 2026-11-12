@@ -14,6 +14,11 @@ EE_LDFLAGS = -L$(PS2SDK)/sbv/lib -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib -L$(EE
 EE_LIBS    = -lpatches -lc -lkernel -lmf
 EE_CFLAGS := -Dmemset=mips_memset -Dmemcpy=mips_memcpy -D_EE -O2 -G8192 -mgpopt -Wall -mno-check-zero-division
 
+# Short commit id shown at the end of the About screen so a tester can tell builds apart.
+# CI passes the commit; a local build says "local".
+SMS_BUILD_ID ?= local
+EE_CFLAGS += -DSMS_BUILD_ID=\"$(SMS_BUILD_ID)\"
+
 EE_OBJS  = main.o SMS_OS.o SMS_GS_0.o SMS_GS_1.o SMS_GS_2.o SMS_Timer.o           \
            SMS_MP123Core.o SMS_FileContext.o  SMS_H263.o                          \
            SMS_DSP.o SMS_DSP_MMI.o SMS_MPEG.o SMS_MPEG4.o SMS_VLC.o SMS_IPU.o     \

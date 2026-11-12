@@ -127,8 +127,9 @@ jobs:
     # toolchain the project builds with locally).
     - name: Build (ps2dev v1.0 toolchain)
       run: |
+        BID=$(echo "$GITHUB_SHA" | cut -c1-7)
         docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
-          sh -c 'apk add --no-cache build-base git zip && make all pack && make -C tools/mpeg_motion_probe'
+          sh -c 'apk add --no-cache build-base git zip && make SMS_BUILD_ID='"$BID"' all pack && make -C tools/mpeg_motion_probe'
 
     - name: Package
       run: |
@@ -159,7 +160,8 @@ jobs:
     # blocking call. Shipped ALONGSIDE the release ELF, never instead of it.
     - name: Build diagnostic ELF (SMS_DIAG=1)
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_DIAG=1 all'
+        BID=$(echo "$GITHUB_SHA" | cut -c1-7)
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_BUILD_ID='"$BID"' SMS_DIAG=1 all'
         cp bin/SMS.elf dist/Simple-Media-System-DIAG.elf
         ls -la dist
 
