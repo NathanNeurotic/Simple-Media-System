@@ -159,7 +159,7 @@ picture that doesn't sync — the defaults are fine for standard NTSC/PAL. Chang
 <tbody>
 <tr><td><b>Display height</b></td><td>The output framebuffer height in scanlines.</td></tr>
 <tr><td><b>Display width</b></td><td>The output framebuffer width in pixels.</td></tr>
-<tr><td><b>Color resolution</b></td><td>Framebuffer colour depth (also selectable from the Player menu). See <a href="#colour-res">Color resolution</a>.</td></tr>
+<tr><td><b>Color resolution</b></td><td>The screen image's colour depth. A separate setting from <a href="#colour-res">Player settings → Color resolution</a>, which sets the depth of each movie frame.</td></tr>
 <tr><td><b>Synch. parameter 1 (video)</b></td><td>Fine video-sync timing for the current mode. Adjust only if the picture rolls or is off-centre.</td></tr>
 <tr><td><b>Synch. parameter 2 (GUI)</b></td><td>The equivalent sync tuning for the on-screen GUI layer.</td></tr>
 <tr><td><b>Synch. parameter 3 (Audio)</b></td><td>The equivalent sync tuning for audio timing.</td></tr>
@@ -234,7 +234,7 @@ page for the full walkthrough.</p>
 <tr><td><b>S/PDIF - Dolby Digital/DTS</b></td><td>Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2.</td><td>on / off</td></tr>
 <tr><td><b>Video auto 2:2 pulldown</b></td><td>Applies 2:2 pulldown handling for correct playback of certain video cadences.</td><td>on / off</td></tr>
 <tr><td><b>Default volume</b></td><td>The starting playback volume level.</td><td>value</td></tr>
-<tr><td id="colour-res"><b>Color resolution</b></td><td>Framebuffer colour depth used during playback / GUI. Higher looks better; lower saves video memory.</td><td>16 bit / 32 bit</td></tr>
+<tr><td id="colour-res"><b>Color resolution</b></td><td>The colour depth of each movie frame in video memory. <b>Auto</b> uses 32 bit when the frame fits beside the screen image and 16 bit when it does not, which is common in 720p and 1080i. <b>32 bit</b> always uses full colour; in 720p and 1080i that can share memory with the bottom of the screen and corrupt or flicker the lower part of the picture. <b>16 bit</b> always saves memory, with slight colour banding.</td><td>Auto / 32 bit / 16 bit</td></tr>
 </tbody>
 </table>
 

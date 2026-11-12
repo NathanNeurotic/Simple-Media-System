@@ -75,7 +75,8 @@ def run_case(name, expected, **overrides):
         (tmp / "dist").mkdir()
         for asset in ("Simple-Media-System.elf", "Simple-Media-System-packed.elf",
                       "Simple-Media-System-DIAG.elf", "Simple-Media-System.zip",
-                      "Simple-Media-System-languages.zip"):
+                      "Simple-Media-System-languages.zip", "Simple-Media-System-kit.zip",
+                      "APP_SMS3.zip", "APP_SMS3.psu"):
             (tmp / "dist" / asset).write_bytes(b"fixture")
         # Use fail-fast Bash behavior as on GitHub Actions.
         # A shell function also works with Python's Windows path under Git Bash.

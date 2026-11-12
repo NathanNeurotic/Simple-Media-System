@@ -172,6 +172,67 @@ void SMS_ConfigSetCWD ( const char* apELFPath ) {
 
 }  /* end SMS_ConfigSetCWD */
 
+/* Settings pointer, wLaunchELF CNF_Path style: a one-line text file SMSPATH.TXT next to the
+ * ELF names the folder that holds SMS.cfg ( and SMS.smb, which follows it ), e.g. "mc0:/SMS3/",
+ * so an APP_ folder can stay clean. "mc:" means the card SMS booted from. No file, an unreadable
+ * device ( not mounted yet on the early pass, read again after the late mount ) or a line that
+ * is not a device path leaves the config in the ELF's folder. Fonts, skins, palette, language
+ * and IPCONFIG.DAT do not move. Only SMS_LoadConfig calls this, so it re-runs idempotently. */
+/* Both in .data, as is every literal below that is not already in this file: with -G8192 a new
+ * string literal lands in the GP-relative small-data window, which has no room left. */
+static int  s_CfgPtr         __attribute__(   (  section( ".data" )  )   );   /* 1 = SMS.cfg comes from SMSPATH.TXT */
+static char s_CfgPtrName[ 12 ] __attribute__(   (  section( ".data" )  )   ) = "SMSPATH.TXT";
+
+static void _follow_cfg_pointer ( void ) {
+
+ char lBuf[ 128 ];
+ int  lFD, lLen, lBeg, lEnd, lOut;
+
+ if (  !g_pBootDir[ 0 ] || strlen ( g_pBootDir ) > sizeof ( lBuf ) - sizeof ( s_CfgPtrName )  ) return;
+
+ strcpy ( lBuf, g_pBootDir );
+ strcat ( lBuf, s_CfgPtrName );
+
+ if (  ( lFD = fioOpen ( lBuf, O_RDONLY ) ) < 0  ) return;
+
+ lLen = fioRead (  lFD, lBuf, sizeof ( lBuf ) - 1  );
+ fioClose ( lFD );
+
+ if ( lLen <= 0 ) return;
+
+ lBeg = 0;   /* skip a UTF-8 BOM ( EF BB BF ) from a PC editor */
+ if (  lLen >= 3 && ( unsigned char )lBuf[ 0 ] == 0xEF && ( unsigned char )lBuf[ 1 ] == 0xBB && ( unsigned char )lBuf[ 2 ] == 0xBF  ) lBeg = 3;
+
+ for ( ; lBeg < lLen && ( lBuf[ lBeg ] == ' ' || lBuf[ lBeg ] == '\t' ); ++lBeg );
+ for ( lEnd = lBeg; lEnd < lLen && ( unsigned char )lBuf[ lEnd ] >= ' '; ++lEnd );   /* first line only */
+ while ( lEnd > lBeg && lBuf[ lEnd - 1 ] == ' ' ) --lEnd;
+
+ for ( lOut = lBeg; lOut < lEnd && lOut < lBeg + 8 && lBuf[ lOut ] != ':'; ++lOut );
+
+ if ( lOut >= lEnd || lBuf[ lOut ] != ':' || lOut == lBeg ) return;   /* needs a "<device>:" prefix */
+ if (  lOut + 1 >= lEnd || ( lOut + 2 == lEnd && lBuf[ lOut + 1 ] == '/' )  ) return;   /* and a folder: never a card root */
+ if ( lEnd - lBeg > ( int )sizeof ( s_pMC0SMC ) - 10 ) return;        /* path + '/' + "SMS.cfg" must fit */
+
+ lBuf[ lEnd ] = '\x00';
+ lOut = 0;
+
+ if ( lBuf[ lBeg ] == 'm' && lBuf[ lBeg + 1 ] == 'c' && lBuf[ lBeg + 2 ] == ':' ) {   /* "mc:" -> the card SMS booted from */
+  s_pMC0SMC[ 0 ] = 'm'; s_pMC0SMC[ 1 ] = 'c'; s_pMC0SMC[ 2 ] = ( char )( '0' + g_MCSlot );
+  lOut  = 3;
+  lBeg += 2;
+ }  /* end if */
+
+ while ( lBeg < lEnd ) s_pMC0SMC[ lOut++ ] = lBuf[ lBeg++ ];
+
+ if ( s_pMC0SMC[ lOut - 1 ] != '/' && s_pMC0SMC[ lOut - 1 ] != ':' ) s_pMC0SMC[ lOut++ ] = '/';
+
+ strcpy ( &s_pMC0SMC[ lOut ], "SMS.cfg" );
+
+ s_CfgPtr = 1;
+ _derive_smb_path ();
+
+}  /* end _follow_cfg_pointer */
+
 /* CWD-first asset probe. On a re-mountable FS boot ( g_pBootDir set ) where
  * "<bootdir><apName>" exists, copy that fio path into apBuf and return 1. Return 0
  * ( the CWD copy is absent, or a boot with no usable CWD: cdrom / host / SMB ) ->
@@ -517,6 +578,7 @@ void SMS_ConfigClearFS ( void ) {
  strcpy ( s_pMC0SMC, "mc0:/SMS/SMS.cfg" );
  s_CfgOnFS       = 0;
  s_CfgFallback   = 1;
+ s_CfgPtr        = 0;
  g_pBootDir[ 0 ] = '\x00';
  _derive_smb_path ();
 }  /* end SMS_ConfigClearFS */
@@ -602,6 +664,8 @@ int SMS_LoadConfig ( void  ) {
 
  SMS_ListPushBack (  g_Config.m_pSkinList = SMS_ListInit (), g_EmptyStr  );
  SMS_ListPushBack (  g_Config.m_pMBFList  = SMS_ListInit (), g_EmptyStr  );
+
+ if ( s_CfgOnFS ) _follow_cfg_pointer ();
 
 #ifdef BDM
  lRes = s_CfgOnFS ? 0 : _mc_get_info ();
@@ -811,7 +875,22 @@ int SMS_SaveConfig ( void ) {
 
  if ( s_CfgOnFS ) {   /* non-mc boot: write settings next to the ELF, no memory-card save/icon */
 
-  int lFD = fioOpen ( s_pMC0SMC, O_WRONLY | O_CREAT );
+  int lFD;
+
+  if ( s_CfgPtr ) {   /* SMSPATH.TXT may name a folder that does not exist yet ( mc0:/SMS3 ): make it */
+
+   char lDir[ 128 ];
+   int  lCut = strlen ( s_pMC0SMC ) - 8;   /* index of the '/' before "SMS.cfg" */
+
+   if ( lCut > 0 && s_pMC0SMC[ lCut ] == '/' && s_pMC0SMC[ lCut - 1 ] != ':' ) {
+    memcpy ( lDir, s_pMC0SMC, lCut );
+    lDir[ lCut ] = '\x00';
+    fioMkdir ( lDir );   /* an existing folder just fails; the open below is what counts */
+   }  /* end if */
+
+  }  /* end if */
+
+  lFD = fioOpen ( s_pMC0SMC, O_WRONLY | O_CREAT );
 
 /* A USB replug re-enumerates the bus, so the boot drive can renumber ( massN
  * shifts to a different unit ), leaving the config path -- pinned to the boot

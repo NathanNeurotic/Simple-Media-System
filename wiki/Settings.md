@@ -122,7 +122,7 @@ These control the raw output resolution and timing. They are for advanced users 
 | --- | --- |
 | **Display height** | The output framebuffer height in scanlines. |
 | **Display width** | The output framebuffer width in pixels. |
-| **Color resolution** | Framebuffer colour depth (also selectable from the Player menu). See [Color resolution](https://nathanneurotic.github.io/Simple-Media-System/settings.html#colour-res). |
+| **Color resolution** | The screen image's colour depth. A separate setting from [Player settings → Color resolution](https://nathanneurotic.github.io/Simple-Media-System/settings.html#colour-res), which sets the depth of each movie frame. |
 | **Synch. parameter 1 (video)** | Fine video-sync timing for the current mode. Adjust only if the picture rolls or is off-centre. |
 | **Synch. parameter 2 (GUI)** | The equivalent sync tuning for the on-screen GUI layer. |
 | **Synch. parameter 3 (Audio)** | The equivalent sync tuning for audio timing. |
@@ -195,7 +195,7 @@ SMS shows external subtitle files over video. These options control loading, loo
 | **S/PDIF - Dolby Digital/DTS** | Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2. | on / off |
 | **Video auto 2:2 pulldown** | Applies 2:2 pulldown handling for correct playback of certain video cadences. | on / off |
 | **Default volume** | The starting playback volume level. | value |
-| **Color resolution** | Framebuffer colour depth used during playback / GUI. Higher looks better; lower saves video memory. | 16 bit / 32 bit |
+| **Color resolution** | The colour depth of each movie frame in video memory. **Auto** uses 32 bit when the frame fits beside the screen image and 16 bit when it does not, which is common in 720p and 1080i. **32 bit** always uses full colour; in 720p and 1080i that can share memory with the bottom of the screen and corrupt or flicker the lower part of the picture. **16 bit** always saves memory, with slight colour banding. | Auto / 32 bit / 16 bit |
 
 ### On-screen extras & scroll bar
 

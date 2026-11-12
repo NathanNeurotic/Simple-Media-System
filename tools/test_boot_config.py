@@ -135,6 +135,8 @@ static int checkConnectedMassDev(int unit) { char name[8]; sprintf(name,"mass%d:
 """ + "\n".join([
     optional(cfg, r"^int +g_BootDisplayMode[^\n]*"), optional(iop, r"^int +g_CfgLate;"),
     function(cfg, "_derive_smb_path"), function(cfg, "SMS_ConfigSetCWD"), function(cfg, "_mc_get_info"),
+    optional(cfg, r"^static int +s_CfgPtr [^\n]*"), optional(cfg, r"^static char s_CfgPtrName\[[^\n]*"),
+    function(cfg, "_follow_cfg_pointer") if "_follow_cfg_pointer" in cfg else "",
     line(cfg, r"^int SMS_MCPresent \([^\n]*\}"), line(cfg, r"^int SMS_ConfigOnFS \([^\n]*\}"),
     line(cfg, r"^const char\* SMS_ConfigPath \([^\n]*\}"), line(cfg, r"^int SMS_ConfigFallback \([^\n]*\}"),
     line(cfg, r"^void SMS_ConfigUseFSPath \([^\n]*\}"), function(cfg, "SMS_ConfigClearFS"),
@@ -146,7 +148,8 @@ int main(int argc,char **argv) {
  const char *boot=argv[1], *config=argv[2];
  int expected_inits=atoi(argv[7]), expected_mode=(int)strtol(argv[8],NULL,0);
  int lVideoMode=(int)strtol(argv[9],NULL,0);         /* SELECT+R1 / SELECT+R2 held at boot */
- assert(argc==10);
+ static char pointer_path[96];
+ assert(argc==10||argc==11);
  late=argv[5];
  SMS_LoadConfig();                                   /* nothing mounted: the built-in defaults */
  saved=g_Config; saved.m_Version=14; saved.m_DisplayMode=(int)strtol(argv[4],NULL,0);
@@ -154,10 +157,14 @@ int main(int argc,char **argv) {
  saved.m_DispDXDY[0][0]=8;                           /* the user moved the picture */
  memset(&g_Config,0,sizeof(g_Config));
  if(strcmp(config,"-")) add(config,&saved,896);
+ if(argc==11) {                                      /* SMSPATH.TXT next to the ELF */
+  normal(boot,pointer_path); strcpy(strrchr(pointer_path,'/')+1,"SMSPATH.TXT");
+  add(pointer_path,argv[10],(int)strlen(argv[10]));
+ }
 
  if(boot[0]=='m'&&boot[1]=='c') g_MCSlot=boot[2]-'0';
  SMS_ConfigSetCWD(boot);
- if(atoi(argv[6])) mount("mc0:");                    /* the card is the only device up this early */
+ if(atoi(argv[6])) mount(boot[0]=='m'&&boot[1]=='c'&&boot[2]=='1' ? "mc1:" : "mc0:");   /* the card is the only device up this early */
  if(!SMS_LoadConfig()) SMS_LoadConfig();             /* GUI_Initialize ( 1 ) */
  SMS_LocaleInit(); SMS_LocaleSet();
 """ + override + r"""
@@ -192,6 +199,18 @@ cases = [  # name, argv[0], SMS.cfg, saved skin, saved mode, late device, card, 
     ("host:, 1080i on the card, SELECT+R1", "host:SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 1, NTSC, NTSC),
     ("memory card, saved 1080i, SELECT+R1", "mc0:/SMS/SMS.ELF", "mc0:/SMS/SMS.cfg", "-", HD, "-", 1, 1, NTSC, NTSC),
 ]
+# SMSPATH.TXT next to the ELF ( the last argument is the file's text ).
+pointer_cases = [
+    ("APP_SMS3 on the card, SMSPATH.TXT names mc0:/SMS3/", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc0:/SMS3/\n"),
+    ("SMSPATH.TXT 'mc:' is the boot card ( mc1 )", "mc1:/APP_SMS3/SMS3.ELF", "mc1:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/SMS3"),
+    ("SMSPATH.TXT from a PC editor ( BOM, CRLF, spaces )", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "\ufeff  mc0:/SMS3  \r\nsecond line"),
+    ("USB, SMSPATH.TXT read again after the late mount", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/SMSCFG/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mass:/SMSCFG/"),
+    ("SMSPATH.TXT without a device is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "SMS3/"),
+    ("SMSPATH.TXT naming a card root is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc0:/"),
+    ("empty SMSPATH.TXT is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, " "),
+]
+if "_follow_cfg_pointer" in cfg:
+    cases += pointer_cases
 with tempfile.TemporaryDirectory() as temp:
     src = Path(temp) / "boot.c"
     src.write_text(harness)

@@ -12,7 +12,9 @@ SMS decodes video in software on the Emotion Engine and uses the PS2's **IPU** f
 
 ### Confirm the format is supported
 
-SMS plays a specific set of containers and codecs. If a file uses anything outside this list, it will fail to open or may play only its supported audio track. Supported video is **AVI** (DivX / Xvid / MPEG-4 Part 2), **MP4** (`mp4v`, MPEG-4 Part 2), and **MPEG program streams** (MPEG-1/2, `.mpg`/`.mpeg`). H.264/AVC, H.265/HEVC, VP9, AV1 and WMV video are **not** supported — re-encode those to MPEG-4 Part 2 first. See [Video Playback](https://nathanneurotic.github.io/Simple-Media-System/video.html) for the full format table.
+SMS plays a specific set of containers and codecs. If a file uses anything outside this list, it will fail to open or may play only its supported audio track. Supported video is **AVI** (DivX / Xvid / MPEG-4 Part 2), **MP4** (`mp4v`, MPEG-4 Part 2), and **MPEG program streams** (MPEG-1/2, `.mpg`/`.mpeg`). H.264/AVC, H.265/HEVC, VP9, AV1 and WMV video are **not** supported — re-encode those to MPEG-4 Part 2 first. An MP4 that plays sound with no picture usually holds H.264 (`avc1`) video, so that result is expected. See [Video Playback](https://nathanneurotic.github.io/Simple-Media-System/video.html) for the full format table.
+
+To see what a file holds, open it in [MediaInfo](https://mediaarea.net/en/MediaInfo) on a PC (a tip from TnA): *MPEG-4 Visual* is the supported MPEG-4 Part 2, *AVC* is H.264, and the details list QPel, GMC and B-frames. On the PS2, press Cross during playback: the first press shows the elapsed time, the second the time remaining and the third a panel with the video and audio codecs, picture size, audio rate and free memory.
 
 ### Lower the bitrate and resolution
 
@@ -128,6 +130,8 @@ Known issue in HD output modes
  In the two high-definition modes (720p and 1080i) SMS does not draw the desktop wallpaper at all — it paints a plain gradient background instead. This is deliberate: the HD framebuffer leaves no room in VRAM for the full-screen artwork, and forcing it there used to comb the text and leave black bars. Everything else works normally; if you want the artwork, use a standard-definition mode (480i/480p/576p), all of which are unaffected.
 
 HD modes use a much larger framebuffer than standard definition, which leaves little room for the full-screen desktop artwork; the result can be a corrupted or garbled background on the desktop. This is a known, open issue in the current theme at HD resolutions. Standard-definition output (480i) is not affected and is the recommended mode until this is resolved. If you do use an HD mode and the desktop looks wrong, switch the video/output mode back to 480i.
+
+Movies in 720p and 1080i: from this build, **Player settings → Color resolution: Auto** stores a movie frame in 16-bit colour whenever a 32-bit frame would not fit beside the screen image, and the frame is sized in whole video-memory pages. Before, a frame could overlap the bottom of the screen image and corrupt the lower right of the picture. Choosing **32 bit** keeps the old shared placement, which can still flicker there, so use Auto or 16 bit in HD. 1080i is now centred instead of leaving an unpainted band at the right and bottom. A large movie frame can still overlap in 1080i even at 16 bit. These changes have not been checked on a PS2 yet.
 
 ℹ Still stuck?
 

@@ -748,19 +748,28 @@ retry:
 
   }  /* end else */
 
-  lImgSize = (   ( lTBW << 6 ) * (  ( aHeight + 31 ) & ~31  ) * ( 4 >> lf16 )   ) >> 8;
+/* Height rounds to a whole page row: 32 lines at 32-bit, 64 at 16-bit. Rounding 16-bit to 32
+ * under-counted heights such as 272 or 480: the last page row ran past the end of GS memory,
+ * wrapped onto the top of the screen buffer and was drawn over before the bottom rows were
+ * read ( lower-right corruption ), and with an odd TBW the texture also missed a page boundary. */
+  lImgSize = (   ( lTBW << 6 ) * (  ( aHeight + ( 32 << lf16 ) - 1 ) & -( 32 << lf16 )  ) * ( 4 >> lf16 )   ) >> 8;
   lVRAM    = 0x4000 - lImgSize;
-   
-  if ( !lf16 && g_GSCtx.m_VRAMFontPtr && lVRAM < g_GSCtx.m_VRAMPtr ) {
-   lf16 = 1;
-   goto retry;
-  }  /* end if */
 
-  if (  !lf16 && !g_GSCtx.m_VRAMFontPtr && (
-          lCRTMode == GSVideoMode_DTV_1920x1080I ||
-          lCRTMode == GSVideoMode_DTV_1280x720P
-         )
-  ) lVRAM = ( g_GSCtx.m_VRAMPtr2 << 5 ) - lImgSize + 352;
+/* Only when the texture does not fit above the screen buffer: Auto drops to 16-bit, in 720p and
+ * 1080i too ( before, those two always took the shared placement below, even when 32-bit fit ).
+ * That placement overlaps the bottom of the visible screen buffer, which flickers as each frame
+ * uploads, so it is left only for an explicit 32 bit choice. */
+  if ( !lf16 && lVRAM < g_GSCtx.m_VRAMPtr ) {
+
+   if (  g_GSCtx.m_VRAMFontPtr || !( g_Config.m_PlayerFlags & SMS_PF_C32 )  ) {
+    lf16 = 1;
+    goto retry;
+   }  /* end if */
+
+   if ( lCRTMode == GSVideoMode_DTV_1920x1080I || lCRTMode == GSVideoMode_DTV_1280x720P )
+    lVRAM = ( g_GSCtx.m_VRAMPtr2 << 5 ) - lImgSize + 352;
+
+  }  /* end if */
 
   if ( !g_GSCtx.m_DrawDelay )
    lVSync = SMS_EstimateVSync ( lf16, aWidth, aHeight );

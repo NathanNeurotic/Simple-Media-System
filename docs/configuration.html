@@ -31,6 +31,14 @@
 </tbody></table>
 <p>Examples: <code>mass0:/APPS/SMS/SMS.elf</code> normally uses <code>mass0:/APPS/SMS/SMS.cfg</code>; <code>mc1:/APPS/SMS.elf</code> normally uses <code>mc1:/APPS/SMS.cfg</code>. BDM mass numbering can change across boots. A UDPFS server must permit writes for config saved there; an unreachable/read-only boot source can cause fallback.</p>
 <p>SMS remounts filesystem boot devices before its second settings load. That is why a saved skin or display setting may load later than the first boot screen. The October repaint fix addresses that sequence; <a href="known-issues.html#skin">the reported restart case still needs acceptance</a>.</p>
+<h2 id="smspath">Keep settings in another folder: SMSPATH.TXT</h2>
+<p>To keep <code>SMS.cfg</code> and <code>SMS.smb</code> somewhere other than the launch folder, put a one-line text file named <code>SMSPATH.TXT</code> beside the ELF that names the folder, in the style of wLaunchELF's CNF path. For example, for an <code>APPS/APP_SMS3/</code> install:</p>
+<pre>mc0:/SMS3/</pre>
+<ul><li><code>mc:</code> means the memory card SMS started from, so <code>mc:/SMS3/</code> follows the card between slots.</li>
+<li>The line needs a device and a folder: a device root such as <code>mc0:/</code> is ignored, and so is an empty or unreadable file. A UTF-8 byte-order mark and Windows line endings are fine.</li>
+<li>SMS creates the folder on the first save (one level only). On a memory card it also writes <code>icon.sys</code> and <code>SMS.icn</code> there when the folder has none, so the card browser shows the SMS icon. It never overwrites an existing icon.</li>
+<li>Only the settings move. Fonts, skins, the language file and <code>IPCONFIG.DAT</code> stay where they are.</li>
+<li>A hard-drive (<code>hdd0:</code>) folder is not supported. SMS reads <code>SMSPATH.TXT</code> only when it started from a device it can read again after start-up, as in the first row of the table above.</li></ul>
 <h2 id="network-files">IPCONFIG.DAT is separate</h2>
 <p>The network editor saves the PS2's static address/mask/gateway to <code>mc?:/SYS-CONF/IPCONFIG.DAT</code> when the configured memory card is usable. Without a card it uses the ELF's folder. Startup probes the boot-folder copy and the card fallback; a stale boot-folder copy can therefore matter. This file does not simply follow <code>SMS.cfg</code> into every fallback directory.</p>
 <p><code>SMS.smb</code> stores SMB server settings, including credentials, beside the resolved <code>SMS.cfg</code>. Keep your personal configuration out of public bug-report attachments or remove credentials before sharing it.</p>

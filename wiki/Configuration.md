@@ -14,6 +14,20 @@ Examples: `mass0:/APPS/SMS/SMS.elf` normally uses `mass0:/APPS/SMS/SMS.cfg`; `mc
 
 SMS remounts filesystem boot devices before its second settings load. That is why a saved skin or display setting may load later than the first boot screen. The October repaint fix addresses that sequence; [the reported restart case still needs acceptance](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#skin).
 
+## Keep settings in another folder: SMSPATH.TXT
+
+To keep `SMS.cfg` and `SMS.smb` somewhere other than the launch folder, put a one-line text file named `SMSPATH.TXT` beside the ELF that names the folder, in the style of wLaunchELF's CNF path. For example, for an `APPS/APP_SMS3/` install:
+
+```
+mc0:/SMS3/
+```
+
+- `mc:` means the memory card SMS started from, so `mc:/SMS3/` follows the card between slots.
+- The line needs a device and a folder: a device root such as `mc0:/` is ignored, and so is an empty or unreadable file. A UTF-8 byte-order mark and Windows line endings are fine.
+- SMS creates the folder on the first save (one level only). On a memory card it also writes `icon.sys` and `SMS.icn` there when the folder has none, so the card browser shows the SMS icon. It never overwrites an existing icon.
+- Only the settings move. Fonts, skins, the language file and `IPCONFIG.DAT` stay where they are.
+- A hard-drive (`hdd0:`) folder is not supported. SMS reads `SMSPATH.TXT` only when it started from a device it can read again after start-up, as in the first row of the table above.
+
 ## IPCONFIG.DAT is separate
 
 The network editor saves the PS2's static address/mask/gateway to `mc?:/SYS-CONF/IPCONFIG.DAT` when the configured memory card is usable. Without a card it uses the ELF's folder. Startup probes the boot-folder copy and the card fallback; a stale boot-folder copy can therefore matter. This file does not simply follow `SMS.cfg` into every fallback directory.

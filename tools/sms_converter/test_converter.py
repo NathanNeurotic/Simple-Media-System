@@ -98,6 +98,32 @@ class TestSMSConverter(unittest.TestCase):
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["29.97"], "30000/1001")
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["59.94"], "60000/1001")
 
+    def test_source_frame_rate_is_kept_up_to_30(self):
+        from config import FPS_SOURCE
+        from ffmpeg_utils import source_fps_choice
+
+        def info(avg, r="0/0"):
+            return {"streams": [{"codec_type": "video", "avg_frame_rate": avg, "r_frame_rate": r}]}
+
+        cases = {"24000/1001": "23.976", "24/1": "24", "25/1": "25", "30000/1001": "29.97",
+                 "30/1": "30", "48/1": "24", "50/1": "25", "60000/1001": "29.97", "60/1": "30",
+                 "15/1": "30", "0/0": "30"}
+        for avg, want in cases.items():
+            self.assertEqual(source_fps_choice(info(avg)), want, avg)
+        # Variable-rate phone video: r_frame_rate is a timestamp unit, the average is the rate.
+        self.assertEqual(source_fps_choice(info("2997/100", "90000/1")), "29.97")
+        self.assertEqual(source_fps_choice(info("0/0", "25/1")), "25")
+        self.assertEqual(source_fps_choice(None), "30")
+
+        for preset in PRESETS.values():
+            if preset.vcodec:
+                self.assertEqual(preset.fps, FPS_SOURCE, preset.name)
+        cmd = build_ffmpeg_cmd("ffmpeg", "in.mkv", "out.mpg",
+                               {"vcodec": "mpeg2video", "acodec": "mp2", "fps": FPS_SOURCE},
+                               source_info=info("50/1"))
+        self.assertEqual(cmd[cmd.index("-r") + 1], "25/1")
+        self.assertIn("fps=fps=25/1", cmd[cmd.index("-vf") + 1])
+
     def test_estimated_size_calculation(self):
         est_bytes = calculate_estimated_output_size(600, 1500, 128)
         self.assertGreater(est_bytes, 100 * 1024 * 1024)
