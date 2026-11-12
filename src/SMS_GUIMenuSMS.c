@@ -580,6 +580,8 @@ static void _display_handler ( GUIMenu* apMenu, int aDir ) {
 
 }  /* end _display_handler */
 
+static int s_DevRow;   /* row to put the cursor back on after _rebuild_devmenu; 0 = first row */
+
 static SMString* s_Speeds[ 3 ] = {
  &STR_LOW, &STR_MEDIUM, &STR_HIGH
 };
@@ -760,6 +762,13 @@ static void _device_handler ( GUIMenu* apMenu, int aDir ) {
  lpState -> m_pCurr  = s_DevMenu;
  lpState -> m_pLast  = &s_DevMenu[ lSize ];
  lpState -> m_pTitle = &STR_DEVICE_SETTINGS1;
+
+ if ( s_DevRow ) {
+
+  GUIMenu_SelectItem ( apMenu, s_DevRow );
+  s_DevRow = 0;
+
+ }  /* end if */
 
  GUIMenuSMS_UpdateStatus ( apMenu );
  apMenu -> Redraw ( apMenu );
@@ -1513,6 +1522,20 @@ static void _autohdd_handler ( GUIMenu* apMenu, int aDir ) {
 
 }  /* end _autohdd_handler */
 
+/* Rebuild Device settings after a Start or Refresh row with the cursor in the same place.
+ * Same place, not same row: a started device's Start row goes away, and the row below
+ * moves up into its spot. */
+static void _rebuild_devmenu ( GUIMenu* apMenu ) {
+
+ GUIMenuState* lpState = ( GUIMenuState* )( unsigned int )apMenu -> m_pState -> m_pTail -> m_Param;
+
+ s_DevRow = lpState -> m_pCurr - lpState -> m_pItems;
+
+ GUI_MenuPopState ( apMenu );
+ _device_handler  ( apMenu, 0 );
+
+}  /* end _rebuild_devmenu */
+
 static int _start_device (  GUIMenu* apMenu, int ( *Start ) ( int )  ) {
 
  int retVal;
@@ -1539,13 +1562,13 @@ static int _start_device (  GUIMenu* apMenu, int ( *Start ) ( int )  ) {
 
  } else {
 
-/* Swallow the still-held confirm before the menu is rebuilt. _device_handler
- * parks the cursor on the first row, and SMS's software auto-repeat
- * ( QueryPad0 -> QueryPad1 ) would otherwise stream the held CROSS into it: when
- * Network Settings was the first row that ran straight down Edit IP config -> the
- * IP octet editor and rolled octet 1 ( 0..255 ), pinning the user there -- the
- * "starting MMCE dumps me in the network octet loop" report. Now it would keep
- * toggling the first autostart. MMCE is the worst offender because its
+/* Swallow the still-held confirm before the menu is rebuilt. The cursor comes back
+ * to the same place ( _rebuild_devmenu ), where another row may now sit, and SMS's
+ * software auto-repeat ( QueryPad0 -> QueryPad1 ) would otherwise stream the held
+ * CROSS into that row. When the cursor went to the first row and Network Settings
+ * was that row, it ran straight down Edit IP config -> the IP octet editor and
+ * rolled octet 1 ( 0..255 ), pinning the user there -- the "starting MMCE dumps me
+ * in the network octet loop" report. MMCE is the worst offender because its
  * start does a ~1-2 s blind busy-wait ( SMS_IOP.c ) with no on-screen feedback,
  * so the user keeps holding X. Same drain idiom the rest of the GUI already
  * uses ( e.g. SMS_GUISMBrowser "swallow the press that opened us" ), bounded on
@@ -1554,8 +1577,7 @@ static int _start_device (  GUIMenu* apMenu, int ( *Start ) ( int )  ) {
    u64 lEnd = g_Timer + 3000;
    while (  GUI_ReadButtons () && g_Timer < lEnd  );
   }
-  GUI_MenuPopState ( apMenu );
-  _device_handler ( apMenu, 0 );
+  _rebuild_devmenu ( apMenu );
 
  }  /* end else */
 
@@ -1693,8 +1715,7 @@ static void _refresh_handler ( GUIMenu* apMenu, int aDir ) {
 
  }  /* end if */
 
- GUI_MenuPopState ( apMenu );
- _device_handler  ( apMenu, 0 );
+ _rebuild_devmenu ( apMenu );
 
 }  /* end _refresh_handler */
 

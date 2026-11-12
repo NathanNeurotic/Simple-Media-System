@@ -14,6 +14,9 @@ preserved in full below the marked boundary, unmodified.
   file could not even be opened. SMS now embeds the same driver built with UTF-8 names, room for
   accented 8.3-only names, and Windows' Western European codepage for those 8.3 names
   (`tools/build_bdmfs_fatfs.sh`); plain ASCII names are unchanged.
+- Device settings: after a Start row or Refresh connections, the cursor stays where you pressed instead of
+  landing on another row. A Start row goes away once its device is running, so the row below it moves up
+  under the cursor. A drive mounting while a menu is open also no longer moves that menu's cursor down a row.
 
 ---
 

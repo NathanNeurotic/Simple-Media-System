@@ -1588,8 +1588,9 @@ redraw:
    _redraw ( lpMenu, anEvent & GUI_MSG_MENU_BIT );
 
    retVal = GUIHResult_Handled;
-
-   if ( !lpMenu -> m_Active ) GUI_PostMessage ( SMS_PAD_DOWN );
+/* Not with GUI_MSG_MENU_BIT: a menu is open on top ( GUIMenu_HandleEvent re-posts the
+ * event with that bit ), so this Down would move that menu's cursor, not focus us. */
+   if (  !lpMenu -> m_Active && !( anEvent & GUI_MSG_MENU_BIT )  ) GUI_PostMessage ( SMS_PAD_DOWN );
 
   } break;
 
