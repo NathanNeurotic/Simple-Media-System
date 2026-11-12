@@ -75,7 +75,7 @@ SMS has a long history. It was created by **Eugene Plotnikov** as, in his own wo
 
 <details><summary>Why does this fork jump to version 3.0?</summary>
 
-SMS versioning has never been a single tidy line — the original author noted early on that different "distributors" would put their own signature on their builds. This documentation set describes the build labelled **v3.0.0-rev1**, displayed by SMS as **Version 3.0 (Rev.1)**: a storage-focused fork that keeps SMS's decades-old playback while adding the devices, MP4 path and on-screen setup covered throughout this site. The version shows on-screen during startup, so you can always confirm what you are running.
+SMS versioning has never been a single tidy line — the original author noted early on that different "distributors" would put their own signature on their builds. This documentation set describes the build labelled **v3.0.0-rev2**, displayed by SMS as **Version 3.0 (Rev.2)**: a storage-focused fork that keeps SMS's decades-old playback while adding the devices, MP4 path and on-screen setup covered throughout this site. The version shows on-screen during startup, so you can always confirm what you are running.
 
 </details>
 
