@@ -126,7 +126,7 @@ Measured on host: for B-frame fixtures the real reader emits video PTS that go b
 
 ### fix
 In _ReadPacket, after m_DTS and m_PTS are set, for video use the decode timestamp: `if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) lpPkt -> m_PTS = lpPkt -> m_DTS;`. With the usual one-frame reorder delay the frame output at packet k has presentation time equal to that packet's edit-adjusted DTS, so stamps become exact; for files without B-frames DTS equals PTS already. Not trialled.
-> Review note: SUPERSEDED. Applying this video-wide timestamp rule breaks MPEG-1/2 timestamp handling; use the codec-gated variant in the next proposal.
+> Review note: SUPERSEDED. Applying this video-wide timestamp rule breaks MPEG-1/2 timestamp handling; use the codec-gated `corrected_fix` in the fix verdict that follows (the diagnosis verdict above it still shows the rejected condition).
 
 ### test
 tools/test_mov_packets.py composition-timing case: assert video packet timestamps are non-decreasing in read order for a ctts stream and equal DTS + edit offset; audio expectations unchanged. Hardware: B-frame MP4 should play without periodic judder and with correct OSD time.

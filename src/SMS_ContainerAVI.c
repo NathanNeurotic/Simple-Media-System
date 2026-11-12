@@ -1095,9 +1095,12 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
  if ( !lpStm -> m_nIdx ) return 0;
 
-/* A target past the last frame lands on the last frame: the keyframe search then runs
- * from there ( forward finds none and fails, the caller retries backward ). */
- if ( aPos >= lpStm -> m_nIdx ) aPos = lpStm -> m_nIdx - 1;
+/* Past the last frame: forward fails ( fast-forward relies on that to stop at the end ),
+ * backward lands on the last frame, so a caller's backward retry finds the last keyframe. */
+ if ( aPos >= lpStm -> m_nIdx ) {
+  if ( aDir > 0 ) return 0;
+  aPos = lpStm -> m_nIdx - 1;
+ }  /* end if */
 
  while (  aPos != lEnd && !lpStm -> m_pIdx[ aPos ].m_fKey ) aPos += aDir;
 

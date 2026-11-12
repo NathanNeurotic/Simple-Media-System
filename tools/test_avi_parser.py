@@ -164,8 +164,9 @@ int main(int argc,char **argv) {
   ++pkts;bytes+=got;mix(&idx,sizeof(idx));
   if(pkt) { mix(&pkt->m_DTS,8);mix(&pkt->m_Size,12);mix(pkt->m_pData,pkt->m_Size); }
  }
- /* A target past the last frame must land on the last frame, not fail. */
- int past=open?cont.Seek(&cont,0,1,MYSTRM(cont.m_pStm[0])->m_nIdx+50):-1;
+ /* Past the last frame: forward fails (fast-forward stops there), backward lands on the last frame. */
+ int past=open?cont.Seek(&cont,0,-1,MYSTRM(cont.m_pStm[0])->m_nIdx+50):-1;
+ if(open) assert(cont.Seek(&cont,0,1,MYSTRM(cont.m_pStm[0])->m_nIdx+50)==0);
  printf(" seekpast=%d empty=%u pkts=%u bytes=%u sig=%016llx\n",past,empty,pkts,bytes,(unsigned long long)sig);
  return 0;
 }

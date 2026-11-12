@@ -10,4 +10,4 @@ Findings marked "Not independently checked" were below the verification
 cut-off, or their checker did not finish.
 
 Lines starting `> Review note:` were added during review of the branch. The
-status of every finding is in `../2026-11-11-open-issues-triage.md`.
+status of every finding is in `../../2026-11-11-open-issues-triage.md`.
