@@ -17,7 +17,8 @@ configuration, USB/Bluetooth DS3/DS4 support and a desktop media converter.
 | Channel | What it contains |
 |---|---|
 | **Rolling development** | Current master fixes/features, player tester bundle, matching language pack, and Windows/Win7/Linux converter packages. Keep `build-info.json` with a test report. |
-| **[v3.0.0-rev2 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev2)** | The current stable release, shown in the app as Version 3.0 (Rev.2). Includes the UTF-8 / accented file-name display fix. |
+| **[v3.0.0-rev3 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev3)** | The current stable release, shown in the app as Version 3.0 (Rev.3). Lists accented file names on FAT and exFAT drives by their real names, and adds the 720p and 1080i picture fixes, `SMSPATH.TXT` and the SAS app packages. |
+| **[v3.0.0-rev2 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev2)** | Archived 12 November 2026 release, kept for history. |
 | **[v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1)** | Archived July 2026 release, kept for history. |
 | **Actions / PR artifact** | A specific candidate that may not yet be in rolling. Record the run, artifact and source/head SHA. |
 

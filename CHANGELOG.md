@@ -6,7 +6,11 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
-## Unreleased
+## v3.0.0-rev3 (Version 3.0 Rev.3)
+
+Shown in the app as Version 3.0 (Rev.3); the About screen ends with `Build <commit>`. Includes everything in rolling
+up to this point: the fixes below and the psx-place forum fixes in the next section. `v3.0.0-rev2` stays as an
+archived release.
 
 - Accented file names on USB, MX4SIO, HDD and i.LINK now list with their real names. The stock PS2SDK
   `bdmfs_fatfs` driver turns long names into the Greek codepage 869, which has no Spanish letters, so any
