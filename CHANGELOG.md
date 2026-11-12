@@ -6,6 +6,17 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
+## Unreleased
+
+- Accented file names on USB, MX4SIO, HDD and i.LINK now list with their real names. The stock PS2SDK
+  `bdmfs_fatfs` driver turns long names into the Greek codepage 869, which has no Spanish letters, so any
+  name with an accent fell back to its 8.3 alias on FAT32 (`01TRAT~1.AVI`) or to `?` on exFAT, where the
+  file could not even be opened. SMS now embeds the same driver built with UTF-8 names, room for
+  accented 8.3-only names, and Windows' Western European codepage for those 8.3 names
+  (`tools/build_bdmfs_fatfs.sh`); plain ASCII names are unchanged.
+
+---
+
 ## Rolling development — 2026-11-12
 
 From the psx-place forum feedback on rev2.
