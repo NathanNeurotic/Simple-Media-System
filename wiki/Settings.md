@@ -83,9 +83,9 @@ The Device menu also ends with a **Refresh connections** item, which re-probes t
 
 The top of Device settings: Autostart toggles.
 
-![The bottom of SMS Device settings with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
+![SMS Device settings further down, with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
 
-The bottom of Device settings: CD/DVD and controller options, then the Start … support items.
+Further down Device settings: CD/DVD and controller options, then the Start … support items.
 
 ### Network, CD/DVD and controller options
 
