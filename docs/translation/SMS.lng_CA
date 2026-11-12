@@ -34,10 +34,10 @@ Moure Imatge Amunt
 Moure Imatge Avall
 Autoengegar Xarxa
 Autoengegar USB
-Autoengegar HDD
+Autoengegar HDD APA
 Opcions de Dispositius
 Engegar Suport de Xarxa
-Engegar Suport de HDD
+Engegar Suport de HDD APA
 Engegar Suport de USB
 Editar IPCONFIG.DAT...
 Editar IPCONFIG.DAT
@@ -178,8 +178,8 @@ copiant
 KB/s
 Seleccionar Acció
 Resolució de Color
-32 bit
-16 bit
+32 bits
+16 bits
 DTV 480P
 Control Port 2
 Comandament de Joc
@@ -242,70 +242,70 @@ Reproduir tot
 Vídeo
 Paràmetre d'autodetecció
 Començar reproducció des de
-?center-right
-?Use exception handler
-?Subtitle MBCS
-?Loading font...
-?Loading ODML indices %d...
-?File size: 
-?GB
-?KB
+Centre-Dreta
+Usar Gestor d'Excepcions
+Subtítols MBCS
+Carregant Font...
+Carregant Índexs ODML %d...
+Mida de l'Arxiu: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Kb/s
+Hz
+can.
+Memòria Disponible: %.1fMB/%.2fMB
+Continuar reproducció des de %s ? ('Creu'='sí', 'Triangle'='no')
+Desplaçament d'Imatge
+Resolució de vídeo massa gran (prem "Creu" per continuar)...
+Paràmetre de sincronització 3 (àudio)
+Imatges
+Imatge no suportada o malmesa
+Acció del Botó Reset
+apagar
+sortir
+Pulldown 2:2 automàtic (vídeo)
+DTV 576p
+Autoengegar MX4SIO
+Engegar Suport de MX4SIO
+Autoengegar HDD BDM
+Engegar Suport de HDD BDM
+Autoengegar i.LINK
+Engegar Suport de i.LINK
+Autoengegar MMCE
+Engegar Suport de MMCE
+Engegar Unitat de Xarxa UDPFS
+Autoengegar UDPFS
+UDPFS: preparant la xarxa (DEV9)...
+UDPFS: carregant el controlador Ethernet...
+UDPFS: engegant la pila IP...
+UDPFS: cercant el servidor...
+UDPFS FAIL [NOIP]: primer configura la IP estàtica d'aquesta PS2 a Ajustos de Xarxa
+UDPFS FAIL [SMAP]: el controlador Ethernet no s'ha carregat
+UDPFS FAIL [STACK]: la pila IP no s'ha carregat
+UDPFS FAIL [DEV]: udpfs: el dispositiu no s'ha registrat
+UDPFS FAIL [DISCOVERY]: cap servidor ha respost -- comprova que el servidor UDPFS s'executa a la mateixa LAN i que el seu mode "Modulo" està desactivat
+ATA: preparant el bus (DEV9)...
+ATA: carregant el controlador (ata_bd)...
+ATA: escanejant la unitat (muntant exFAT)...
+ESPAI
+ESBORRA
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:escriure  O:enrere  []:espai  /\:fet
+Refrescar Connexions
+Aparellar Comandament Bluetooth
+Afegir Servidor...
+Editar Servidor...
+Nom del Servidor
+Nom d'Usuari
+Contrasenya
+Nom del Client
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Recurs compartit ( opcional )
+Servidor SMB
+Engegar Suport de Servidor SMB
+Engegar Suport de HOST ( ps2dev )
+Autoengegar HOST ( ps2dev )
+Autoengegar SMB
+La xarxa ja està en marxa. Reiniciar-la ara per aplicar-ho?

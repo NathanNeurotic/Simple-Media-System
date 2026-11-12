@@ -34,10 +34,10 @@ Przesuñ obraz w górê
 Przesuñ obraz w dó³
 Automatycznie uruchom sieæ
 Automatycznie uruchom USB
-Automatycznie uruchom HDD
+Automatycznie uruchom HDD APA
 Ustawienia urz¹dzeñ
 Uruchom obs³ugê sieci
-Uruchom obs³ugê HDD
+Uruchom obs³ugê HDD APA
 Uruchom obs³ugê USB
 Edytuj IPCONFIG.DAT...
 Edytuj IPCONFIG.DAT
@@ -191,7 +191,7 @@ VESA (75Hz)
 widescreen
 wide pan-scan 1
 wide pan-scan 2
-Network protocol
+Protokó³ sieciowy
 ps2dev/host
 SMB/CIFS
 B³¹d komunikacji (naciœnij X, aby kontynuowaæ)...
@@ -258,54 +258,54 @@ kana³(y)
 Dostêpna pamiêæ: %.1fMB/%.2fMB
 Wznów odtwarzanie z %s ? ('krzy¿yk'='tak', 'trójk¹t'='nie')
 Offset obrazu
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Rozdzielczoœæ wideo jest za du¿a (naciœnij X, aby kontynuowaæ)...
+Parametr synch. 3 (audio)
+Obrazy
+Nieobs³ugiwany lub uszkodzony obraz
+Dzia³anie przycisku Reset
+wy³¹cz
+wyjdŸ
+Automatyczny pulldown 2:2 (obraz)
+DTV 576p
+Automatycznie uruchom MX4SIO
+Uruchom obs³ugê MX4SIO
+Automatycznie uruchom HDD BDM
+Uruchom obs³ugê HDD BDM
+Automatycznie uruchom i.LINK
+Uruchom obs³ugê i.LINK
+Automatycznie uruchom MMCE
+Uruchom obs³ugê MMCE
+Uruchom dysk sieciowy UDPFS
+Automatycznie uruchom UDPFS
+UDPFS: przygotowanie sieci (DEV9)...
+UDPFS: ³adowanie sterownika Ethernet...
+UDPFS: uruchamianie stosu IP...
+UDPFS: wyszukiwanie serwera...
+UDPFS FAIL [NOIP]: najpierw ustaw statyczny IP tej PS2 w Ustawieniach sieciowych
+UDPFS FAIL [SMAP]: sterownik Ethernet nie zosta³ za³adowany
+UDPFS FAIL [STACK]: stos IP nie zosta³ za³adowany
+UDPFS FAIL [DEV]: udpfs: urz¹dzenie nie zosta³o zarejestrowane
+UDPFS FAIL [DISCOVERY]: ¿aden serwer nie odpowiedzia³ -- sprawdŸ, czy serwer UDPFS dzia³a w tej samej sieci LAN i czy jego tryb "Modulo" jest WY£¥CZONY
+ATA: przygotowanie magistrali (DEV9)...
+ATA: ³adowanie sterownika (ata_bd)...
+ATA: skanowanie dysku (montowanie exFAT)...
+SPACJA
+USUÑ
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:pisz  O:wstecz  []:spacja  /\:gotowe
+Odœwie¿ po³¹czenia
+Sparuj kontroler Bluetooth
+Dodaj serwer...
+Edytuj serwer...
+Nazwa serwera
+Nazwa u¿ytkownika
+Has³o
+Nazwa klienta
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Udzia³ ( opcjonalnie )
+Serwer SMB
+Uruchom obs³ugê serwera SMB
+Uruchom obs³ugê HOST ( ps2dev )
+Automatycznie uruchom HOST ( ps2dev )
+Automatycznie uruchom SMB
+Sieæ ju¿ dzia³a. Uruchomiæ j¹ ponownie teraz, aby zastosowaæ?

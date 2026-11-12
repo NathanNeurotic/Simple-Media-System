@@ -34,10 +34,10 @@ WinGreek
 Смещение экрана вниз
 Автозапуск сети
 Автозапуск USB
-Автозапуск HDD
+Автозапуск HDD APA
 Настройки устройств
 Запуск поддержки сети
-Запуск поддержки HDD
+Запуск поддержки HDD APA
 Запуск поддержки USB
 Редактирование IPCONFIG.DAT...
 Редактирование IPCONFIG.DAT
@@ -265,47 +265,47 @@ MBCS для субтитров
 Нажатие "Reset"
 выключение
 выход
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Автоматический pulldown 2:2 (видео)
+DTV 576p
+Автозапуск MX4SIO
+Запуск поддержки MX4SIO
+Автозапуск HDD BDM
+Запуск поддержки HDD BDM
+Автозапуск i.LINK
+Запуск поддержки i.LINK
+Автозапуск MMCE
+Запуск поддержки MMCE
+Запуск сетевого диска UDPFS
+Автозапуск UDPFS
+UDPFS: подготовка сети (DEV9)...
+UDPFS: загрузка драйвера Ethernet...
+UDPFS: запуск стека IP...
+UDPFS: поиск сервера...
+UDPFS FAIL [NOIP]: сначала задайте статический IP этой PS2 в Сетевых настройках
+UDPFS FAIL [SMAP]: драйвер Ethernet не загрузился
+UDPFS FAIL [STACK]: стек IP не загрузился
+UDPFS FAIL [DEV]: udpfs: устройство не зарегистрировалось
+UDPFS FAIL [DISCOVERY]: ни один сервер не ответил -- проверьте, что сервер UDPFS запущен в той же LAN и что его режим "Modulo" ВЫКЛЮЧЕН
+ATA: подготовка шины (DEV9)...
+ATA: загрузка драйвера (ata_bd)...
+ATA: сканирование диска (подключение exFAT)...
+ПРОБЕЛ
+УДАЛ
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+X:ввод  O:назад  []:пробел  /\:готово
+Обновить подключения
+Сопряжение Bluetooth-контроллера
+Добавить сервер...
+Изменить сервер...
+Имя сервера
+Имя пользователя
+Пароль
+Имя клиента
+Порт
+Общая папка ( необязательно )
+Сервер SMB
+Запуск поддержки сервера SMB
+Запуск поддержки HOST ( ps2dev )
+Автозапуск HOST ( ps2dev )
+Автозапуск SMB
+Сеть уже запущена. Перезапустить сейчас, чтобы применить?

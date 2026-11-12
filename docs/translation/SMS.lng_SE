@@ -34,10 +34,10 @@ Justera bilden uppåt
 Justera bilden nedåt
 Autostarta nätverket
 Autostarta USB
-Autostarta HDD
+Autostarta HDD APA
 Inställningar för enheter
 Starta nätverket
-Starta HDD
+Starta HDD APA
 Starta USB
 Editera IPCONFIG.DAT...
 Editera IPCONFIG.DAT
@@ -93,8 +93,8 @@ Undertexts teckenhöjd
 Snabb hjälp
  
 Vid uppstart:
-select+R1 - NTSC mode
-select+R2 - PAL mode
+select+R1 - NTSC-läge
+select+R2 - PAL-läge
 Browser:
 triangel - högre foldernivå
 vänster/höger - enhetsval
@@ -114,7 +114,7 @@ höger/vänster - snabb fram/back-spolning
 kryss - avbryt snabb-spolning
 triangel - avbryt uppspelning
 select - paus/hopplist
-start - resume/menu
+start - fortsätt/meny
 kryss - OSD tidsvisning
 fyrkant - pan-scan läge
 L1 - panorera åt vänster
@@ -145,7 +145,7 @@ Buffrar fil %s...
 Identifierar fil-format...
 Paus
 Stannar
-default
+standard
 V/A:
 S/V:
 Play 
@@ -178,13 +178,13 @@ Kopierar
 KB/s
 Välj handling
 Färgupplösning
-32 bit
-16 bit
+32 bitar
+16 bitar
 DTV 480P
 Spelkontroll-port 2
 spelkontroll
 fjärrkontroll
-AC3 range level
+AC3 dynamiknivå
 höger
 VESA (60Hz)
 VESA (75Hz)
@@ -208,7 +208,7 @@ Skapar katalog-träd...
 Radera
 Raderar...
 CD/DVD hastighet
-medium
+medel
 hög
 låg
 Riktningsknappar
@@ -228,7 +228,7 @@ Inställningar för nätverk...
 Inställningar för nätverk
 Synkroniseringsparameter 1 (video)
 Synkroniseringsparameter 2 (GUI)
-SMB server...
+SMB-server...
 Avbryter väntande förbindelse...
 Updatera SMS språk
 Updatera SMS palett
@@ -254,58 +254,58 @@ KB
 %d.%03d
 Kb/s
 Hz
-ch
+kan.
 Tillgängligt minne: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Återuppta uppspelning från %s ? ('kryss'='ja', 'triangel'='nej')
+Bildförskjutning
+Videoupplösningen är för stor (tryck "kryss" för att gå vidare)...
+Synkroniseringsparameter 3 (ljud)
+Bilder
+Bilden stöds inte eller är skadad
+Funktion för Reset-knappen
+stäng av
+avsluta
+Automatisk 2:2-pulldown (video)
+DTV 576p
+Autostarta MX4SIO
+Starta MX4SIO
+Autostarta HDD BDM
+Starta HDD BDM
+Autostarta i.LINK
+Starta i.LINK
+Autostarta MMCE
+Starta MMCE
+Starta UDPFS-nätverksenhet
+Autostarta UDPFS
+UDPFS: förbereder nätverket (DEV9)...
+UDPFS: laddar Ethernet-drivrutin...
+UDPFS: startar IP-stacken...
+UDPFS: söker efter server...
+UDPFS FAIL [NOIP]: ange först denna PS2:s statiska IP under Inställningar för nätverk
+UDPFS FAIL [SMAP]: Ethernet-drivrutinen laddades inte
+UDPFS FAIL [STACK]: IP-stacken laddades inte
+UDPFS FAIL [DEV]: udpfs: enheten registrerades inte
+UDPFS FAIL [DISCOVERY]: ingen server svarade -- kontrollera att UDPFS-servern körs på samma LAN och att dess "Modulo"-läge är AV
+ATA: förbereder bussen (DEV9)...
+ATA: laddar drivrutin (ata_bd)...
+ATA: söker igenom enheten (monterar exFAT)...
+MELLANSLAG
+RADERA
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:skriv  O:tillbaka  []:mellanslag  /\:klar
+Uppdatera anslutningar
+Para ihop Bluetooth-spelkontroll
+Lägg till server...
+Redigera server...
+Servernamn
+Användarnamn
+Lösenord
+Klientnamn
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Delad mapp ( valfritt )
+SMB-server
+Starta SMB-server
+Starta HOST ( ps2dev )
+Autostarta HOST ( ps2dev )
+Autostarta SMB
+Nätverket körs redan. Starta om det nu för att tillämpa?

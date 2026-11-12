@@ -34,10 +34,10 @@ Ajuster l'image en haut
 Ajuster l'image en bas
 Démarrage auto du réseau
 Démarrage auto de l'USB
-Démarrage auto du DD
+Démarrage auto du HDD APA
 Options périphérique
 Démarrer le support du réseau
-Démarrer le support du DD
+Démarrer le support du HDD APA
 Démarrer le support de l'USB
 Editer IPCONFIG.DAT...
 Editer IPCONFIG.DAT
@@ -83,7 +83,7 @@ Couleur barre de volume
 Animation audio
 haut
 bas
-off
+désactivé
 centre
 gauche
 %d min
@@ -112,7 +112,7 @@ Lecteur:
 haut/bas - ajuster volume
 droite/gauche - avancer/reculer
 croix - sortir du mode avancer/reculer
-triangle - stop
+triangle - arrêt
 select - pause/curseur
 start - reprendre/menu
 croix - temps
@@ -132,7 +132,7 @@ Options avancées...
 Hauteur d'affichage
 Appliquer les changements
 Options avancées
-Sample
+Exemple
 English
 Français
 Langage
@@ -167,7 +167,7 @@ Navigateur PS2
 mc0:/BOOT/BOOT.ELF
 mc0:/B?DATA-SYSTEM/BOOT.ELF
 Sortir vers
-Sound FX
+Effets sonores
 S/PDIF - Dolby Digital/DTS
 Réglages MP3...
 Playlist aléatoire
@@ -254,58 +254,58 @@ KB
 %d.%03d
 Kb/s
 Hz
-ch
+can.
 Mémoire disponible: %.1fMo/%.2fMo
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Reprendre la lecture depuis %s ? ('X'='oui', 'triangle'='non')
+Décalage de l'image
+Résolution vidéo trop grande (pressez "X" pour continuer)...
+Paramètre 3 de synch. (audio)
+Images
+Image non supportée ou corrompue
+Action du bouton Reset
+éteindre
+quitter
+Pulldown 2:2 auto (vidéo)
+DTV 576p
+Démarrage auto du MX4SIO
+Démarrer le support du MX4SIO
+Démarrage auto du HDD BDM
+Démarrer le support du HDD BDM
+Démarrage auto de l'i.LINK
+Démarrer le support de l'i.LINK
+Démarrage auto du MMCE
+Démarrer le support du MMCE
+Démarrer le lecteur réseau UDPFS
+Démarrage auto de l'UDPFS
+UDPFS: préparation du réseau (DEV9)...
+UDPFS: chargement du pilote Ethernet...
+UDPFS: démarrage de la pile IP...
+UDPFS: recherche du serveur...
+UDPFS FAIL [NOIP]: définissez d'abord l'IP statique de cette PS2 dans Réglages réseau
+UDPFS FAIL [SMAP]: le pilote Ethernet ne s'est pas chargé
+UDPFS FAIL [STACK]: la pile IP ne s'est pas chargée
+UDPFS FAIL [DEV]: udpfs: le périphérique ne s'est pas enregistré
+UDPFS FAIL [DISCOVERY]: aucun serveur n'a répondu -- vérifiez que le serveur UDPFS tourne sur le même LAN et que son mode "Modulo" est désactivé
+ATA: préparation du bus (DEV9)...
+ATA: chargement du pilote (ata_bd)...
+ATA: analyse du disque (montage exFAT)...
+ESPACE
+EFFACER
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:saisir  O:retour  []:espace  /\:fini
+Actualiser les connexions
+Appairer une manette Bluetooth
+Ajouter un serveur...
+Modifier le serveur...
+Nom du serveur
+Nom d'utilisateur
+Mot de passe
+Nom du client
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Partage ( facultatif )
+Serveur SMB
+Démarrer le support du serveur SMB
+Démarrer le support du HOST ( ps2dev )
+Démarrage auto du HOST ( ps2dev )
+Démarrage auto du SMB
+Le réseau est déjà actif. Le redémarrer maintenant pour appliquer ?

@@ -2,7 +2,7 @@ Pilih media:
 Tidak ada
 Loading SMS...
 Menyimpan konfigurasi...
-Loading %s...
+Memuat %s...
 Menyalakan jaringan...
 Mencari USBD.IRX...
 Masukan media! ("start" untuk menu)...
@@ -34,10 +34,10 @@ Geser gambar ke atas
 Geser gambar ke bawah
 LAN aktif otomatis
 USB aktif otomatis
-HDD aktif otomatis
+HDD APA aktif otomatis
 Pengaturan peralatan
 Aktifkan LAN
-Aktifkan HDD
+Aktifkan HDD APA
 Aktifkan USB
 Edit IPCONFIG.DAT...
 Edit IPCONFIG.DAT
@@ -136,19 +136,19 @@ contoh
 Indonesia
 Indonesia
 Bahasa
-Loading indices...
+Memuat indeks...
 Loading teks...
 Teks: %s error (%d), "X" untuk lanjut...
 format
 Urutan
 Loading %s file...
 Memeriksa format file...
-Pause
+Jeda
 Berhenti....
 awal
 V/A:
 S/V:
-Play 
+Putar
 Percepat 
  Mundur 
 Kursor
@@ -183,7 +183,7 @@ Kedalaman warna
 DTV 480P
 Kontrol ke 2
 gamepad
-remote control
+remote kontrol
 Jangkauan suara AC3
 kanan
 VESA (60Hz)
@@ -244,68 +244,68 @@ parameter deteksi otomatis
 Mulai play dari
 Tangah-kanan
 Gunakan pengurus kesalahan
-?Subtitle MBCS
-?Loading font...
-?Loading ODML indices %d...
-?File size: 
-?GB
-?KB
+Teks MBCS
+Memuat font...
+Memuat indeks ODML %d...
+Ukuran file: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Kb/s
+Hz
+kanal
+Memori tersedia: %.1fMB/%.2fMB
+Lanjutkan pemutaran dari %s ? ('X'='ya', 'segitiga'='tidak')
+Posisi gambar
+Resolusi video terlalu besar (X untuk lanjut)...
+Parameter sinkron 3 (audio)
+Gambar
+Gambar tidak didukung atau rusak
+Fungsi tombol Reset
+matikan
+keluar
+Pulldown 2:2 otomatis (video)
+DTV 576p
+MX4SIO aktif otomatis
+Aktifkan MX4SIO
+HDD BDM aktif otomatis
+Aktifkan HDD BDM
+i.LINK aktif otomatis
+Aktifkan i.LINK
+MMCE aktif otomatis
+Aktifkan MMCE
+Aktifkan drive jaringan UDPFS
+UDPFS aktif otomatis
+UDPFS: menyiapkan jaringan (DEV9)...
+UDPFS: memuat driver Ethernet...
+UDPFS: menjalankan IP stack...
+UDPFS: mencari server...
+UDPFS FAIL [NOIP]: atur dulu IP statis PS2 ini di Pengaturan jaringan
+UDPFS FAIL [SMAP]: driver Ethernet gagal dimuat
+UDPFS FAIL [STACK]: IP stack gagal dimuat
+UDPFS FAIL [DEV]: udpfs: perangkat gagal terdaftar
+UDPFS FAIL [DISCOVERY]: tidak ada server yang menjawab -- pastikan server UDPFS berjalan di LAN yang sama dan mode "Modulo" dimatikan
+ATA: menyiapkan bus (DEV9)...
+ATA: memuat driver (ata_bd)...
+ATA: memindai drive (memasang exFAT)...
+SPASI
+HAPUS
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:ketik  O:kembali  []:spasi  /\:selesai
+Segarkan koneksi
+Pasangkan kontroler Bluetooth
+Tambah server...
+Ubah server...
+Nama server
+Nama pengguna
+Kata sandi
+Nama klien
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Folder berbagi ( opsional )
+Server SMB
+Aktifkan server SMB
+Aktifkan HOST ( ps2dev )
+HOST ( ps2dev ) aktif otomatis
+SMB aktif otomatis
+Jaringan sudah berjalan. Mulai ulang sekarang untuk menerapkan?

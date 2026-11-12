@@ -34,10 +34,10 @@ Görüntüyü yukarý kaydýr
 Görüntüyü aþaðý kaydýr
 Aðý otomatik baþlat
 USB yi otomatik baþlat
-HDD yi otomatik baþlat
+HDD APA yý otomatik baþlat
 Aygýt ayarlarý
 Að desteðini baþlat
-HDD desteðini baþlat
+HDD APA desteðini baþlat
 USB desteðini baþlat
 IPCONFIG.DAT düzenle...
 IPCONFIG.DAT düzenle
@@ -182,7 +182,7 @@ Görüntü çözünürlüðü
 16 bit
 DTV 480P
 Kontrol port 2
-gamepad
+oyun kolu
 uzaktan kumanda
 AC3 menzil seviyesi level
 sað
@@ -247,65 +247,65 @@ Hata denetleyicisi kullan
 Altyazý MBCS
 Font yükleniyor...
 ODML indeksi yükleniyor %d...
-?File size: 
-?GB
-?KB
+Dosya boyutu: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Kb/s
+Hz
+kan.
+Kullanýlabilir bellek: %.1fMB/%.2fMB
+Oynatmaya %s noktasýndan devam edilsin mi? ('çarpý'='evet', 'üçgen'='hayýr')
+Görüntü kaymasý
+Video çözünürlüðü çok büyük (devam etmek için "X" e basýn)...
+Senkronizasyon parametresi 3 (ses)
+Resimler
+Desteklenmeyen veya bozuk resim
+Reset butonu iþlevi
+kapat
+çýk
+Otomatik 2:2 pulldown (video)
+DTV 576p
+MX4SIO yu otomatik baþlat
+MX4SIO desteðini baþlat
+HDD BDM yi otomatik baþlat
+HDD BDM desteðini baþlat
+i.LINK i otomatik baþlat
+i.LINK desteðini baþlat
+MMCE yi otomatik baþlat
+MMCE desteðini baþlat
+UDPFS að sürücüsünü baþlat
+UDPFS i otomatik baþlat
+UDPFS: að hazýrlanýyor (DEV9)...
+UDPFS: Ethernet sürücüsü yükleniyor...
+UDPFS: IP yýðýný baþlatýlýyor...
+UDPFS: sunucu aranýyor...
+UDPFS FAIL [NOIP]: önce Að ayarlarýndan bu PS2'nin sabit IP adresini ayarlayýn
+UDPFS FAIL [SMAP]: Ethernet sürücüsü yüklenmedi
+UDPFS FAIL [STACK]: IP yýðýný yüklenmedi
+UDPFS FAIL [DEV]: udpfs: aygýt kaydolmadý
+UDPFS FAIL [DISCOVERY]: hiçbir sunucu yanýt vermedi -- UDPFS sunucusunun ayný LAN'da çalýþtýðýný ve "Modulo" modunun KAPALI olduðunu kontrol edin
+ATA: veri yolu hazýrlanýyor (DEV9)...
+ATA: sürücü yükleniyor (ata_bd)...
+ATA: disk taranýyor (exFAT baðlanýyor)...
+BOÞLUK
+SÝL
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:yaz  O:geri  []:boþluk  /\:tamam
+Baðlantýlarý yenile
+Bluetooth kontrolcüsünü eþleþtir
+Sunucu ekle...
+Sunucuyu düzenle...
+Sunucu adý
+Kullanýcý adý
+Þifre
+Ýstemci adý
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Paylaþým ( isteðe baðlý )
+SMB sunucusu
+SMB sunucu desteðini baþlat
+HOST ( ps2dev ) desteðini baþlat
+HOST ( ps2dev ) u otomatik baþlat
+SMB yi otomatik baþlat
+Að zaten çalýþýyor. Uygulamak için þimdi yeniden baþlatýlsýn mý?

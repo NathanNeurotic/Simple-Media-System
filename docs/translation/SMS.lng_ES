@@ -37,7 +37,7 @@ Autoarrancar USB
 Autoarrancar HDD APA
 Ajustes de dispositivo
 Iniciar soporte de red
-Iniciar soporte de HDD
+Iniciar soporte de HDD APA
 Iniciar soporte de USB
 Editar IPCONFIG.DAT...
 Editar IPCONFIG.DAT
@@ -270,7 +270,7 @@ DTV 576p
 Autoarrancar MX4SIO
 Iniciar soporte MX4SIO
 Autoarrancar HDD BDM
-Iniciar HDD BDM
+Iniciar soporte HDD BDM
 Autoarrancar i.LINK
 Iniciar soporte i.LINK
 Autoarrancar MMCE

@@ -34,10 +34,10 @@ Ajustar tela para cima
 Ajustar tela para baixo
 Auto-iniciar rede
 Auto-iniciar USB
-Auto-iniciar HDD
+Auto-iniciar HDD APA
 Configurações de dispositivo
 Iniciar suporte Rede
-Iniciar suporte HDD
+Iniciar suporte HDD APA
 Iniciar suporte USB
 Editar IPCONFIG.DAT...
 Editar IPCONFIG.DAT
@@ -178,8 +178,8 @@ Copiando
 KB/s
 Selecione ação
 Resolução da cor
-32 bit
-16 bit
+32 bits
+16 bits
 DTV 480P
 Controle da porta 2
 joystick
@@ -254,7 +254,7 @@ KB
 %d.%03d
 Kb/s
 Hz
-ch
+can.
 Memória disponível: %.1fMB/%.2fMB
 Continuar reprodução em %s? ("X"= SIM, "triângulo"= NÃO)
 Offset de imagem
@@ -265,47 +265,47 @@ Imagem não suportada ou corrompida
 Ação do botão de reset
 desligar
 sair
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Pulldown 2:2 automático (vídeo)
+DTV 576p
+Auto-iniciar MX4SIO
+Iniciar suporte MX4SIO
+Auto-iniciar HDD BDM
+Iniciar suporte HDD BDM
+Auto-iniciar i.LINK
+Iniciar suporte i.LINK
+Auto-iniciar MMCE
+Iniciar suporte MMCE
+Iniciar unidade de rede UDPFS
+Auto-iniciar UDPFS
+UDPFS: preparando a rede (DEV9)...
+UDPFS: carregando o driver Ethernet...
+UDPFS: iniciando a pilha IP...
+UDPFS: procurando o servidor...
+UDPFS FAIL [NOIP]: primeiro defina o IP estático deste PS2 em Configurações de rede
+UDPFS FAIL [SMAP]: o driver Ethernet não foi carregado
+UDPFS FAIL [STACK]: a pilha IP não foi carregada
+UDPFS FAIL [DEV]: udpfs: o dispositivo não foi registrado
+UDPFS FAIL [DISCOVERY]: nenhum servidor respondeu -- verifique se o servidor UDPFS está rodando na mesma LAN e se o modo "Modulo" está DESLIGADO
+ATA: preparando o barramento (DEV9)...
+ATA: carregando o driver (ata_bd)...
+ATA: verificando a unidade (montando exFAT)...
+ESPAÇO
+APAGAR
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+X:digitar  O:voltar  []:espaço  /\:pronto
+Atualizar conexões
+Parear controle Bluetooth
+Adicionar servidor...
+Editar servidor...
+Nome do servidor
+Nome de usuário
+Senha
+Nome do cliente
+Porta
+Compartilhamento ( opcional )
+Servidor SMB
+Iniciar suporte servidor SMB
+Iniciar suporte HOST ( ps2dev )
+Auto-iniciar HOST ( ps2dev )
+Auto-iniciar SMB
+A rede já está em execução. Reiniciar agora para aplicar?

@@ -34,10 +34,10 @@ verschiebe Bild noch oben
 verschiebe Bild nach unten
 Autostart Netzwerk
 Autostart USB
-Autostart HDD
+Autostart HDD APA
 Geräte Einstellungen
 Starte Netzwerk Unterstützung
-Starte HDD Unterstützung
+Starte HDD APA Unterstützung
 Starte USB Unterstützung
 IPCONFIG.DAT bearbeiten...
 IPCONFIG.DAT bearbeiten
@@ -178,8 +178,8 @@ kopiere
 KB/s
 Wähle Aktion
 Farbauflösung
-32 bit
-16 bit
+32 Bit
+16 Bit
 DTV 480P
 Kontrolleranschluss 2
 Gamepad
@@ -215,7 +215,7 @@ Richtungstasten
 DTV 1080I
 DTV 720P
 Betriebsmodus
-auto-negotiation
+Auto-Aushandlung
 automatisch
 manuell
 Duplex Modus
@@ -254,58 +254,58 @@ KB
 %d.%03d
 Kb/s
 Hz
-ch
+Kan.
 Verfügbarer Speicher: %.1fMB/%.2fMB
 Wiedergabe von %s fortsetzen? ('Kreuz'='Ja', 'Dreieck'='Nein')
 Bildposition
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
+Videoauflösung ist zu groß (drücke "Kreuz" zum Fortfahren)...
+Synchronisationsparameter 3 (audio)
+Bilder
+Nicht unterstütztes oder beschädigtes Bild
+Aktion der Reset-Taste
+ausschalten
+beenden
+Automatisches 2:2 Pulldown (Video)
+DTV 576p
 Autostart MX4SIO
-Start MX4SIO support
+Starte MX4SIO Unterstützung
 Autostart HDD BDM
-Start HDD BDM
+Starte HDD BDM Unterstützung
 Autostart i.LINK
-Start i.LINK support
+Starte i.LINK Unterstützung
 Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
+Starte MMCE Unterstützung
+Starte UDPFS Netzlaufwerk
 Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+UDPFS: Netzwerk wird vorbereitet (DEV9)...
+UDPFS: Lade Ethernet-Treiber...
+UDPFS: Starte IP-Stack...
+UDPFS: Suche Server...
+UDPFS FAIL [NOIP]: zuerst die statische IP dieser PS2 in den Netzwerk Einstellungen setzen
+UDPFS FAIL [SMAP]: Ethernet-Treiber wurde nicht geladen
+UDPFS FAIL [STACK]: IP-Stack wurde nicht geladen
+UDPFS FAIL [DEV]: udpfs: Gerät wurde nicht registriert
+UDPFS FAIL [DISCOVERY]: kein Server hat geantwortet -- prüfe, ob der UDPFS-Server im selben LAN läuft und sein "Modulo"-Modus AUS ist
+ATA: Bus wird vorbereitet (DEV9)...
+ATA: Lade Treiber (ata_bd)...
+ATA: Durchsuche Laufwerk (exFAT wird eingebunden)...
+LEERTASTE
+LÖSCHEN
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:tippen  O:zurück  []:Leer  /\:fertig
+Verbindungen aktualisieren
+Bluetooth-Controller koppeln
+Server hinzufügen...
+Server bearbeiten...
+Servername
+Benutzername
+Passwort
+Clientname
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
+Freigabe ( optional )
+SMB Server
+Starte SMB Server Unterstützung
+Starte HOST ( ps2dev ) Unterstützung
 Autostart HOST ( ps2dev )
 Autostart SMB
-Network is already running. Restart it now to apply?
+Netzwerk läuft bereits. Jetzt neu starten, um es anzuwenden?

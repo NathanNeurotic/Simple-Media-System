@@ -3,9 +3,9 @@
 <h2 id="install">Install an external language</h2>
 <ol><li>Download the <a href="releases.html#whats-in-a-release">matching language ZIP</a>. It contains 19 named variants (including an English variant), the base English template and translator guide.</li>
 <li>Choose a variant such as <code>SMS.lng_ES</code> and rename it <code>SMS.lng</code>. Copy it beside the ELF, or to <code>mc?:/SMS/SMS.lng</code>. A boot-folder copy has priority.</li>
-<li>Alternatively highlight a language file in the browser and use its import/update action. Enable the external language with <b>Browser settings → Language</b>; choosing English uses the built-in strings.</li>
+<li>Alternatively highlight a language file in the browser and use its import/update action. Enable the external language with <b>Display settings → Language</b>; choosing English uses the built-in strings.</li>
 <li>Select the matching <b>Character set</b>, save settings and check the UI after relaunch.</li></ol>
-<p>Spanish was updated with <a href="https://github.com/Nacheras">Nacheras</a>'s submitted strings in the October work. Other variants can retain English placeholders for newer entries. Integrated strings and host checks do not establish that every glyph or long label fits on a console.</p>
+<p>Spanish was updated with <a href="https://github.com/Nacheras">Nacheras</a>'s submitted strings in the October work. In the other variants, the entries that were still English were machine-translated on 12 November 2026; the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/TRANSLATING.txt">translator reference</a> lists them so native speakers can check and correct them. Integrated strings and host checks do not establish that every glyph or long label fits on a console.</p>
 <h2 id="encoding">Encoding matters</h2>
 <p>Menu language files use the player's single-byte code pages, not general UTF-8 text rendering. Use the relevant WinLatin1, WinLatin2, Cyrillic or Greek setting. An external <code>.mbf</code> font is a separate mechanism, particularly for multibyte subtitles.</p>
 <p>Subtitle encoding is different: the subtitle reader recognizes UTF-8 with a BOM and has its own MBCS/font selection. Do not apply menu-language encoding rules to every SRT. See <a href="subtitles.html">Subtitles</a>.</p>
