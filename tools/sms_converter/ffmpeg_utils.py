@@ -8,7 +8,7 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
-from config import DEFAULT_SCALING_MODE, MPEG_ALLOWED_FPS_MAP, MAX_CONVERTER_STREAMS, MULTI_AUDIO_CONTAINERS
+from config import DEFAULT_SCALING_MODE, FPS_SOURCE, MPEG_ALLOWED_FPS_MAP, MAX_CONVERTER_STREAMS, MULTI_AUDIO_CONTAINERS
 
 def get_app_dir() -> Path:
     """Returns the base directory of the application."""
@@ -204,6 +204,32 @@ def parse_media_summary(probe_info: Dict[str, Any]) -> Dict[str, Any]:
         "num_streams": len(streams),
         "audio_tracks": sum(s.get("codec_type") == "audio" for s in streams)
     }
+
+def source_fps_choice(source_info: Optional[Dict[str, Any]]) -> str:
+    """The MPEG_ALLOWED_FPS_MAP key that FPS_SOURCE resolves to for this source.
+
+    The average rate comes first: for variable-rate phone video r_frame_rate is a timestamp
+    granularity (often 90000/1 or 120/1), not how many frames there are. Above 30 the rate is
+    halved until it is 30 or less, so frames are dropped evenly and motion stays even: 50 or
+    60 fps keeps every other frame, 96, 100 or 120 every fourth. Forcing 30 on a 96 or 100 fps
+    source would drop frames unevenly instead. A rate that then does not land within 2% of a standard one
+    (15, 20, 72, unknown) gets 30, the old fixed rate.
+    """
+    video = next((s for s in (source_info or {}).get("streams") or []
+                  if s.get("codec_type") == "video" and not s.get("disposition", {}).get("attached_pic")), {})
+    rate = 0.0
+    for key in ("avg_frame_rate", "r_frame_rate"):
+        num, _, den = str(video.get(key, "0/0")).partition("/")
+        try:
+            rate = float(num) / float(den or 1)
+        except (ValueError, ZeroDivisionError):
+            rate = 0.0
+        if rate > 0:
+            break
+    while rate > 30.5:
+        rate /= 2
+    best = min(("23.976", "24", "25", "29.97", "30"), key=lambda name: abs(rate - float(name)))
+    return best if abs(rate - float(best)) <= float(best) * 0.02 else "30"
 
 def calculate_estimated_output_size(duration_sec: float, vbitrate_kbps: float, abitrate_kbps: float) -> int:
     """Calculates estimated output size in bytes including minor container overhead (~1%)."""
@@ -429,6 +455,8 @@ def build_ffmpeg_cmd(
 
         # Frame rate
         fps = str(settings.get("fps", ""))
+        if fps == FPS_SOURCE:
+            fps = source_fps_choice(source_info)
         if fps in MPEG_ALLOWED_FPS_MAP:
             cmd.extend(["-r", MPEG_ALLOWED_FPS_MAP[fps]])
             vf_chain.append(f"fps=fps={MPEG_ALLOWED_FPS_MAP[fps]}")

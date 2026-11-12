@@ -54,6 +54,13 @@ MAX_SMS_STREAMS = 8
 MAX_CONVERTER_STREAMS = MAX_SMS_STREAMS - 1
 MULTI_AUDIO_CONTAINERS = {".avi", ".mpg", ".mpeg", ".mp4"}
 
+# Frame rate setting that follows the source: a standard rate of 30 or less is kept, a faster
+# source is halved until it is 30 or less so frames drop evenly (48, 50, 59.94, 60 -> 24, 25,
+# 29.97, 30; 96, 100, 120 -> 24, 25, 30), anything else becomes 30. Every preset forced 30
+# before, which repeated every fifth frame of a 25 fps source (uneven motion) and spent bits on
+# frames that were only copies.
+FPS_SOURCE = "Source (up to 30)"
+
 # Allowed Frame Rates for MPEG-1 and MPEG-2
 MPEG_ALLOWED_FPS_MAP: Dict[str, str] = {
     "23.976": "24000/1001",
@@ -98,7 +105,7 @@ PRESETS: Dict[str, Preset] = {
         vtag="XVID",
         width=640,
         height=480,
-        fps="30",
+        fps=FPS_SOURCE,
         vbitrate_kbps=1500,
         acodec="libmp3lame",
         abitrate_kbps=128,
@@ -113,7 +120,7 @@ PRESETS: Dict[str, Preset] = {
         vtag=None,
         width=640,
         height=480,
-        fps="30",
+        fps=FPS_SOURCE,
         vbitrate_kbps=2500,
         acodec="mp2",
         abitrate_kbps=192,
@@ -129,7 +136,7 @@ PRESETS: Dict[str, Preset] = {
         vtag=None,
         width=640,
         height=480,
-        fps="30",
+        fps=FPS_SOURCE,
         vbitrate_kbps=1150,
         acodec="mp2",
         abitrate_kbps=192,
@@ -145,7 +152,7 @@ PRESETS: Dict[str, Preset] = {
         vtag=None,
         width=640,
         height=480,
-        fps="30",
+        fps=FPS_SOURCE,
         vbitrate_kbps=1500,
         acodec="aac",
         abitrate_kbps=128,
@@ -160,7 +167,7 @@ PRESETS: Dict[str, Preset] = {
         vtag=None,
         width=320,
         height=240,
-        fps="30",
+        fps=FPS_SOURCE,
         vbitrate_kbps=600,
         acodec="aac",
         abitrate_kbps=128,
@@ -171,11 +178,11 @@ PRESETS: Dict[str, Preset] = {
     ),
     "Xvid-Compatible AVI [High Quality - Fast Storage]": Preset(
         name="Xvid-Compatible AVI [High Quality - Fast Storage]",
-        vcodec="mpeg4", vtag="XVID", width=640, height=480, fps="30",
+        vcodec="mpeg4", vtag="XVID", width=640, height=480, fps=FPS_SOURCE,
         vbitrate_kbps=10000, acodec="pcm_s16le", abitrate_kbps=0,
         sample_rate=48000, channels=2, ext=".avi", gop=6,
         keep_sd_resolution=True,
-        description="10 Mbps Xvid, uncompressed 16-bit stereo PCM at 48 kHz and keyframes every 6 frames. Keeps source SD resolution. Requires fast storage; smooth playback is content and transport dependent."
+        description="10 Mbps Xvid, uncompressed 16-bit stereo PCM at 48 kHz and keyframes every 6 frames. Keeps source SD resolution. About 1.4 MB a second, more than the PS2's USB port reads (under 1 MB a second), so it stutters from USB and needs faster storage such as the internal hard drive. Smooth playback still depends on the content."
     ),
     # ----------------------------------------------------------------------------------
     # AUDIO-ONLY targets.

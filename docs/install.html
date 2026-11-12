@@ -64,6 +64,14 @@ Docker toolchain and <code>make</code>.</p>
 <p>The IOP driver modules SMS needs (USB, MX4SIO, HDD, MMCE, network and the rest) are <b>embedded inside the
 ELF</b>, so a single file is genuinely all you copy — there are no loose <code>.irx</code> files to place beside it.</p>
 
+<div class="callout info"><div class="h">ℹ App packages for OPL, OSDMenu and memory cards</div>
+Each release also ships SMS as an app package, with icons by Berion. <code>Simple-Media-System-kit.zip</code> copies to
+the root of a USB drive, MX4SIO, MMCE or exFAT hard drive: SMS then appears in app lists that read <code>APPS/</code>
+(OPL, OSDMenu and others) as <code>APPS/APP_SMS3/SMS3.ELF</code>, and the kit includes the language packs.
+<code>APP_SMS3.zip</code> holds the same app folder alone. <code>APP_SMS3.psu</code> is the same folder as a memory-card
+save: install it with wLaunchELF's or Launchstation's PSU paste and it becomes <code>mc?:/APP_SMS3/</code>. To keep the
+settings out of the app folder, see <a href="configuration.html#smspath">SMSPATH.TXT</a>.</div>
+
 <div class="callout info"><div class="h">ℹ One file, many names</div>
 You can rename the ELF to suit your loader (some setups expect <code>BOOT.ELF</code> on a memory card, for example).
 The program is the same regardless of the filename.</div>

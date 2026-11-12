@@ -6,25 +6,27 @@ Convert modern source files into SMS's supported video and audio formats. The co
 
 ## Prepare a file for SMS
 
-1. Install FFmpeg and FFprobe from a trusted distribution, or let the application's setup helper locate them. A Windows executable does not guarantee they are installed. Builds need the selected encoders; text burn-in also requires the subtitles/libass filter.
+1. Install FFmpeg and FFprobe from a trusted distribution, or let the application's setup helper locate them. A Windows executable does not guarantee they are installed. Builds need the selected encoders; text burn-in also requires the subtitles/libass filter. There is no fixed install path such as `C:\ffmpeg\bin`. The converter looks in this order: the folder you pick in the app (or its `bin` subfolder), then `ffmpeg\bin` and `ffmpeg` beside the converter, the converter's own folder, and finally your system PATH. In those folders `ffmpeg` and `ffprobe` must sit side by side.
 2. Add a source file, choose an output folder and start with a conservative preset. Keep a short sample for your first console test.
 3. Use Advanced settings only for deliberate changes. The settings badge tells you whether settings differ from the preset; it is not a hardware certification badge.
 4. Read the conversion/validation result and retain the log if anything fails. Test the output in SMS before converting a large library.
 
-H.264, H.265, VP9 and AV1 are not SMS video decoders. An MP4 container may hold either supported `mp4v` or unsupported modern video; conversion changes the codec, not just the filename.
+H.264, H.265, VP9 and AV1 are not SMS video decoders, so an MP4 holding H.264 (`avc1`) video plays its sound with no picture. That is the expected result: convert the file. An MP4 container may hold either supported `mp4v` or unsupported modern video; conversion changes the codec, not just the filename.
 
 ## Preset choices
 
 | Preset family | Default target | Tradeoff |
 | --- | --- | --- |
-| Xvid-compatible AVI | 640×480, 30 fps; 1.5 Mbps video + 128 kbps MP3. | Software MPEG-4 decode with hardware-assisted color conversion. A useful starting profile; content and transport can still cause stutter. |
-| MPEG-2 / MPEG-1 PS | 640×480, 30 fps; 2.5 Mbps MPEG-2 or 1.15 Mbps MPEG-1 + 192 kbps MP2. | IPU-assisted MPEG path. Compare it with AVI on your setup; neither guarantees smoother playback for every source. |
-| MPEG-4 MP4 | 640×480 / 1.5 Mbps, or 320×240 / 600 kbps; 30 fps + 128 kbps AAC. | MPEG-4 Part 2, with the MP4 index front-loaded using `+faststart`. See the [remaining MP4 report](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#mp4). |
-| High Quality — Fast Storage | 10 Mbps Xvid, GOP 6, 48 kHz stereo PCM16; keeps source SD dimensions. | High storage demand; console acceptance is pending. Stereo PCM adds 1.536 Mbps before container overhead. |
+| Xvid-compatible AVI | 640×480, the source frame rate up to 30 fps; 1.5 Mbps video + 128 kbps MP3. | Software MPEG-4 decode with hardware-assisted color conversion. A useful starting profile; content and transport can still cause stutter. |
+| MPEG-2 / MPEG-1 PS | 640×480, the source frame rate up to 30 fps; 2.5 Mbps MPEG-2 or 1.15 Mbps MPEG-1 + 192 kbps MP2. | IPU-assisted MPEG path. Compare it with AVI on your setup; neither guarantees smoother playback for every source. |
+| MPEG-4 MP4 | 640×480 / 1.5 Mbps, or 320×240 / 600 kbps; the source frame rate up to 30 fps + 128 kbps AAC. | MPEG-4 Part 2, with the MP4 index front-loaded using `+faststart`. See the [remaining MP4 report](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#mp4). |
+| High Quality — Fast Storage | 10 Mbps Xvid, GOP 6, 48 kHz stereo PCM16; keeps source SD dimensions. | About 1.4 MB of data a second (stereo PCM alone adds 1.536 Mbps). That is more than the PS2's USB port reads: the original SMS author measured about 950 KB a second at best. It stutters from USB and needs faster storage such as the internal hard drive. Console acceptance is pending. |
 | MP3 / Ogg Vorbis / AAC music | 192 kbps, 48 kHz stereo. | Lossy audio output. Video and embedded cover art are dropped. |
 | FLAC music | FLAC with the source sample rate/channel count retained when possible. | Lossless compression does not restore a lossy source or guarantee unchanged samples after format conversion. SMS's FLAC path requires mono/stereo and outputs 16-bit PCM; read validation results for your input. |
 
 MPEG-1/2 presets use GOP 15; ordinary MPEG-4 presets use GOP 50 and the high-quality Xvid preset uses GOP 6. All default to zero B-frames. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.
+
+Every video preset uses the frame rate **Source (up to 30)**. A source at 23.976, 24, 25, 29.97 or 30 fps keeps its rate. A faster source is halved until it is 30 or less, so frames are dropped evenly: 48, 50, 59.94 and 60 fps keep every other frame (24, 25, 29.97 and 30), and 96, 100 and 120 fps keep every fourth (24, 25 and 30). Anything else becomes 30. Earlier builds forced 30 fps, which repeated every fifth frame of a 25 fps film and spent bitrate and decoding time on the copies. Choose a fixed rate in Advanced settings to override it. MPEG-1/2 output still uses a legal MPEG rate.
 
 ## Tracks, subtitles and advanced controls
 
@@ -49,6 +51,8 @@ Loading a preset restores the default scaling mode and disables upscaling. Chang
 
 **Source audio track** selects a zero-based source index. **Keep all source audio tracks** encodes all selected source audio to the configured audio codec in AVI, MPEG-PS or MP4. At most **six audio tracks plus video** are allowed; excess tracks produce a settings error. Tracks are re-encoded, not copied bit for bit. Language/title metadata are preserved where supported by the container.
 
+**Surround (5.1) sources.** Every preset mixes surround sound down to stereo. SMS outputs stereo and mixes a 5.1 AC-3 track down itself, so through the TV's speakers a 5.1 track only costs decoding time. The exception is SMS's **S/PDIF - Dolby Digital/DTS** option, which sends AC-3 or DTS untouched to a surround receiver over the optical port. For that, choose AC-3 audio and **Keep source layout** under channels in Advanced settings. That combination has not been tested on a console.
+
 The player has its own stream limits and codec/container mappings. Validate actual audio switching in SMS; a desktop muxer accepting a track does not prove that the PS2 reader can use it.
 
 ### Text-subtitle burn-in
@@ -63,11 +67,11 @@ For switchable text, retain a separate matching SRT/SUB/TXT sidecar and use SMS'
 
 ### Two-pass encoding
 
-The app implements two-pass video encoding: analysis followed by an encode using the recorded statistics. It can improve bitrate allocation, at the cost of another processing pass. It does not cap every instantaneous packet or eliminate source/transport bottlenecks. More than two passes is not exposed by this application.
+The app implements two-pass video encoding: analysis followed by an encode using the recorded statistics. It can improve bitrate allocation, at the cost of another processing pass. It does not cap every instantaneous packet or eliminate source/transport bottlenecks. More than two passes is not exposed by this application. TnA reports that Xvid at about 1 Mbit/s already looks good at 640×480 when it is encoded in two passes, and a lower bitrate also asks less of the storage.
 
 ### Keyframe interval and B-frames
 
-GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 15 is about 0.5 seconds and GOP 50 about 1.67 seconds. The shorter MPEG-1/2 default is a mitigation candidate for the [reported color changes](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#colors); re-convert existing files to test it. The exact cause and affected-console acceptance remain unconfirmed. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other.
+GOP/keyframe interval controls how far the player may need to decode from an earlier keyframe after a seek. At 30 fps, GOP 15 is about 0.5 seconds and GOP 50 about 1.67 seconds. The shorter MPEG-1/2 default is a mitigation candidate for the [reported color changes](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#colors); re-convert existing files to test it. The exact cause and affected-console acceptance remain unconfirmed. B-frames are a separate prediction tool. Start with zero B-frames when isolating decode load; do not substitute one setting for the other. A long interval such as 300 frames (12 seconds at 25 fps, TnA's suggestion) saves bitrate and is fine for watching straight through, but a seek can then land up to that far from the point you chose.
 
 ## Understand PASS, WARN and FAIL
 

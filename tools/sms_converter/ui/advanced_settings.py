@@ -10,7 +10,7 @@ from qt_compat import (
 )
 
 from config import (
-    VIDEO_CODECS_MAP, AUDIO_CODECS_MAP, MPEG_ALLOWED_FPS_MAP,
+    VIDEO_CODECS_MAP, AUDIO_CODECS_MAP, FPS_SOURCE, MPEG_ALLOWED_FPS_MAP,
     MAX_WIDTH, MAX_HEIGHT, WARNING_RESOLUTION_MSG, Preset, sms_supports, MULTI_AUDIO_CONTAINERS
 )
 
@@ -136,10 +136,15 @@ class AdvancedSettingsWidget(QWidget):
         self.chk_keep_sd.stateChanged.connect(self._on_control_changed)
 
         self.combo_fps = QComboBox()
-        self.combo_fps.setToolTip("Target video frame rate. 30 FPS or 24 FPS recommended for PS2 hardware. Restricted for MPEG-1/2.")
+        self.combo_fps.setToolTip(
+            "Target video frame rate. Source (up to 30) keeps a standard rate of 30 or less "
+            "(23.976, 24, 25, 29.97, 30), halves a 50 or 60 fps source, and uses 30 for "
+            "anything else. More than 30 fps may drop frames on a PS2. Restricted for MPEG-1/2."
+        )
+        self.combo_fps.addItem(FPS_SOURCE)
         for fps_val in MPEG_ALLOWED_FPS_MAP.keys():
             self.combo_fps.addItem(fps_val)
-        self.combo_fps.setCurrentText("30")
+        self.combo_fps.setCurrentText(FPS_SOURCE)
         self.combo_fps.currentIndexChanged.connect(self._on_control_changed)
 
         self.spin_vbitrate = QSpinBox()

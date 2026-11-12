@@ -6,6 +6,29 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
+## Rolling development — 2026-11-12
+
+From the psx-place forum feedback on rev2.
+
+- HD movie picture: in 720p and 1080i a movie frame is sized in whole video-memory pages, and
+  Color resolution **Auto** stores it in 16-bit colour whenever 32-bit would not fit beside the screen
+  image (a video with DivX picture subtitles stays 32-bit, which those subtitles need). Before, it
+  could overlap the bottom of the screen image and corrupt the lower right.
+- 1080i: the picture is centred instead of leaving an unpainted band at the right and bottom.
+- Settings pointer: a one-line `SMSPATH.TXT` beside the ELF names the folder for `SMS.cfg` and
+  `SMS.smb` (wLaunchELF style; `mc:` means the card SMS started from). The folder must be on a memory
+  card or the kind of device SMS started from; any other line is ignored. SMS creates the folder on
+  the first save and, on a memory card, adds the SMS icon.
+- SAS app packages, with icons by Berion: `APP_SMS3.psu`, `APP_SMS3.zip` and
+  `Simple-Media-System-kit.zip` (APPS/APP_SMS3/, the PSU, language packs and SMB module notices),
+  built and checked in CI for rolling and stable releases.
+- Converter: video presets keep the source frame rate up to 30 fps (a 25 fps film no longer repeats
+  every fifth frame); the 10 Mbps preset says it is too much data for USB.
+
+**NOT TESTED on a PS2.**
+
+---
+
 ## v3.0.0-rev2 (Version 3.0 Rev.2)
 
 First stable release since July. Shown in the app as Version 3.0 (Rev.2); the About screen ends with `Build <commit>`.

@@ -67,7 +67,7 @@ To be precise about which parts are new here versus inherited: this fork's own w
 
 Some of the most valuable work on this fork was not writing code. Homebrew runs on hardware nobody has all of, and a fault nobody can reproduce is a fault nobody can fix. These people supplied the missing half.
 
-- **[Nadwiślański (Berion)](https://www.psx-place.com/members/berion.1431)** — the fork's graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout.
+- **[Nadwiślański (Berion)](https://www.psx-place.com/members/berion.1431)** — the fork's graphics and interface work, and the sustained visual feedback behind the current theme, icons, splash and menu layout, and the `APP_SMS3` app package and its icons.
 - **GhostTownUS** — systematic hardware testing on PS2 and PSX (DESR), with recorded sessions rather than descriptions. Traced the memory-card-less IP problem, and the screen capture that localised the PSX boot hang to a single step. Also spotted that wLaunchELF R3Z keeps its boot driver loaded where SMS resets the IOP — which is why config beside the ELF had to be read at a different point in boot.
 - **[israpps](https://github.com/israpps)** — root-caused the PSX boot failure from a DESR‑5000 ROM dump: the DESR BIOS has no `rom0:LIBSD`, only the XMB and testmode variants. That single observation turned an unreproducible hang into a one-line diagnosis, and is why SMS now ships its own sound driver instead of relying on the console's.
 - **[TnA](https://github.com/TnA-Plastic)** — encoder expertise behind the Media Converter: multi-pass encoding, the distinction between B‑frames and the keyframe interval, and the push that led to real Xvid being used where the preset claimed it.
