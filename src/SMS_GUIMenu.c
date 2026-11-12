@@ -258,6 +258,26 @@ void GUIMenu_SelectItemByName ( GUIMenu* apMenu, const char* apName ) {
 
 }  /* end GUIMenu_SelectItemByName */
 
+/* Same walk by position: row aPos counted from the top, or the last row if there are fewer. */
+void GUIMenu_SelectItem ( GUIMenu* apMenu, int aPos ) {
+
+ GUIMenuState* lpState = ( GUIMenuState* )( unsigned int )apMenu -> m_pState -> m_pTail -> m_Param;
+
+ lpState -> m_pFirst =
+ lpState -> m_pCurr  = lpState -> m_pItems;
+
+ _update_state ( apMenu, lpState );
+
+ while ( aPos-- > 0 && lpState -> m_pCurr != lpState -> m_pLast ) {
+
+  if ( lpState -> m_pLastV && lpState -> m_pCurr + 1 == lpState -> m_pLastV ) ++lpState -> m_pFirst;
+  ++lpState -> m_pCurr;
+  _update_state ( apMenu, lpState );
+
+ }  /* end while */
+
+}  /* end GUIMenu_SelectItem */
+
 int GUIMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
 
  GUIMenu*      lpMenu  = ( GUIMenu* )apObj;

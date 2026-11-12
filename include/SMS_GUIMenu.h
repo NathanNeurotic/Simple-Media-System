@@ -93,6 +93,7 @@ GUIObject* GUI_CreateMenuSMS ( void );
 GUIMenuState* GUI_MenuPushState        ( GUIMenu*              );
 int           GUI_MenuPopState         ( GUIMenu*              );
 void          GUIMenu_SelectItemByName ( GUIMenu*, const char* );
+void          GUIMenu_SelectItem       ( GUIMenu*, int         );
 void          GUIMenu_ShowItem         ( GUIMenu*, int, int    );
 
 #ifdef __cplusplus
