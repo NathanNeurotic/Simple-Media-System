@@ -34,10 +34,10 @@ Képernyõ igazítása fel
 Képernyõ igazítása le
 Hálózat automatikus indítása
 USB automatikus indítása
-HDD automatikus indítása
+HDD APA automatikus indítása
 Eszköz beállítások
 Hálózat támogatás indítása
-HDD támogatás indítása
+HDD APA támogatás indítása
 USB támogatás indítása
 IPCONFIG.DAT szerkesztése...
 IPCONFIG.DAT szerkesztése
@@ -167,7 +167,7 @@ tallózó indítása
 mc0:/BOOT/BOOT.ELF
 mc0:/B?DATA-SYSTEM/BOOT.ELF
 Kilépés ide
-Sound FX
+Hangeffektek
 S/PDIF - Dolby Digital/DTS
 MP3 beállítások...
 Véletlenszerû lejátszási lista
@@ -221,7 +221,7 @@ kézi
 Duplex mód
 teljes
 fél
-Standard
+Szabvány
 10Base-T
 100Base-TX
 Hálózat beállítások...
@@ -265,47 +265,47 @@ Nem támogatott vagy sérült kép
 Nullázó gomb használata
 Kikapcsolás
 Kilépés
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Automatikus 2:2 pulldown (kép)
+DTV 576p
+MX4SIO automatikus indítása
+MX4SIO támogatás indítása
+HDD BDM automatikus indítása
+HDD BDM támogatás indítása
+i.LINK automatikus indítása
+i.LINK támogatás indítása
+MMCE automatikus indítása
+MMCE támogatás indítása
+UDPFS hálózati meghajtó indítása
+UDPFS automatikus indítása
+UDPFS: hálózat elõkészítése (DEV9)...
+UDPFS: Ethernet illesztõprogram betöltése...
+UDPFS: IP-verem indítása...
+UDPFS: szerver keresése...
+UDPFS FAIL [NOIP]: elõbb állítsd be a PS2 statikus IP címét a Hálózat beállításokban
+UDPFS FAIL [SMAP]: az Ethernet illesztõprogram nem töltõdött be
+UDPFS FAIL [STACK]: az IP-verem nem töltõdött be
+UDPFS FAIL [DEV]: udpfs: az eszköz nem regisztrálódott
+UDPFS FAIL [DISCOVERY]: egy szerver sem válaszolt -- ellenõrizd, hogy az UDPFS szerver fut-e ugyanazon a LAN-on, és hogy a "Modulo" módja KI van-e kapcsolva
+ATA: busz elõkészítése (DEV9)...
+ATA: illesztõprogram betöltése (ata_bd)...
+ATA: meghajtó vizsgálata (exFAT csatolása)...
+SZÓKÖZ
+TÖRLÉS
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:írás  O:vissza  []:szóköz  /\:kész
+Kapcsolatok frissítése
+Bluetooth vezérlõ párosítása
+Szerver hozzáadása...
+Szerver szerkesztése...
+Szerver neve
+Felhasználónév
+Jelszó
+Kliens neve
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Megosztás ( nem kötelezõ )
+SMB szerver
+SMB szerver támogatás indítása
+HOST ( ps2dev ) támogatás indítása
+HOST ( ps2dev ) automatikus indítása
+SMB automatikus indítása
+A hálózat már fut. Újraindítod most az alkalmazáshoz?

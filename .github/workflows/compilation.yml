@@ -61,6 +61,7 @@ jobs:
     - name: Host playback and file I/O regression checks
       run: |
         python3 tools/check_devmenu.py
+        python3 tools/test_check_devmenu.py
         python3 tools/test_language_packs.py
         python3 tools/test_stream_allocation.py
         python3 tools/test_stio_stream_failure.py

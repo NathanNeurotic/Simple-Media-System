@@ -34,10 +34,10 @@ Ajustar o ecrã para cima
 Ajustar o ecrã para baixo
 Autoiniciar a rede
 Autoiniciar o USB
-Autoiniciar o HDD
+Autoiniciar o HDD APA
 Configurações do dispositivo
 Iniciar suporte de rede
-Iniciar suporte para HDD
+Iniciar suporte para HDD APA
 Iniciar suporte para USB
 Editar IPCONFIG.DAT...
 Editar IPCONFIG.DAT
@@ -178,8 +178,8 @@ A copiar
 KB/s
 Seleccionar acção
 Resolução da cor
-32 bit
-16 bit
+32 bits
+16 bits
 DTV 480P
 Porta do controlador 2
 joystick
@@ -254,58 +254,58 @@ KB
 %d.%03d
 Kb/s
 Hz
-ch
+can.
 Memória disponível: %.1fMB/%.2fMB
 Recomeçar apartir de %s ? ('cruz'='sim', 'triangulo'='não')
 Deslocamento da imagem
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Resolução de vídeo demasiado grande (pressione "X" para continuar)...
+Parametro de sincr. 3 (audio)
+Imagens
+Imagem não suportada ou danificada
+Acção do botão Reset
+desligar
+sair
+Pulldown 2:2 automático (vídeo)
+DTV 576p
+Autoiniciar o MX4SIO
+Iniciar suporte para MX4SIO
+Autoiniciar o HDD BDM
+Iniciar suporte para HDD BDM
+Autoiniciar o i.LINK
+Iniciar suporte para i.LINK
+Autoiniciar o MMCE
+Iniciar suporte para MMCE
+Iniciar unidade de rede UDPFS
+Autoiniciar o UDPFS
+UDPFS: a preparar a rede (DEV9)...
+UDPFS: a carregar o driver Ethernet...
+UDPFS: a iniciar a pilha IP...
+UDPFS: a procurar o servidor...
+UDPFS FAIL [NOIP]: defina primeiro o IP estático desta PS2 em Configurações de rede
+UDPFS FAIL [SMAP]: o driver Ethernet não foi carregado
+UDPFS FAIL [STACK]: a pilha IP não foi carregada
+UDPFS FAIL [DEV]: udpfs: o dispositivo não foi registado
+UDPFS FAIL [DISCOVERY]: nenhum servidor respondeu -- verifique se o servidor UDPFS está a funcionar na mesma LAN e se o modo "Modulo" está DESLIGADO
+ATA: a preparar o barramento (DEV9)...
+ATA: a carregar o driver (ata_bd)...
+ATA: a analisar a unidade (a montar exFAT)...
+ESPAÇO
+APAGAR
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+X:escrever  O:voltar  []:espaço  /\:pronto
+Actualizar ligações
+Emparelhar controlador Bluetooth
+Adicionar servidor...
+Editar servidor...
+Nome do servidor
+Nome de utilizador
+Palavra-passe
+Nome do cliente
+Porta
+Partilha ( opcional )
+Servidor SMB
+Iniciar suporte para servidor SMB
+Iniciar suporte para HOST ( ps2dev )
+Autoiniciar o HOST ( ps2dev )
+Autoiniciar o SMB
+A rede já está ativa. Reiniciá-la agora para aplicar?

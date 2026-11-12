@@ -17,7 +17,7 @@ Napoveda...
 Ulozit nastaveni
 Vypnout konzoli
 Ukoncit SMS
-TV system
+TV norma
 PAL
 NTSC
 Auto
@@ -27,17 +27,17 @@ WinLatin2
 WinCyrillic
 WinGreek
 Nastaveni Zobrazeni
-SMS Menu
+Menu SMS
 Posunout obraz doleva
 Posunout obraz doprava
 Posunout obraz nahoru
 Posunout obraz dolu
 Automaticka inicializace site
 Automaticka inicializace USB
-Automaticka inicializace HDD
+Automaticka inicializace HDD APA
 Nastaveni Zarizeni
 Spustit inicializaci site
-Spustit inicializaci HDD
+Spustit inicializaci HDD APA
 Spustit inicializaci USB
 Editovat IPCONFIG.DAT...
 Editace IPCONFIG.DAT
@@ -122,7 +122,7 @@ R1 - prava cast pan-scan
 KRUH - Synchronizacni mod A/V (Titulky/V)
 L2 - zmensi synchronizacni hodnotu
 R2 - zvetsi synchronizacni hodnotu
-SMS menu:
+Menu SMS:
 KRIZEK/KROUZEK-Akce/Presunuti do slozky
 TROJUHELNIK-Nadrazena slozka/Ukonceni menu
 Chyba (stisknete "KRIZEK" pro pokracovani)...
@@ -215,12 +215,12 @@ Smerova tlacitka
 DTV 1080i
 DTV 720p
 Operacni mod
-auto-negotiation
+auto-vyjednavani
 automaticky
 rucne
 Duplexni mod
-full
-half
+plny
+polovicni
 Standard
 10Base-T
 100Base-TX
@@ -228,7 +228,7 @@ Nastavovani site...
 Nastaveni site
 Synchronizacni parameter 1 (video)
 Synchronizacni parameter 2 (GUI)
-SMB server...
+Server SMB...
 Ukoncovani nevyrizeneho spojeni...
 Aktualizace jazyka SMS
 Aktualizace palety SMS
@@ -244,68 +244,68 @@ Parametr Autodetekce
 Start prehravani od
 stred-doprava
 Pouzit obsluhu vyjimky
-?Subtitle MBCS
-?Loading font...
-?Loading ODML indices %d...
-?File size: 
-?GB
-?KB
+Titulky MBCS
+Nacitani fontu...
+Nacitani indexu ODML %d...
+Velikost souboru: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Kb/s
+Hz
+kan.
+Dostupna pamet: %.1fMB/%.2fMB
+Pokracovat v prehravani od %s ? ('KRIZEK'='ano', 'TROJUHELNIK'='ne')
+Posun obrazu
+Rozliseni videa je prilis velke (stisknete "KRIZEK" pro pokracovani)...
+Synchronizacni parameter 3 (audio)
+Obrazky
+Nepodporovany nebo poskozeny obrazek
+Akce tlacitka Reset
+vypnout
+ukoncit
+Automaticky 2:2 pulldown (video)
+DTV 576p
+Automaticka inicializace MX4SIO
+Spustit inicializaci MX4SIO
+Automaticka inicializace HDD BDM
+Spustit inicializaci HDD BDM
+Automaticka inicializace i.LINK
+Spustit inicializaci i.LINK
+Automaticka inicializace MMCE
+Spustit inicializaci MMCE
+Spustit sitovy disk UDPFS
+Automaticka inicializace UDPFS
+UDPFS: priprava site (DEV9)...
+UDPFS: nacitani ovladace Ethernet...
+UDPFS: spousteni IP stacku...
+UDPFS: hledani serveru...
+UDPFS FAIL [NOIP]: nejprve nastavte statickou IP tohoto PS2 v Nastaveni site
+UDPFS FAIL [SMAP]: ovladac Ethernet se nenacetl
+UDPFS FAIL [STACK]: IP stack se nenacetl
+UDPFS FAIL [DEV]: udpfs: zarizeni se nezaregistrovalo
+UDPFS FAIL [DISCOVERY]: zadny server neodpovedel -- zkontrolujte, ze server UDPFS bezi ve stejne LAN a ze jeho rezim "Modulo" je vypnuty
+ATA: priprava sbernice (DEV9)...
+ATA: nacitani ovladace (ata_bd)...
+ATA: prohledavani disku (pripojovani exFAT)...
+MEZERA
+SMAZAT
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:psat  O:zpet  []:mezera  /\:hotovo
+Obnovit pripojeni
+Sparovat ovladac Bluetooth
+Pridat server...
+Upravit server...
+Nazev serveru
+Uzivatelske jmeno
+Heslo
+Nazev klienta
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Sdileni ( volitelne )
+Server SMB
+Spustit inicializaci serveru SMB
+Spustit inicializaci HOST ( ps2dev )
+Automaticka inicializace HOST ( ps2dev )
+Automaticka inicializace SMB
+Sit uz bezi. Restartovat ji nyni a pouzit zmeny?

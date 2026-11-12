@@ -71,7 +71,9 @@ static void _lang_handler     ( GUIMenu*, int );
        void _adjdown_handler  ( GUIMenu*, int );
 
 static void _cntslot_handler  ( GUIMenu*, int );
+#ifndef BDM
 static void _autonet_handler  ( GUIMenu*, int );
+#endif
 static void _autousb_handler  ( GUIMenu*, int );
 #ifdef BDM
 static void _automx4sio_handler ( GUIMenu*, int );
@@ -216,51 +218,69 @@ static GUIMenuItem s_AdvDispMenu[] __attribute__(   (  section( ".data" )  )   )
 
 /* The device-menu labels below ( MX4SIO / HDD BDM / i.LINK / MMCE / UDPFS start+autostart,
  * Pair Bluetooth, Refresh connections ) are now in the translatable string table
- * ( SMS_Locale, indices 269+ ) via STR_* macros -- no longer hardcoded here. */
+ * ( SMS_Locale, indices 269+ ) via STR_* macros -- no longer hardcoded here.
+ *
+ * Every static row is placed by NAME ( [ DEVROW_x ] = ... ) and every handler and the status block
+ * in _device_handler write a row's ON/OFF ( or text ) value through the same name, so the order is
+ * defined once, in the DEVROW numbers. An earlier reorder ( 9985cc3 ) moved the rows but not the
+ * hardcoded numbers, and toggles then painted the wrong lines. To reorder, change only the
+ * numbers ( 0..DEVROW_LAST, each used once ) and run tools/check_devmenu.py: it fails when a
+ * label, its handler, its flag and its repaint stop belonging together. */
 #ifdef BDM
+/* Grouped: storage autostarts; Network settings with the three network modes; CD/DVD; the two
+ * controller rows. The Start rows are appended after these at run time ( _device_handler ). */
+# define DEVROW_AUTO_USB     0
+# define DEVROW_AUTO_ILINK   1
+# define DEVROW_AUTO_MX4SIO  2
+# define DEVROW_AUTO_MMCE    3
+# define DEVROW_AUTO_HDD     4   /* HDD APA */
+# define DEVROW_AUTO_ATA     5   /* HDD BDM */
+# define DEVROW_NETWORK      6
+/* The three NETWORK MODE rows are one choice: selecting any of them repaints all three
+ * ( _switch_netmode ), so these are also needed away from their own handlers. */
+# define DEVROW_HOST         7
+# define DEVROW_SMB          8
+# define DEVROW_UDPFS        9
+# define DEVROW_CDVD        10
+# define DEVROW_CDVD_SPEED  11
+# define DEVROW_CNTSLOT     12
+# define DEVROW_DIRBTN      13
+# define DEVROW_LAST        13
 static GUIMenuItem s_DevMenu[ 28 ] __attribute__(   (  section( ".data" )  )   ) = {
-/* ORIGINAL upstream row order, restored after the 9985cc3 reorder broke every index-
- * based consumer: the autostart / cdvd / dirbtn handlers below write each row's ON/OFF
- * ( or text ) icon BY HARDCODED INDEX via _switch_flag / s_DevMenu[ n ], and so does the
- * status block in _device_handler. Reordering rows without moving all of those indices
- * in lockstep makes toggles land on the wrong lines -- and writing a GUICON id into a
- * MENU_ITEM_TYPE_TEXT row ( or a string pointer into an icon row ) crashes the redraw.
- * Do NOT reorder these rows without auditing every s_DevMenu[ n ] / _switch_flag index
- * in this file first. */
- {                   0, &STR_NETWORK_SETTINGS,    0, 0, _network_handler,    0, 0 },   /*  0 */
- { MENU_ITEM_TYPE_TEXT, &STR_CONTROLLER_SLOT2,    0, 0, _cntslot_handler,    0, 0 },   /*  1 */
- {                   0, &STR_AUTOSTART_USB,       0, 0, _autousb_handler,    0, 0 },   /*  2 */
- {                   0, &STR_AUTOSTART_ILINK,     0, 0, _autoilink_handler,  0, 0 },   /*  3 */
- {                   0, &STR_AUTOSTART_MX4SIO,    0, 0, _automx4sio_handler, 0, 0 },   /*  4 */
- {                   0, &STR_AUTOSTART_MMCE,      0, 0, _automce_handler,    0, 0 },   /*  5 */
- {                   0, &STR_AUTOSTART_HDD,       0, 0, _autohdd_handler,    0, 0 },   /*  6  HDD APA */
- {                   0, &STR_AUTOSTART_HDD_BDM,   0, 0, _autoata_handler,    0, 0 },   /*  7  HDD BDM */
- {                   0, &STR_AUTOSTART_HOST,      0, 0, _autohost_handler,   0, 0 },   /*  8  net mode */
- {                   0, &STR_AUTOSTART_SMB,       0, 0, _autosmb_handler,    0, 0 },   /*  9  net mode */
- {                   0, &STR_AUTOSTART_UDPFS,     0, 0, _autoudpfs_handler,  0, 0 },   /* 10  net mode */
- {                   0, &STR_DISABLE_CDVD,        0, 0, _cdvd_handler,       0, 0 },   /* 11 */
- { MENU_ITEM_TYPE_TEXT, &STR_CDVD_SPEED,          0, 0, _cdvd_spd_handler,   0, 0 },   /* 12 */
- { MENU_ITEM_TYPE_TEXT, &STR_DIRECTIONAL_BUTTONS, 0, 0, _dirbtn_handler,     0, 0 }    /* 13 */
+ [ DEVROW_AUTO_USB    ] = {                   0, &STR_AUTOSTART_USB,       0, 0, _autousb_handler,    0, 0 },
+ [ DEVROW_AUTO_ILINK  ] = {                   0, &STR_AUTOSTART_ILINK,     0, 0, _autoilink_handler,  0, 0 },
+ [ DEVROW_AUTO_MX4SIO ] = {                   0, &STR_AUTOSTART_MX4SIO,    0, 0, _automx4sio_handler, 0, 0 },
+ [ DEVROW_AUTO_MMCE   ] = {                   0, &STR_AUTOSTART_MMCE,      0, 0, _automce_handler,    0, 0 },
+ [ DEVROW_AUTO_HDD    ] = {                   0, &STR_AUTOSTART_HDD,       0, 0, _autohdd_handler,    0, 0 },
+ [ DEVROW_AUTO_ATA    ] = {                   0, &STR_AUTOSTART_HDD_BDM,   0, 0, _autoata_handler,    0, 0 },
+ [ DEVROW_NETWORK     ] = {                   0, &STR_NETWORK_SETTINGS,    0, 0, _network_handler,    0, 0 },
+ [ DEVROW_HOST        ] = {                   0, &STR_AUTOSTART_HOST,      0, 0, _autohost_handler,   0, 0 },
+ [ DEVROW_SMB         ] = {                   0, &STR_AUTOSTART_SMB,       0, 0, _autosmb_handler,    0, 0 },
+ [ DEVROW_UDPFS       ] = {                   0, &STR_AUTOSTART_UDPFS,     0, 0, _autoudpfs_handler,  0, 0 },
+ [ DEVROW_CDVD        ] = {                   0, &STR_DISABLE_CDVD,        0, 0, _cdvd_handler,       0, 0 },
+ [ DEVROW_CDVD_SPEED  ] = { MENU_ITEM_TYPE_TEXT, &STR_CDVD_SPEED,          0, 0, _cdvd_spd_handler,   0, 0 },
+ [ DEVROW_CNTSLOT     ] = { MENU_ITEM_TYPE_TEXT, &STR_CONTROLLER_SLOT2,    0, 0, _cntslot_handler,    0, 0 },
+ [ DEVROW_DIRBTN      ] = { MENU_ITEM_TYPE_TEXT, &STR_DIRECTIONAL_BUTTONS, 0, 0, _dirbtn_handler,     0, 0 }
 };
-
-/* Row indices for the three NETWORK MODE rows. They are named because selecting any one of
- * them repaints ALL THREE ( picking a mode clears the other two ), so unlike every other row
- * these indices are needed away from their own handler. Keeping them here means the group
- * has exactly ONE definition to move if the menu is ever reordered again. */
-#define DEVROW_NET_FIRST  8
-#define DEVROW_HOST       8
-#define DEVROW_SMB        9
-#define DEVROW_UDPFS     10
 #else
+# define DEVROW_NETWORK      0
+# define DEVROW_CNTSLOT      1
+# define DEVROW_AUTO_NET     2
+# define DEVROW_AUTO_USB     3
+# define DEVROW_AUTO_HDD     4
+# define DEVROW_CDVD         5
+# define DEVROW_CDVD_SPEED   6
+# define DEVROW_DIRBTN       7
+# define DEVROW_LAST         7
 static GUIMenuItem s_DevMenu[ 12 ] __attribute__(   (  section( ".data" )  )   ) = {
- {                   0, &STR_NETWORK_SETTINGS,    0, 0, _network_handler,  0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_CONTROLLER_SLOT2,    0, 0, _cntslot_handler,  0, 0 },
- {                   0, &STR_AUTOSTART_NETWORK,   0, 0, _autonet_handler,  0, 0 },
- {                   0, &STR_AUTOSTART_USB,       0, 0, _autousb_handler,  0, 0 },
- {                   0, &STR_AUTOSTART_HDD,       0, 0, _autohdd_handler,  0, 0 },
- {                   0, &STR_DISABLE_CDVD,        0, 0, _cdvd_handler,     0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_CDVD_SPEED,          0, 0, _cdvd_spd_handler, 0, 0 },
- { MENU_ITEM_TYPE_TEXT, &STR_DIRECTIONAL_BUTTONS, 0, 0, _dirbtn_handler,   0, 0 }
+ [ DEVROW_NETWORK     ] = {                   0, &STR_NETWORK_SETTINGS,    0, 0, _network_handler,  0, 0 },
+ [ DEVROW_CNTSLOT     ] = { MENU_ITEM_TYPE_TEXT, &STR_CONTROLLER_SLOT2,    0, 0, _cntslot_handler,  0, 0 },
+ [ DEVROW_AUTO_NET    ] = {                   0, &STR_AUTOSTART_NETWORK,   0, 0, _autonet_handler,  0, 0 },
+ [ DEVROW_AUTO_USB    ] = {                   0, &STR_AUTOSTART_USB,       0, 0, _autousb_handler,  0, 0 },
+ [ DEVROW_AUTO_HDD    ] = {                   0, &STR_AUTOSTART_HDD,       0, 0, _autohdd_handler,  0, 0 },
+ [ DEVROW_CDVD        ] = {                   0, &STR_DISABLE_CDVD,        0, 0, _cdvd_handler,     0, 0 },
+ [ DEVROW_CDVD_SPEED  ] = { MENU_ITEM_TYPE_TEXT, &STR_CDVD_SPEED,          0, 0, _cdvd_spd_handler, 0, 0 },
+ [ DEVROW_DIRBTN      ] = { MENU_ITEM_TYPE_TEXT, &STR_DIRECTIONAL_BUTTONS, 0, 0, _dirbtn_handler,   0, 0 }
 };
 #endif
 
@@ -567,45 +587,35 @@ static SMString* s_Speeds[ 3 ] = {
 static void _device_handler ( GUIMenu* apMenu, int aDir ) {
 
  GUIMenuState* lpState = GUI_MenuPushState ( apMenu );
-#ifdef BDM
- unsigned int  lSize   = 13;   /* 14 static rows ( 0..13 ); dynamic Start rows append after */
-#else
- unsigned int  lSize   = 7;
-#endif
+ unsigned int  lSize   = DEVROW_LAST;   /* static rows 0..DEVROW_LAST; the Start rows append after */
 
  if ( g_Config.m_NetworkFlags & SMS_DF_GAMEPAD )
-  s_DevMenu[ 1 ].m_IconRight = ( unsigned int )&STR_GAMEPAD;
+  s_DevMenu[ DEVROW_CNTSLOT ].m_IconRight = ( unsigned int )&STR_GAMEPAD;
  else if (  ( g_IOPFlags & SMS_IOPF_RMMAN ) && ( g_Config.m_NetworkFlags & SMS_DF_REMOTE )  )
-  s_DevMenu[ 1 ].m_IconRight = ( unsigned int )&STR_REMOTE_CONTROL;
- else s_DevMenu[ 1 ].m_IconRight = ( unsigned int )&STR_NONE;
+  s_DevMenu[ DEVROW_CNTSLOT ].m_IconRight = ( unsigned int )&STR_REMOTE_CONTROL;
+ else s_DevMenu[ DEVROW_CNTSLOT ].m_IconRight = ( unsigned int )&STR_NONE;
 
-/* These indices MUST match the s_DevMenu row order above -- and the two layouts now diverge
- * from row 2 onwards, so EVERY row is assigned inside its own branch. Do not hoist any back
- * out. tools/check_devmenu.py cross-checks all of this against the array and the handlers. */
+/* Every row is painted through its DEVROW name, so this block does not depend on the order.
+ * tools/check_devmenu.py checks each one against the row's label and handler. */
+ s_DevMenu[ DEVROW_AUTO_USB    ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_USB    ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_AUTO_HDD    ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_HDD    ? GUICON_ON : GUICON_OFF;  /* HDD APA */
 #ifdef BDM
- s_DevMenu[  2 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_USB    ? GUICON_ON : GUICON_OFF;
- s_DevMenu[  3 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_ILINK  ? GUICON_ON : GUICON_OFF;
- s_DevMenu[  4 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_MX4SIO ? GUICON_ON : GUICON_OFF;
- s_DevMenu[  5 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_MMCE   ? GUICON_ON : GUICON_OFF;
- s_DevMenu[  6 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_HDD    ? GUICON_ON : GUICON_OFF;  /* HDD APA */
- s_DevMenu[  7 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_ATA    ? GUICON_ON : GUICON_OFF;  /* HDD BDM */
+ s_DevMenu[ DEVROW_AUTO_ILINK  ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_ILINK  ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_AUTO_MX4SIO ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_MX4SIO ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_AUTO_MMCE   ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_MMCE   ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_AUTO_ATA    ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_ATA    ? GUICON_ON : GUICON_OFF;  /* HDD BDM */
 /* The three network rows are ONE choice, so they are painted from the single derived mode
  * rather than from three independent bits. That is what makes an inherited two-stacks-at-once
  * config ( which older builds could write ) display honestly instead of lighting two rows. */
- s_DevMenu[ DEVROW_HOST  ].m_IconRight = SMS_ConfigNetMode () == SMS_NETMODE_HOST  ? GUICON_ON : GUICON_OFF;
- s_DevMenu[ DEVROW_SMB   ].m_IconRight = SMS_ConfigNetMode () == SMS_NETMODE_SMB   ? GUICON_ON : GUICON_OFF;
- s_DevMenu[ DEVROW_UDPFS ].m_IconRight = SMS_ConfigNetMode () == SMS_NETMODE_UDPFS ? GUICON_ON : GUICON_OFF;
- s_DevMenu[ 11 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_CDVD        ? GUICON_ON : GUICON_OFF;
- s_DevMenu[ 12 ].m_IconRight = ( unsigned int )s_Speeds[ g_Config.m_CDVDSpeed ];
- s_DevMenu[ 13 ].m_IconRight = ( unsigned int )( g_Config.m_BrowserFlags & SMS_BF_DIRB ? &STR_REMOTE_CONTROL : &STR_GAMEPAD );
+ s_DevMenu[ DEVROW_HOST        ].m_IconRight = SMS_ConfigNetMode () == SMS_NETMODE_HOST  ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_SMB         ].m_IconRight = SMS_ConfigNetMode () == SMS_NETMODE_SMB   ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_UDPFS       ].m_IconRight = SMS_ConfigNetMode () == SMS_NETMODE_UDPFS ? GUICON_ON : GUICON_OFF;
 #else
- s_DevMenu[ 2 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_NET ? GUICON_ON   : GUICON_OFF;
- s_DevMenu[ 3 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_USB ? GUICON_ON   : GUICON_OFF;
- s_DevMenu[ 4 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_HDD ? GUICON_ON   : GUICON_OFF;
- s_DevMenu[ 5 ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_CDVD     ? GUICON_ON   : GUICON_OFF;
- s_DevMenu[ 6 ].m_IconRight = ( unsigned int )s_Speeds[ g_Config.m_CDVDSpeed ];
- s_DevMenu[ 7 ].m_IconRight = ( unsigned int )( g_Config.m_BrowserFlags & SMS_BF_DIRB ? &STR_REMOTE_CONTROL : &STR_GAMEPAD );
+ s_DevMenu[ DEVROW_AUTO_NET    ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_AUTO_NET    ? GUICON_ON : GUICON_OFF;
 #endif
+ s_DevMenu[ DEVROW_CDVD        ].m_IconRight = g_Config.m_NetworkFlags & SMS_DF_CDVD        ? GUICON_ON : GUICON_OFF;
+ s_DevMenu[ DEVROW_CDVD_SPEED  ].m_IconRight = ( unsigned int )s_Speeds[ g_Config.m_CDVDSpeed ];
+ s_DevMenu[ DEVROW_DIRBTN      ].m_IconRight = ( unsigned int )( g_Config.m_BrowserFlags & SMS_BF_DIRB ? &STR_REMOTE_CONTROL : &STR_GAMEPAD );
 
 /* START <device> rows, ordered the way Nad asked for ( item 3 of his batch ): the storage
  * devices first, in the order people actually reach for them, and the network stacks last.
@@ -617,11 +627,10 @@ static void _device_handler ( GUIMenu* apMenu, int aDir ) {
  * Every gating condition is otherwise byte-for-byte what it was; only placement changed.
  *
  * Safe to reorder, unlike the static block above: these rows are appended with ++lSize and
- * deliberately carry no m_IconRight, so not one of them owns a hardcoded index. That is the
- * whole difference between this list and the autostart rows, where a reorder that misses a
- * consumer paints the indicator on the wrong row ( which is exactly what happened the first
- * time this was attempted -- _switch_flag was the consumer that got missed ).
- * tools/check_devmenu.py verifies the static side; run it after touching either. */
+ * deliberately carry no m_IconRight, so not one of them owns a row number. The static rows
+ * above are written through their DEVROW names instead; the first reorder, before those names,
+ * missed _switch_flag's numbers and painted indicators on the wrong rows.
+ * tools/check_devmenu.py verifies both lists; run it after touching either. */
 
  if (  !( g_IOPFlags & SMS_IOPF_UMS )  ) {   /* UMS ( usb-mass ) not USB ( usbd ): ds34usb now loads usbd alone at boot, so keep offering "Start USB" until the MASS stack is actually up */
 
@@ -1382,7 +1391,7 @@ setNone:
 
  }  /* end else */
 
- s_DevMenu[ 1 ].m_IconRight = lStr;
+ s_DevMenu[ DEVROW_CNTSLOT ].m_IconRight = lStr;
 
  apMenu -> Redraw ( apMenu );
 
@@ -1449,47 +1458,45 @@ static void _autosmb_handler ( GUIMenu* apMenu, int aDir ) {
 }  /* end _autosmb_handler */
 #endif
 
+#ifndef BDM
 static void _autonet_handler ( GUIMenu* apMenu, int aDir ) {
 
 /* non-BDM only: that build has no SMB ( SMS_IOPStartNet compiles it out ) and no UDPFS, so
  * its single "Autostart network" row IS the HOST mode and a plain bit toggle is correct.
  * The BDM build reaches HOST through _autohost_handler above. */
- _switch_flag ( apMenu, 2, &g_Config.m_NetworkFlags, SMS_DF_AUTO_NET );
+ _switch_flag ( apMenu, DEVROW_AUTO_NET, &g_Config.m_NetworkFlags, SMS_DF_AUTO_NET );
 
 }  /* end _autonet_handler */
+#endif
 
 static void _autousb_handler ( GUIMenu* apMenu, int aDir ) {
 
-#ifdef BDM
- _switch_flag ( apMenu, 2, &g_Config.m_NetworkFlags, SMS_DF_AUTO_USB );   /* USB heads the autostart block */
-#else
- _switch_flag ( apMenu, 3, &g_Config.m_NetworkFlags, SMS_DF_AUTO_USB );   /* non-BDM keeps Network at row 2 */
-#endif
+ _switch_flag ( apMenu, DEVROW_AUTO_USB, &g_Config.m_NetworkFlags, SMS_DF_AUTO_USB );
 
 }  /* end _autousb_handler */
 
 #ifdef BDM
 static void _automx4sio_handler ( GUIMenu* apMenu, int aDir ) {
 
- _switch_flag ( apMenu, 4, &g_Config.m_NetworkFlags, SMS_DF_AUTO_MX4SIO );  /* MX4SIO is row [4] */
+ _switch_flag ( apMenu, DEVROW_AUTO_MX4SIO, &g_Config.m_NetworkFlags, SMS_DF_AUTO_MX4SIO );
 
 }  /* end _automx4sio_handler */
 
 static void _autoata_handler ( GUIMenu* apMenu, int aDir ) {
 
- _switch_flag ( apMenu, 7, &g_Config.m_NetworkFlags, SMS_DF_AUTO_ATA );   /* HDD BDM is row [7] */
+ _switch_flag ( apMenu, DEVROW_AUTO_ATA, &g_Config.m_NetworkFlags, SMS_DF_AUTO_ATA );   /* HDD BDM */
 
 }  /* end _autoata_handler */
 
 static void _autoilink_handler ( GUIMenu* apMenu, int aDir ) {
 
- _switch_flag ( apMenu, 3, &g_Config.m_NetworkFlags, SMS_DF_AUTO_ILINK );  /* i.LINK is row [3] */
+ _switch_flag ( apMenu, DEVROW_AUTO_ILINK, &g_Config.m_NetworkFlags, SMS_DF_AUTO_ILINK );
 
 }  /* end _autoilink_handler */
 
 static void _automce_handler ( GUIMenu* apMenu, int aDir ) {
 
- _switch_flag ( apMenu, 5, &g_Config.m_NetworkFlags, SMS_DF_AUTO_MMCE );  /* MMCE is row [5] */
+ _switch_flag ( apMenu, DEVROW_AUTO_MMCE, &g_Config.m_NetworkFlags, SMS_DF_AUTO_MMCE );
 
 }  /* end _automce_handler */
 
@@ -1502,11 +1509,7 @@ static void _autoudpfs_handler ( GUIMenu* apMenu, int aDir ) {
 
 static void _autohdd_handler ( GUIMenu* apMenu, int aDir ) {
 
-#ifdef BDM
- _switch_flag ( apMenu, 6, &g_Config.m_NetworkFlags, SMS_DF_AUTO_HDD );  /* HDD APA is row [6] in the BDM menu */
-#else
- _switch_flag ( apMenu, 4, &g_Config.m_NetworkFlags, SMS_DF_AUTO_HDD );
-#endif
+ _switch_flag ( apMenu, DEVROW_AUTO_HDD, &g_Config.m_NetworkFlags, SMS_DF_AUTO_HDD );  /* HDD APA */
 
 }  /* end _autohdd_handler */
 
@@ -1537,11 +1540,12 @@ static int _start_device (  GUIMenu* apMenu, int ( *Start ) ( int )  ) {
  } else {
 
 /* Swallow the still-held confirm before the menu is rebuilt. _device_handler
- * parks the cursor on s_DevMenu[0] ( "Network Settings" ), and SMS's software
- * auto-repeat ( QueryPad0 -> QueryPad1 ) would otherwise stream the held CROSS
- * straight down Network Settings -> Edit IP config -> the IP octet editor and
- * roll octet 1 ( 0..255 ), pinning the user there -- the "starting MMCE dumps
- * me in the network octet loop" report. MMCE is the worst offender because its
+ * parks the cursor on the first row, and SMS's software auto-repeat
+ * ( QueryPad0 -> QueryPad1 ) would otherwise stream the held CROSS into it: when
+ * Network Settings was the first row that ran straight down Edit IP config -> the
+ * IP octet editor and rolled octet 1 ( 0..255 ), pinning the user there -- the
+ * "starting MMCE dumps me in the network octet loop" report. Now it would keep
+ * toggling the first autostart. MMCE is the worst offender because its
  * start does a ~1-2 s blind busy-wait ( SMS_IOP.c ) with no on-screen feedback,
  * so the user keeps holding X. Same drain idiom the rest of the GUI already
  * uses ( e.g. SMS_GUISMBrowser "swallow the press that opened us" ), bounded on
@@ -1766,11 +1770,7 @@ static void _editipc_handler ( GUIMenu* apMenu, int aDir ) {
 
 static void _cdvd_handler ( GUIMenu* apMenu, int aDir ) {
 
-#ifdef BDM
- _switch_flag ( apMenu, 11, &g_Config.m_NetworkFlags, SMS_DF_CDVD );   /* CDVD is row [11] in the BDM menu */
-#else
- _switch_flag ( apMenu, 5, &g_Config.m_NetworkFlags, SMS_DF_CDVD );
-#endif
+ _switch_flag ( apMenu, DEVROW_CDVD, &g_Config.m_NetworkFlags, SMS_DF_CDVD );
 
 }  /* end _cdvd_handler */
 
@@ -1782,11 +1782,7 @@ static void _cdvd_spd_handler ( GUIMenu* apMenu, int aDir ) {
   lSpeed = 2;
  else if ( lSpeed > 2 ) lSpeed = 0;
 
-#ifdef BDM
- s_DevMenu[ 12 ].m_IconRight = ( unsigned int )s_Speeds[ g_Config.m_CDVDSpeed = lSpeed ];   /* CDVD-speed is row [12] */
-#else
- s_DevMenu[ 6 ].m_IconRight = ( unsigned int )s_Speeds[ g_Config.m_CDVDSpeed = lSpeed ];
-#endif
+ s_DevMenu[ DEVROW_CDVD_SPEED ].m_IconRight = ( unsigned int )s_Speeds[ g_Config.m_CDVDSpeed = lSpeed ];
  apMenu -> Redraw ( apMenu );
  CDVD_SetSpeed ();
 
@@ -1795,11 +1791,7 @@ static void _cdvd_spd_handler ( GUIMenu* apMenu, int aDir ) {
 static void _dirbtn_handler ( GUIMenu* apMenu, int aDir ) {
 
  g_Config.m_BrowserFlags ^= SMS_BF_DIRB;
-#ifdef BDM
- s_DevMenu[ 13 ].m_IconRight = ( unsigned int )( g_Config.m_BrowserFlags & SMS_BF_DIRB ? &STR_REMOTE_CONTROL : &STR_GAMEPAD );   /* dir-buttons is row [13] */
-#else
- s_DevMenu[ 7 ].m_IconRight = ( unsigned int )( g_Config.m_BrowserFlags & SMS_BF_DIRB ? &STR_REMOTE_CONTROL : &STR_GAMEPAD );
-#endif
+ s_DevMenu[ DEVROW_DIRBTN ].m_IconRight = ( unsigned int )( g_Config.m_BrowserFlags & SMS_BF_DIRB ? &STR_REMOTE_CONTROL : &STR_GAMEPAD );
  apMenu -> Redraw ( apMenu );
 
  SMS_SetDirButtons ();

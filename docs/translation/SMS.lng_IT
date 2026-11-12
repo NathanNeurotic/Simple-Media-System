@@ -27,17 +27,17 @@ WinLatin2
 WinCyrillic
 WinGreek
 Impostazioni schermo
-SMS Menu
+Menu SMS
 Sposta immagine a sinistra
 Sposta immagine a destra
 Sposta immagine in alto
 Sposta immagine in basso
 Avvio automatico rete
 Avvio automatico USB
-Avvio automatico HDD
+Avvio automatico HDD APA
 Impostazioni dispositivo
 Avvio supporto rete
-Avvio supporto HDD
+Avvio supporto HDD APA
 Avvio supporto USB
 Modifica IPCONFIG.DAT
 Modifica IPCONFIG.DAT
@@ -45,10 +45,10 @@ Indirizzo IP (octet 1)
 Indirizzo IP (octet 2)
 Indirizzo IP (octet 3)
 Indirizzo IP (octet 4)
-Net Mask (octet 1)
-Net Mask (octet 2)
-Net Mask (octet 3)
-Net Mask (octet 4)
+Maschera di rete (octet 1)
+Maschera di rete (octet 2)
+Maschera di rete (octet 3)
+Maschera di rete (octet 4)
 Gateway Indirizzo (octet 1)
 Gateway Indirizzo (octet 2)
 Gateway Indirizzo (octet 3)
@@ -122,7 +122,7 @@ R1 - pan destra
 cerchio - V/A (S/V) sync mode
 L2 - abbassa valore sync
 R2 - alza valore sync
-SMS menu:
+Menu SMS:
 croce/cerchio - azione/livello successivo
 triangolo - livello superiore/esci dal menu
 Error (premi "X" per continuare)...
@@ -145,7 +145,7 @@ Memorizzazione %s file...
 Controllo formato file...
 Pausa
 Stop
-default
+predefinito
 V/A:
 S/V:
 Play 
@@ -154,7 +154,7 @@ REW
 Pausa
 Formato non supportato (premi "X" per continuare)...
 -
-Player menu
+Menu player
 Schermo
 Letterbox
 Zoom 1
@@ -167,7 +167,7 @@ Browser PS2
 mc0:/BOOT/BOOT.ELF
 mc0:/B?DATA-SYSTEM/BOOT.ELF
 Uscita da SMS
-Sound FX
+Effetti sonori
 S/PDIF - Dolby Digital/DTS
 Impostazioni MP3
 Riproduzione casuale
@@ -184,7 +184,7 @@ DTV 480p
 Porta controller 2
 gamepad
 telecomando
-AC3 range level
+Livello dinamica AC3
 destra
 VESA (60Hz)
 VESA (75Hz)
@@ -260,52 +260,52 @@ Riprendi riproduzione da %s ? ('X'='si', 'triangolo'='no')
 Offset verticale immagine
 Risoluzione video troppo grande (premi 'X' per continuare)...
 Parametro sincron. 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Immagini
+Immagine non supportata o danneggiata
+Azione tasto Reset
+spegni
+esci
+Pulldown 2:2 automatico (video)
+DTV 576p
+Avvio automatico MX4SIO
+Avvio supporto MX4SIO
+Avvio automatico HDD BDM
+Avvio supporto HDD BDM
+Avvio automatico i.LINK
+Avvio supporto i.LINK
+Avvio automatico MMCE
+Avvio supporto MMCE
+Avvio unità di rete UDPFS
+Avvio automatico UDPFS
+UDPFS: preparazione rete (DEV9)...
+UDPFS: caricamento driver Ethernet...
+UDPFS: avvio stack IP...
+UDPFS: ricerca server...
+UDPFS FAIL [NOIP]: imposta prima l'IP statico di questa PS2 in Impostazioni Rete
+UDPFS FAIL [SMAP]: il driver Ethernet non è stato caricato
+UDPFS FAIL [STACK]: lo stack IP non è stato caricato
+UDPFS FAIL [DEV]: udpfs: il dispositivo non si è registrato
+UDPFS FAIL [DISCOVERY]: nessun server ha risposto -- verifica che il server UDPFS sia attivo sulla stessa LAN e che la sua modalità "Modulo" sia disattivata
+ATA: preparazione bus (DEV9)...
+ATA: caricamento driver (ata_bd)...
+ATA: scansione unità (montaggio exFAT)...
+SPAZIO
+CANC
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
+X:scrivi  O:indietro  []:spazio  /\:fatto
+Aggiorna connessioni
+Associa controller Bluetooth
+Aggiungi server...
+Modifica server...
+Nome server
+Nome utente
 Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Nome client
+Porta
+Condivisione ( opzionale )
+Server SMB
+Avvio supporto server SMB
+Avvio supporto HOST ( ps2dev )
+Avvio automatico HOST ( ps2dev )
+Avvio automatico SMB
+La rete è già attiva. Riavviarla ora per applicare?

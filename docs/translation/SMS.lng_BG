@@ -34,10 +34,10 @@ Greek
 Изместване надолу
 Авт. стартиране LAN
 Авт. стартиране USB
-Авт. стартиране HDD
+Авт. стартиране HDD APA
 Системни настройки
 Активиране LAN връзка
-Активиране HDD поддръжка
+Активиране HDD APA поддръжка
 Активиране USB поддръжка
 Редактиране на IPCONFIG.DAT...
 Редактиране на IPCONFIG.DAT
@@ -163,7 +163,7 @@ pan-scan 3
 на цял екран
 Показване на субтитри
 Избор на субтитри
-boot browser
+boot-browser
 mc0:/BOOT/BOOT.ELF
 mc0:/B?DATA-SYSTEM/BOOT.ELF
 Изход към 
@@ -178,8 +178,8 @@ MP3 настройки...
 KB/s
 Изберете операция
 Дълбочина цветове
-32 bit
-16 bit
+32 бита
+16 бита
 DTV 480P
 Вторият joypad порт е
 джойстик
@@ -219,8 +219,8 @@ DTV 720P
 автоматично
 ръчни настройки
 Duplex режим
-full
-half
+пълен
+половин
 Ethernet стандарт
 10Base-T
 100Base-TX
@@ -254,7 +254,7 @@ KB
 %d.%03d
 Kb/s
 Hz
-ch
+кан.
 Свободна памет: %.1fMB/%.2fMB
 Да продължи от %s ? ('Х'='да', '/\'='не')
 Отместване
@@ -265,47 +265,47 @@ ch
 Функция на RESET бутона
 Изключване
 Изход
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Авт. 2:2 pulldown (видео)
+DTV 576p
+Авт. стартиране MX4SIO
+Активиране MX4SIO поддръжка
+Авт. стартиране HDD BDM
+Активиране HDD BDM поддръжка
+Авт. стартиране i.LINK
+Активиране i.LINK поддръжка
+Авт. стартиране MMCE
+Активиране MMCE поддръжка
+Активиране UDPFS мрежов диск
+Авт. стартиране UDPFS
+UDPFS: подготовка на мрежата (DEV9)...
+UDPFS: зареждане на Ethernet драйвера...
+UDPFS: стартиране на IP стека...
+UDPFS: търсене на сървър...
+UDPFS FAIL [NOIP]: първо задайте статичен IP на PS2 в Настройки на мрежа
+UDPFS FAIL [SMAP]: Ethernet драйверът не се зареди
+UDPFS FAIL [STACK]: IP стекът не се зареди
+UDPFS FAIL [DEV]: udpfs: устройството не се регистрира
+UDPFS FAIL [DISCOVERY]: няма отговор от сървър -- проверете дали UDPFS сървърът работи в същата LAN мрежа и дали режимът му "Modulo" е изключен
+ATA: подготовка на шината (DEV9)...
+ATA: зареждане на драйвера (ata_bd)...
+ATA: сканиране на диска (монтиране на exFAT)...
+ИНТЕРВАЛ
+ИЗТР.
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+X:пиши  O:назад  []:интервал  /\:готово
+Опресняване на връзките
+Сдвояване на Bluetooth контролер
+Добавяне на сървър...
+Редактиране на сървър...
+Име на сървъра
+Потребител
+Парола
+Име на клиента
+Порт
+Споделена папка ( по избор )
+SMB сървър
+Активиране SMB връзка
+Активиране HOST ( ps2dev ) връзка
+Авт. стартиране HOST ( ps2dev )
+Авт. стартиране SMB
+Мрежата вече работи. Рестартиране сега, за да се приложи?

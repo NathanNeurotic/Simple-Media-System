@@ -27,17 +27,17 @@ WinLatin2
 WinCyrillic
 WinGreek
 Nastavenie Zobrazenia
-SMS Menu
+Menu SMS
 Posunut obraz dolava
 Posunut obraz doprava
 Posunut obraz hore
 Posunut obraz dole
 Automaticka inicializacia siete
 Automaticka inicializacia USB
-Automaticka inicializacia HDD
+Automaticka inicializacia HDD APA
 Nastavenie Zaridenia
 Spustit inicializaciu siete
-Spustit inicializaciu HDD
+Spustit inicializaciu HDD APA
 Spustit inicializaciu USB
 Editovat IPCONFIG.DAT...
 Editacia IPCONFIG.DAT
@@ -122,7 +122,7 @@ R1 - prava cast pan-scan
 KRUH - Synchronizacny mod A/V (Titulky/V)
 L2 - zmensi synchronizacnu hodnotu
 R2 - zvetsi synchronizacnu hodnotu
-SMS menu:
+Menu SMS:
 KRIZIK/KRUZOK-Akcia/Presunutie do adresara
 TROJUHOLNIK-Nadradena zlozka/Ukoncenie menu
 Chyba (stlacte "KRIZIK" pre pokracovanie)...
@@ -184,11 +184,11 @@ DTV 480P
 Port ovladaca 2
 joystick
 dialkovy ovladac
-?AC3 range level?
+Uroven dynamiky AC3
 vpravo
 VESA (60Hz)
 VESA (75Hz)
-widescreen
+16:9
 siroky pan-scan 1
 siroky pan-scan 2
 Sietovy protokol
@@ -197,115 +197,115 @@ SMB/CIFS
 Chyba komunikacie (stlacte "KRIZIK" pre pokracovanie)...
 Chyba jednania protokolu (%d) (stlacte "KRIZIK" pre pokracovanie)...
 Chyba prihlasenia (%d) (stlacte "KRIZIK" pre pokracovanie)...
-?Subtitles?
-?Disable CD/DVD?
-?Display width
-?Reading %s...
-?Error: out of memory
-?Checking free space...
-?Error: not enough free space on HDD
-?Creating directory tree...
-?Delete
-?Deleting...
-?CD/DVD speed
-?medium
-?high
-?low
-?Directional buttons
+Titulky
+Vypnut CD/DVD
+Displej - sirka
+Citanie %s...
+Chyba: nedostatok pamate
+Kontrola volneho miesta...
+Chyba: nedostatok volneho miesta na HDD
+Vytvaranie stromu adresarov...
+Vymazat
+Mazanie...
+Rychlost CD/DVD
+stredna
+vysoka
+nizka
+Smerove tlacidla
 DTV 1080I
 DTV 720P
-?Operating mode
-?auto-negotiation
-?automatic
-?manual
-?Duplex mode
-?full
-?half
-?Standard
-?10Base-T
-?100Base-TX
-?Network settings...
-?Network settings
-?Synchronization parameter 1 (video)
-?Synchronization parameter 2 (GUI)
-?SMB server...
-?Terminating pending connection...
-?Update SMS language
-?Update SMS palette
-?Update SMS
-?Update SMB server list
-?Add background image
-?Processing...
-?Creating SMS backup...
-?Play all
-?Audio
-?Video
-?Autodetection parameter
-?Start playback from
-?center-right
-?Use exception handler
-?Subtitle MBCS
-?Loading font...
-?Loading ODML indices %d...
-?File size: 
-?GB
-?KB
+Prevadzkovy rezim
+auto-vyjednavanie
+automaticky
+rucne
+Duplexny rezim
+plny
+polovicny
+Standard
+10Base-T
+100Base-TX
+Nastavenie siete...
+Nastavenie siete
+Synchronizacny parameter 1 (video)
+Synchronizacny parameter 2 (GUI)
+Server SMB...
+Ukoncovanie cakajuceho spojenia...
+Aktualizovat jazyk SMS
+Aktualizovat paletu SMS
+Aktualizovat SMS
+Aktualizovat zoznam serverov SMB
+Pridat obrazok na pozadie
+Spracovanie...
+Vytvaranie zalohy SMS...
+Prehrat vsetko
+Audio
+Video
+Parameter automatickej detekcie
+Spustit prehravanie od
+stred-vpravo
+Pouzit obsluhu vynimiek
+Titulky MBCS
+Nacitanie fontu...
+Nacitanie indexov ODML %d...
+Velkost suboru: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Kb/s
+Hz
+kan.
+Dostupna pamat: %.1fMB/%.2fMB
+Pokracovat v prehravani od %s ? ('KRIZIK'='ano', 'TROJUHOLNIK'='nie')
+Posun obrazu
+Rozlisenie videa je prilis velke (stlacte "KRIZIK" pre pokracovanie)...
+Synchronizacny parameter 3 (audio)
+Obrazky
+Nepodporovany alebo poskodeny obrazok
+Funkcia tlacidla Reset
+vypnut
+ukoncit
+Automaticky pulldown 2:2 (video)
+DTV 576p
+Automaticka inicializacia MX4SIO
+Spustit inicializaciu MX4SIO
+Automaticka inicializacia HDD BDM
+Spustit inicializaciu HDD BDM
+Automaticka inicializacia i.LINK
+Spustit inicializaciu i.LINK
+Automaticka inicializacia MMCE
+Spustit inicializaciu MMCE
+Spustit sietovy disk UDPFS
+Automaticka inicializacia UDPFS
+UDPFS: priprava siete (DEV9)...
+UDPFS: nacitanie ovladaca Ethernet...
+UDPFS: spustanie zasobnika IP...
+UDPFS: hladanie servera...
+UDPFS FAIL [NOIP]: najprv nastavte staticku IP tejto PS2 v Nastaveni siete
+UDPFS FAIL [SMAP]: ovladac Ethernet sa nenacital
+UDPFS FAIL [STACK]: zasobnik IP sa nenacital
+UDPFS FAIL [DEV]: udpfs: zariadenie sa nezaregistrovalo
+UDPFS FAIL [DISCOVERY]: ziadny server neodpovedal -- skontrolujte, ci server UDPFS bezi v tej istej LAN a ci je jeho rezim "Modulo" VYPNUTY
+ATA: priprava zbernice (DEV9)...
+ATA: nacitanie ovladaca (ata_bd)...
+ATA: skenovanie disku (pripajanie exFAT)...
+MEDZERA
+ZMAZAT
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
+X:pisat  O:spat  []:medzera  /\:hotovo
+Obnovit pripojenia
+Sparovat ovladac Bluetooth
+Pridat server...
+Upravit server...
+Nazov servera
+Pouzivatelske meno
+Heslo
+Nazov klienta
 Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+Zdielany priecinok ( volitelne )
+Server SMB
+Spustit inicializaciu servera SMB
+Spustit inicializaciu HOST ( ps2dev )
+Automaticka inicializacia HOST ( ps2dev )
+Automaticka inicializacia SMB
+Siet uz bezi. Restartovat ju teraz na pouzitie zmien?

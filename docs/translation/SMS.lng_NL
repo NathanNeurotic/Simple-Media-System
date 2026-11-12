@@ -27,17 +27,17 @@ WinLatin2
 WinCyrillic
 WinGreek
 Beeld instellingen
-SMS Menu
+SMS-menu
 Beeld naar links
 Beeld naar rechts
 Beeld omhoog
 Beeld omlaag
 Autostart netwerk
 Autostart USB
-Autostart HDD
+Autostart HDD APA
 Apparaat instellingen
 Start netwerk nu
-Start HDD nu
+Start HDD APA nu
 Start USB nu
 IPCONFIG.DAT aanpassen...
 IPCONFIG.DAT aanpassen
@@ -122,7 +122,7 @@ R1 - pan rechts
 cirkel - V/A (S/V) sync modus
 L2 - Verlaag sync waarde
 R2 - Verhoog sync waarde
-SMS menu:
+SMS-menu:
 Kruis/cirkel - Actie/Volgende
 Driehoek - Pagina terug/Stop menu
 Fout (Druk "kruis" om door te gaan)...
@@ -218,22 +218,22 @@ werk modus
 auto-onderhandeling
 automatisch
 Handmatig
-Duplex mode
-full
+Duplexmodus
+volledig
 half
-Standard
+Standaard
 10Base-T
 100Base-TX
 Netwerk instellingen...
 Netwerk instellingen
 Synchronizatie waarde 1 (video)
 Synchronizatie waarde 2 (GUI)
-SMB server...
+SMB-server...
 Huidige connectie beeindigen...
 Update SMS taal
-Update SMS palette
+Update SMS palet
 Update SMS
-Update SMB server list
+Update SMB serverlijst
 Voeg achtergrond foto toe
 Verwerken...
 SMS backup maken...
@@ -244,68 +244,68 @@ Auto detectie waarde
 Start afspelen vanaf
 midden-rechts
 Fout rapportage (let op MI)
-?Subtitle MBCS
-?Loading font...
-?Loading ODML indices %d...
-?File size: 
-?GB
-?KB
+Ondertiteling MBCS
+Lettertype laden...
+ODML-indexen %d laden...
+Bestandsgrootte: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
+Kb/s
+Hz
+kan.
+Beschikbaar geheugen: %.1fMB/%.2fMB
+Afspelen hervatten vanaf %s ? ('kruis'='ja', 'driehoek'='nee')
+Beeldverschuiving
+Videoresolutie is te groot (Druk "kruis" om door te gaan)...
+Synchronizatie waarde 3 (audio)
+Afbeeldingen
+Niet-ondersteunde of beschadigde afbeelding
+Functie resetknop
+uitschakelen
+afsluiten
+Automatische 2:2 pulldown (video)
+DTV 576p
 Autostart MX4SIO
-Start MX4SIO support
+Start MX4SIO nu
 Autostart HDD BDM
-Start HDD BDM
+Start HDD BDM nu
 Autostart i.LINK
-Start i.LINK support
+Start i.LINK nu
 Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
+Start MMCE nu
+Start UDPFS netwerkschijf nu
 Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+UDPFS: netwerk voorbereiden (DEV9)...
+UDPFS: Ethernet-driver laden...
+UDPFS: IP-stack starten...
+UDPFS: server zoeken...
+UDPFS FAIL [NOIP]: stel eerst het vaste IP van deze PS2 in bij Netwerk instellingen
+UDPFS FAIL [SMAP]: Ethernet-driver is niet geladen
+UDPFS FAIL [STACK]: IP-stack is niet geladen
+UDPFS FAIL [DEV]: udpfs: apparaat is niet geregistreerd
+UDPFS FAIL [DISCOVERY]: geen server antwoordde -- controleer of de UDPFS-server op hetzelfde LAN draait en of de "Modulo"-modus UIT staat
+ATA: bus voorbereiden (DEV9)...
+ATA: driver laden (ata_bd)...
+ATA: schijf scannen (exFAT koppelen)...
+SPATIE
+WIS
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
+X:typen  O:terug  []:spatie  /\:klaar
+Verbindingen vernieuwen
+Bluetooth-controller koppelen
+Server toevoegen...
+Server bewerken...
+Servernaam
+Gebruikersnaam
+Wachtwoord
+Clientnaam
+Poort
+Gedeelde map ( optioneel )
+SMB-server
+Start SMB-server nu
+Start HOST ( ps2dev ) nu
 Autostart HOST ( ps2dev )
 Autostart SMB
-Network is already running. Restart it now to apply?
+Netwerk draait al. Nu herstarten om toe te passen?

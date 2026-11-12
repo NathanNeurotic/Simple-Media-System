@@ -59,7 +59,7 @@ When a device is *not* already running, a matching "Start <device> now" item app
 
 Out of the box, **no optional Autostart flag is enabled**. You decide what to enable. This keeps boot fast and avoids probing hardware you don't have. Clearing the config returns you to this state (see [Where settings live](https://nathanneurotic.github.io/Simple-Media-System/devices.html#config)).
 
-![SMS Device settings menu: Network settings, Controller port 2 and the Autostart toggles for USB, i.LINK, MX4SIO, MMCE, HDD APA and HDD BDM, all off](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/device-settings.png)
+![SMS Device settings menu: the Autostart toggles for USB, i.LINK, MX4SIO, MMCE, HDD APA and HDD BDM, then Network settings and Autostart HOST, all off](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/device-settings.png)
 
 Device settings on a clean install: every Autostart toggle is off.
 

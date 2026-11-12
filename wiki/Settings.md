@@ -33,20 +33,22 @@ Start opens the SMS menu.
 
 This is the menu you care about most on this fork: it is where you turn storage devices on. Each device has an **Autostart** toggle (whether it starts automatically at boot), and — when the device is *not* currently running — a matching **Start … support** item appears at the bottom of the menu so you can bring it up right now without rebooting.
 
+From the top, the menu lists the six storage **Autostart** toggles (USB, i.LINK, MX4SIO, MMCE, HDD APA, HDD BDM); **Network settings…** with the three network **Autostart** rows (HOST, SMB, UDPFS) under it; **Disable CD/DVD** and **CD/DVD speed**; **Controller port 2** and **Directional buttons**; then the **Start … support** items, **Pair Bluetooth controller** when the Bluetooth driver is available, and **Refresh connections**.
+
 ### Autostart toggles
 
 Each toggle shows `on` or `off`. On a clean install (no saved settings) every one of these is **off** — SMS auto-starts *nothing*, so you enable only the devices you actually use. Once you [save](https://nathanneurotic.github.io/Simple-Media-System/settings.html#saving), your choices persist across reboots.
 
 | Option | Device it starts | Values |
 | --- | --- | --- |
-| **Autostart HOST ( ps2dev )** | The ps2dev `host:` stack (ps2client on a PC). One of three mutually exclusive network rows. | on / off |
-| **Autostart SMB** | The SMB1/CIFS share client. One of three mutually exclusive network rows. See [Network Setup](https://nathanneurotic.github.io/Simple-Media-System/network.html). | on / off |
 | **Autostart USB** | USB mass storage (`massN:`). See [USB](https://nathanneurotic.github.io/Simple-Media-System/usb.html). | on / off |
+| **Autostart i.LINK** | An i.LINK (IEEE 1394 / FireWire) drive as a BDM `massN:` device. See [i.LINK](https://nathanneurotic.github.io/Simple-Media-System/ilink.html). | on / off |
+| **Autostart MX4SIO** | The MX4SIO microSD adapter over SIO2 (`massN:`). The headline feature of this fork. See [MX4SIO](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html). | on / off |
+| **Autostart MMCE** | An MMCE device (SD2PSX / MemCard PRO2) in the memory-card slot (`mmce0:` / `mmce1:`). See [MMCE](https://nathanneurotic.github.io/Simple-Media-System/mmce.html). | on / off |
 | **Autostart HDD APA** | The internal HDD via the classic APA/PFS path (`hdd0:`); SMS lists the drive's PFS partitions so you can pick one. See [Internal HDD](https://nathanneurotic.github.io/Simple-Media-System/hdd.html). | on / off |
 | **Autostart HDD BDM** | The internal HDD via ATA as a BDM `massN:` device — this is the **exFAT** path added by this fork. See [Internal HDD](https://nathanneurotic.github.io/Simple-Media-System/hdd.html). | on / off |
-| **Autostart MX4SIO** | The MX4SIO microSD adapter over SIO2 (`massN:`). The headline feature of this fork. See [MX4SIO](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html). | on / off |
-| **Autostart i.LINK** | An i.LINK (IEEE 1394 / FireWire) drive as a BDM `massN:` device. See [i.LINK](https://nathanneurotic.github.io/Simple-Media-System/ilink.html). | on / off |
-| **Autostart MMCE** | An MMCE device (SD2PSX / MemCard PRO2) in the memory-card slot (`mmce0:` / `mmce1:`). See [MMCE](https://nathanneurotic.github.io/Simple-Media-System/mmce.html). | on / off |
+| **Autostart HOST ( ps2dev )** | The ps2dev `host:` stack (ps2client on a PC). One of three mutually exclusive network rows. | on / off |
+| **Autostart SMB** | The SMB1/CIFS share client. One of three mutually exclusive network rows. See [Network Setup](https://nathanneurotic.github.io/Simple-Media-System/network.html). | on / off |
 | **Autostart UDPFS** | The folder-served UDPFS network drive (`udpfs:`). Mutually exclusive with SMB/host for that boot. See [UDPFS](https://nathanneurotic.github.io/Simple-Media-System/network.html#udpfs). | on / off |
 
 Shared resources — choose one member of each pair
@@ -61,15 +63,15 @@ Shared resources — choose one member of each pair
 
 When a device isn't running yet, a matching item appears at the bottom of the Device menu. Selecting it starts that device immediately, so it shows up in the device row without a reboot. Once the device is up, its item disappears from the list. The wording matches each device:
 
+- **Start USB support**
+- **Start i.LINK support**
+- **Start MX4SIO support**
+- **Start MMCE support**
+- **Start HDD APA support**
+- **Start HDD BDM support** (ATA / exFAT)
+- **Start UDPFS network drive**
 - **Start SMB server support** (shown when an SMB server is configured)
 - **Start HOST ( ps2dev ) support**
-- **Start USB support**
-- **Start HDD support** (APA)
-- **Start HDD BDM** (ATA / exFAT)
-- **Start MX4SIO support**
-- **Start i.LINK support**
-- **Start MMCE support**
-- **Start UDPFS network drive**
 
 The Device menu also ends with a **Refresh connections** item, which re-probes the running devices — handy after hot-swapping a card or drive so its contents are re-read.
 
@@ -81,22 +83,22 @@ The Device menu also ends with a **Refresh connections** item, which re-probes t
 
 The top of Device settings: Autostart toggles.
 
-![The bottom of SMS Device settings with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
+![SMS Device settings further down, with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
 
-The bottom of Device settings: CD/DVD options and the Start … support items.
+Further down Device settings: CD/DVD and controller options, then the Start … support items.
 
-### CD/DVD and controller options
+### Network, CD/DVD and controller options
 
-The rest of the Device menu covers the optical drive and controller behaviour, plus the network settings entry that links to the on-screen network setup.
+The other rows open the on-screen network setup and cover the optical drive and the controllers.
 
 | Option | What it does | Values |
 | --- | --- | --- |
 | **Network settings…** | Opens **Edit IPCONFIG.DAT** (the PS2's static IP, mask and gateway), the **Network protocol** selector, **SMB server…** — where share entries are added, edited and deleted — and the link parameters: **Operating mode**, plus **Duplex mode** and **Standard** when the mode is manual. See [Network Setup](https://nathanneurotic.github.io/Simple-Media-System/network.html). | opens sub-menu |
-| **Controller port 2** | Tells SMS what is plugged into controller port 2 so it reads it correctly. | gamepad / remote control / none |
-| **Pair Bluetooth controller** | Pairs a DualShock 3 or DualShock 4 to the connected USB Bluetooth dongle. The row appears only when the Bluetooth driver is available: connect the dongle, plug the controller into USB, run this command, then unplug the cable and power on the controller. | action |
 | **Disable CD/DVD** | Turns the optical (CD/DVD) source on or off. Disable it if you never use discs, so SMS doesn't wait on the drive. | on / off |
 | **CD/DVD speed** | Read speed for the optical drive. | low / medium / high |
+| **Controller port 2** | Tells SMS what is plugged into controller port 2 so it reads it correctly. | gamepad / remote control / none |
 | **Directional buttons** | Chooses how the D-pad is read — as a standard gamepad or as a remote control. | gamepad / remote control |
+| **Pair Bluetooth controller** | Pairs a DualShock 3 or DualShock 4 to the connected USB Bluetooth dongle. The row appears after the Start … support items, only when the Bluetooth driver is available: connect the dongle, plug the controller into USB, run this command, then unplug the cable and power on the controller. | action |
 
 ## Display settings — TV output & language
 

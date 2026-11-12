@@ -11,8 +11,9 @@ HOW SMS USES IT
   * SMS tries SMS.lng beside the launched ELF first, including an MC boot.
     The fallback is mc?:/SMS/SMS.lng on the configured card slot.
   * Filesystem boot assets are re-read after the boot device is mounted.
-  * Or import it in-app: SMS menu -> Device settings -> "Update SMS.lng file"
-  * Then set  SMS menu -> Browser settings -> Language  to anything other than
+  * Or import it in-app: highlight the file in the browser and use its
+    "Update SMS language" action.
+  * Then set  SMS menu -> Display settings -> Language  to anything other than
     "English" for the file to take effect.
 
 THE FIVE RULES (the fixed string count is checked by the loader; the other
@@ -31,16 +32,17 @@ automatically):
      -- flagged LOCKED-PATH.
      They are boot-file paths, not text. Copy them verbatim.
   5. Save as plain text. ASCII or the code page that matches SMS's Character
-     Set (Browser settings -> Character set: WinLatin1 / WinLatin2 / Cyrillic /
+     Set (Display settings -> Character set: WinLatin1 / WinLatin2 / Cyrillic /
      Greek). CRLF or LF line endings are both fine; UTF-8 is NOT -- SMS renders
      single-byte encodings.
 
 NEW IN THIS BUILD: entries 269..310 (zero-based below) extend UI that used to be English-only
 (device menu: MX4SIO / HDD BDM / i.LINK / MMCE / UDPFS start+autostart; the UDPFS
 and ATA start/error messages; the on-screen keyboard; the SMB server editor). In
-most shipped community packs these tail entries are still ENGLISH placeholders --
-that is where translation is now needed. Keep device/protocol proper-nouns
-(MX4SIO, UDPFS, i.LINK, MMCE, HDD BDM) verbatim; translate the words around them.
+the shipped packs these entries are MACHINE TRANSLATIONS (see that section
+below), so that is where a native speaker's check is needed most. Keep
+device/protocol proper-nouns (MX4SIO, UDPFS, i.LINK, MMCE, HDD APA, HDD BDM)
+verbatim; translate the words around them.
 
 TIP: keep lines about the same length as the English. The GUI has fixed widths;
 very long strings can overflow their box.
@@ -52,13 +54,56 @@ INSTALLING A FINISHED TRANSLATION (from the legacy pack's own readme)
 
 The 19 named language variants (including an English variant) in docs/translation/ (BG CA CZ DE EN ES FR HU ID IT
 NL PL PT PT-BR RU SE SK TR UA) were extended to 311 lines to match THIS build, so
-they load as-is (new-feature lines show English until translated). They are the
-best reference for tone/length. (TR had a pre-existing duplicate line that was
-removed to realign it.)
+they load as-is (the lines they were missing are machine translations, listed
+below). They are the best reference for tone/length. (TR had a pre-existing
+duplicate line that was removed to realign it.)
 
 The original 269-entry SMS 2.9 packs (the lng/ folder of the source tree, and
 any SMS.lng from an older release) do NOT load in this build: the loader
 refuses a file that does not have exactly 311 entries.
+
+==============================================================================
+  MACHINE TRANSLATIONS  (added 2026-11-12)
+==============================================================================
+  The entries listed below were still English, or still marked with a
+  leading "?", and were filled in by machine translation so the whole menu
+  shows the pack's language. Names and units that read the same in every
+  language (PAL, NTSC, GB, MX4SIO and so on) were left as they were. Entries
+  36, 39 and 272 were also edited so the HDD rows say HDD APA and HDD BDM the
+  way the English does.
+
+  These are a starting point, not a native speaker's work. If you speak one
+  of these languages, please check the entries listed for it and send
+  corrections as an issue or pull request, keeping the five rules above. A
+  pack line cannot carry a comment, so the list lives here. Entry numbers
+  are zero-based, as in the reference below: entry 0 is line 1 of the file.
+
+  BG     36, 39, 165, 180-181, 221-222, 256, 267-292, 294-310
+  CA     36, 39, 180-181, 244-251, 254-292, 294-302, 304-310
+  CZ     19, 29, 36, 39, 124, 217, 221-222, 230, 246-251, 254-292, 294-302,
+         304-310
+  DE     36, 39, 180-181, 217, 256, 260-268, 270, 272, 274, 276-277,
+         279-292, 294-302, 304-307, 310
+  ES     39, 272
+  FR     36, 39, 85, 114, 134, 169, 256, 258-292, 294-302, 304-310
+  HU     36, 39, 169, 223, 267-292, 294-302, 304-310
+  ID     4, 36, 39, 138, 145, 150, 185, 246-251, 254-292, 294-302, 304-310
+  IT     29, 36, 39, 47-50, 124, 147, 156, 169, 186, 262-292, 294-300,
+         302-310
+  NL     29, 36, 39, 124, 220-221, 223, 230, 233, 235, 246-251, 254-268,
+         270, 272, 274, 276-277, 279-292, 294-307, 310
+  PL     36, 39, 193, 260-292, 294-302, 304-310
+  PT     36, 39, 180-181, 256, 260-292, 294-310
+  PT-BR  36, 39, 180-181, 256, 267-292, 294-310
+  RU     36, 39, 267-292, 294-310
+  SE     36, 39, 95-96, 116, 147, 180-181, 186, 210, 230, 256, 258-292,
+         294-302, 304-310
+  SK     29, 36, 39, 124, 186, 190, 199-213, 216-251, 254-292, 294-302,
+         304-310
+  TR     36, 39, 184, 249-251, 254-292, 294-302, 304-310
+  UA     36, 39, 180-181, 183-184, 186, 199-213, 216-251, 254-292, 294-310
+  SMS.lng_EN only had entries 36, 39 and 272 brought in line with the
+  built-in English labels.
 
 ==============================================================================
   LINE-BY-LINE REFERENCE  (line# | flags | English)

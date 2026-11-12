@@ -35,6 +35,14 @@ From the psx-place forum feedback on rev2.
   built and checked in CI for rolling and stable releases.
 - Converter: video presets keep the source frame rate up to 30 fps (a 25 fps film no longer repeats
   every fifth frame); the 10 Mbps preset says it is too much data for USB.
+- Device settings: related rows are grouped. The six storage Autostart toggles come first, then
+  Network settings with the HOST, SMB and UDPFS Autostart rows, then the two CD/DVD rows, then
+  Controller port 2 and Directional buttons; the Start rows are unchanged. Every row's on/off is
+  written through the row's name, and `tools/check_devmenu.py` fails CI if a label, its action, its
+  setting and its repaint stop matching.
+- Language packs: the lines that were still English (or marked `?`) are machine translations,
+  listed in `TRANSLATING.txt` so native speakers can correct them, and the HDD rows say HDD APA and
+  HDD BDM in every pack.
 
 **NOT TESTED on a PS2.**
 

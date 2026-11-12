@@ -34,10 +34,10 @@ WinGreek
 Зсув зображення донизу
 Автозапуск мережі
 Автозапуск USB
-Автозапуск HDD
+Автозапуск HDD APA
 Настроювання пристрою
 Запуск підтримки мережі
-Запуск HDD підтримки
+Запуск HDD APA підтримки
 Запуск USB підтримки
 Редагування IPCONFIG.DAT...
 Редагування IPCONFIG.DAT
@@ -178,13 +178,13 @@ MP3 настроювання...
 КБ/сек
 Вибір дії
 Роздільна здатність кольору
-32 bit
-16 bit
+32 біт
+16 біт
 DTV 480P
-Controller port 2
-gamepad
+Порт контролера 2
+геймпад
 пульт дистанційного керування
-?AC3 range level?
+Рівень динаміки AC3
 праворуч
 VESA (60Hz)
 VESA (75Hz)
@@ -197,115 +197,115 @@ SMB/CIFS
 Помилка зв’язку (натисніть "cross" для продовження)...
 Помилка протоколу узгоджень (%d) (натисніть "cross" для продовження)...
 Помилка логіну (%d) (натисніть "cross" для продовження)...
-?Subtitles?
-?Disable CD/DVD?
-?Display width
-?Reading %s...
-?Error: out of memory
-?Checking free space...
-?Error: not enough free space on HDD
-?Creating directory tree...
-?Delete
-?Deleting...
-?CD/DVD speed
-?medium
-?high
-?low
-?Directional buttons
+Субтитри
+Вимкнути CD/DVD
+Ширина екрану
+Зчитування %s...
+Помилка: недостатньо пам'яті
+Перевірка вільного місця...
+Помилка: недостатньо вільного місця на HDD
+Створення дерева каталогів...
+Видалити
+Видалення...
+Швидкість CD/DVD
+середня
+висока
+низька
+Кнопки напрямків
 DTV 1080I
 DTV 720P
-?Operating mode
-?auto-negotiation
-?automatic
-?manual
-?Duplex mode
-?full
-?half
-?Standard
-?10Base-T
-?100Base-TX
-?Network settings...
-?Network settings
-?Synchronization parameter 1 (video)
-?Synchronization parameter 2 (GUI)
-?SMB server...
-?Terminating pending connection...
-?Update SMS language
-?Update SMS palette
-?Update SMS
-?Update SMB server list
-?Add background image
-?Processing...
-?Creating SMS backup...
-?Play all
-?Audio
-?Video
-?Autodetection parameter
-?Start playback from
-?center-right
-?Use exception handler
-?Subtitle MBCS
-?Loading font...
-?Loading ODML indices %d...
-?File size: 
-?GB
-?KB
+Режим роботи
+автоузгодження
+автоматичний
+вручну
+Режим дуплексу
+повний дуплекс
+напівдуплекс
+Стандарт
+10Base-T
+100Base-TX
+Настроювання мережі...
+Настроювання мережі
+Параметр синхр. 1 (відео)
+Параметр синхр. 2 (GUI)
+SMB сервер...
+Скасування очікуваного з'єднання...
+Оновити мову SMS
+Оновити палітру SMS
+Оновити SMS
+Оновити список SMB серверів
+Додати фонове зображення
+Обробка...
+Створення резервної копії SMS...
+Відтворити все
+Аудіо
+Відео
+Параметр автовизначення
+Почати відтворення з
+центр-праворуч
+Використовувати обробник винятків
+MBCS для субтитрів
+Завантаження шрифту...
+Завантаження індексів ODML %d...
+Розмір файлу: 
+GB
+KB
 %d.%02d
 %d.%03d
-?Kb/s
-?Hz
-?ch
-?Available memory: %.1fMB/%.2fMB
-?Resume playback from %s ? ('cross'='yes', 'triangle'='no')
-?Image offset
-?Video resolution is too big (press 'cross' to continue)...
-?Synch. parameter 3 (audio)
-?Images
-?Unsupported or corrupted image
-?Reset button action
-?power off
-?exit
-?Video auto 2:2 pulldown
-?DTV 576p
-Autostart MX4SIO
-Start MX4SIO support
-Autostart HDD BDM
-Start HDD BDM
-Autostart i.LINK
-Start i.LINK support
-Autostart MMCE
-Start MMCE support
-Start UDPFS network drive
-Autostart UDPFS
-UDPFS: preparing network (DEV9)...
-UDPFS: loading Ethernet driver...
-UDPFS: starting IP stack...
-UDPFS: discovering server...
-UDPFS FAIL [NOIP]: set this PS2's static IP in Network Config first
-UDPFS FAIL [SMAP]: Ethernet driver did not load
-UDPFS FAIL [STACK]: IP stack did not load
-UDPFS FAIL [DEV]: udpfs: device did not register
-UDPFS FAIL [DISCOVERY]: no server answered -- check the UDPFS server is running on the same LAN, and that its "Modulo" mode is OFF
-ATA: preparing bus (DEV9)...
-ATA: loading driver (ata_bd)...
-ATA: scanning drive (mounting exFAT)...
-SPACE
-DEL
+Kb/s
+Hz
+кан.
+Доступна пам'ять: %.1fMB/%.2fMB
+Відновити з %s ? ('cross'='так', 'triangle'='ні')
+Зсув зображення
+Роздільна здатність відео завелика (натисніть "cross" для продовження)...
+Параметр синхр. 3 (аудіо)
+Зображення
+Непідтримуване або пошкоджене зображення
+Дія кнопки Reset
+вимкнення
+вихід
+Автоматичний pulldown 2:2 (відео)
+DTV 576p
+Автозапуск MX4SIO
+Запуск MX4SIO підтримки
+Автозапуск HDD BDM
+Запуск HDD BDM підтримки
+Автозапуск i.LINK
+Запуск i.LINK підтримки
+Автозапуск MMCE
+Запуск MMCE підтримки
+Запуск мережевого диска UDPFS
+Автозапуск UDPFS
+UDPFS: підготовка мережі (DEV9)...
+UDPFS: завантаження драйвера Ethernet...
+UDPFS: запуск стека IP...
+UDPFS: пошук сервера...
+UDPFS FAIL [NOIP]: спершу задайте статичну IP-адресу цієї PS2 у Настроюванні мережі
+UDPFS FAIL [SMAP]: драйвер Ethernet не завантажився
+UDPFS FAIL [STACK]: стек IP не завантажився
+UDPFS FAIL [DEV]: udpfs: пристрій не зареєструвався
+UDPFS FAIL [DISCOVERY]: жоден сервер не відповів -- перевірте, що сервер UDPFS запущено в тій самій LAN і що його режим "Modulo" ВИМКНЕНО
+ATA: підготовка шини (DEV9)...
+ATA: завантаження драйвера (ata_bd)...
+ATA: сканування диска (підключення exFAT)...
+ПРОБІЛ
+ВИДАЛ
 OK
-X:type  O:back  []:space  /\:done
-Refresh connections
-Pair Bluetooth controller
-Add server...
-Edit server...
-Server name
-Username
-Password
-Client name
-Port
-Share ( optional )
-SMB server
-Start SMB server support
-Start HOST ( ps2dev ) support
-Autostart HOST ( ps2dev )
-Autostart SMB
-Network is already running. Restart it now to apply?
+X:ввід  O:назад  []:пробіл  /\:готово
+Оновити з'єднання
+Сполучити Bluetooth-контролер
+Додати сервер...
+Змінити сервер...
+Ім'я сервера
+Ім'я користувача
+Пароль
+Ім'я клієнта
+Порт
+Спільна папка ( необов'язково )
+Сервер SMB
+Запуск підтримки сервера SMB
+Запуск HOST ( ps2dev ) підтримки
+Автозапуск HOST ( ps2dev )
+Автозапуск SMB
+Мережа вже працює. Перезапустити зараз, щоб застосувати?

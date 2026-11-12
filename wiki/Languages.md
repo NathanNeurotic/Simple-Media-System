@@ -6,10 +6,10 @@ Install a language pack from the same build as your player. The current table ha
 
 1. Download the [matching language ZIP](https://nathanneurotic.github.io/Simple-Media-System/releases.html#whats-in-a-release). It contains 19 named variants (including an English variant), the base English template and translator guide.
 2. Choose a variant such as `SMS.lng_ES` and rename it `SMS.lng`. Copy it beside the ELF, or to `mc?:/SMS/SMS.lng`. A boot-folder copy has priority.
-3. Alternatively highlight a language file in the browser and use its import/update action. Enable the external language with **Browser settings → Language**; choosing English uses the built-in strings.
+3. Alternatively highlight a language file in the browser and use its import/update action. Enable the external language with **Display settings → Language**; choosing English uses the built-in strings.
 4. Select the matching **Character set**, save settings and check the UI after relaunch.
 
-Spanish was updated with [Nacheras](https://github.com/Nacheras)'s submitted strings in the October work. Other variants can retain English placeholders for newer entries. Integrated strings and host checks do not establish that every glyph or long label fits on a console.
+Spanish was updated with [Nacheras](https://github.com/Nacheras)'s submitted strings in the October work. In the other variants, the entries that were still English were machine-translated on 12 November 2026; the [translator reference](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/TRANSLATING.txt) lists them so native speakers can check and correct them. Integrated strings and host checks do not establish that every glyph or long label fits on a console.
 
 ## Encoding matters
 

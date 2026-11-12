@@ -67,9 +67,9 @@ If USB is not currently running — for example you left Autostart off — SMS o
 
  Once USB is running, use **Left/Right** in the device menu to move the highlight onto the USB (`massN:`) device, then press **Down** to enter its file list. The status line at the bottom shows the current device and path so you always know where you are.
 
-![SMS Device settings scrolled to the bottom with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
+![SMS Device settings scrolled down with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
 
-**Start USB support** appears at the bottom of Device settings while USB is not running.
+**Start USB support** appears near the bottom of Device settings while USB is not running.
 
 ## Browsing & playing
 
