@@ -104,7 +104,7 @@ Everything about how SMS drives the screen, plus the interface language and char
 
 | Option | What it does | Values |
 | --- | --- | --- |
-| **TV system** | Chooses the video standard SMS outputs. | NTSC / PAL |
+| **TV system** | Chooses the video standard SMS outputs. A clean install starts on **auto**. | auto / NTSC / PAL / DTV 480p / DTV 576p / DTV 720p / DTV 1080i / VESA (60Hz) / VESA (75Hz) |
 | **Character set** | The code page used when drawing text (menus, file names, subtitles) — pick the one that matches your language/filenames. | cycles through the built-in character sets |
 | **Language** | English or the installed external `SMS.lng` pack; this row does not list every translation in the download ZIP. See [Languages & Fonts](https://nathanneurotic.github.io/Simple-Media-System/languages.html). | English / installed external pack |
 | **Adjust image left / right / up / down** | Nudge the whole picture to centre it on your TV. Four separate items, one per direction. | press to nudge |
