@@ -8,8 +8,10 @@
 #   converted, so FatFs drops the long name: FAT32 lists the 8.3 alias ("01TRAT~1.AVI"),
 #   exFAT lists "?". SMS's UTF-8 display path never saw those names.
 #
-# FIX: the same PS2SDK and FatFs sources with exactly one change, FF_LFN_UNICODE 2, so
-#   the driver hands names to iomanX as UTF-8 and takes UTF-8 paths back on open.
+# FIX: the same PS2SDK and FatFs sources with three ffconf.h changes: FF_LFN_UNICODE 2, so
+#   the driver hands names to iomanX as UTF-8 and takes UTF-8 paths back on open;
+#   FF_SFN_BUF 34, so an 8.3-only name with accented bytes still fits once in UTF-8; and
+#   FF_CODE_PAGE 850, the OEM codepage Western European Windows uses for 8.3 aliases.
 #   Plain ASCII names come out byte-for-byte as before.
 #
 # Needs git, docker and python3. Run from anywhere:
@@ -23,7 +25,7 @@ PS2SDK_TAG=v2.0.0
 FATFS_COMMIT=18cc3d9e07473a6aa3d783a66224b243a7b4974c   # fjtrujy/FatFs iop-r0.16, the tip when v2.0.0 was built
 IMAGE=ps2dev/ps2dev:v2.0.0
 STOCK_SHA256=597b23addfdb35346544d742d9e4e67edadb3b064e7c03b9784fbf71cb9e37d6
-UTF8_SHA256=e76412c235d9ac5636e202ea860dddab22b2e394c27e6428724b29bdb7f8de76   # checked by tools/test_bdmfs_fatfs_module.py
+UTF8_SHA256=1e1d9deac89e8b600ac20174fdf87f913ed23b87dd7a1f5fac3f229343086260   # checked by tools/test_bdmfs_fatfs_module.py
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$(mktemp -d)"
@@ -36,8 +38,13 @@ git clone -q -b iop-r0.16 https://github.com/fjtrujy/FatFs.git "$WORK/ps2sdk/com
 git -C "$WORK/ps2sdk/common/external_deps/fatfs" checkout -q "$FATFS_COMMIT"
 FFCONF="$WORK/ps2sdk/common/external_deps/fatfs/source/include/ffconf.h"
 if [ "$MODE" = utf8 ]; then
-  sed -i 's/^#define FF_LFN_UNICODE\t0/#define FF_LFN_UNICODE\t2/' "$FFCONF"
-  grep -q '^#define FF_LFN_UNICODE	2' "$FFCONF"
+  # UTF-8 names; room for an 8.3 alias whose 11 OEM bytes each become up to 3 UTF-8 bytes;
+  # and the Western European OEM codepage Windows writes into those aliases (every byte
+  # defined, unlike 869, where an alias byte such as 0x80 would turn the name into "?").
+  sed -i -e 's/^#define FF_LFN_UNICODE\t0/#define FF_LFN_UNICODE\t2/' \
+         -e 's/^#define FF_SFN_BUF\t\t12/#define FF_SFN_BUF\t\t34/' \
+         -e 's/^#define FF_CODE_PAGE\t869/#define FF_CODE_PAGE\t850/' "$FFCONF"
+  [ "$(grep -c -E '^#define (FF_LFN_UNICODE.2|FF_SFN_BUF.+34|FF_CODE_PAGE.850)' "$FFCONF")" = 3 ]
 fi
 
 docker run --rm $DOCKER_ARGS -v "$WORK/ps2sdk":/ps2sdksrc:ro -v "$WORK":/out "$IMAGE" sh -c '
