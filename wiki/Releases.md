@@ -7,10 +7,11 @@ Choose a build deliberately. Rolling follows development; version tags preserve 
 | Channel | Use it for | Identity |
 | --- | --- | --- |
 | [Rolling development](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/rolling) | Current fixes, features and issue retests. Updated by successful master publication. | The release notes' commit and the tester bundle's `build-info.json`. |
-| [v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1) | The fixed July 2026 release. It predates the October fixes and converter additions. | Tag/source `95b803ba07d1c55aa644acbd633936eb0a1e6ad6`; published 2026-07-26 UTC. |
+| [v3.0.0-rev2 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev2) | The current stable release, shown in the app as Version 3.0 (Rev.2). Includes the UTF-8 / accented file-name display fix. | The tag; the About screen ends with `Build <commit>`. |
+| [v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1) | Archived July 2026 release, kept for history. | Tag/source `95b803ba07d1c55aa644acbd633936eb0a1e6ad6`; published 2026-07-26 UTC. |
 | [Actions / PR artifacts](https://github.com/NathanNeurotic/Simple-Media-System/actions) | Testing a particular unmerged candidate. | Exact run, artifact and manifest head/source SHA. A rolling download cannot test an unmerged PR. |
 
-The [latest stable release link](https://github.com/NathanNeurotic/Simple-Media-System/releases/latest) excludes prereleases, so it can still lead to July while rolling contains much newer work.
+The [latest stable release link](https://github.com/NathanNeurotic/Simple-Media-System/releases/latest) excludes prereleases and leads to the newest stable tag; rolling can still contain newer work.
 
 ## Rolling download contents
 
