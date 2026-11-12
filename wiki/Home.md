@@ -8,6 +8,16 @@ MPEG-1 / MPEG-2 · DIVX / XVID · AUDIO & JPEG · MX4SIO · SMB / UDPFS
 
 **Following the October fixes?** Use the [rolling development build](https://nathanneurotic.github.io/Simple-Media-System/releases.html#this-build). The July stable tag does not include the October parser, streaming, frame-ownership and converter changes. [Reported console regressions still need confirmation.](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html)
 
+![SMS start screen: Available media none, Version 3.0 (Rev.2) and the status line Waiting for media (press start for menu)](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-screen.png)
+
+First launch: no device is started yet, so SMS waits for media.
+
+![SMS browser with a USB drive started, showing Music, Pictures and Videos folders](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/usb-root.png)
+
+After **Start USB support**, the USB drive and its folders.
+
+Screenshots are SMS 3.0 Rev.2 (build `c936bc1`) captured in the RIPPCSX2 emulator with sample files we generated, at the native 640 × 480. They show the interface, not a playback test on a real PS2. [Capture details](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/capture-manifest.json).
+
 ## The maintained SMS fork
 
 SMS was created by **Eugene Plotnikov** and developed by the PS2 homebrew community. This storage-focused fork adds MX4SIO, ATA/exFAT, i.LINK and MMCE paths, a folder-served UDPFS network drive, on-screen network configuration, USB/Bluetooth DualShock 3/4 input and updated artwork. You need a PS2 that can already launch homebrew; a hard disk or network adapter is optional.

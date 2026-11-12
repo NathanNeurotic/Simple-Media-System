@@ -16,7 +16,9 @@ The SMS screen is split into three stacked areas, each drawn inside a rounded re
 
 Only the active area is highlighted. You move around the device bar with **Left/Right**, and press **Down** to drop into the file list for the highlighted device; **Left/Right** from the top of the file list takes you back up to the bar. A device only earns an icon on the bar once it has been *started* and something is present. Startup may already remount the launch source to read its settings; otherwise start the source you need (see [Autostart vs Start now](https://nathanneurotic.github.io/Simple-Media-System/devices.html#autostart) below).
 
-![The SMS main screen: a row of device icons across the top (the device bar), the file browser in the middle, and the status line with path and clock at the bottom.](https://nathanneurotic.github.io/Simple-Media-System/images/usage-sms-maingui.png)
+![SMS browser: the USB icon in the device bar at the top, Music, Pictures and Videos folders in the file list, and mass0:/ with the clock on the status line](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/usb-root.png)
+
+The browser in SMS 3.0 Rev.2 after **Start USB support**: the device bar (top), the file list (middle) and the status line with the current path (bottom).
 
 ℹ Navigating a device
 
@@ -57,7 +59,9 @@ When a device is *not* already running, a matching "Start <device> now" item app
 
 Out of the box, **no optional Autostart flag is enabled**. You decide what to enable. This keeps boot fast and avoids probing hardware you don't have. Clearing the config returns you to this state (see [Where settings live](https://nathanneurotic.github.io/Simple-Media-System/devices.html#config)).
 
-![The SMS device settings screen, with the per-device Autostart toggles.](https://nathanneurotic.github.io/Simple-Media-System/images/usage-sms-devicesettings.png)
+![SMS Device settings menu: Network settings, Controller port 2 and the Autostart toggles for USB, i.LINK, MX4SIO, MMCE, HDD APA and HDD BDM, all off](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/device-settings.png)
+
+Device settings on a clean install: every Autostart toggle is off.
 
 ℹ Just want to try a device?
 

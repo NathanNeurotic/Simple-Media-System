@@ -33,6 +33,7 @@ Every option name and value on this page is taken from the SMS build's own on-sc
 you see on the TV. Wording can differ slightly if you load a translated language file, but the layout and behaviour are
 the same.</div>
 
+<figure class="ui-capture"><a href="assets/ui/sms-menu.png"><img src="assets/ui/sms-menu.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS Menu: Display settings, Device settings, Browser settings, Player settings, Help, Save settings, Shutdown console and Exit SMS"></a><figcaption>Start opens the SMS menu.</figcaption></figure>
 <h2 id="device-settings">Device settings — storage &amp; network</h2>
 <p>This is the menu you care about most on this fork: it is where you turn storage devices on. Each device has an
 <b>Autostart</b> toggle (whether it starts automatically at boot), and — when the device is <i>not</i> currently
@@ -93,6 +94,9 @@ is a one-shot "turn it on for this session" that doesn't change the Autostart to
 off, use <b>Start MX4SIO support</b> to test, then — once happy — flip <b>Autostart MX4SIO</b> on and
 <a href="#saving">save</a>.</div>
 
+<div class="ui-gallery"><figure><a href="assets/ui/device-settings.png"><img src="assets/ui/device-settings.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS Device settings with all Autostart toggles off"></a><figcaption>The top of Device settings: Autostart toggles.</figcaption></figure>
+<figure><a href="assets/ui/start-usb-support.png"><img src="assets/ui/start-usb-support.png" width="640" height="480" loading="lazy" decoding="async" alt="The bottom of SMS Device settings with Start USB support highlighted"></a><figcaption>The bottom of Device settings: CD/DVD options and the Start … support items.</figcaption></figure>
+</div>
 <h3 id="cd-and-controller">CD/DVD and controller options</h3>
 <p>The rest of the Device menu covers the optical drive and controller behaviour, plus the network settings entry that
 links to the on-screen network setup.</p>
@@ -114,7 +118,7 @@ system once and never touch the rest.</p>
 <table>
 <thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
 <tbody>
-<tr><td><b>TV system</b></td><td>Chooses the video standard SMS outputs.</td><td>NTSC / PAL</td></tr>
+<tr><td><b>TV system</b></td><td>Chooses the video standard SMS outputs. A clean install starts on <b>auto</b>.</td><td>auto / NTSC / PAL / DTV 480p / DTV 576p / DTV 720p / DTV 1080i / VESA (60Hz) / VESA (75Hz)</td></tr>
 <tr><td><b>Character set</b></td><td>The code page used when drawing text (menus, file names, subtitles) — pick the one that matches your language/filenames.</td><td>cycles through the built-in character sets</td></tr>
 <tr><td><b>Language</b></td><td>English or the installed external <code>SMS.lng</code> pack; this row does not list every translation in the download ZIP. See <a href="languages.html">Languages &amp; Fonts</a>.</td><td>English / installed external pack</td></tr>
 <tr><td><b>Adjust image left / right / up / down</b></td><td>Nudge the whole picture to centre it on your TV. Four separate items, one per direction.</td><td>press to nudge</td></tr>
@@ -122,6 +126,7 @@ system once and never touch the rest.</p>
 </tbody>
 </table>
 
+<figure class="ui-capture"><a href="assets/ui/display-settings.png"><img src="assets/ui/display-settings.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS Display settings: TV system auto, Character set WinLatin1, Language English, Adjust image left, right, up and down, and Advanced settings"></a><figcaption>Display settings.</figcaption></figure>
 <h3 id="advanced-display">Advanced display settings</h3>
 <p>These control the raw output resolution and timing. They are for advanced users chasing a specific mode or fixing a
 picture that doesn't sync — the defaults are fine for standard NTSC/PAL. Changes here only take effect when you run
@@ -171,11 +176,13 @@ The colour options (<b>Active border color</b>, <b>Text color</b>, <b>Selection 
 in the Player menu) pick from SMS's 16-entry palette. Cycle the value to preview each colour live in the panel it
 affects, so you can match your skin. See <a href="themes.html">Themes &amp; Skins</a> for the palette itself.</div>
 
+<figure class="ui-capture"><a href="assets/ui/browser-settings.png"><img src="assets/ui/browser-settings.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS Browser settings: Use background image none, Sound FX, Sort filesystem objects and Filter media files on, Display HDL partitions, Hide system partitions and Use exception handler off, and the border colours"></a><figcaption>Browser settings.</figcaption></figure>
 <h2 id="player-settings">Player settings — playback, subtitles &amp; audio</h2>
 <p>The biggest sub-menu. It covers subtitles, audio/SPDIF, volume, the scroll bar, colour resolution, an auto power-off
 timer, and an <b>MP3 settings</b> sub-menu for audio playback. Toggles are on/off; value items cycle with Left/Right;
 colour items pick a palette index.</p>
 
+<figure class="ui-capture"><a href="assets/ui/player-settings.png"><img src="assets/ui/player-settings.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS Player settings: MP3 settings, subtitle toggles, scroll bar time, S/PDIF and subtitle colours"></a><figcaption>Player settings.</figcaption></figure>
 <h3 id="player-subtitles">Subtitles</h3>
 <p>SMS shows external subtitle files over video. These options control loading, look and placement. Some (offset,
 font width/height) show a live <b>Sample</b> while you adjust them. See the dedicated <a href="subtitles.html">Subtitles</a>

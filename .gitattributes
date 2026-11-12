@@ -11,6 +11,8 @@ docs/data/*.js text eol=lf
 docs/sitemap.xml text eol=lf
 docs-site/** text eol=lf
 docs-site/static/assets/*.png binary
+docs-site/static/assets/ui/*.png binary
+docs/assets/ui/*.png binary
 wiki/*.md text eol=lf
 
 # Custom for Visual Studio

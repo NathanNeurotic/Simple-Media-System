@@ -10,7 +10,9 @@ This guide gets a video or song playing on your PlayStation 2 from start to fini
 
 The SMS browser is split into three stacked areas, each drawn inside its own rounded rectangle. Whichever area you are currently working in is highlighted. Learn these three and the whole interface makes sense.
 
-![The SMS main browser, showing the device menu at the top, the file list in the middle, and the status line at the bottom](https://nathanneurotic.github.io/Simple-Media-System/images/usage-sms-maingui.png)
+![SMS browser: the USB icon in the device bar at the top, Music, Pictures and Videos folders in the file list, and mass0:/ with the clock on the status line](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/usb-root.png)
+
+The browser in SMS 3.0 Rev.2 after **Start USB support**: the device bar (top), the file list (middle) and the status line with the current path (bottom).
 
 ### 1 · Device menu — top row
 
