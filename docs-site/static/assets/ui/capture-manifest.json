@@ -16,14 +16,14 @@
   ],
   "shots_sha256": {
     "browser-settings.png": "ef89ef26f7c0f3a3bb201cf2c7c98fec7a672cbda2caf313be4f560da39aa4c0",
-    "device-settings.png": "2c9d1eee111f39a3ea166bf4689b6c12d788734ab4f8b8a849c92e4027d11614",
+    "device-settings.png": "b9d250fb4e2ccf560f5ee1fb779c2da13c4026532f92d2c1b11baaa5d42fce71",
     "display-settings.png": "9b07779be0376803e9e488c13f428dd633de024c0d47ae06cbe2532d68dc957e",
     "music-folder.png": "1cf9b9c7000b8f9aece21e8327771fd29bcef8c12a2aa0bf9f560767f5d1f74f",
     "play-all.png": "119a092a9ed98a1fe9bc433300f5773157d2e0842b41f35427ec480db52a2a4c",
     "player-settings.png": "c1265101e4a40eb3e3bdf9921ac21e3eb79b5c0fc8452abd76486e97e3c44c33",
     "sms-menu.png": "63f43b5fda7ebe80a24d6d4ee5806b2e17c7edca88c8482dd87106dfe4210373",
     "start-screen.png": "3dc3cb8406370aaa518d7eb8c5a6ff631be125305b0fcc38bb46b1cd9c68f120",
-    "start-usb-support.png": "88ec848763732de486f7deac0730cb066926ff41ad742fdbf453b570e7faeb9f",
+    "start-usb-support.png": "3d0e6652d9572d0113e4af09659ddba60078838bdcb482514d606ba3b12853b5",
     "usb-root.png": "fb2458b244cf4516a055511365294ee9857c47596cd105638f7b0130d11d893e",
     "video-playback.png": "1fabac330496273a34e4259172919e0073751189e9055253af95f453615436f7",
     "videos-folder.png": "4f5c9a8a2af2ea50e52c9ccb91da2b0bcc7f77210de2f44753e08c09a5f660d2"
@@ -33,14 +33,14 @@
       "device-settings.png",
       "start-usb-support.png"
     ],
-    "note": "These two pictures replace the originals because the Device settings rows were regrouped. Everything above still applies to the other pictures.",
+    "note": "These two pictures replace the originals because the Device settings rows were regrouped. They were taken the same way as the others (same emulator, settings and USB image), from a newer build.",
     "captured_on": "2026-11-12",
-    "source_commit": "c19330a92cf995ce2726cee3987d81db6b12da42",
-    "elf": "bin/SMS-packed.elf, a development build of that commit (not a release)",
-    "elf_sha256": "bb615f6aa3f494e12dcca2d6614f9794340584cb4bcad53b2165643ca7fa2670",
-    "emulator": "PCSX2 2.8.2 (Linux Flatpak, software renderer), its own settings and a new throwaway memory card",
-    "display": "Captured from the emulator window and cropped to the 640x480 picture; not F8 screenshots",
-    "media": "None attached",
+    "source_commit": "bfb89d58f4206bd5143a89ab6b238337394fe194",
+    "elf": "Simple-Media-System.elf, the CI build of that commit (not a release)",
+    "elf_sha256": "4f5708d356185a14b0d54701f52e91855ce893642bbab8c42c10881754a43dfd",
+    "emulator": "RIPPCSX2 2.9.96-rippcsx2.2 (a new copy of the same lab and its settings, with a new throwaway memory card)",
+    "display": "Auto NTSC 4:3; native PNG 640x480; unmodified emulator screenshots (F8)",
+    "media": "The same 128 MiB USB image, with USB support not started",
     "steps": "device-settings.png: Start, Device settings. start-usb-support.png: then 14 x Down to 'Start USB support'"
   }
 }

@@ -16,7 +16,7 @@ First launch: no device is started yet, so SMS waits for media.
 
 After **Start USB support**, the USB drive and its folders.
 
-Screenshots are SMS 3.0 Rev.2 (build `c936bc1`) captured in the RIPPCSX2 emulator with sample files we generated, at the native 640 × 480. They show the interface, not a playback test on a real PS2. The two Device settings pictures were retaken in PCSX2 2.8.2 when its rows were regrouped. [Capture details](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/capture-manifest.json).
+Screenshots are SMS 3.0 Rev.2 (build `c936bc1`) captured in the RIPPCSX2 emulator with sample files we generated, at the native 640 × 480. They show the interface, not a playback test on a real PS2. The two Device settings pictures were retaken the same way, from a newer build, when its rows were regrouped. [Capture details](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/capture-manifest.json).
 
 ## The maintained SMS fork
 
