@@ -145,6 +145,7 @@ typedef struct SMSConfig {
 
 extern SMSConfig    g_Config        __attribute__(   (  section( ".data" )  )   );
 extern unsigned int g_Palette[ 16 ] __attribute__(   (  section( ".bss"  )  )   );
+extern int          g_BootDisplayMode;
 
 #ifdef __cplusplus
 extern "C" {

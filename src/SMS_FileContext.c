@@ -1384,7 +1384,10 @@ static int STIO_Seek ( FileContext* apCtx, unsigned int aPos ) {
  lPos = SetFilePointer ( lpPriv -> m_hFile, aPos, NULL, FILE_BEGIN );
 #else  /* PS2 */
 #ifdef BDM
- if ( lpPriv -> m_fXio ) lPos = fileXioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
+ /* fileXioLseek takes a signed 32-bit offset, which bdmfs_fatfs sign-extends:
+  * a position at or above 2 GiB would land on end-of-file. */
+ if ( lpPriv -> m_fXio ) lPos = aPos > 0x7FFFFFFFU ? ( unsigned int )fileXioLseek64 ( lpPriv -> m_FD, aPos, SEEK_SET )
+                                                   : ( unsigned int )fileXioLseek   ( lpPriv -> m_FD, aPos, SEEK_SET );
  else
 #endif
  lPos = fioLseek ( lpPriv -> m_FD, aPos, SEEK_SET );
@@ -1655,6 +1658,8 @@ static void STIO_PfStop ( FileContext* apCtx ) {
  apCtx -> m_pPos   = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
  apCtx -> Fill     = STIO_Fill;
  apCtx -> Seek     = STIO_Seek;
+ if ( apCtx -> m_CurPos > 0x7FFFFFFFU ) fileXioLseek64 ( (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_FD, apCtx -> m_CurPos, SEEK_SET );
+ else
  fileXioLseek ( (  ( STIOFilePrivate* )apCtx -> m_pData  ) -> m_FD, apCtx -> m_CurPos, SEEK_SET );
  apCtx -> m_Pos    = apCtx -> m_CurPos;
 
@@ -1753,6 +1758,9 @@ static int STIO_FillStm ( FileContext* apCtx ) {
     apCtx -> m_pPos = apCtx -> m_pEnd;
     return 0;
    }
+   /* fio keeps one result word for all calls, so this can be the count of a
+    * later call ( a copy's destination write ). Never publish past the file. */
+   if ( ( unsigned int )lnRead > apCtx -> m_Size - apCtx -> m_CurPos ) lnRead = apCtx -> m_Size - apCtx -> m_CurPos;
    lOldBuf            = apCtx -> m_CurBuf;
    apCtx -> m_CurBuf  = !apCtx -> m_CurBuf;
    apCtx -> m_pPos    = apCtx -> m_pBuff[ apCtx -> m_CurBuf ];
@@ -1844,7 +1852,12 @@ static int STIO_Stream ( FileContext* apCtx, unsigned int aStartPos, unsigned in
   apCtx -> Fill     = STIO_Fill;
 
   apCtx -> m_pPos = apCtx -> m_pEnd = apCtx -> m_pBuff[ 0 ];
-  if ( aStartPos > apCtx -> m_Size ) return 0;
+  if ( aStartPos > apCtx -> m_Size ) {
+   /* Refused, but the buffer is gone and read-ahead moved the descriptor:
+    * put it back at the cursor the caller keeps reading from. */
+   apCtx -> Seek ( apCtx, apCtx -> m_CurPos );
+   return 0;
+  }  /* end if */
 
   return apCtx -> Seek ( apCtx, aStartPos ) != -1;
 

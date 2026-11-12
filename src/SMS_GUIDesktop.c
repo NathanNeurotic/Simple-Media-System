@@ -145,10 +145,10 @@ extern void PowerOf2 ( int, int, int*, int* );
 /* lands on top of the framebuffer in VRAM and corrupts the desktop. Until mode-    */
 /* appropriate background assets exist, skip the full-screen background image in    */
 /* those modes and let the cleared background show through. Every SD-class mode     */
-/* (NTSC/PAL/480p/576p/VESA) is exactly 640 wide and fits, so it is unaffected.     */
+/* (NTSC/PAL/480p/576p/VESA) is 640..720 wide ( Display menu ) and fits.            */
 static int _bgTexUnsafe ( void ) {
 
- return g_GSCtx.m_Width > 640;   /* only 720p (1216) / 1080i (1820) exceed 640 -> collide */
+ return g_GSCtx.m_Width > 720;   /* only 720p ( >= 1090 ) / 1080i ( >= 1400 ) collide */
 
 }  /* end _bgTexUnsafe */
 
@@ -258,7 +258,10 @@ static int DrawSkin ( void ) {
 
    lTexSize = (   ( lTBW << 6 ) * (  ( lHeight + 31 ) & ~31  ) * 4   ) >> 8;
 
-   if ( lTexSize >= 0x4000 ) {   /* skin texture too large for VRAM -> fall back to default */
+/* The texture sits at the top of VRAM; m_VRAMPtr is the first block past the framebuffer
+ * ( and Z buffer, when on ) and the font. A tall skin ( 1024x768 starts at 0x1000, a PAL
+ * 640x512 framebuffer ends at 0x1400 ) would overlap them, so refuse it as too large. */
+   if ( lTexSize >= 0x4000 || 0x4000 - lTexSize < g_GSCtx.m_VRAMPtr ) {   /* skin texture too large for VRAM -> fall back to default */
     free ( lpData );
     return 0;
    }  /* end if */
@@ -587,7 +590,7 @@ static void Desktop_Render ( GUIObject* apObj, int aCtx ) {
 
  if ( !apObj -> m_pGSPacket ) {
 
-  int            i, lW, lH;
+  int            lW, lH;
   u64            lXYXY;
   int            lX    = ( g_GSCtx.m_Width  - LOGO_W * 32 ) >> 1;
   int            lY    = ( g_GSCtx.m_Height - LOGO_H * 32 ) >> 1;
@@ -607,9 +610,9 @@ static void Desktop_Render ( GUIObject* apObj, int aCtx ) {
  * shows as a black gap before the desktop lands. */
    _DecodeJellyfish ();
 
-/* Boot splash: fades in, holds ~1s, fades out to black ( all inside
- * _DrawSplash ). */
-   _DrawSplash ();
+/* Boot splash, first render only: fades in, holds ~1s, fades out to black ( all
+ * inside _DrawSplash ). */
+   if ( !s_Init ) _DrawSplash ();
 
    if (  _bgTexUnsafe ()  ) {
 /* HD DTV (720p/1080i): do NOT upload the full-screen background texture. At

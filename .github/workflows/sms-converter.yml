@@ -2,7 +2,7 @@ name: sms-converter
 
 on:
   push:
-    branches: ['**']
+    branches: [master]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
@@ -26,6 +26,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     - name: Set up Python 3.12
       uses: actions/setup-python@v7
@@ -73,9 +75,11 @@ jobs:
 
     - name: Build Portable Package (Linux)
       if: runner.os == 'Linux'
+      shell: bash
       run: |
         mkdir -p dist-artifact/SMS-Media-Converter-Linux
-        cp -r tools/sms_converter/* dist-artifact/SMS-Media-Converter-Linux/
+        # Tracked files only: the tests above leave __pycache__ and a crash log beside them.
+        git archive HEAD:tools/sms_converter | tar -x -C dist-artifact/SMS-Media-Converter-Linux
         # Stable filename, NOT commit-stamped: the rolling release is updated in place rather
         # than recreated, so a per-commit name would add a new zip on every push and never
         # remove the old ones. The commit is already recorded in the release notes.
@@ -163,25 +167,30 @@ jobs:
         for i in {1..12}; do
           if gh release upload "$GITHUB_REF_NAME" dist-artifact/SMS-Media-Converter.exe --clobber; then
             echo "Uploaded SMS-Media-Converter.exe to release $GITHUB_REF_NAME!"
-            break
+            exit 0
           fi
           echo "Waiting for release $GITHUB_REF_NAME..."
           sleep 10
         done
+        echo "Failed to publish SMS-Media-Converter.exe to release $GITHUB_REF_NAME after 12 attempts" >&2
+        exit 1
 
     - name: Upload Linux Package to Version Release
       if: runner.os == 'Linux' && startsWith(github.ref, 'refs/tags/v')
       env:
         GH_TOKEN: ${{ github.token }}
+      shell: bash
       run: |
         for i in {1..12}; do
           if gh release upload "$GITHUB_REF_NAME" dist-artifact/*.zip --clobber; then
             echo "Uploaded SMS-Media-Converter-Linux.zip to release $GITHUB_REF_NAME!"
-            break
+            exit 0
           fi
           echo "Waiting for release $GITHUB_REF_NAME..."
           sleep 10
         done
+        echo "Failed to publish SMS-Media-Converter-Linux.zip to release $GITHUB_REF_NAME after 12 attempts" >&2
+        exit 1
 
   # ---------------------------------------------------------------------------------------
   # Windows 7 build.
@@ -210,6 +219,8 @@ jobs:
       cancel-in-progress: false
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     # setup-python's OWN major version is not one of the pins described above -- it only
     # selects an interpreter. "3.8" still resolves to 3.8.10 here, which is python.org's last
@@ -307,8 +318,10 @@ jobs:
         for i in {1..12}; do
           if gh release upload "$GITHUB_REF_NAME" dist-artifact/SMS-Media-Converter-Win7.exe --clobber; then
             echo "Uploaded SMS-Media-Converter-Win7.exe to release $GITHUB_REF_NAME!"
-            break
+            exit 0
           fi
           echo "Waiting for release $GITHUB_REF_NAME..."
           sleep 10
         done
+        echo "Failed to publish SMS-Media-Converter-Win7.exe to release $GITHUB_REF_NAME after 12 attempts" >&2
+        exit 1

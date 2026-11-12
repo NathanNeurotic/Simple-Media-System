@@ -994,8 +994,10 @@ void** SMS_OpenMediaFile ( const char* apName, int aFlags ) {
 
 static void _perform_file_action ( GUIFileMenu* apMenu, int aFlags ) {
 
- if ( apMenu -> m_ArtworkMode ) GUIFileMenu_Cleanup ( ( GUIObject* )apMenu );
- if ( !SMS_OpenMediaFile ( _STR( apMenu -> m_pCurrent ), aFlags | SMS_FA_FLAGS_MSG ) && apMenu -> m_ArtworkMode ) _redraw ( apMenu, 0 );
+ /* Release artwork only once the file is open: the subtitle picker repaints
+  * the page from the cache and a failed open leaves it as drawn. */
+ if ( SMS_OpenMediaFile ( _STR( apMenu -> m_pCurrent ), aFlags | SMS_FA_FLAGS_MSG ) && apMenu -> m_ArtworkMode )
+  GUIFileMenu_Cleanup ( ( GUIObject* )apMenu );
 
 }  /* end _perform_file_action */
 
@@ -1400,7 +1402,12 @@ static int GUIFileMenu_HandleEvent ( GUIObject* apObj, u64           anEvent ) {
    /* R2: ordinary list -> artwork grid -> selected poster -> ordinary list. */
    lpMenu -> m_ArtworkMode = ( lpMenu -> m_ArtworkMode + 1 ) % 3;
    if ( lpMenu -> m_ArtworkMode ) _artwork_position ( lpMenu );
-   else { lpMenu -> m_pFirst = lpMenu -> m_pCurrent; lpMenu -> m_YOffset = 0; }
+   else {
+    /* List rows: the selection is never the dimmed "more above" first row. */
+    SMS_ListNode* lpPrev = lpMenu -> m_pCurrent ? lpMenu -> m_pCurrent -> m_pPrev : NULL;
+    lpMenu -> m_pFirst  = lpPrev ? lpPrev : lpMenu -> m_pCurrent;
+    lpMenu -> m_YOffset = lpPrev != NULL;
+   }
    _redraw ( lpMenu, 0 );
    return GUIHResult_Handled;
   }
@@ -1518,6 +1525,11 @@ redraw:
      lpMenu -> m_pFirst   = lpNode;
      lpMenu -> m_pCurrent = SMS_ListFind ( lpMenu -> m_pFiltList, lpInfo -> m_pCurrent );
      lpMenu -> m_YOffset  = lpInfo -> m_YOffset;
+     /* A level saved in a grid/poster view can start its page on the selection. */
+     if ( !lpMenu -> m_ArtworkMode && lpMenu -> m_pCurrent == lpNode && lpNode -> m_pPrev ) {
+      lpMenu -> m_pFirst  = lpNode -> m_pPrev;
+      lpMenu -> m_YOffset = 1;
+     }
 
     } else {
 

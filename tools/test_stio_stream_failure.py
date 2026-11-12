@@ -102,6 +102,7 @@ static int fioRead(int fd,void *p,unsigned n) {
 }
 #ifdef BDM
 static int fileXioLseek(int fd,unsigned n,int whence) { return fioLseek(fd,n,whence); }
+static long long fileXioLseek64(int fd,long long n,int whence) { return fioLseek(fd,(unsigned)n,whence); }
 static int fileXioRead(int fd,void *p,unsigned n) { (void)fd;return native_read(p,n); }
 #endif
 #ifdef _WIN32
@@ -230,6 +231,13 @@ int main(int argc,char **argv) {
   assert(STIO_SeekStm(&ctx,100)==100);
   assert(STIO_Read(&ctx,data,sizeof(data))==sizeof(data));
   for(unsigned i=0;i<sizeof(data);++i) assert(data[i]==(unsigned char)((100+i)*17+3));
+ } else if(which==15) { /* A refused streaming seek keeps the descriptor at the cursor. */
+  unsigned char data[16];
+  assert(STIO_Stream(&ctx,0,1)==4096);
+  assert(STIO_Read(&ctx,data,sizeof(data))==sizeof(data));
+  assert(ctx.Seek(&ctx,ctx.m_Size+1)==-1 && ctx.m_CurPos==sizeof(data));
+  assert(STIO_Read(&ctx,data,sizeof(data))==sizeof(data));
+  for(unsigned i=0;i<sizeof(data);++i) assert(data[i]==(unsigned char)((16+i)*17+3));
  } else assert(0);
  destroy(&ctx);return 0;
 }
@@ -245,6 +253,6 @@ with tempfile.TemporaryDirectory() as tmp:
                         "-fsanitize=address,undefined", "-fno-sanitize-recover=all", "-pthread",
                         "-Wno-missing-field-initializers", "-Wno-unused-function",
                         *flags, str(src), "-o", str(exe)], check=True)
-        for case in ([int(selected)] if selected else range(1, 15)):
+        for case in ([int(selected)] if selected else range(1, 16)):
             subprocess.run([str(exe), str(case)], check=True, timeout=15)
 print("STIO legacy/BDM/Win32: failed seeks/reads/prefetch, completion/EOF bounds, partial reads and byte continuity passed")

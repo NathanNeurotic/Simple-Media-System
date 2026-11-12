@@ -229,6 +229,12 @@ static void _terminate_threads ( int afDelete ) {
   s_Player.m_Flags &= ~SMS_FLAGS_STOP;
  }  /* end if */
 
+ /* No worker is left to consume a pause signal or acknowledgement: a count
+  * kept here would let a restarted renderer run through the next pause. */
+ while (  PollSema ( s_SemaPauseAudio ) >= 0  );
+ while (  PollSema ( s_SemaPauseVideo ) >= 0  );
+ while (  PollSema ( s_SemaAckPause   ) >= 0  );
+
  /* A stopped renderer can have taken a notification without releasing its
   * slot. Drain allocated slots, including that frame and an unposted tail. */
  while ( s_pVideoBuffer -> m_Size < s_pVideoBuffer -> m_Capacity ) {
@@ -1586,7 +1592,10 @@ static void _setup_video_pulldown22 ( void ) {
   uint32_t       lBase      = lpVideoStm -> m_pCodec -> m_FrameRateBase;
   float          lFPS       = ( float )lRate / ( float )lBase;
  
-  if ( lFPS > 23.8 && lFPS < 25.0F ) {
+  /* The 1/25 time base set below is one frame only when a tick is one frame. */
+  if ( lFPS > 23.8 && lFPS < 25.0F &&
+       ( int64_t )lpVideoStm -> m_TimeBase.m_Num * lRate == ( int64_t )lpVideoStm -> m_TimeBase.m_Den * lBase
+  ) {
 
    s_Player.m_Flags |= SMS_FLAGS_PDW22;
 

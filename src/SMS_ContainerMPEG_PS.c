@@ -319,7 +319,9 @@ static int _fill_video_parameters ( SMS_Container* apCont, SMS_Stream* apStm, in
    apStm -> m_pCodec -> m_fWS    = ( lHeader[ 3 ] >> 4 ) == 3;
 
    retVal = apStm -> m_pCodec -> m_Width && apStm -> m_pCodec -> m_Height;
-   break;
+   if ( retVal ) break;   /* an invalid (zero-size) header: keep looking for a later valid one */
+   if ( i++ >= 1024 ) goto end;   /* within the same bound as the packet walk below */
+   continue;
 
   }  /* end if */
 
@@ -654,9 +656,11 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
     if ( lCode < 0 ) break;
 
+    /* picture_coding_type follows the 10-bit temporal reference; the four
+     * header bytes are read in little-endian order. */
     if ( lCode == 0x000001B8 || lCode == 0x000001B3 || (
           lCode == 0x00000100 && (
-           (  File_GetUInt ( lpFileCtx ) >> 19  ) & 3
+           (  File_GetUInt ( lpFileCtx ) >> 11  ) & 7
           ) == 1
          )
     ) {
@@ -680,6 +684,7 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
  int64_t           lPTS, lDTS;
  int               i, lfVideo, lfAudio, lfVideoParam, retVal = 0;
+ unsigned int      lBadVideo = 0;
  FileContext*      lpFileCtx;
  _MPEGPSContainer* lpMyCont;
  SMS_Stream**      lIt, **lppStm = apCont -> m_pStm;
@@ -804,7 +809,11 @@ int SMS_GetContainerMPEG_PS ( SMS_Container* apCont ) {
 
      if ( lCodecType == SMS_CodecTypeVideo ) {
 
-      lfParams = lfVideo = lfVideoParam = _fill_video_parameters ( apCont, lpStm, lLen, lStartCode );
+      /* One header walk per video stream ID: a retry from the next packet
+       * would re-read almost the same ~1024 headers. */
+      lfParams = lfVideo = lfVideoParam = !(  lBadVideo & ( 1 << ( lStartCode & 15 ) )  ) &&
+                                          _fill_video_parameters ( apCont, lpStm, lLen, lStartCode );
+      lBadVideo |= !lfParams << ( lStartCode & 15 );
 
      } else {
       lfParams = _fill_audio_parameters ( lpFileCtx, lpStm, lLen );
@@ -911,8 +920,14 @@ error:
     if (  ( int64_t )lSEPTS[ i ] > ( int64_t )lDTS  ) lDTS = lSEPTS[ i ];
    }  /* end for */
 
-   apCont -> m_StartTime = ( int )SMS_Rescale ( lPTS, SMS_TIME_BASE, 90000 );
-   apCont -> m_Duration  = ( int )SMS_Rescale ( lDTS, SMS_TIME_BASE, 90000 );
+   /* SMS_Rescale recurses without end on SMS_NOPTS_VALUE. Without a start PTS
+    * the stream starts at 0; without a PTS in the last 128 KiB the duration
+    * stays unknown and seeking, which is derived from it, is disabled. */
+   apCont -> m_StartTime = lPTS == SMS_NOPTS_VALUE ? 0 : ( int )SMS_Rescale ( lPTS, SMS_TIME_BASE, 90000 );
+
+   if ( lDTS == SMS_NOPTS_VALUE )
+    apCont -> m_Flags &= ~SMS_CONT_FLAGS_SEEKABLE;
+   else apCont -> m_Duration = ( int )SMS_Rescale ( lDTS, SMS_TIME_BASE, 90000 );
 
   }  /* end block */
 

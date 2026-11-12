@@ -18,7 +18,7 @@ import tempfile
 parser = argparse.ArgumentParser()
 parser.add_argument("--source", type=Path)
 CASES = ("standard", "faststart", "co64", "extended", "extended-nested", "zero", "missing-moov", "missing-mdat", "short-stts",
-         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-before-track", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
+         "ctts-v0", "ctts-v0-two-frame", "ctts-v1", "edit-delay", "edit-v1", "no-edits", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail", "edit-priming", "edit-sub-frame", "stts-zero-tail", "edit-before-track", "stsd-count", "m4a-metadata", "m4a-metadata-stereo", "m4a-metadata-bad-asc")
 parser.add_argument("--case", default="all", choices=("all",) + CASES)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -111,6 +111,12 @@ int main(int argc,char **argv) {
   assert(info.m_BitRate>0);assert(f.m_CurPos==0);
   free(data);return 0;
  }
+ if(!strcmp(argv[3],"bounded")) {
+  /* Both readers only have to return; the caller's timeout catches a runaway loop. */
+  SMS_AudioInfo info={0};SMS_M4AProbe(&f,&info);
+  if(_GetContainerMOV(&c,s_MOVParseTbl)) SMS_DestroyContainer(&c,0);
+  free(data);return 0;
+ }
  int result=_GetContainerMOV(&c,s_MOVParseTbl);
  if(!strcmp(argv[3],"reject")) {
   assert(!result && !c.m_nStm && !c.m_pCtx);free(data);return 0;
@@ -120,6 +126,16 @@ int main(int argc,char **argv) {
  struct { unsigned pos,bytes;long long pts,dts; } expected[SMS_MAX_STREAMS][256];
  long long pts,dts;
  in=fopen(argv[2],"r");assert(in);
+ /* FFprobe's extradata sizes prove each stream's esds reached its codec context. */
+ for(unsigned i=0;i<c.m_nStm;++i) {
+  SMS_CodecContext *codec=c.m_pStm[i]->m_pCodec;unsigned extra;
+  assert(fscanf(in,"%u",&extra)==1 && extra>0);
+  assert(codec->m_ID==(codec->m_Type==SMS_CodecTypeVideo?SMS_CodecID_MPEG4:SMS_CodecID_AAC));
+  assert(codec->m_BitRate>0 && codec->m_UserDataLen==(int)extra);
+  if(codec->m_Type==SMS_CodecTypeVideo) assert(codec->m_FrameRate>0 && codec->m_FrameRateBase>0);
+  /* The MPEG-4 header scan reads up to here and needs a zero to end user data. */
+  assert(!memcmp((char *)codec->m_pUserData+extra,"\0\0\0",4));
+ }
  /* FFprobe is the independent oracle for every packet's on-disk range. */
  while(fscanf(in,"%u %u %u %lld %lld",&stream,&pos,&bytes,&pts,&dts)==5) {
   assert(stream<c.m_nStm);
@@ -143,6 +159,13 @@ int main(int argc,char **argv) {
   unsigned j=read_counts[selected]++;assert(j<counts[selected]);
   assert(packet.m_Size==(int)expected[selected][j].bytes);
   assert(!memcmp(packet.m_pData,data+expected[selected][j].pos,packet.m_Size));
+  /* MPEG-4 video is stamped in decode order; other codecs keep composition time. */
+  if(c.m_pStm[selected]->m_pCodec->m_ID==SMS_CodecID_MPEG4) expected[selected][j].pts=expected[selected][j].dts;
+  /* The player has no position before time zero, so video is never stamped there. */
+  if(c.m_pStm[selected]->m_pCodec->m_Type==SMS_CodecTypeVideo) {
+   assert(packet.m_PTS>=0);
+   if(expected[selected][j].pts<0) expected[selected][j].pts=0;
+  }
   if(llabs(packet.m_PTS-expected[selected][j].pts)>1 || llabs(packet.m_DTS-expected[selected][j].dts)>1) {
    fprintf(stderr,"stream%d packet%u PTS=%lld expected=%lld DTS=%lld expected=%lld\n",selected,j,
            (long long)packet.m_PTS,expected[selected][j].pts,(long long)packet.m_DTS,expected[selected][j].dts);
@@ -164,6 +187,18 @@ def atoms(data):
         yield tag, data[pos + 8:pos + size]
         pos += size
     assert pos == len(data)
+
+
+def edit_starts(data):
+    """Each track's edit start in seconds: the media time shown at movie time zero."""
+    starts = []
+    for tag, body in atoms(data):
+        if tag == b"moov":
+            for tag, trak in atoms(body):
+                if tag == b"trak":
+                    scale = struct.unpack_from(">I", trak, trak.index(b"mdhd") + 16)[0]
+                    starts.append(struct.unpack_from(">i", trak, trak.index(b"elst") + 16)[0] / scale)
+    return starts
 
 
 def rewrite(data, kind, video=False):
@@ -193,6 +228,12 @@ def rewrite(data, kind, video=False):
                 body = body[:4] + struct.pack(">I", 2) + body[8:20] * 2
             elif kind in ("edit-trim", "edit-tail"):
                 body = body[:4] + struct.pack(">I", 1) + struct.pack(">Iihh", 2000, 10240 if kind == "edit-trim" else 0, 1, 0)
+            elif kind == "edit-priming" and not video:
+                # FDK and CoreAudio AAC prime with more than FFmpeg's one frame.
+                body = body[:12] + struct.pack(">i", 2112) + body[16:]
+            elif kind == "edit-sub-frame" and video:
+                # Half of one 10 fps frame: the first frame is still on screen at time zero.
+                body = body[:12] + struct.pack(">i", 512) + body[16:]
             elif kind == "ctts-v0-two-frame" and video:
                 media_time = struct.unpack_from(">i", body, 12)[0]
                 body = body[:12] + struct.pack(">i", media_time + 1024) + body[16:]
@@ -200,6 +241,16 @@ def rewrite(data, kind, video=False):
             count = struct.unpack_from(">I", body, 4)[0]
             entries = [struct.unpack_from(">II", body, 8 + 8 * i) for i in range(count)]
             body = body[:8] + b"".join(struct.pack(">II", n, offset + 1024) for n, offset in entries)
+        if kind == "stsd-count" and tag == b"stsd":
+            # One negative and one huge sample-entry count: neither is backed by data.
+            body = body[:4] + struct.pack(">I", 0xA2000001 if video else 0x7FFFFFFF) + body[8:]
+        if kind == "stts-zero-tail" and tag == b"stts":
+            # FFmpeg's variable-frame-rate output ends with a zero-duration sample.
+            count = struct.unpack_from(">I", body, 4)[0]
+            entries = [list(struct.unpack_from(">II", body, 8 + 8 * i)) for i in range(count)]
+            entries[-1][0] -= 1
+            entries = [entry for entry in entries if entry[0]] + [[1, 0]]
+            body = body[:4] + struct.pack(">I", len(entries)) + b"".join(struct.pack(">II", *entry) for entry in entries)
         if kind == "ctts-unknown" and tag == b"ctts":
             body = b"\x02" + body[1:]
         if kind == "m4a-metadata-bad-asc" and tag == b"stsd" and not video:
@@ -258,7 +309,7 @@ with tempfile.TemporaryDirectory() as temporary:
         elif case == "faststart":
             subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-i", str(media), "-c", "copy",
                             "-movflags", "+faststart", str(fixture)], check=True, timeout=20)
-        elif case in ("ctts-v0", "ctts-v0-two-frame", "ctts-v1", "ctts-unknown", "edit-delay", "edit-v1", "no-edits", "edit-trim", "edit-tail"):
+        elif case in ("ctts-v0", "ctts-v0-two-frame", "ctts-v1", "ctts-unknown", "edit-delay", "edit-v1", "no-edits", "edit-trim", "edit-tail", "edit-sub-frame"):
             generated = tmp / "generated.mp4"
             command = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"]
             delayed = case in ("edit-delay", "edit-v1")
@@ -277,18 +328,29 @@ with tempfile.TemporaryDirectory() as temporary:
         else:
             fixture.write_bytes(original if case == "standard" else rewrite(original, case))
         manifest = tmp / "packets.txt"
-        if case == "m4a-metadata-bad-asc":
+        if case == "stsd-count":
+            mode = "bounded"
+        elif case == "m4a-metadata-bad-asc":
             mode = "probe-reject"
         elif case in ("m4a-metadata", "m4a-metadata-stereo"):
             mode = "probe"
             audio = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "a:0",
                                                        "-show_streams", "-of", "json", str(fixture)], timeout=10))["streams"][0]
             manifest.write_text(f"{audio['sample_rate']} {audio['channels']}\n")
-        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim", "edit-tail"):
+        elif case.startswith("missing-") or case in ("short-stts", "edit-rate", "edit-multiple", "ctts-unknown", "edit-trim"):
+            # edit-trim cuts ten video frames: that lead-in would play before time zero.
             mode = "reject"
         else:
             mode = "accept"
-            probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_packets", "-of", "json", str(fixture)], timeout=10))
-            manifest.write_text("".join(f"{p['stream_index']} {p['pos']} {p['size']} {round(float(p['pts_time']) * 1000000)} {round(float(p['dts_time']) * 1000000)}\n" for p in probe["packets"]))
+            # FFprobe drops what an edit trims; SMS plays audio priming, a trimmed tail and a first
+            # video frame that straddles time zero, so those cases take the untrimmed packets
+            # shifted by each track's edit start.
+            trimmed = case in ("edit-tail", "edit-priming", "edit-sub-frame")
+            shift = edit_starts(fixture.read_bytes()) if trimmed else [0, 0]
+            probe = json.loads(subprocess.check_output(["ffprobe", "-v", "error"] + ["-ignore_editlist", "1"] * trimmed +
+                                                       ["-show_packets", "-show_streams", "-of", "json", str(fixture)], timeout=10))
+            manifest.write_text(" ".join(str(s.get("extradata_size", 0)) for s in probe["streams"]) + "\n" + "".join(
+                f"{p['stream_index']} {p['pos']} {p['size']} {round((float(p['pts_time']) - shift[p['stream_index']]) * 1000000)} "
+                f"{round((float(p['dts_time']) - shift[p['stream_index']]) * 1000000)}\n" for p in probe["packets"]))
         subprocess.run([str(exe), str(fixture), str(manifest), mode], check=True, timeout=5)
         print(f"MOV parser: {case} passed")

@@ -89,29 +89,13 @@ int main ( int argc, char** argv ) {
  SMS_PgIndStop ();
 
 #ifdef BDM
-/* Filesystem boot ( USB / MMCE / ... ): the config -- and thus the chosen display
- * mode -- was loaded by SMS_IOPInit AFTER GUI_Initialize already brought the
- * screen up in the default ( auto NTSC/PAL ) mode, so the resolution never
- * switched to what the user picked. The loading spinner is stopped now, so it is
- * safe to re-init the GUI ( same call as returning from the player ) to apply the
- * saved mode. Guarded on != Default so an auto-mode boot skips the needless
- * re-init, and on SMS_ConfigOnFS so mc boot ( config already applied ) is untouched. */
-/* The re-init also has to run when only a SKIN is set: on an FS boot the config
- * ( m_SkinName ) loads late, in SMS_IOPInit, long after the first GUI_Initialize
- * painted the desktop with an empty skin name -- and the desktop only re-paints
- * ( DrawSkin ) through THIS call. Gated on DisplayMode != Default alone, an FS
- * boot whose saved mode IS Default ( auto PAL/NTSC ) skipped the re-init, so the
- * desktop kept its pre-config default background and the skin a user picked
- * never came back after restart ( #27 ). The mode is Default here, so
- * GSContext_Init re-inits to the same mode -- no flash, just the repaint. */
- if (   SMS_ConfigOnFS () &&
-        (  g_Config.m_DisplayMode != GSVideoMode_Default || g_Config.m_SkinName[ 0 ]  ) &&
-        !( g_pBootDir[ 0 ] == 'm' && g_pBootDir[ 1 ] == 'c' )
- ) GUI_Initialize ( 0 );
-/* ^ the re-init applies the saved display mode for FS boots whose config loaded LATE ( the
- * device mounts only in SMS_IOPInit, after the screen came up in the default mode ). An mc
- * boot re-mounts early, so its config -- and the mode -- already applied inside the first
- * GUI_Initialize; skip the redundant re-init to avoid a boot-time mode flash. */
+/* SMS_IOPInit loaded the config only after the first GUI_Initialize had painted with
+ * defaults: the boot device ( or the memory card it fell back to ) was not readable
+ * that early. The loading spinner is stopped now, so re-init the GUI ( same call as
+ * returning from the player ) to apply the saved display mode, picture position and
+ * size, charset and skin. An mc boot, and a cdrom / host / SMB boot with a card, read
+ * their config early and never set g_CfgLate. */
+ if ( g_CfgLate ) GUI_Initialize ( 0 );
 #endif
 
  GUI_Run ();

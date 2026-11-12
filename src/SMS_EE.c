@@ -96,7 +96,7 @@ s64  SMS_Rescale ( s64  anA, s64  aB, s64  aC ){
  u64           lA0, lA1, lB0, lB1, lT1, lT1a;
  s64           lR;
 
- if ( anA < 0 ) return -SMS_Rescale ( -anA, aB, aC );
+ if ( anA < 0 ) return anA == SMS_NOPTS_VALUE ? anA : -SMS_Rescale ( -anA, aB, aC );   /* -INT64_MIN is still negative */
 
  lR = aC >> 1;
 
@@ -762,7 +762,7 @@ void SMS_EEScanDir ( const char* apPath, const char* apExt, SMS_List* apList ) {
 
    int lLen = strlen ( lEntry.name );
 
-   if ( lLen > 4 ) {
+   if ( lLen > 4 && lLen < 68 ) {   /* listed names are strcpy'd into the 64-byte m_SkinName / m_MBFName */
 
     char* lpPtr = &lEntry.name[ lLen - 4 ];
 

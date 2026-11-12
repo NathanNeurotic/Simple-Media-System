@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any, Tuple
 from config import (
     MAX_WIDTH, MAX_HEIGHT, MAX_SMS_FILE_SIZE_BYTES, MAX_SMS_STREAMS,
     MAX_VIDEO_PACKET_SIZE, MAX_AUDIO_PACKET_SIZE, MPEG_ALLOWED_FPS_MAP,
@@ -140,11 +140,7 @@ def scan_packet_sizes(ffprobe_path: str, file_path: str) -> Tuple[int, int]:
 
     return max_video_packet, max_audio_packet
 
-def validate_converted_file(
-    ffprobe_path: str,
-    file_path: str,
-    preset_name: Optional[str] = None
-) -> ValidationResult:
+def validate_converted_file(ffprobe_path: str, file_path: str) -> ValidationResult:
     """Performs full post-conversion validation of the generated file."""
     result = ValidationResult(status="PASS")
 
@@ -208,7 +204,8 @@ def validate_converted_file(
 
         duration_sec = float(fmt.get("duration", 0.0))
         v_bitrate = int(video_stream.get("bit_rate", 0)) // 1000
-        if v_bitrate <= 0 or v_bitrate > 50000:
+        # MPEG-1 reports the peak declared in its sequence header (-maxrate), not a measurement.
+        if v_name == "mpeg1video" or v_bitrate <= 0 or v_bitrate > 50000:
             if duration_sec > 0:
                 v_bitrate = int((file_size_bytes * 8) / (duration_sec * 1000))
             else:
@@ -252,10 +249,7 @@ def validate_converted_file(
             n, d = r_fps.split("/")
             if float(d) > 0:
                 fps_float = float(n) / float(d)
-            n, d = r_fps.split("/")
-            if float(d) > 0:
-                fps_float = float(n) / float(d)
-        
+
         if v_name in ("mpeg1video", "mpeg2video"):
             valid_fps_values = [23.976, 24.0, 25.0, 29.97, 30.0, 50.0, 59.94, 60.0]
             if not any(abs(fps_float - target) < 0.05 for target in valid_fps_values):

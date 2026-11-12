@@ -17,9 +17,13 @@ args = parser.parse_args()
 root = Path(__file__).resolve().parents[1]
 source = (args.source or root / "src/SMS_ContainerMPEG_PS.c").read_text()
 source = re.sub(r'^#include "[^"]+"\s*$', '', source, flags=re.M)
+# The production SMS_Rescale: it negates its argument, so INT64_MIN never returns.
+ee = (root / "src/SMS_EE.c").read_text()
+rescale = ee[ee.index("s64  SMS_Rescale ("):ee.index("/* end SMS_Rescale */")]
 
 prefix = r"""
 #include <assert.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +31,7 @@ prefix = r"""
 typedef int64_t s64;
 #define SMS_MAX_STREAMS 8
 #define SMS_NOPTS_VALUE INT64_MIN
-#define SMS_TIME_BASE 1000000
+#define SMS_TIME_BASE 1000
 #define SMS_INT64(x) x##LL
 #define SMS_SYNTH_BUFFER NULL
 #define SMS_MKTAG(a,b,c,d) 0
@@ -122,7 +126,9 @@ static int DTS_SyncInfo(unsigned char *p, int *flags, int *rate, int *bitrate, i
 static int DTS_Channels(int f) { (void)f; return 2; }
 static void SMSContainer_SetPTSInfo(SMS_Stream *s, int a, int b) { (void)s;(void)a;(void)b; }
 static void SMSContainer_CalcPktFields(SMS_Stream *s, SMS_AVPacket *p) { (void)s;(void)p; }
-static int64_t SMS_Rescale(int64_t a, int64_t b, int64_t c) { (void)b; return a/c; }
+typedef uint64_t u64;
+static s64 MUL64(s64 a, s64 b) { return a*b; }
+static s64 SMS_Rescale(s64, s64, s64);
 static void SMS_DestroyContainer(SMS_Container *c, int all) {
  unsigned i; (void)all;
  for(i=0;i<c->m_nStm;++i) if(c->m_pStm[i]) {
@@ -187,6 +193,15 @@ static void test_video(void) {
   assert(file.m_CurPos==0);
  }
  assert(codec.m_Width==640 && codec.m_Height==480 && codec.m_fWS==1);
+ /* Zero-size sequence headers are skipped, but count toward the 1024-step scan bound. */
+ for(n=1;n<=1025;n+=(n==1?1023:1)) {
+  reset(8*n+8);
+  for(unsigned k=0;k<n;++k) memcpy(input+8*k,"\0\0\1\xb3\0\0\0\0",8);
+  memcpy(input+8*n,"\0\0\1\xb3\x28\x01\xe0\x34",8);
+  codec.m_Width=codec.m_Height=0;
+  assert(_fill_video_parameters(&c,&stream,2000,0x1e0)==(n<=1024));
+  assert(file.m_CurPos==0 && (n>1024 || codec.m_Width==640));
+ }
 }
 static SMS_AVPacket *packet_alloc(void *unused,int n) {
  (void)unused;assert(n>0 && n<=sizeof(packet_data));
@@ -210,6 +225,8 @@ static void test_probe_and_packets(void) {
  c.m_pFileCtx=&file;
  assert(SMS_GetContainerMPEG_PS(&c)==1);
  assert(c.m_nStm==2 && c.m_pStm[1]->m_pCodec->m_SampleRate==48000);
+ /* No PTS anywhere: start 0, unknown duration, no seeking. */
+ assert(c.m_StartTime==0 && c.m_Duration==INT64_MAX && !(c.m_Flags&SMS_CONT_FLAGS_SEEKABLE));
  SMS_DestroyContainer(&c,0);
  /* Inject failure into each context/stream/codec allocation. */
  for(int failure=1;failure<=6;++failure) {
@@ -322,6 +339,47 @@ static void test_probe_retry(int secondary) {
  assert(c.m_pStm[1]->m_Flags & SMS_STRM_FLAGS_AUDIO);
  SMS_DestroyContainer(&c,0);
 }
+static void test_seek_picture_type(void) {
+ SMS_Container c={0};_MPEGPSContainer private={0};SMS_Stream stream={0};SMS_CodecContext codec={0};
+ /* A B picture whose vbv_delay bits 9:8 are 01, then an I picture with vbv_delay 0xffff. */
+ reset(0);pes(0xe0,(const unsigned char *)"\0\0\1\0\0\x18\x08\0",8);
+ pes(0xe0,(const unsigned char *)"\0\0\1\0\0\x0f\xff\xf8",8);file.m_Size=input_size;
+ c.m_pFileCtx=&file;c.m_pCtx=&private;c.m_Duration=1000;c.m_nStm=1;c.m_pStm[0]=&stream;
+ stream.m_pCodec=&codec;stream.m_pPktBuf=&codec;stream.m_ID=0x1e0;codec.m_Type=SMS_CodecTypeVideo;
+ assert(_Seek(&c,0,0,0)==8 && file.m_CurPos==15);
+}
+static void pes_pts(unsigned sid, unsigned pts, const unsigned char *p, unsigned n) {
+ unsigned char b[32]={0x21|(pts>>29&0xe),pts>>22,pts>>14|1,pts>>7,pts<<1|1};
+ unsigned at=input_size;
+ assert(n+5<=sizeof(b));memcpy(b+5,p,n);pes(sid,b,n+5);input[at+6]=0xff;
+}
+static void test_probe_times(void) {
+ const unsigned char video[]={0,0,1,0xb3,0x28,0x01,0xe0,0x34};
+ const unsigned char ac3[]={0x80,1,0,0,0x0b,0x77,0,0,0,0x40,0x40};
+ SMS_Container c={0};
+ reset(0);pes_pts(0xe0,90000,video,sizeof(video));pes_pts(0xbd,180000,ac3,sizeof(ac3));
+ file.m_Size=input_size;c.m_pFileCtx=&file;
+ assert(SMS_GetContainerMPEG_PS(&c)==1 && c.m_StartTime==1000 && c.m_Duration==2000);
+ assert(c.m_Flags&SMS_CONT_FLAGS_SEEKABLE);
+ SMS_DestroyContainer(&c,0);
+ /* More than 128 KiB of padding packets at the end: no PTS to end on. */
+ for(unsigned i=0;i<3;++i) {
+  memcpy(input+input_size,"\0\0\1\xbe\xea\x60",6);input_size+=6+60000;
+ }
+ memset(&c,0,sizeof(c));file.m_CurPos=0;file.m_Size=input_size;c.m_pFileCtx=&file;
+ assert(SMS_GetContainerMPEG_PS(&c)==1 && c.m_StartTime==1000 && c.m_Duration==INT64_MAX);
+ assert(!(c.m_Flags&SMS_CONT_FLAGS_SEEKABLE));
+ SMS_DestroyContainer(&c,0);
+}
+static void test_probe_video_walk(unsigned ids) {
+ const unsigned char ac3[]={0x80,1,0,0,0x0b,0x77,0,0,0,0x40,0x40};
+ SMS_Container c={0};
+ /* Video without a sequence header gets one header walk per stream ID. */
+ reset(0);for(unsigned i=0;i<300;++i) pes(0xe0+i%ids,(const unsigned char *)"x",1);
+ pes(0xbd,ac3,sizeof(ac3));file.m_Size=input_size;c.m_pFileCtx=&file;
+ assert(SMS_GetContainerMPEG_PS(&c)==0 && c.m_pCtx==NULL && c.m_nStm==0);
+ assert(read_calls<20000);
+}
 int main(int argc,char **argv) {
  const char *cases[]={"packet-allocation","tail-allocation","short-video","short-video-with-tail","short-video-tail",
                       "short-video-buffer","short-audio","short-pcm"};
@@ -332,6 +390,11 @@ int main(int argc,char **argv) {
  if(!strcmp(which,"all") || !strcmp(which,"alignment")) test_packet_alignment();
  if(!strcmp(which,"all") || !strcmp(which,"probe-retry")) test_probe_retry(0);
  if(!strcmp(which,"all") || !strcmp(which,"probe-secondary")) test_probe_retry(1);
+ if(!strcmp(which,"all") || !strcmp(which,"seek-picture-type")) test_seek_picture_type();
+ if(!strcmp(which,"all") || !strcmp(which,"probe-times")) test_probe_times();
+ if(!strcmp(which,"all") || !strcmp(which,"probe-video-walk")) {
+  test_probe_video_walk(1);test_probe_video_walk(2);
+ }
  for(unsigned i=0;i<sizeof(cases)/sizeof(cases[0]);++i)
   if(!strcmp(which,"all") || !strcmp(which,cases[i])) test_packet_failure(cases[i]);
  puts("MPEG-PS: bounded probes, packet alignment, allocation and read failures passed");
@@ -341,7 +404,7 @@ int main(int argc,char **argv) {
 with tempfile.TemporaryDirectory() as tmp:
     cfile = Path(tmp) / "probe.c"
     exe = Path(tmp) / "probe"
-    cfile.write_text(prefix + source + tests)
+    cfile.write_text(prefix + "static " + rescale + source + tests)
     subprocess.run([os.environ.get("CC", "cc"), "-std=gnu99", "-g", "-no-pie",
                     "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
                     str(cfile), "-o", str(exe)], check=True)

@@ -769,7 +769,7 @@ void GUI_Initialize ( int afCold ) {
   SMS_LocaleSet  ();
 
   if ( lfNoXH                            ) g_Config.m_BrowserFlags &= ~SMS_BF_UXH;
-  if ( lVideoMode != GSVideoMode_Default ) g_Config.m_DisplayMode   = lVideoMode;
+  if ( lVideoMode != GSVideoMode_Default ) g_Config.m_DisplayMode   = g_BootDisplayMode = lVideoMode;
 
   g_GSCtx.m_CodePage = g_Config.m_DisplayCharset;
   s_pObjectList      = SMS_ListInit ();

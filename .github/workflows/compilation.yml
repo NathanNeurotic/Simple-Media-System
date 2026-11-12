@@ -2,13 +2,13 @@ name: build
 
 on:
   push:
-    branches: ['**']
+    branches: [master]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write        # needed to publish the rolling / stable releases
+  contents: read
 
 jobs:
   # Legacy non-BDM build. Separate job so it runs in PARALLEL and its failure shows a
@@ -20,13 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
     - name: Verify non-BDM (BDM=0) build links
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
           sh -c 'apk add --no-cache build-base git zip && make BDM=0 all'
 
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # needed to publish the rolling / stable releases
     # Only one master publisher may upload player assets and advance rolling.
     # Keep queued builds: a historical rerun must not cancel the latest master.
     concurrency:
@@ -35,6 +39,8 @@ jobs:
       queue: max
     steps:
     - uses: actions/checkout@v7
+      with:
+        persist-credentials: false
 
     # IRX ABI gate. IOP loadcore binds a client module to a library provider by NAME +
     # MAJOR version only, then resolves every stub BY ORDINAL -- so a module built
@@ -54,6 +60,8 @@ jobs:
 
     - name: Host playback and file I/O regression checks
       run: |
+        python3 tools/check_devmenu.py
+        python3 tools/test_language_packs.py
         python3 tools/test_stream_allocation.py
         python3 tools/test_stio_stream_failure.py
         python3 tools/test_cdda_stream_failure.py
@@ -61,6 +69,8 @@ jobs:
         python3 tools/test_stio_refill.py
         python3 tools/test_stio_device_reads.py
         python3 tools/test_stio_usb_readahead.py
+        python3 tools/test_copy_file.py
+        python3 tools/test_ctxmenu_import.py
         python3 tools/test_io_diagnostics.py
         python3 tools/test_mpeg_ps_probe.py
         python3 tools/test_mpeg12_frame_lifetime.py
@@ -76,6 +86,7 @@ jobs:
         python3 tools/test_player_hardware_failure.py
         python3 tools/test_player_video_drain.py
         python3 tools/test_player_scrollbar_seek.py
+        python3 tools/test_player_pulldown.py
         python3 tools/test_container_probe.py
         python3 tools/test_m3u_probe.py
         python3 tools/test_display_limits.py
@@ -97,6 +108,12 @@ jobs:
         python3 tools/test_mov_index.py
         python3 tools/test_mov_parser.py
         python3 tools/test_mov_sample_sizes.py
+        python3 tools/test_avi_parser.py
+        python3 tools/test_asf_parser.py
+        python3 tools/test_boot_config.py
+        python3 tools/test_ipconfig.py
+        python3 tools/test_audio_formats.py
+        python3 tools/test_ee_helpers.py
         python3 tools/test_skin_loading.py
 
     - name: IRX ABI gate (dev9 v1.1 bindings)
@@ -110,7 +127,7 @@ jobs:
     # toolchain the project builds with locally).
     - name: Build (ps2dev v1.0 toolchain)
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0 \
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
           sh -c 'apk add --no-cache build-base git zip && make all pack && make -C tools/mpeg_motion_probe'
 
     - name: Package
@@ -142,7 +159,7 @@ jobs:
     # blocking call. Shipped ALONGSIDE the release ELF, never instead of it.
     - name: Build diagnostic ELF (SMS_DIAG=1)
       run: |
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_DIAG=1 all'
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_DIAG=1 all'
         cp bin/SMS.elf dist/Simple-Media-System-DIAG.elf
         ls -la dist
 

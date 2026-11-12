@@ -87,7 +87,6 @@ class MainWindow(QMainWindow):
         # 2. Preset Selector
         self.preset_selector = PresetSelectorWidget()
         self.preset_selector.preset_changed.connect(self._on_preset_changed)
-        self.preset_selector.destination_changed.connect(self._on_destination_changed)
 
         # 3. Advanced Settings
         self.advanced_settings = AdvancedSettingsWidget()
@@ -346,9 +345,6 @@ class MainWindow(QMainWindow):
         if preset:
             self.advanced_settings.load_preset(preset)
         self._on_settings_changed(self.advanced_settings.get_settings_dict())
-
-    def _on_destination_changed(self, mode: str, path: str):
-        pass
 
     def _on_settings_changed(self, settings: dict):
         preset_name = self.preset_selector.current_preset_name()

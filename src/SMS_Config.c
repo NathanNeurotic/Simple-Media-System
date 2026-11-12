@@ -27,6 +27,7 @@ extern void _check_dc_offset ( void );
 extern unsigned char g_IconSMS[ 2020 ] __attribute__(   (  section( ".data" )  )   );
 
 SMSConfig g_Config __attribute__(   (  section( ".data" )  )   );
+int       g_BootDisplayMode = GSVideoMode_Default;   /* SELECT+R1 / SELECT+R2 held at boot: outlives the late SMS_LoadConfig */
 
 static unsigned int s_DefPalette[ 16 ] __attribute__(   (  section( ".data" )  )   ) = {
  GS_SET_RGBAQ( 0x00, 0x00, 0x00, 0x80, 0x00 ),
@@ -58,7 +59,6 @@ static char s_pCyrill[] __attribute__(   (  section( ".data" ), aligned( 1 )  ) 
 static char s_pLatin1[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "mc0:SMS/latin1.mtf";
 static char s_pGreek [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "mc0:SMS/greek.mtf";
 static char s_pSMS   [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "/SMS";
-static char s_pSMSCfg[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "/SMS/SMS.cfg";
 static char s_pIcoSys[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "mc0:SMS/icon.sys";
 static char s_pSMSIcn[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "mc0:/SMS/SMS.icn";
 static char s_pMC0SMC[ 128 ] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "mc0:/SMS/SMS.cfg";
@@ -689,6 +689,7 @@ int SMS_LoadConfig ( void  ) {
 
  g_Config.m_Version       = 14;
  g_Config.m_BrowserFlags &= ~SMS_BF_UDFL;
+ if ( g_BootDisplayMode != GSVideoMode_Default ) g_Config.m_DisplayMode = g_BootDisplayMode;
  g_Config.m_SkinName[ sizeof( g_Config.m_SkinName ) - 1 ] = '\x00';   /* guard: a corrupt config field must stay in-bounds */
 
  if ( g_Config.m_PlayerAC3RL < 1 ) g_Config.m_PlayerAC3RL = 6;

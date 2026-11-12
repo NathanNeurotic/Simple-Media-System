@@ -1,5 +1,5 @@
 """
-End-to-end integration test creating sample media and testing all 6 hardware-confirmed presets.
+End-to-end integration test creating sample media and converting it with every preset.
 """
 import subprocess
 import os
@@ -59,7 +59,7 @@ def test_all_presets():
         conv_cmd = build_ffmpeg_cmd(ff, input_file, partial_path, settings, has_video_stream=(preset.vcodec is not None))
         subprocess.run(conv_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        val_result = validate_converted_file(fp, partial_path, preset.name)
+        val_result = validate_converted_file(fp, partial_path)
         print(val_result.generate_report())
 
         assert val_result.status in ("PASS", "WARN"), f"Preset '{preset_name}' failed validation: {val_result.reasons}"

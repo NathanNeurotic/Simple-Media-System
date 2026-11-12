@@ -49,6 +49,50 @@ class TestSMSConverter(unittest.TestCase):
                     "gop": preset.gop, "fps": preset.fps, "ext": preset.ext})
                 self.assertEqual(cmd[cmd.index("-g") + 1], str(preset.gop))
 
+    def test_mpeg_ps_peak_bitrate_is_capped(self):
+        # Uncapped, FFmpeg spends the bits saved on a quiet opening in the seconds after it:
+        # six times the target for this source.
+        import subprocess
+        import tempfile
+        ff, fp = find_ffmpeg_binaries()
+        settings = {"vcodec": "mpeg2video", "acodec": "mp2", "vbitrate_kbps": 300, "fps": "30",
+                    "gop": 15, "width": 320, "height": 240}
+        self.assertNotIn("-maxrate", build_ffmpeg_cmd(ff, "in.mkv", "out.avi", dict(settings, vcodec="mpeg4")))
+        with tempfile.TemporaryDirectory() as tmp:
+            source, output = str(Path(tmp) / "source.mkv"), str(Path(tmp) / "out.mpg")
+            subprocess.run([ff, "-v", "error", "-f", "lavfi", "-i",
+                            "testsrc2=size=320x240:rate=30:duration=8,drawbox=enable='lt(t,5)':color=black:t=fill",
+                            "-c:v", "ffv1", source], check=True, capture_output=True)
+            cmd = build_ffmpeg_cmd(ff, source, output, settings)
+            self.assertEqual(cmd[cmd.index("-maxrate") + 1], "375k")
+            self.assertIn("-muxrate", cmd)
+            result = subprocess.run(cmd, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            sizes = [int(size) for size in subprocess.run(
+                [fp, "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=size",
+                 "-of", "default=nw=1:nk=1", output], check=True, capture_output=True, text=True).stdout.split()]
+        seconds = [sum(sizes[i:i + 30]) * 8 for i in range(0, len(sizes), 30)]
+        self.assertLess(max(seconds), 2 * 300000, seconds)
+
+    def test_flac_output_is_16_bit_mono_or_stereo(self):
+        # SMS's FLAC reader rejects more than two channels and renders 16-bit samples.
+        import subprocess
+        import tempfile
+        ff, fp = find_ffmpeg_binaries()
+        settings = {"acodec": "flac", "sample_rate": None, "channels": None}
+        cmd = build_ffmpeg_cmd(ff, "in.ac3", "out.flac", dict(settings, normalize_audio=True), has_video_stream=False)
+        self.assertNotIn("-filter:a", cmd)
+        self.assertEqual(cmd[cmd.index("-af") + 1], "loudnorm,aformat=sample_fmts=s16:channel_layouts=mono|stereo")
+        with tempfile.TemporaryDirectory() as tmp:
+            source, output = str(Path(tmp) / "surround.wav"), str(Path(tmp) / "out.flac")
+            subprocess.run([ff, "-v", "error", "-f", "lavfi", "-i", "sine=duration=1", "-ac", "6",
+                            "-c:a", "pcm_f32le", source], check=True, capture_output=True)
+            result = subprocess.run(build_ffmpeg_cmd(ff, source, output, settings, has_video_stream=False),
+                                    capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            audio = get_media_info(fp, output)["streams"][0]
+            self.assertEqual((audio["channels"], audio["sample_fmt"]), (2, "s16"))
+
     def test_fps_mapping(self):
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["23.976"], "24000/1001")
         self.assertEqual(MPEG_ALLOWED_FPS_MAP["29.97"], "30000/1001")
@@ -248,6 +292,11 @@ class TestOnlyPlayableCombinationsAreOffered(unittest.TestCase):
         # MPEG-PS carries MPEG-1/2 video; MP4 has no msmpeg4v3 object type.
         self.assertTrue(sms_supports(".mpg", "video", "mpeg2video"))
         self.assertFalse(sms_supports(".mp4", "video", "msmpeg4v3"))
+        # MP4/M4A: FFmpeg's 'ac-3' sample entry has no esds, so SMS finds no codec for it;
+        # FFmpeg 9 cannot mux Vorbis into MP4; MPEG-1/2 video is tagged 'mp4v' like MPEG-4.
+        from config import SMS_CONTAINER_CODECS
+        self.assertEqual(SMS_CONTAINER_CODECS[".mp4"], {"video": {"mpeg4"}, "audio": {"aac", "mp3"}})
+        self.assertEqual(SMS_CONTAINER_CODECS[".m4a"], {"video": set(), "audio": {"aac", "mp3"}})
         # An unlisted container means "no information", never "unsupported".
         self.assertTrue(sms_supports(".mkv", "video", "anything"))
 
@@ -671,6 +720,19 @@ class TestPacketValidation(unittest.TestCase):
         self.assertEqual(result.status, "WARN")
         self.assertIn("ffprobe missing", result.warnings[0])
         self.assertEqual(self.validate_probe().status, "WARN")
+
+    def test_mpeg1_bitrate_is_measured_not_read_from_the_header(self):
+        # ffprobe's MPEG-1 stream bit_rate is the peak declared in the sequence header.
+        self.media = Path(self.tmp.name) / "output.mpg.partial"
+        self.metadata["streams"][0]["codec_name"] = "mpeg1video"
+        self.metadata["streams"][1]["codec_name"] = "mp2"
+        records = ["codec_type=video|size=100\n", "codec_type=audio|size=20\n"]
+        for size, declared, expected in ((250000, "3125000", ("PASS", 2000)),
+                                         (500000, "1437200", ("WARN", 4000))):
+            self.media.write_bytes(bytes(size))
+            self.metadata["streams"][0]["bit_rate"] = declared
+            result = self.validate_probe(records)
+            self.assertEqual((result.status, result.vbitrate_kbps), expected, result.warnings)
 
     def test_malformed_packet_records_warn_and_stop_the_process(self):
         for record in ("not a packet\n", "codec_type=video\n", "codec_type=video|size=-1\n",

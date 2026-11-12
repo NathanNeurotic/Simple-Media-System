@@ -48,6 +48,7 @@ extern char g_pBootDir[];   /* SMS_Config.c: "<dev>/path/" on a non-mc boot, emp
 extern void* _gp;
 
 unsigned int g_IOPFlags;
+int          g_CfgLate;   /* 1 = SMS_IOPInit loaded a config the first GUI_Initialize could not read */
 
 /* Which network personality owns the single EMAC3 NIC this boot: 0 = free, 1 = SMS
  * SMB/host ( PS2SMAP + SMSTCPIP ), 2 = udpfs ( udpfs_smap, its own SMAP ). Both register
@@ -1395,7 +1396,9 @@ static int _read_ipconfig ( void ) {
  if ( i <= 0 ) return 0;
 
  {
+  static char* const s_lpDst[ 3 ] = { g_pDefIP, g_pDefMask, g_pDefGW };
   char lChr;
+  int  lLen, k;
 
   lBuff[ i ] = '\x00';
 
@@ -1403,11 +1406,20 @@ static int _read_ipconfig ( void ) {
 
    if (  lChr == ' ' || lChr == '\r' || lChr == '\n' ) lBuff[ i ] = '\x00';
 
-  strncpy ( g_pDefIP, lBuff, 15 );
-  i = strlen ( g_pDefIP ) + 1;
-  strncpy ( g_pDefMask, lBuff + i, 15 );
-  i += strlen ( g_pDefMask ) + 1;
-  strncpy ( g_pDefGW, lBuff + i, 15 );
+  lLen = i;
+
+/* A run of separators ( CRLF line ends, doubled spaces ) counts as one; a field the
+ * file lacks keeps its current value. */
+  for ( i = k = 0; k < 3; ++k ) {
+
+   while ( i < lLen && !lBuff[ i ] ) ++i;
+
+   if ( i == lLen ) break;
+
+   strncpy ( s_lpDst[ k ], lBuff + i, 15 );
+   i += strlen ( lBuff + i );
+
+  }  /* end for */
  }
 
  return 1;
@@ -1416,8 +1428,6 @@ static int _read_ipconfig ( void ) {
 
 void SMS_IOPInit ( void ) {
 
- int         i, lFD;
- char        lBuff[ 64 ];
  ee_thread_t lThreadParam;
 
 /* IPCONFIG.DAT, first attempt. Reads the memory card, plus a CWD probe that will only
@@ -1556,7 +1566,7 @@ void SMS_IOPInit ( void ) {
    _cfg_resolve_fallback ();
   }  /* end if */
 
-  SMS_LoadConfig ();
+  g_CfgLate = SMS_LoadConfig ();
   GUI_SetColors  ();
   SMS_LocaleInit ();   /* re-read SMS.lng now the boot device is mounted ( CWD-first ) */
   SMS_LocaleSet  ();
@@ -1578,8 +1588,10 @@ void SMS_IOPInit ( void ) {
  * is attached. Same post-GUI slot as the re-mountable branch, before AUTO_* reads
  * m_NetworkFlags. */
   _cfg_resolve_fallback ();
-  SMS_LoadConfig ();
+  g_CfgLate = SMS_LoadConfig () && SMS_ConfigOnFS ();   /* a card config was already read ( and painted ) early */
   GUI_SetColors  ();
+  SMS_LocaleInit ();   /* SMS_LoadConfig dropped SMS_BF_UDFL and may have brought a new m_Language */
+  SMS_LocaleSet  ();
 
  }  /* end else if */
 #endif

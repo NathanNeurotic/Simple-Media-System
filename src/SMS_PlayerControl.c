@@ -647,9 +647,11 @@ static int PlayerControl_Scroll ( int aDir ) {
 
  if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG1 ||
       lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG2
- ) lIncr <<= 3;
+ ) lIncr *= 8;
 
  lTime += lIncr;
+
+ if ( lTime < lpCont -> m_StartTime ) lTime = lpCont -> m_StartTime;
 
  lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos,  0 );
  lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, 10 );
@@ -672,7 +674,11 @@ static int PlayerControl_Scroll ( int aDir ) {
    retVal = 0;
    break;
 
-  } else if ( lTime == 0LL ) {
+  }  /* end if */
+
+  lFilePos = lpFileCtx -> m_CurPos;
+
+  if ( lTime == lpCont -> m_StartTime ) {
 
    s_Player.m_VideoTime = 0;
    s_Player.m_AudioTime = 0;
@@ -682,8 +688,6 @@ static int PlayerControl_Scroll ( int aDir ) {
    break;
 
   }  /* end if */
-
-  lFilePos = lpFileCtx -> m_CurPos;
 
   if (  s_Player.m_pVideoCodec -> Decode (
          lpStm -> m_pCodec, lpDispBuff, lpBuff
@@ -784,7 +788,7 @@ static int PlayerControl_Scroll ( int aDir ) {
 
   lTime += lIncr;
 
-  if ( lTime < 0 ) lTime = 0;
+  if ( lTime < lpCont -> m_StartTime ) lTime = lpCont -> m_StartTime;
 
   SMS_Codec_MPEG12_Reset ( SMS_MPEG12_RESET_DECODER );
 
@@ -1349,7 +1353,11 @@ redo:
 
    lPos = SMS_Rescale (  lTime, lpStm -> m_TimeBase.m_Den, SMS_TIME_BASE * ( int64_t )lpStm -> m_TimeBase.m_Num  );
  
-   if (  lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos )  ) {
+   /* A forward seek fails when no keyframe follows the target: use the one before it.
+    * The MPEG-PS seek ignores the direction, so repeating it would only rescan. */
+   if (  lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, lDir, lPos ) ||
+         (  lDir > 0 && lpCont -> m_pName != g_pMPEGPS && lpCont -> Seek ( lpCont, s_Player.m_VideoIdx, -1, lPos )  )
+   ) {
 
     lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, lpFileCtx -> m_StreamSize >> 3 );
 

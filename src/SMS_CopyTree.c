@@ -339,7 +339,7 @@ int SMS_CopyFile (
 
     if ( lnRead <= 0 ) break;
 
-    if (  fioWrite ( lFD, lpBuf, lnRead ) < 0  ) {
+    if (  ( lnWrite = fioWrite ( lFD, lpBuf, lnRead ) ) < 0  ) {
 error:
      lfError = 1;
      break;

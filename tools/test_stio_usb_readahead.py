@@ -77,6 +77,7 @@ static int fileXioLseek ( int fd, int off, int whence ) {
  pthread_mutex_unlock ( &dev_lock ); pthread_mutex_unlock ( &fxio_lock );
  return r;
 }
+static long long fileXioLseek64 ( int fd, long long off, int whence ) { return fileXioLseek ( fd, ( int )off, whence ); }
 static int fileXioClose ( int fd ) {
  int k = slot ( fd );
  pthread_mutex_lock ( &dev_lock ); assert ( !dev_inflight[ k ] ); ++dev_closes; pthread_mutex_unlock ( &dev_lock );

@@ -2,6 +2,7 @@ name: smbman source consistency
 on:
   pull_request:
   push:
+    branches: [master]
   workflow_dispatch:
     inputs:
       rebuild:

@@ -127,14 +127,13 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
 
  int          i, lnIdx = aSize / 16;
  uint32_t     lIdx, lTag, lFlags, lPos, lLen, lPerc;
- SMS_Stream*  lpBaseStm;
  _AVIStream*  lpStm;
  _AVIdxEntry* lpIndices;
  _AVIdxEntry* lpIndex;
- FileContext* lpFileCtx    = apCtx -> m_pFileCtx;
- int          lPrevIdx     = -1;
- int          lnSameIdx    =  1;
- int          lnMaxSameIdx = -1;
+ FileContext* lpFileCtx = apCtx -> m_pFileCtx;
+ int          lnMax     = ( lpFileCtx -> m_Size - lpFileCtx -> m_CurPos ) / 16;
+
+ if ( lnIdx > lnMax ) lnIdx = lnMax;  /* only the entries the file still holds */
 
  if ( lnIdx <= 0 ) return 0;
 
@@ -165,21 +164,6 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
 
   if ( lIdx >= apCtx -> m_nStm ) continue;
 
-  lpBaseStm = apCtx -> m_pStm[ lIdx ];
-
-  if ( lIdx == lPrevIdx )
-
-   lnSameIdx += 1;
-
-  else {
-
-   if ( lnMaxSameIdx < lnSameIdx && !( apCtx -> m_pStm[ lPrevIdx ] -> m_Flags & SMS_STRM_FLAGS_AUDIO ) ) lnMaxSameIdx = lnSameIdx;
-
-   lnSameIdx = 1;
-   lPrevIdx  = lIdx;
-
-  }  /* end else */
-
   lpStm = MYSTRM( apCtx -> m_pStm[ lIdx ] );
 
   lpIndices = SMS_Realloc (
@@ -198,14 +182,12 @@ static int _Load_idx1 ( SMS_Container* apCtx, int aSize ) {
 
  }  /* end for */
 
- if ( lnMaxSameIdx < lnSameIdx ) lnMaxSameIdx = lnSameIdx;
-
  lpFileCtx -> Stream ( lpFileCtx, lpFileCtx -> m_CurPos, 0 );
 
  GUI_UpdateStatus ();
  SMS_GUIClockResume ();
 
- return 1;//lnMaxSameIdx > 256 ? -1 : 1;
+ return 1;
 
 }  /* end _Load_idx1 */
 
@@ -258,7 +240,7 @@ static int _LoadODMLIdx ( SMS_Container* apCont, int* apNum ) {
  _AVIdxEntry* lpIndices;
  _AVIdxEntry* lpIndex;
 
- if (  ( uint32_t )lStID > apCont -> m_nStm || lStID < 0  ) return 0;
+ if (  ( uint32_t )lStID >= apCont -> m_nStm  ) return 0;
 
  lpStm = apCont -> m_pStm[ lStID ];
 
@@ -718,7 +700,7 @@ static int _ReadHeader ( SMS_Container* apCtx ) {
 
   } else goto error;
 endOfHeader:
- if ( lStmIdx != apCtx -> m_nStm - 1 )
+ if ( !apCtx -> m_nStm || lStmIdx != apCtx -> m_nStm - 1 )
 error: retVal = 0;
  if ( retVal ) {
 
@@ -788,18 +770,18 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
    "dsrl    $at, $at, 8\n\t"
    "or      $at, $at, %2\n\t"
    "sd      $at, %0\n\t"
-   "dsrl32  %1, $at, 0\n\t"
+   "dsra32  %1, $at, 0\n\t"
    ".set at\n\t"
    : "=m"( lData ), "=r"( lSize ) : "r"( lSize ): "at"
   );
 
   lCount = (  ( int )lData[ 2 ] - '0' ) * 10 + (  ( int )lData[ 3 ] - '0'  );
-  lCond  = (  lCount < ( int32_t )apCont -> m_nStm  ) + (  i + lSize <= ( uint32_t )lpAVICont -> m_MoviEnd  );
+  lCond  = lSize >= 0 && i + lSize <= ( uint32_t )lpAVICont -> m_MoviEnd;
 
   if ( lData[ 2 ] >= '0' && lData[ 2 ] <= '9' &&
        lData[ 3 ] >= '0' && lData[ 3 ] <= '9' &&
        *( uint16_t* )&lData[ 0 ] == 0x7869    &&  /* ix */
-       lCond
+       lCond && lCount < ( int32_t )apCont -> m_nStm
   ) File_Skip ( lpBuf, lSize );
             
   lCount   = (  ( int )lData[ 0 ] - '0'  ) * 10 + (  ( int )lData[ 1 ] - '0'  );
@@ -812,7 +794,7 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
           lChunkID == 0x6273 ||  /* sb */
           lChunkID == 0x6264 ||  /* db */
           lChunkID == 0x5F5F     /* __ */
-       ) && lCond
+       ) && lCond && lCount < ( int32_t )apCont -> m_nStm
   ) {
 
    SMS_Stream* lpStm = apCont -> m_pStm[ lCount ];
@@ -1111,7 +1093,14 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
  uint32_t    lEnd  = aDir > 0 ? lpStm -> m_nIdx : 0;
  uint32_t    lPos;
 
- if ( aPos >= lpStm -> m_nIdx ) return 0;
+ if ( !lpStm -> m_nIdx ) return 0;
+
+/* Past the last frame: forward fails ( fast-forward relies on that to stop at the end ),
+ * backward lands on the last frame, so a caller's backward retry finds the last keyframe. */
+ if ( aPos >= lpStm -> m_nIdx ) {
+  if ( aDir > 0 ) return 0;
+  aPos = lpStm -> m_nIdx - 1;
+ }  /* end if */
 
  while (  aPos != lEnd && !lpStm -> m_pIdx[ aPos ].m_fKey ) aPos += aDir;
 

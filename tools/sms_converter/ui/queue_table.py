@@ -29,7 +29,6 @@ class QueueItem:
     final_output_path: str = ""
 
 class QueueTableWidget(QTableWidget):
-    item_selected = Signal(str)           # item_id
     show_details_requested = Signal(str)  # item_id
     # Removal is REQUESTED, never performed here. Queue membership lives in two structures --
     # this widget's items_dict and MainWindow.queue_order -- and only MainWindow maintains

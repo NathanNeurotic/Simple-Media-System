@@ -158,7 +158,7 @@ static int asf_read_header ( SMS_Container* apCont ) {
 
  memset ( lpASF -> asfid2avid, -1, sizeof ( lpASF -> asfid2avid )  );
 
- while ( 1 ) {
+ while (  !FILE_EOF( lpFileCtx )  ) {
 
   get_guid ( lpFileCtx, lGUID );
 
@@ -324,7 +324,7 @@ static int asf_read_header ( SMS_Container* apCont ) {
    for ( j = 0; j < lnStm; ++j ) {
     int lFlags   = File_GetUShort ( lpFileCtx );
     int lBitRate = File_GetUInt   ( lpFileCtx );
-    int lStmID   = lFlags * 0x7F;
+    int lStmID   = lFlags & 0x7F;
     lpASF -> stream_bitrates[ lStmID ] = lBitRate;
    }  /* end for */
 
@@ -549,7 +549,8 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
   if ( lpASF -> packet_size_left < 0 ) continue;
 
-  if ( lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||
+  if ( lpASF -> packet_frag_offset < 0 || lpASF -> packet_frag_size < 0 || !lpASFStm -> pkt.data ||
+       lpASF -> packet_frag_offset >= lpASFStm -> pkt.size ||
        lpASF -> packet_frag_size   >  lpASFStm -> pkt.size - lpASF -> packet_frag_offset
   ) continue;
 

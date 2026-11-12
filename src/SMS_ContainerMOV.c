@@ -328,7 +328,7 @@ static int _mov_read_stsd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
   uint32_t          lFmt;
   File_Skip ( apFileCtx, 4 );
   lnEntries = _read_int_be ( apFileCtx );
-  while ( lnEntries-- ) {
+  while (  lnEntries-- > 0 && !FILE_EOF( apFileCtx )  ) {
    MOVAtom     lAtom     = { 0, 0, 0 };
    uint32_t    lStartPos = apFileCtx -> m_CurPos;
    int         lSize     = _read_int_be ( apFileCtx );
@@ -346,6 +346,7 @@ static int _mov_read_stsd ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
     lpCodecCtx -> m_Height = File_GetShortBE ( apFileCtx );
     File_Skip ( apFileCtx, 46 );
     lpCodecCtx -> m_BitsPerSample = File_GetShortBE ( apFileCtx );
+    File_Skip ( apFileCtx, 2 );  /* colour table id; child atoms ( esds ) start after it */
    } else if ( lpCodecCtx -> m_Type == SMS_CodecTypeAudio ) {
     uint16_t lVer = File_GetShortBE ( apFileCtx );
     File_Skip ( apFileCtx, 6 );
@@ -453,9 +454,11 @@ static int _mov_read_esds ( MOVContext* apCtx, FileContext* apFileCtx, MOVAtom* 
  * DecoderSpecificInfo either reads far past the atom or, once the oversized malloc fails on a
  * 32 MB heap, reads directly into a NULL pointer. Leaving m_pUserData NULL is the documented
  * no-extradata state that both consumers already handle ( SMS_AAC.c _aac_init and the MPEG-4
- * seeding in SMS_MPEG4.c both gate on m_pUserData && m_UserDataLen > 0 ). */
+ * seeding in SMS_MPEG4.c both gate on m_pUserData && m_UserDataLen > 0 ).
+ * Four zero bytes follow the data: the MPEG-4 header scan loads a 32-bit word at its last byte,
+ * and its user-data scan ( the encoder string that ends an esds ) stops only at a zero byte. */
   if ( lTag == MP4DecSpecificDescrTag && lLen > 0 && _tbl_fits ( apAtom, lLen, 1, 0 )  ) {
-   lpCodecCtx -> m_pUserData = ( uint8_t* )malloc (  ( lLen + 15 ) & ~15  );
+   lpCodecCtx -> m_pUserData = ( uint8_t* )calloc (  1, ( lLen + 4 + 15 ) & ~15  );
    if ( lpCodecCtx -> m_pUserData ) {
     apFileCtx -> Read ( apFileCtx, lpCodecCtx -> m_pUserData, lLen );
     lpCodecCtx -> m_UserDataLen = lLen;
@@ -723,7 +726,7 @@ static int _mov_read_stsd_m4ap ( MOVContext* apCtx, FileContext* apFileCtx, MOVA
   uint32_t lFmt;
   File_Skip ( apFileCtx, 4 );
   lnEntries = _read_int_be ( apFileCtx );
-  while ( lnEntries-- ) {
+  while (  lnEntries-- > 0 && !FILE_EOF( apFileCtx )  ) {
    MOVAtom     lAtom     = { 0, 0, 0 };
    uint32_t    lStartPos = apFileCtx -> m_CurPos;
    int         lSize     = _read_int_be ( apFileCtx );
@@ -1053,38 +1056,6 @@ static int _mov_build_index ( SMS_Container* apCont, MOVStream* apMyStm, SMS_Str
  return 1;
 }  /* end _mov_build_index */
 
-static int _mov_edit_fits ( SMS_Stream* apStm, MOVStream* apMyStm, MOVContext* apCtx ) {
- int64_t lStart = 0, lEnd = apStm -> m_Duration;
- int64_t lLength = SMS_Rescale ( apMyStm -> m_EditDuration, apMyStm -> m_TimeScale, apCtx -> m_TimeScale );
- int lFirstDelta = apMyStm -> m_pStts[ 0 ].m_Duration;
- int lLastDelta = apMyStm -> m_pStts[ apMyStm -> m_nStts - 1 ].m_Duration;
- unsigned int i, lCTimeIdx = 0, lCTimeSample = 0;
- if ( apMyStm -> m_pCtts && apMyStm -> m_nCtts ) {
-  lStart = SMS_MAXINT64;
-  lEnd = -SMS_MAXINT64;
-  for ( i = 0; i < ( unsigned int )apMyStm -> m_nIdx; ++i ) {
-   int lOffset = 0;
-   int64_t lPTS, lDelta;
-   while ( lCTimeIdx < apMyStm -> m_nCtts && apMyStm -> m_pCtts[ lCTimeIdx ].m_Count <= 0 ) ++lCTimeIdx;
-   if ( lCTimeIdx < apMyStm -> m_nCtts ) {
-    MOVStts* lpTime = &apMyStm -> m_pCtts[ lCTimeIdx ];
-    lOffset = lpTime -> m_Duration;
-    if ( ++lCTimeSample == ( unsigned int )lpTime -> m_Count ) { ++lCTimeIdx; lCTimeSample = 0; }
-   }  /* end if */
-   lPTS = ( int64_t )apMyStm -> m_pIdx[ i ].m_DTS * apMyStm -> m_TimeRate + lOffset;
-   lDelta = i + 1 < ( unsigned int )apMyStm -> m_nIdx ?
-            ( int64_t )( apMyStm -> m_pIdx[ i + 1 ].m_DTS - apMyStm -> m_pIdx[ i ].m_DTS ) * apMyStm -> m_TimeRate : lLastDelta;
-   if ( lPTS < lStart ) lStart = lPTS;
-   if ( lPTS + lDelta > lEnd ) lEnd = lPTS + lDelta;
-  }  /* end for */
- }  /* end if */
- /* Retain at most one codec sample of priming/tail rounding. Composition
-  * reorder origin is part of the presentation coverage, not a content trim. */
- return lFirstDelta > 0 && lLastDelta > 0 && apMyStm -> m_EditStart <= lStart + lFirstDelta &&
-        lEnd >= apMyStm -> m_EditStart && lLength >= lEnd - apMyStm -> m_EditStart - lLastDelta &&
-        lLength <= lEnd - apMyStm -> m_EditStart + lLastDelta;
-}  /* end _mov_edit_fits */
-
 static int _mov_read_header ( SMS_Container* apCont ) {
 
  MOVContext*  lpMOV     = ( MOVContext* )apCont -> m_pCtx;
@@ -1132,6 +1103,11 @@ static int _mov_read_header ( SMS_Container* apCont ) {
    if ( lpMOV -> m_TimeScale <= 0 || lpMyStm -> m_TimeScale <= 0 ||
         lpMyStm -> m_EditEmpty + lpMyStm -> m_EditDuration > UINT_MAX ) return 0;
    lOffset = SMS_Rescale ( lpMyStm -> m_EditEmpty, lpMyStm -> m_TimeScale, lpMOV -> m_TimeScale ) - lpMyStm -> m_EditStart;
+/* The player has no position before time zero, so video that an edit starts more than one
+ * frame into the track ( a trimmed copy ) is refused; _ReadPacket holds the rest at zero. */
+   if ( lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo &&
+        lOffset + lpMyStm -> m_pStts[ 0 ].m_Duration +
+        ( lpMyStm -> m_nCtts ? lpMyStm -> m_pCtts[ 0 ].m_Duration : 0 ) < 0 ) return 0;
    lpMyStm -> m_TimeRate = _gcd ( lpMyStm -> m_TimeRate, ( int32_t )( lOffset % lpMyStm -> m_TimeRate ) );
    lpMyStm -> m_TimeOffset = lOffset / lpMyStm -> m_TimeRate;
    if ( lpMyStm -> m_TimeOffset < INT_MIN || lpMyStm -> m_TimeOffset > UINT_MAX ) return 0;
@@ -1147,7 +1123,6 @@ static int _mov_read_header ( SMS_Container* apCont ) {
 
   if ( !_mov_build_index ( apCont, lpMyStm, lpStm ) ) return 0;
   if ( lpMyStm -> m_HasEdit ) {
-   if ( !_mov_edit_fits ( lpStm, lpMyStm, lpMOV ) ) return 0;
    lpStm -> m_Duration = SMS_Rescale ( lpMyStm -> m_EditEmpty + lpMyStm -> m_EditDuration,
                                      lpMyStm -> m_TimeScale, lpMOV -> m_TimeScale );
   }  /* end if */
@@ -1227,10 +1202,14 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  do {
 
-  int64_t lBestDTS = SMS_MAXINT64;
+  int64_t lMinDTS  = SMS_MAXINT64;
+  int     lPass;
   lpSample = NULL;
 
-  for ( i = 0; i < apCont -> m_nStm; ++i ) {
+/* Streams within one second of the earliest DTS are read in file order, so an interleaved file
+ * is read front to back and never seeks backwards; later ones wait. The window stays fixed on
+ * the earliest DTS so the choice does not depend on stream order. */
+  for ( lPass = 0; lPass < 2; ++lPass ) for ( i = 0; i < apCont -> m_nStm; ++i ) {
    SMS_Stream* lpCurStm   = apCont -> m_pStm[ i ];
    MOVStream*  lpMyCurStm = ( MOVStream* )lpCurStm -> m_pCtx;
    if ( lpMyCurStm -> m_pIdx && lpMyCurStm -> m_TimeScale > 0 && lpMyCurStm -> m_TimeRate > 0 &&
@@ -1238,9 +1217,12 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
         lpMyCurStm -> m_CurSample < ( unsigned int )lpMyCurStm -> m_nIdx ) {
     MOVIndex* lpCurSample = &lpMyCurStm -> m_pIdx[ lpMyCurStm -> m_CurSample ];
     int64_t   lDTS = SMS_Rescale ( ( ( int64_t )lpCurSample -> m_DTS + lpMyCurStm -> m_TimeOffset - lpMyCurStm -> m_DTSShift ) * lpMyCurStm -> m_TimeRate, SMS_TIME_BASE, lpMyCurStm -> m_TimeScale );
-    if ( lDTS < lBestDTS ) {
+    if ( !lPass ) {
+     if ( lDTS < lMinDTS ) lMinDTS = lDTS;
+    } else if ( lDTS - lMinDTS < SMS_TIME_BASE &&
+                ( !lpSample || lpCurSample -> m_Pos < lpSample -> m_Pos )
+    ) {
      lpSample = lpCurSample;
-     lBestDTS = lDTS;
      lpStm    = lpCurStm;
      lpMyStm  = lpMyCurStm;
      lIdx     = i;
@@ -1277,6 +1259,10 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
  lpPkt -> m_StmIdx = lIdx;
  lpPkt -> m_DTS = ( int64_t )lpSample -> m_DTS + lpMyStm -> m_TimeOffset - lpMyStm -> m_DTSShift;
  lpPkt -> m_PTS = ( int64_t )lpSample -> m_DTS + lpMyStm -> m_TimeOffset + lCTime / lpMyStm -> m_TimeRate;
+/* The MPEG-4 decoder stamps the picture it outputs ( with B-frames, the previous reference )
+ * with the current packet's time, as AVI supplies it: in decode order. */
+ if ( lpStm -> m_pCodec -> m_ID == SMS_CodecID_MPEG4 ) lpPkt -> m_PTS = lpPkt -> m_DTS;
+ if ( lpPkt -> m_PTS < 0 && lpStm -> m_pCodec -> m_Type == SMS_CodecTypeVideo ) lpPkt -> m_PTS = 0;
 
  lpPkt -> m_Flags |= lpSample -> m_Flags ? SMS_PKT_FLAG_KEY : 0;
 
@@ -1365,10 +1351,13 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
  * treat it as backward instead of walking "in direction 0" forever. */
  aDir = aDir > 0 ? 1 : -1;
 
-/* Same range check AVI does ( target past the last frame fails ). */
+/* Same rule AVI uses ( past the last frame: forward fails, backward lands on the last frame ). */
  lTarget = ( int64_t )aPos - lpMyStm -> m_TimeOffset;
  if ( lTarget < 0 ) lTarget = 0;
- if (  lTarget > lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS  ) return 0;
+ if (  lTarget > lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS  ) {
+  if ( aDir > 0 ) return 0;   /* forward past the end fails: fast-forward stops there */
+  lTarget = lpMyStm -> m_pIdx[ lpMyStm -> m_nIdx - 1 ].m_DTS;   /* backward lands on the last frame */
+ }  /* end if */
 
  lSample = _mov_locate_sample ( lpMyStm -> m_pIdx, lpMyStm -> m_nIdx, ( uint32_t )lTarget );
  if ( aDir > 0 && lpMyStm -> m_pIdx[ lSample ].m_DTS < lTarget ) ++lSample;
@@ -1378,8 +1367,8 @@ static int _Seek ( SMS_Container* apCont, int anIdx, int aDir, uint32_t aPos ) {
 
  if (  lSample == ( uint32_t )lpMyStm -> m_nIdx || !lpMyStm -> m_pIdx[ lSample ].m_Flags  ) return 0;
 
-/* The keyframe's timestamp in the neutral SMS_TIME_BASE units _ReadPacket uses to pick the
- * lowest-DTS stream. The other streams' cursors are placed on that same instant so the
+/* The keyframe's timestamp in the neutral SMS_TIME_BASE units _ReadPacket uses to order the
+ * streams. The other streams' cursors are placed on that same instant so the
  * interleave resumes consistently -- audio typically lands a few frames BEFORE the video
  * keyframe, which is exactly what the decoders expect after a seek. */
  lTime = SMS_Rescale (

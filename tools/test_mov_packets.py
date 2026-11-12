@@ -41,7 +41,9 @@ struct FileContext {
  int (*Read)(FileContext *,void *,unsigned);
  int (*Seek)(FileContext *,unsigned);
 };
-typedef struct { void *m_pCtx,*m_pPktBuf; } SMS_Stream;
+enum { SMS_CodecID_MPEG4=1,SMS_CodecTypeVideo=1 };
+typedef struct { int m_ID,m_Type; } SMS_CodecContext;
+typedef struct { void *m_pCtx,*m_pPktBuf;SMS_CodecContext *m_pCodec; } SMS_Stream;
 typedef struct { unsigned char *m_pData;int m_Size,m_StmIdx,m_Flags;int64_t m_DTS,m_PTS; } SMS_AVPacket;
 typedef struct {
  FileContext *m_pFileCtx;
@@ -75,10 +77,11 @@ static FileContext file;
 static MOVStream streams[2];
 static MOVIndex index_data[2][3];
 static SMS_Stream sms_streams[2];
+static SMS_CodecContext codec;
 static SMS_Container container;
 static void reset(void) {
  memset(&container,0,sizeof(container));memset(streams,0,sizeof(streams));
- memset(index_data,0,sizeof(index_data));
+ memset(index_data,0,sizeof(index_data));codec=(SMS_CodecContext){0};
  file=(FileContext){1000,0,read_file,seek_file};
  container.m_pFileCtx=&file;container.m_nStm=2;container.AllocPacket=allocate;
  short_read=seek_fail=seek_wrong=allocations=reserved=0;
@@ -86,7 +89,7 @@ static void reset(void) {
   streams[i].m_TimeRate=streams[i].m_TimeScale=1;
   streams[i].m_pIdx=index_data[i];streams[i].m_nSamples=streams[i].m_nIdx=1;
   index_data[i][0]=(MOVIndex){1,0,0,4};
-  sms_streams[i]=(SMS_Stream){streams+i,streams+i};container.m_pStm[i]=sms_streams+i;
+  sms_streams[i]=(SMS_Stream){streams+i,streams+i,&codec};container.m_pStm[i]=sms_streams+i;
  }
 }
 static void disabled(void) {
@@ -107,6 +110,16 @@ static void composition(void) {
  assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==1);
  streams[0].m_CurSample=1;_mov_sync_ctime(streams);
  assert(streams[0].m_Sample2CTimeIdx==1);
+ /* The MPEG-4 decoder stamps frames in decode order, so its packets carry the DTS. */
+ streams[0].m_CurSample=0;_mov_sync_ctime(streams);codec.m_ID=SMS_CodecID_MPEG4;
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0);
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==1);
+ /* An edit can start a track before time zero; only video is held at zero. */
+ streams[0].m_CurSample=0;_mov_sync_ctime(streams);streams[0].m_TimeOffset=-1;
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==-1);
+ streams[0].m_CurSample=0;_mov_sync_ctime(streams);codec.m_Type=SMS_CodecTypeVideo;
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0 && packet.m_DTS==-1);
+ assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0);
  free(streams[0].m_pCtts);
  reset();container.m_nStm=1;streams[0].m_pCtts=times;streams[0].m_nCtts=0;
  assert(_ReadPacket(&container,&selected)==4 && packet.m_PTS==0);
@@ -118,6 +131,14 @@ static void ordering(void) {
  int selected;
  reset();index_data[0][0].m_DTS=0x10000000;
  streams[0].m_TimeRate=streams[0].m_TimeScale=16;index_data[1][0].m_DTS=100;
+ assert(_ReadPacket(&container,&selected)==4 && selected==1);
+ assert(_ReadPacket(&container,&selected)==4 && selected==0);
+ /* Inside the interleave window the sample stored first is read first, so the
+  * file position only moves forward; at the window's edge DTS order applies. */
+ reset();index_data[0][0].m_Pos=8;
+ assert(_ReadPacket(&container,&selected)==4 && selected==1 && file.m_CurPos==4);
+ assert(_ReadPacket(&container,&selected)==4 && selected==0 && file.m_CurPos==12);
+ reset();index_data[0][0].m_DTS=SMS_TIME_BASE;index_data[1][0].m_Pos=8;
  assert(_ReadPacket(&container,&selected)==4 && selected==1);
  assert(_ReadPacket(&container,&selected)==4 && selected==0);
 }
@@ -163,7 +184,14 @@ static void seeking(void) {
  assert(_Seek(&container,0,1,15)==1 && streams[0].m_CurSample==2);
  assert(_Seek(&container,0,-1,15)==1 && streams[0].m_CurSample==0);
  assert(_Seek(&container,0,0,15)==1 && streams[0].m_CurSample==0);
- assert(_Seek(&container,0,1,21)==0 && streams[0].m_CurSample==0);
+ /* Past the last sample: forward fails (fast-forward stops), backward lands on the last keyframe. */
+ assert(_Seek(&container,0,1,21)==0);
+ assert(_Seek(&container,0,-1,21)==1 && streams[0].m_CurSample==2);
+ assert(_Seek(&container,0,-1,500)==1 && streams[0].m_CurSample==2);
+ /* No keyframe at the last sample: backward lands on the last earlier keyframe. */
+ index_data[0][2].m_Flags=0;
+ assert(_Seek(&container,0,-1,21)==1 && streams[0].m_CurSample==0);
+ index_data[0][2].m_Flags=1;
  /* A movie-time offset must affect both the video target and other streams. */
  streams[0].m_TimeOffset=20;
  assert(_Seek(&container,0,-1,25)==1 && streams[0].m_CurSample==0 && streams[1].m_CurSample==2);

@@ -32,7 +32,7 @@ python3 tools/test_mov_parser.py
 python3 tools/irx_imports.py --assert dev9=1.1 irx/udpfs_smap.irx.xz irx/ata_bd.irx.xz
 ```
 
-Host C harnesses need a supported host compiler and sanitizer runtime; the MOV parser fixture test also needs FFmpeg/FFprobe. The [compilation workflow](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/.github/workflows/compilation.yml) lists all 17 current host regressions. Do not submit a physical-console program merely to check whether the console is online.
+Host C harnesses need a supported host compiler and sanitizer runtime; the MOV parser, JPEG parser and AAC sample-rate fixture tests also need FFmpeg/FFprobe. The [compilation workflow](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/.github/workflows/compilation.yml) lists the current host regressions. Do not submit a physical-console program merely to check whether the console is online.
 
 ## IOP and network changes
 

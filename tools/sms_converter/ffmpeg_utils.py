@@ -308,7 +308,7 @@ def build_ffmpeg_cmd(
     pass has nothing new to work from. And because -pass is a bitmask, asking for 3 sets
     PASS1|PASS2 and the encoder reverts to first-pass behaviour: measured at a 700 kbps
     target, pass 1 gave 5022 kbps, pass 2 gave 712, pass 3 gave 5022 again. Exposing 3+ would
-    hand the user a file seven times over target, so the UI caps at 2 and explains itself.
+    hand the user a file seven times over target, so the UI offers two passes and no more.
     """
     cmd = [ffmpeg_path, "-y", "-i", input_file]
 
@@ -377,6 +377,13 @@ def build_ffmpeg_cmd(
         vbitrate = settings.get("vbitrate_kbps")
         if vbitrate:
             cmd.extend(["-b:v", f"{vbitrate}k"])
+            if out_ext in (".mpg", ".mpeg"):
+                # Uncapped, FFmpeg repays a quiet stretch with seconds at several times the
+                # target. The buffer is 0.5 s of the peak, matching the MPEG muxer's preload.
+                # -muxrate keeps the muxer unpaced, as it is without -maxrate; a paced muxer
+                # holds video back behind audio whenever the encoder exceeds the peak.
+                peak = int(vbitrate) * 5 // 4
+                cmd.extend(["-maxrate", f"{peak}k", "-bufsize", f"{peak // 2}k", "-muxrate", "400000k"])
 
         # Scaling and Filters
         src_w = settings.get("src_width", 0)
@@ -479,11 +486,12 @@ def build_ffmpeg_cmd(
         if channels:
             cmd.extend(["-ac", str(channels)])
 
-        # Audio resampling parameters
-        pass
-
-        if settings.get("normalize_audio", False):
-            cmd.extend(["-filter:a", "loudnorm"])
+        audio_filters = ["loudnorm"] if settings.get("normalize_audio", False) else []
+        if acodec == "flac":
+            # SMS opens only mono/stereo FLAC and renders 16-bit samples.
+            audio_filters.append("aformat=sample_fmts=s16:channel_layouts=mono|stereo")
+        if audio_filters:
+            cmd.extend(["-af", ",".join(audio_filters)])
     else:
         cmd.append("-an")
 

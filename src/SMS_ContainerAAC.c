@@ -138,7 +138,10 @@ static int _ReadPacket ( SMS_Container* apCont, int* apIdx ) {
 
  if (  lpFileCtx -> Read ( lpFileCtx, &lBuf, 8 ) == 8  ) while (  !FILE_EOF( lpFileCtx )  ) {
 
-  if (   (  *( uint16_t* )&lBuf[ 0 ] & 0xF0FF  ) == 0xF0FF  ) {
+/* As in the probe, a frame_length below the 8 header bytes copied here is not a frame. */
+  if (   (  *( uint16_t* )&lBuf[ 0 ] & 0xF0FF  ) == 0xF0FF &&
+         (  ( lBuf[ 3 ] & 3 ) << 11 | lBuf[ 4 ] << 3 | lBuf[ 5 ] >> 5  ) > 7
+  ) {
 
    uint64_t lHdr  = (    (   ( uint64_t )SMS_bswap32 (  *( uint32_t* )&lBuf[ 0 ]  )   ) << 32    ) |
                     (    (   ( uint64_t )SMS_bswap32 (  *( uint32_t* )&lBuf[ 4 ]  )   )          );

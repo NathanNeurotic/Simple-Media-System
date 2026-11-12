@@ -56,6 +56,10 @@ they load as-is (new-feature lines show English until translated). They are the
 best reference for tone/length. (TR had a pre-existing duplicate line that was
 removed to realign it.)
 
+The original 269-entry SMS 2.9 packs (the lng/ folder of the source tree, and
+any SMS.lng from an older release) do NOT load in this build: the loader
+refuses a file that does not have exactly 311 entries.
+
 ==============================================================================
   LINE-BY-LINE REFERENCE  (line# | flags | English)
   The editable file SMS.lng has NO line numbers -- this is just a key.
@@ -99,7 +103,7 @@ removed to realign it.)
  36 | STR_AUTOSTA | Autostart HDD APA
  37 | STR_DEVICE_ | Device settings
  38 | STR_START_N | Start network support
- 39 | STR_START_H | Start HDD support
+ 39 | STR_START_H | Start HDD APA support
  40 | STR_START_U | Start USB support
  41 | STR_EDIT_IP | Edit IPCONFIG.DAT...
  42 | STR_EDIT_IP | Edit IPCONFIG.DAT
@@ -332,7 +336,7 @@ removed to realign it.)
 269 | STR_AUTOSTA | Autostart MX4SIO
 270 | STR_START_M | Start MX4SIO support
 271 | STR_AUTOSTA | Autostart HDD BDM
-272 | STR_START_H | Start HDD BDM
+272 | STR_START_H | Start HDD BDM support
 273 | STR_AUTOSTA | Autostart i.LINK
 274 | STR_START_I | Start i.LINK support
 275 | STR_AUTOSTA | Autostart MMCE

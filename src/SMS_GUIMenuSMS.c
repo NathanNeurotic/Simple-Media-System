@@ -1728,9 +1728,11 @@ static void _set_ips ( char apDst[][ 4 ], char* apSrc ) {
 
   j = 0;
 
-  while ( *apSrc && *apSrc != '.' ) apDst[ i ][ j++ ] = *apSrc++;
+  for ( ; *apSrc && *apSrc != '.'; ++apSrc ) if ( j < 3 ) apDst[ i ][ j++ ] = *apSrc;
 
-  ++apSrc;
+  apDst[ i ][ j ] = '\x00';
+
+  if ( *apSrc ) ++apSrc;
 
  }  /* end for */
 

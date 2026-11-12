@@ -13,6 +13,7 @@
 *.o
 !/vu/*.o
 
+*.bak
 *.diff
 *.elf
 *.ELF
