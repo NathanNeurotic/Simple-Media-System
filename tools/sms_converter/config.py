@@ -54,10 +54,11 @@ MAX_SMS_STREAMS = 8
 MAX_CONVERTER_STREAMS = MAX_SMS_STREAMS - 1
 MULTI_AUDIO_CONTAINERS = {".avi", ".mpg", ".mpeg", ".mp4"}
 
-# Frame rate setting that follows the source: a standard rate of 30 or less is kept, a 48, 50,
-# 59.94 or 60 source drops every other frame (24, 25, 29.97, 30), anything else becomes 30. Every
-# preset forced 30 before, which repeated every fifth frame of a 25 fps source (uneven motion)
-# and spent bits on frames that were only copies.
+# Frame rate setting that follows the source: a standard rate of 30 or less is kept, a faster
+# source is halved until it is 30 or less so frames drop evenly (48, 50, 59.94, 60 -> 24, 25,
+# 29.97, 30; 96, 100, 120 -> 24, 25, 30), anything else becomes 30. Every preset forced 30
+# before, which repeated every fifth frame of a 25 fps source (uneven motion) and spent bits on
+# frames that were only copies.
 FPS_SOURCE = "Source (up to 30)"
 
 # Allowed Frame Rates for MPEG-1 and MPEG-2

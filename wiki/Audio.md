@@ -14,7 +14,7 @@ SMS recognises audio files by their extension and hands them to the matching dec
 | --- | --- | --- |
 | MPEG Audio Layer II / III | `.mp2` `.mp3` `.mpa` | MP2 and MP3 use the shared MPEG-audio decoder. |
 | AAC Main / LC and HE-AAC/SBR | `.aac` `.m4a` `.mp4` | `.aac` is raw ADTS; `.m4a` is the audio-only ISO-BMFF route. An audio-only `.mp4` falls back to the same reader. |
-| AC3 (Dolby Digital) | `.ac3` | The same audio format SMS decodes for DVD-style video soundtracks. SMS mixes 5.1 down to stereo, or with **S/PDIF - Dolby Digital/DTS** on passes it untouched to a receiver. |
+| AC3 (Dolby Digital) | `.ac3` | The same audio format SMS decodes for DVD-style video soundtracks. SMS mixes 5.1 down to stereo, or with **S/PDIF - Dolby Digital/DTS** on (and **Video auto 2:2 pulldown** off) passes it untouched to a receiver. |
 | FLAC | `.flac` | Mono or stereo; decoded to 16-bit PCM output. |
 | Ogg Vorbis | `.ogg` | Mono or stereo; decoded to 16-bit PCM output. |
 | WMA v1 / v2 | `.wma` | Windows Media Audio carried in an ASF container. This is audio, not WMV video. |

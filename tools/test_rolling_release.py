@@ -16,6 +16,10 @@ workflow = WORKFLOW.read_text(encoding="utf-8")
 step = workflow.split("    - name: Update rolling pre-release\n", 1)[1]
 step = step.split("    # --- Stable release:", 1)[0].split("      run: |\n", 1)[1]
 script = "\n".join(line[8:] if line.startswith("        ") else line for line in step.splitlines())
+ASSETS = ("Simple-Media-System.elf", "Simple-Media-System-packed.elf",
+          "Simple-Media-System-DIAG.elf", "Simple-Media-System.zip",
+          "Simple-Media-System-languages.zip", "Simple-Media-System-kit.zip",
+          "APP_SMS3.zip", "APP_SMS3.psu")
 bash = os.environ.get("BASH_EXECUTABLE") or shutil.which("bash")
 if os.name == "nt" and Path("C:/Program Files/Git/bin/bash.exe").is_file():
     bash = os.environ.get("BASH_EXECUTABLE", "C:/Program Files/Git/bin/bash.exe")
@@ -73,10 +77,7 @@ def run_case(name, expected, **overrides):
         state_file.write_text(json.dumps(state))
         (tmp / "fake.py").write_text(FAKE)
         (tmp / "dist").mkdir()
-        for asset in ("Simple-Media-System.elf", "Simple-Media-System-packed.elf",
-                      "Simple-Media-System-DIAG.elf", "Simple-Media-System.zip",
-                      "Simple-Media-System-languages.zip", "Simple-Media-System-kit.zip",
-                      "APP_SMS3.zip", "APP_SMS3.psu"):
+        for asset in ASSETS:
             (tmp / "dist" / asset).write_bytes(b"fixture")
         # Use fail-fast Bash behavior as on GitHub Actions.
         # A shell function also works with Python's Windows path under Git Bash.
@@ -95,7 +96,8 @@ def run_case(name, expected, **overrides):
         elif expected:
             assert state["tag"] == SHA, (name, state)
             assert sum(a[:3] == ["release", "create", "rolling"] for a in calls) == (not overrides.get("exists", True))
-            assert any(a[:3] == ["release", "upload", "rolling"] for a in calls), calls
+            uploads = [a for a in calls if a[:3] == ["release", "upload", "rolling"]]
+            assert uploads and {"dist/" + n for n in ASSETS} <= set(uploads[-1]), calls  # every package, the new ones too
             assert calls[-1][1].endswith("/git/ref/tags/rolling"), calls
         if overrides.get("master_error") or name in ("invalid-master-identity", "empty-master-identity"):
             assert len(calls) == 1, calls

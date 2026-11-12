@@ -210,8 +210,10 @@ def source_fps_choice(source_info: Optional[Dict[str, Any]]) -> str:
 
     The average rate comes first: for variable-rate phone video r_frame_rate is a timestamp
     granularity (often 90000/1 or 120/1), not how many frames there are. Above 30 the rate is
-    halved, so 50 or 60 fps drops every other frame and motion stays even. A rate that does not
-    land within 2% of a standard one (15, 20, unknown) gets 30, the old fixed rate.
+    halved until it is 30 or less, so frames are dropped evenly and motion stays even: 50 or
+    60 fps keeps every other frame, 96, 100 or 120 every fourth. Forcing 30 on a 96 or 100 fps
+    source would drop frames unevenly instead. A rate that then does not land within 2% of a standard one
+    (15, 20, 72, unknown) gets 30, the old fixed rate.
     """
     video = next((s for s in (source_info or {}).get("streams") or []
                   if s.get("codec_type") == "video" and not s.get("disposition", {}).get("attached_pic")), {})

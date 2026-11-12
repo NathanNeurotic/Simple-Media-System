@@ -26,7 +26,7 @@ H.264, H.265, VP9 and AV1 are not SMS video decoders, so an MP4 holding H.264 (`
 
 MPEG-1/2 presets use GOP 15; ordinary MPEG-4 presets use GOP 50 and the high-quality Xvid preset uses GOP 6. All default to zero B-frames. The generated historical test fixtures use different GOP values, so a fixture result is not proof of every converter setting.
 
-Every video preset uses the frame rate **Source (up to 30)**. A source at 23.976, 24, 25, 29.97 or 30 fps keeps its rate; a 48, 50, 59.94 or 60 fps source drops every other frame (to 24, 25, 29.97 or 30); anything else becomes 30. Earlier builds forced 30 fps, which repeated every fifth frame of a 25 fps film and spent bitrate and decoding time on the copies. Choose a fixed rate in Advanced settings to override it. MPEG-1/2 output still uses a legal MPEG rate.
+Every video preset uses the frame rate **Source (up to 30)**. A source at 23.976, 24, 25, 29.97 or 30 fps keeps its rate. A faster source is halved until it is 30 or less, so frames are dropped evenly: 48, 50, 59.94 and 60 fps keep every other frame (24, 25, 29.97 and 30), and 96, 100 and 120 fps keep every fourth (24, 25 and 30). Anything else becomes 30. Earlier builds forced 30 fps, which repeated every fifth frame of a 25 fps film and spent bitrate and decoding time on the copies. Choose a fixed rate in Advanced settings to override it. MPEG-1/2 output still uses a legal MPEG rate.
 
 ## Tracks, subtitles and advanced controls
 

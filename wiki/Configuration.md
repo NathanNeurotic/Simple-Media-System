@@ -26,7 +26,7 @@ mc0:/SMS3/
 - The line needs a device and a folder: a device root such as `mc0:/` is ignored, and so is an empty or unreadable file. A UTF-8 byte-order mark and Windows line endings are fine.
 - SMS creates the folder on the first save (one level only). On a memory card it also writes `icon.sys` and `SMS.icn` there when the folder has none, so the card browser shows the SMS icon. It never overwrites an existing icon.
 - Only the settings move. Fonts, skins, the language file and `IPCONFIG.DAT` stay where they are.
-- A hard-drive (`hdd0:`) folder is not supported. SMS reads `SMSPATH.TXT` only when it started from a device it can read again after start-up, as in the first row of the table above.
+- The folder must be on a memory card or on the same kind of device SMS started from (another USB drive is fine on a USB start). SMS does not start other devices just to read its settings, so a line naming one, or a hard-drive (`hdd0:`) folder, is ignored and the settings stay beside the ELF. SMS reads `SMSPATH.TXT` only when it started from a device it can read again after start-up, as in the first row of the table above.
 
 ## IPCONFIG.DAT is separate
 

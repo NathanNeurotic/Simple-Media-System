@@ -107,6 +107,7 @@ class TestSMSConverter(unittest.TestCase):
 
         cases = {"24000/1001": "23.976", "24/1": "24", "25/1": "25", "30000/1001": "29.97",
                  "30/1": "30", "48/1": "24", "50/1": "25", "60000/1001": "29.97", "60/1": "30",
+                 "96/1": "24", "100/1": "25", "120/1": "30", "72/1": "30",  # halved until <= 30
                  "15/1": "30", "0/0": "30"}
         for avg, want in cases.items():
             self.assertEqual(source_fps_choice(info(avg)), want, avg)

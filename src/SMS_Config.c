@@ -211,7 +211,11 @@ static void _follow_cfg_pointer ( void ) {
 
  if ( lOut >= lEnd || lBuf[ lOut ] != ':' || lOut == lBeg ) return;   /* needs a "<device>:" prefix */
  if (  lOut + 1 >= lEnd || ( lOut + 2 == lEnd && lBuf[ lOut + 1 ] == '/' )  ) return;   /* and a folder: never a card root */
- if ( lEnd - lBeg > ( int )sizeof ( s_pMC0SMC ) - 10 ) return;        /* path + '/' + "SMS.cfg" must fit */
+ if ( lEnd - lBeg > ( int )sizeof ( s_pMC0SMC ) - 11 ) return;   /* path ( "mc:" grows by one ) + '/' within _derive_smb_path's scan, + "SMS.cfg" */
+/* Only the memory cards and the boot device are mounted when this runs: a folder on any other
+ * device would leave the settings unread and every save failing, so that line is ignored. */
+ for ( lOut = 0; lBuf[ lBeg + lOut ] >= 'a' && lBuf[ lBeg + lOut ] == g_pBootDir[ lOut ]; ++lOut );
+ if (  ( lBuf[ lBeg ] != 'm' || lBuf[ lBeg + 1 ] != 'c' ) && ( lBuf[ lBeg + lOut ] >= 'a' || g_pBootDir[ lOut ] >= 'a' )  ) return;
 
  lBuf[ lEnd ] = '\x00';
  lOut = 0;

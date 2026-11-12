@@ -14,7 +14,7 @@ SMS decodes video in software on the Emotion Engine and uses the PS2's **IPU** f
 
 SMS plays a specific set of containers and codecs. If a file uses anything outside this list, it will fail to open or may play only its supported audio track. Supported video is **AVI** (DivX / Xvid / MPEG-4 Part 2), **MP4** (`mp4v`, MPEG-4 Part 2), and **MPEG program streams** (MPEG-1/2, `.mpg`/`.mpeg`). H.264/AVC, H.265/HEVC, VP9, AV1 and WMV video are **not** supported — re-encode those to MPEG-4 Part 2 first. An MP4 that plays sound with no picture usually holds H.264 (`avc1`) video, so that result is expected. See [Video Playback](https://nathanneurotic.github.io/Simple-Media-System/video.html) for the full format table.
 
-To see what a file holds, open it in [MediaInfo](https://mediaarea.net/en/MediaInfo) on a PC (a tip from TnA): *MPEG-4 Visual* is the supported MPEG-4 Part 2, *AVC* is H.264, and the details list QPel, GMC and B-frames. On the PS2, press Cross during playback: the first press shows the elapsed time, the second the time remaining and the third a panel with the video and audio codecs, picture size, audio rate and free memory.
+To see what a file holds, open it in [MediaInfo](https://mediaarea.net/en/MediaInfo) on a PC (a tip from TnA): *MPEG-4 Visual* is the supported MPEG-4 Part 2, *AVC* is H.264, and the details list QPel, GMC and B-frames. On the PS2, press Cross during playback: the first press shows the elapsed time, the second the time remaining and the third a panel with the video and audio codecs, picture size, audio rate and free memory. A file that does not report its length skips the last two, so Cross only switches the elapsed time on and off.
 
 ### Lower the bitrate and resolution
 

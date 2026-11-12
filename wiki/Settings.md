@@ -192,10 +192,10 @@ SMS shows external subtitle files over video. These options control loading, loo
 
 | Option | What it does | Values |
 | --- | --- | --- |
-| **S/PDIF - Dolby Digital/DTS** | Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2. | on / off |
+| **S/PDIF - Dolby Digital/DTS** | Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2. Not used while **Video auto 2:2 pulldown** is on (that row appears in PAL and 576p, and hides this one). | on / off |
 | **Video auto 2:2 pulldown** | Applies 2:2 pulldown handling for correct playback of certain video cadences. | on / off |
 | **Default volume** | The starting playback volume level. | value |
-| **Color resolution** | The colour depth of each movie frame in video memory. **Auto** uses 32 bit when the frame fits beside the screen image and 16 bit when it does not, which is common in 720p and 1080i. **32 bit** always uses full colour; in 720p and 1080i that can share memory with the bottom of the screen and corrupt or flicker the lower part of the picture. **16 bit** always saves memory, with slight colour banding. | Auto / 32 bit / 16 bit |
+| **Color resolution** | The colour depth of each movie frame in video memory. **Auto** uses 32 bit when the frame fits beside the screen image and 16 bit when it does not, which is common in 720p and 1080i. A video with picture subtitles (DivX XSUB) stays at 32 bit, because SMS draws those subtitles in spare space that a 16-bit frame does not have. **32 bit** uses full colour; in 720p and 1080i that can share memory with the bottom of the screen and corrupt or flicker the lower part of the picture. When the screen itself is 16 bit (Display settings → Color resolution) and the frame does not fit, 32 bit also drops to 16 bit. **16 bit** always saves memory, with slight colour banding. | Auto / 32 bit / 16 bit |
 
 ### On-screen extras & scroll bar
 

@@ -72,7 +72,7 @@ static char g_SMSSMB[128]="mc0:/SMS/SMS.smb", s_pMC0SMC[128]="mc0:/SMS/SMS.cfg",
 static int g_MCSlot, s_CfgOnFS, s_CfgFallback, inits;
 
 /* fio: a file is reachable only while its device is mounted; "mass:" is unit 0 */
-static struct { char path[64]; const void *data; int size; } files[4];
+static struct { char path[160]; const void *data; int size; } files[4];
 static char mounted[4][8];
 static int nfiles, nmounted, position;
 static void mount(const char *device) { strcpy(mounted[nmounted++],device); }
@@ -175,6 +175,8 @@ int main(int argc,char **argv) {
  assert(applied.m_DisplayMode==expected_mode && g_Config.m_DisplayMode==expected_mode);
  assert(!memcmp(&applied,&g_Config,offsetof(SMSConfig,m_ImgOffs)+sizeof(short)));   /* nothing loaded late is left unapplied */
  assert(g_Config.m_BrowserFlags&SMS_BF_UDFL);        /* the installed SMS.lng is still accepted */
+ { const char *c=SMS_ConfigPath(); size_t n=strlen(c)-7;   /* SMS.smb sits in the same folder as SMS.cfg */
+   assert(!strcmp(c+n,"SMS.cfg") && !strncmp(g_SMSSMB,c,n) && !strcmp(g_SMSSMB+n,"SMS.smb")); }
  return 0;
 }
 """
@@ -208,6 +210,13 @@ pointer_cases = [
     ("SMSPATH.TXT without a device is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "SMS3/"),
     ("SMSPATH.TXT naming a card root is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc0:/"),
     ("empty SMSPATH.TXT is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, " "),
+    ("USB, SMSPATH.TXT names a memory card", "mass:/APPS/APP_SMS3/SMS3.ELF", "mc0:/SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mc0:/SMS3/"),
+    # Only the cards and the boot device are up when the pointer is read: another device is ignored.
+    ("USB, SMSPATH.TXT naming mmce0: is ignored", "mass:/APPS/APP_SMS3/SMS3.ELF", "mass0:/APPS/APP_SMS3/SMS.cfg", "-", HD, "mass0:", 1, 2, HD, D, "mmce0:/SMS/"),
+    ("card, SMSPATH.TXT naming mass0: is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mass0:/SMS/"),
+    # "mc:" grows by one character: the longest accepted line still keeps SMS.smb beside SMS.cfg.
+    ("117-character mc: line", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/" + "A" * 113 + "/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/" + "A" * 113),
+    ("118-character mc: line is ignored", "mc0:/APP_SMS3/SMS3.ELF", "mc0:/APP_SMS3/SMS.cfg", "SMS", HD, "-", 1, 1, HD, D, "mc:/" + "A" * 114),
 ]
 if "_follow_cfg_pointer" in cfg:
     cases += pointer_cases

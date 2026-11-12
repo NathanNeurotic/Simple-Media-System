@@ -208,10 +208,10 @@ page for the full walkthrough.</p>
 <table>
 <thead><tr><th>Option</th><th>What it does</th><th>Values</th></tr></thead>
 <tbody>
-<tr><td><b>S/PDIF - Dolby Digital/DTS</b></td><td>Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2.</td><td>on / off</td></tr>
+<tr><td><b>S/PDIF - Dolby Digital/DTS</b></td><td>Passes AC3/DTS out over the optical S/PDIF port as a bitstream to an external decoder, instead of decoding on the PS2. Not used while <b>Video auto 2:2 pulldown</b> is on (that row appears in PAL and 576p, and hides this one).</td><td>on / off</td></tr>
 <tr><td><b>Video auto 2:2 pulldown</b></td><td>Applies 2:2 pulldown handling for correct playback of certain video cadences.</td><td>on / off</td></tr>
 <tr><td><b>Default volume</b></td><td>The starting playback volume level.</td><td>value</td></tr>
-<tr><td id="colour-res"><b>Color resolution</b></td><td>The colour depth of each movie frame in video memory. <b>Auto</b> uses 32 bit when the frame fits beside the screen image and 16 bit when it does not, which is common in 720p and 1080i. <b>32 bit</b> always uses full colour; in 720p and 1080i that can share memory with the bottom of the screen and corrupt or flicker the lower part of the picture. <b>16 bit</b> always saves memory, with slight colour banding.</td><td>Auto / 32 bit / 16 bit</td></tr>
+<tr><td id="colour-res"><b>Color resolution</b></td><td>The colour depth of each movie frame in video memory. <b>Auto</b> uses 32 bit when the frame fits beside the screen image and 16 bit when it does not, which is common in 720p and 1080i. A video with picture subtitles (DivX XSUB) stays at 32 bit, because SMS draws those subtitles in spare space that a 16-bit frame does not have. <b>32 bit</b> uses full colour; in 720p and 1080i that can share memory with the bottom of the screen and corrupt or flicker the lower part of the picture. When the screen itself is 16 bit (Display settings → Color resolution) and the frame does not fit, 32 bit also drops to 16 bit. <b>16 bit</b> always saves memory, with slight colour banding.</td><td>Auto / 32 bit / 16 bit</td></tr>
 </tbody>
 </table>
 
