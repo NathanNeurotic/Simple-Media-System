@@ -6,6 +6,14 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
+## v3.0.0-rev2 (Version 3.0 Rev.2)
+
+First stable release since July. Shown in the app as Version 3.0 (Rev.2); the About screen ends with `Build <commit>`.
+Includes everything in rolling up to this point, notably accented / UTF-8 file names (n-tilde, a-acute, ...) drawing as
+one glyph everywhere instead of two wrong ones. `v3.0.0-rev1` stays as an archived release.
+
+---
+
 ## Rolling development — 2026-10-31
 
 Merged after PR #30, through [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46) at `4147f0a`. Rolling was

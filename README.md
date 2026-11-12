@@ -17,7 +17,8 @@ configuration, USB/Bluetooth DS3/DS4 support and a desktop media converter.
 | Channel | What it contains |
 |---|---|
 | **Rolling development** | Current master fixes/features, player tester bundle, matching language pack, and Windows/Win7/Linux converter packages. Keep `build-info.json` with a test report. |
-| **[v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1)** | The fixed July 2026 release. It predates October's parser, streaming, frame-ownership, shuffle and converter changes. |
+| **[v3.0.0-rev2 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev2)** | The current stable release, shown in the app as Version 3.0 (Rev.2). Includes the UTF-8 / accented file-name display fix. |
+| **[v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1)** | Archived July 2026 release, kept for history. |
 | **Actions / PR artifact** | A specific candidate that may not yet be in rolling. Record the run, artifact and source/head SHA. |
 
 [PR #30](https://github.com/NathanNeurotic/Simple-Media-System/pull/30) merged on
