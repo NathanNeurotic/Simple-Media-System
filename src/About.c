@@ -26,7 +26,7 @@ extern char g_AboutData[] __attribute__(   (  section( ".text" )  )   );
 # define SMS_BUILD_ID "local"
 #endif
 
-static char  s_BuildStr[] = "Build " SMS_BUILD_ID;
+static char  s_BuildStr[] __attribute__(   (  aligned( 1 ), section( ".data" )  )   ) = "Build " SMS_BUILD_ID;   /* explicit section: keeps it out of the GP-relative window, which is full */
 static char* s_About[ NSTR + 1 ] __attribute__(   (  section( ".bss" )  )   );
 static int   s_Unhash;
 
