@@ -7,7 +7,8 @@ Choose a build deliberately. Rolling follows development; version tags preserve 
 | Channel | Use it for | Identity |
 | --- | --- | --- |
 | [Rolling development](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/rolling) | Current fixes, features and issue retests. Updated by successful master publication. | The release notes' commit and the tester bundle's `build-info.json`. |
-| [v3.0.0-rev2 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev2) | The current stable release, shown in the app as Version 3.0 (Rev.2). Includes the UTF-8 / accented file-name display fix. | The tag; the About screen ends with `Build <commit>`. |
+| [v3.0.0-rev3 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev3) | The current stable release, shown in the app as Version 3.0 (Rev.3). Lists accented file names on FAT and exFAT drives by their real names, and adds the 720p and 1080i picture fixes, `SMSPATH.TXT` and the SAS app packages. | The tag; the About screen ends with `Build <commit>`. |
+| [v3.0.0-rev2 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev2) | Archived 12 November 2026 release, kept for history. | Tag/source `c936bc1863fa394280770511aad851e3dcd1bf4e`; published 2026-11-12 UTC. |
 | [v3.0.0-rev1 stable tag](https://github.com/NathanNeurotic/Simple-Media-System/releases/tag/v3.0.0-rev1) | Archived July 2026 release, kept for history. | Tag/source `95b803ba07d1c55aa644acbd633936eb0a1e6ad6`; published 2026-07-26 UTC. |
 | [Actions / PR artifacts](https://github.com/NathanNeurotic/Simple-Media-System/actions) | Testing a particular unmerged candidate. | Exact run, artifact and manifest head/source SHA. A rolling download cannot test an unmerged PR. |
 
@@ -77,7 +78,7 @@ SMS has a long history. It was created by **Eugene Plotnikov** as, in his own wo
 
 <details><summary>Why does this fork jump to version 3.0?</summary>
 
-SMS versioning has never been a single tidy line — the original author noted early on that different "distributors" would put their own signature on their builds. This documentation set describes the build labelled **v3.0.0-rev2**, displayed by SMS as **Version 3.0 (Rev.2)**: a storage-focused fork that keeps SMS's decades-old playback while adding the devices, MP4 path and on-screen setup covered throughout this site. The version shows on-screen during startup, so you can always confirm what you are running.
+SMS versioning has never been a single tidy line — the original author noted early on that different "distributors" would put their own signature on their builds. This documentation set describes the build labelled **v3.0.0-rev3**, displayed by SMS as **Version 3.0 (Rev.3)**: a storage-focused fork that keeps SMS's decades-old playback while adding the devices, MP4 path and on-screen setup covered throughout this site. The version shows on-screen during startup, so you can always confirm what you are running.
 
 </details>
 
