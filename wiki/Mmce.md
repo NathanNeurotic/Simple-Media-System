@@ -81,7 +81,9 @@ MMCE will not start while MX4SIO is running
 
 Once MMCE is up, it behaves like any other device in the three-part SMS interface — a device menu across the top, the file list in the middle, and the status line (current path on the left, clock on the right) along the bottom.
 
-![The SMS main interface — device menu on top, file list in the middle, status line at the bottom](https://nathanneurotic.github.io/Simple-Media-System/images/usage-sms-maingui.png)
+![SMS browser: the USB icon in the device bar at the top, Music, Pictures and Videos folders in the file list, and mass0:/ with the clock on the status line](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/usb-root.png)
+
+The browser in SMS 3.0 Rev.2 after **Start USB support**: the device bar (top), the file list (middle) and the status line with the current path (bottom).
 
 ### Pick the device
 

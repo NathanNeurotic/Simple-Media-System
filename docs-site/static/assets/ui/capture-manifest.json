@@ -1,0 +1,31 @@
+{
+  "captured_on": "2026-11-12",
+  "app": "Simple Media System 3.0 Rev.2",
+  "release": "v3.0.0-rev2",
+  "source_commit": "c936bc1863fa394280770511aad851e3dcd1bf4e",
+  "elf": "Simple-Media-System.elf",
+  "elf_sha256": "71108766a60a2ad6844b4de744757bb371864d9c1481db325da82e12f280fe7d",
+  "emulator": "RIPPCSX2 2.9.96-rippcsx2.2 (portable lab copy, its own settings and a new throwaway memory card)",
+  "display": "Auto NTSC 4:3; native PNG 640x480; unmodified emulator screenshots (F8)",
+  "media": "128 MiB MBR/FAT32 USB image (PCSX2 USB mass storage). Sample files generated for these captures: ffmpeg mandelbrot and cellular-automaton test video, sine-tone audio, a subtitle file. No third-party or copyrighted media.",
+  "usb_start_steps": "Start, Device settings, 14 x Down to 'Start USB support', Cross, Triangle, Triangle",
+  "scope": "Interface captures only. Not a playback, performance or real-PS2 test.",
+  "emulator_limits_seen": [
+    "Standalone audio did not play in this emulator: MP3 raised an R5900 'Jump to unaligned address' exception; FLAC, OGG and MP2 stopped the display updating.",
+    "Every JPEG opened in this emulator showed 'Unsupported or corrupted image'."
+  ],
+  "shots_sha256": {
+    "browser-settings.png": "ef89ef26f7c0f3a3bb201cf2c7c98fec7a672cbda2caf313be4f560da39aa4c0",
+    "device-settings.png": "22a85c8cd469bd3a7f2954d3604ea5c3440d807df8dfeb876a8b8f95ee69fa86",
+    "display-settings.png": "9b07779be0376803e9e488c13f428dd633de024c0d47ae06cbe2532d68dc957e",
+    "music-folder.png": "1cf9b9c7000b8f9aece21e8327771fd29bcef8c12a2aa0bf9f560767f5d1f74f",
+    "play-all.png": "119a092a9ed98a1fe9bc433300f5773157d2e0842b41f35427ec480db52a2a4c",
+    "player-settings.png": "c1265101e4a40eb3e3bdf9921ac21e3eb79b5c0fc8452abd76486e97e3c44c33",
+    "sms-menu.png": "63f43b5fda7ebe80a24d6d4ee5806b2e17c7edca88c8482dd87106dfe4210373",
+    "start-screen.png": "3dc3cb8406370aaa518d7eb8c5a6ff631be125305b0fcc38bb46b1cd9c68f120",
+    "start-usb-support.png": "d3b48f1ecd279600a992fb7068c75f676ff6c746d2f94c8be1d259bce7742b6d",
+    "usb-root.png": "fb2458b244cf4516a055511365294ee9857c47596cd105638f7b0130d11d893e",
+    "video-playback.png": "1fabac330496273a34e4259172919e0073751189e9055253af95f453615436f7",
+    "videos-folder.png": "4f5c9a8a2af2ea50e52c9ccb91da2b0bcc7f77210de2f44753e08c09a5f660d2"
+  }
+}

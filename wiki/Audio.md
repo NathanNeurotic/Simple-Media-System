@@ -72,7 +72,9 @@ In the **file list**, move with Up/Down; use `L1`/`L2` to page-scroll long folde
 
 Highlight the audio file and press `✕`. SMS opens the audio player and starts playback.
 
-![Browsing to an MP3 file in the SMS file list](https://nathanneurotic.github.io/Simple-Media-System/images/usage-sms-mp3browsing.png)
+![SMS file list of a Music folder with three MP3 files, each shown with a note icon](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/music-folder.png)
+
+A folder of MP3 files in the SMS file list.
 
 ### The audio player screen
 

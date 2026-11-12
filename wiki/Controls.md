@@ -17,6 +17,10 @@ The browser, video player, audio player and picture viewer use different button 
 | Circle on video | Choose an external subtitle manually. |
 | Select + Circle | Power off from the browser. |
 
+![SMS Play all menu over the Pictures folder with Audio, Video and Images choices](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/play-all.png)
+
+Circle on a folder opens **Play all**.
+
 ## Video and audio
 
 | Button | Action |

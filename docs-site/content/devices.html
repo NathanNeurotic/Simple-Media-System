@@ -26,7 +26,7 @@ device bar.</li>
 takes you back up to the bar. A device only earns an icon on the bar once it has been <i>started</i> and something is
 present. Startup may already remount the launch source to read its settings; otherwise start the source you need (see
 <a href="#autostart">Autostart vs Start&nbsp;now</a> below).</p>
-<p><img src="images/usage-sms-maingui.png" alt="The SMS main screen: a row of device icons across the top (the device bar), the file browser in the middle, and the status line with path and clock at the bottom." style="max-width:100%;border-radius:10px"></p>
+<figure class="ui-capture"><a href="assets/ui/usb-root.png"><img src="assets/ui/usb-root.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS browser: the USB icon in the device bar at the top, Music, Pictures and Videos folders in the file list, and mass0:/ with the clock on the status line"></a><figcaption>The browser in SMS 3.0 Rev.2 after <b>Start USB support</b>: the device bar (top), the file list (middle) and the status line with the current path (bottom).</figcaption></figure>
 
 <div class="callout info"><div class="h">ℹ Navigating a device</div>
 Inside the file list: <b>Up/Down</b> move the cursor, <b>L1/L2</b> page-scroll, <b>Cross</b> opens a folder or plays
@@ -66,7 +66,7 @@ demand without a reboot.</p>
 <div class="step"><h3>Start &lt;device&gt; now</h3><p>When a device is <i>not</i> already running, a matching "Start&nbsp;&lt;device&gt;&nbsp;now" item appears so you can spin it up for this session without turning on Autostart or rebooting — handy for a one-off (plug in a drive, start it, browse it).</p></div>
 <div class="step"><h3>Clean config = optional Autostart off</h3><p>Out of the box, <b>no optional Autostart flag is enabled</b>. You decide what to enable. This keeps boot fast and avoids probing hardware you don't have. Clearing the config returns you to this state (see <a href="#config">Where settings live</a>).</p></div>
 </div>
-<p><img src="images/usage-sms-devicesettings.png" alt="The SMS device settings screen, with the per-device Autostart toggles." style="max-width:100%;border-radius:10px"></p>
+<figure class="ui-capture"><a href="assets/ui/device-settings.png"><img src="assets/ui/device-settings.png" width="640" height="480" loading="lazy" decoding="async" alt="SMS Device settings menu: Network settings, Controller port 2 and the Autostart toggles for USB, i.LINK, MX4SIO, MMCE, HDD APA and HDD BDM, all off"></a><figcaption>Device settings on a clean install: every Autostart toggle is off.</figcaption></figure>
 <div class="callout info"><div class="h">ℹ Just want to try a device?</div>
 Use <b>Start&nbsp;now</b>. It doesn't change your saved config, so the device won't come up again on the next boot
 unless you also flip its <b>Autostart</b> toggle. Once you know a source is one you use every session, turn on

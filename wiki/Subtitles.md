@@ -83,9 +83,9 @@ Soft subtitles rendered over video during playback.
 
 Subtitle appearance is controlled from **Settings → Player settings** — press **Start** in the browser to open the SMS menu, then choose **Player settings…**. Every option below is saved to your [configuration](https://nathanneurotic.github.io/Simple-Media-System/settings.html), so once you set it to taste it sticks for future videos. While you adjust size and offset, SMS shows a live **sample** line so you can see the effect immediately.
 
-![The SMS subtitle settings menu](https://nathanneurotic.github.io/Simple-Media-System/images/usage-sms-subtitlessettings.png)
+![SMS Player settings menu: MP3 settings, Autoload subtitles on, Opaque subtitles off, Display scroll bar time on, S/PDIF off, and the subtitle colour swatches](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/player-settings.png)
 
-The subtitle settings, with a live sample line for size and position.
+**SMS Menu → Player settings**, where the subtitle options live.
 
 | Option | What it does |
 | --- | --- |

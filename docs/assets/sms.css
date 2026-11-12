@@ -67,3 +67,12 @@ footer .prov-inline { color:#89a6c5; }
  body,body::before,body::after,.hero-sms { color:#000 !important; background:#fff !important; }
  .content a,.content p,.content li,.content h1,.content h2,.content h3 { color:#000 !important; text-shadow:none !important; }
 }
+
+/* Interface captures (640 x 480 native emulator frames) */
+.ui-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 22px 0; }
+.ui-gallery figure { margin: 0; min-width: 0; }
+.ui-capture { max-width: 640px; margin: 24px auto; }
+.ui-gallery img, .ui-capture img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.ui-gallery figcaption, .ui-capture figcaption { font-size: .9em; margin-top: 8px; line-height: 1.5; opacity: .85; }
+.ui-note { font-size: .9em; opacity: .85; }
+@media (max-width: 680px) { .ui-gallery { grid-template-columns: 1fr; } }

@@ -73,6 +73,14 @@ Highlight the video file and press `✕`. SMS reads the file straight from the d
 
  This fork's headline feature is smooth video playback from an **MX4SIO** microSD adapter, which earlier SMS builds could not do reliably. It works exactly like any other device: pick the MX4SIO device, browse to your movie, press `✕`. See the [MX4SIO](https://nathanneurotic.github.io/Simple-Media-System/mx4sio.html) page for setup.
 
+![SMS file list of the Videos folder on mass0: with two sample videos](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/videos-folder.png)
+
+Two sample videos in a folder on the USB drive.
+
+![A sample Xvid AVI open in the SMS player, filling the screen](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/video-playback.png)
+
+A 640 × 480 Xvid + MP3 AVI open in the player.
+
 ## Optional poster grid in the file browser
 
 This feature is included in current master for [#26](https://nathanneurotic.github.io/Simple-Media-System/known-issues.html#posters); console acceptance is pending.

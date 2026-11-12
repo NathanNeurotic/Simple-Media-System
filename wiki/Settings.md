@@ -25,6 +25,10 @@ Labels come straight from the app
 
  Every option name and value on this page is taken from the SMS build's own on-screen strings, so it should match what you see on the TV. Wording can differ slightly if you load a translated language file, but the layout and behaviour are the same.
 
+![SMS Menu: Display settings, Device settings, Browser settings, Player settings, Help, Save settings, Shutdown console and Exit SMS](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/sms-menu.png)
+
+Start opens the SMS menu.
+
 ## Device settings — storage & network
 
 This is the menu you care about most on this fork: it is where you turn storage devices on. Each device has an **Autostart** toggle (whether it starts automatically at boot), and — when the device is *not* currently running — a matching **Start … support** item appears at the bottom of the menu so you can bring it up right now without rebooting.
@@ -73,6 +77,14 @@ The Device menu also ends with a **Refresh connections** item, which re-probes t
 
  **Autostart** decides what comes up automatically at every boot (and is remembered once saved). **Start … support** is a one-shot "turn it on for this session" that doesn't change the Autostart toggle. A common flow: leave everything off, use **Start MX4SIO support** to test, then — once happy — flip **Autostart MX4SIO** on and [save](https://nathanneurotic.github.io/Simple-Media-System/settings.html#saving).
 
+![SMS Device settings with all Autostart toggles off](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/device-settings.png)
+
+The top of Device settings: Autostart toggles.
+
+![The bottom of SMS Device settings with Start USB support highlighted](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/start-usb-support.png)
+
+The bottom of Device settings: CD/DVD options and the Start … support items.
+
 ### CD/DVD and controller options
 
 The rest of the Device menu covers the optical drive and controller behaviour, plus the network settings entry that links to the on-screen network setup.
@@ -97,6 +109,10 @@ Everything about how SMS drives the screen, plus the interface language and char
 | **Language** | English or the installed external `SMS.lng` pack; this row does not list every translation in the download ZIP. See [Languages & Fonts](https://nathanneurotic.github.io/Simple-Media-System/languages.html). | English / installed external pack |
 | **Adjust image left / right / up / down** | Nudge the whole picture to centre it on your TV. Four separate items, one per direction. | press to nudge |
 | **Advanced settings…** | Opens the advanced display sub-menu below (resolution, colour depth, sync parameters). Only needed for HD/VESA modes or fine tuning. | opens sub-menu |
+
+![SMS Display settings: TV system auto, Character set WinLatin1, Language English, Adjust image left, right, up and down, and Advanced settings](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/display-settings.png)
+
+Display settings.
 
 ### Advanced display settings
 
@@ -142,9 +158,17 @@ These change how the file browser looks and behaves, and what SMS does on the re
 
  The colour options (**Active border color**, **Text color**, **Selection bar color**, and the subtitle colours in the Player menu) pick from SMS's 16-entry palette. Cycle the value to preview each colour live in the panel it affects, so you can match your skin. See [Themes & Skins](https://nathanneurotic.github.io/Simple-Media-System/themes.html) for the palette itself.
 
+![SMS Browser settings: Use background image none, Sound FX, Sort filesystem objects and Filter media files on, Display HDL partitions, Hide system partitions and Use exception handler off, and the border colours](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/browser-settings.png)
+
+Browser settings.
+
 ## Player settings — playback, subtitles & audio
 
 The biggest sub-menu. It covers subtitles, audio/SPDIF, volume, the scroll bar, colour resolution, an auto power-off timer, and an **MP3 settings** sub-menu for audio playback. Toggles are on/off; value items cycle with Left/Right; colour items pick a palette index.
+
+![SMS Player settings: MP3 settings, subtitle toggles, scroll bar time, S/PDIF and subtitle colours](https://nathanneurotic.github.io/Simple-Media-System/assets/ui/player-settings.png)
+
+Player settings.
 
 ### Subtitles
 
