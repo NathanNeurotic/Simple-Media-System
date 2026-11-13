@@ -25,8 +25,11 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      # The master tip when the job starts, not the event's commit, so a late or re-run
+      # older run cannot publish older pages over newer ones.
       - uses: actions/checkout@v7
         with:
+          ref: master
           persist-credentials: false
 
       - name: Check the generated docs and wiki are current
@@ -63,6 +66,7 @@ jobs:
             exit 0
           fi
           git diff --cached --stat | tail -n 1
+          src_sha=$(git -C "$GITHUB_WORKSPACE" rev-parse --short=8 HEAD)
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -q -m "Sync wiki from master ${GITHUB_SHA::8}"
+            commit -q -m "Sync wiki from master ${src_sha}"
           git push origin HEAD
