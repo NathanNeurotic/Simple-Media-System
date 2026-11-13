@@ -1,0 +1,72 @@
+name: Publish wiki
+
+# Copies the generated wiki/ pages to the GitHub wiki with docs-site/sync_wiki.py.
+# It only writes the pages it generates: other wiki pages are left alone, nothing is
+# deleted, and the push is a normal fast-forward. Nothing is committed when nothing changed.
+on:
+  push:
+    branches: [master]
+    paths: ['docs-site/**', 'wiki/**', '.github/workflows/wiki.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One group per branch, so a skipped run from another branch cannot replace a pending master run.
+concurrency:
+  group: sms-wiki-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # A manual run from another branch must not publish that branch's pages.
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # The master tip when the job starts, not the event's commit, so a late or re-run
+      # older run cannot publish older pages over newer ones.
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          persist-credentials: false
+
+      - name: Check the generated docs and wiki are current
+        run: python3 docs-site/build.py --check
+
+      - name: Clone the wiki
+        run: |
+          set -euo pipefail
+          # The token goes through GIT_ASKPASS so it is not in the remote URL, which
+          # sync_wiki.py checks, or in the log.
+          cat > "$RUNNER_TEMP/askpass.sh" <<'SH'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' x-access-token ;;
+            *Password*) printf '%s\n' "$GH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          SH
+          chmod 700 "$RUNNER_TEMP/askpass.sh"
+          echo "GIT_ASKPASS=$RUNNER_TEMP/askpass.sh" >> "$GITHUB_ENV"
+          echo "GIT_TERMINAL_PROMPT=0" >> "$GITHUB_ENV"
+          git clone --quiet "https://github.com/$GITHUB_REPOSITORY.wiki.git" "$RUNNER_TEMP/wiki"
+
+      - name: Copy the generated pages
+        run: python3 docs-site/sync_wiki.py --checkout "$RUNNER_TEMP/wiki" --apply
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wiki"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki already up to date."
+            exit 0
+          fi
+          git diff --cached --stat | tail -n 1
+          src_sha=$(git -C "$GITHUB_WORKSPACE" rev-parse --short=8 HEAD)
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Sync wiki from master ${src_sha}"
+          git push origin HEAD
