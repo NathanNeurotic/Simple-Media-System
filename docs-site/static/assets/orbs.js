@@ -25,7 +25,7 @@
       var radius = 20 + i * 7;
       var px = x + Math.cos(angle) * radius, py = y + Math.sin(angle) * radius * 0.45;
       var glow = context.createRadialGradient(px, py, 0, px, py, 9);
-      glow.addColorStop(0, "rgba(180,240,255,.9)"); glow.addColorStop(.25, "rgba(0,170,255,.6)"); glow.addColorStop(1, "rgba(0,80,240,0)");
+      glow.addColorStop(0, "rgba(185, 217, 225,.9)"); glow.addColorStop(.25, "rgba(83, 149, 181,.6)"); glow.addColorStop(1, "rgba(75, 108, 175,0)");
       context.fillStyle = glow; context.beginPath(); context.arc(px, py, 9, 0, Math.PI * 2); context.fill();
     }
     frame = requestAnimationFrame(draw);
