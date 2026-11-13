@@ -63,7 +63,7 @@ Complete the static-IP steps above and save `IPCONFIG.DAT`.
 
 ### Serve the folder
 
-Start the **UDPFS** card in [PS2-Servers](https://github.com/NathanNeurotic/PS2-Servers), select the folder to expose, and leave **Enforce Modulo mode** unticked; its default Protocol mode, **Auto**, negotiates with each console. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is no server IP to enter in SMS.
+On the **UDPFS** card in [PS2-Servers](https://github.com/NathanNeurotic/PS2-Servers), choose the folder to expose as the **Games folder**, leave **Enforce Modulo mode** unticked and **Protocol mode** on **Auto**, then start the card. Auto negotiates with each console. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is no server IP to enter in SMS.
 
 ### Start the drive
 
@@ -77,7 +77,7 @@ Earlier project hardware report
 
 - **Check link and subnet.** Confirm Ethernet link lights and put the PS2 and server on the same subnet.
 - **UDPFS says NOIP.** Save the PS2's static IP through **Edit IPCONFIG.DAT** first.
-- **UDPFS discovery fails.** Start the UDPFS card before retrying, leave Enforce Modulo mode unticked, and allow UDP port `0xF5F6` (62966) through the PC firewall on the trusted LAN.
+- **UDPFS discovery fails.** On the UDPFS card, leave Enforce Modulo mode unticked and set Protocol mode to Auto, then stop and start the card so the change takes effect, and allow UDP port `0xF5F6` (62966) through the PC firewall on the trusted LAN.
 - **The other network option disappeared.** One network stack already owns the NIC. Reboot, then start only the path you intend to use.
 - **SMB reaches the host but cannot list or open shares.** Check SMB1 availability and the configured credentials. Administrative shares ending in `$` are intentionally hidden.
 
