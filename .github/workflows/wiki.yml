@@ -12,8 +12,9 @@ on:
 permissions:
   contents: write
 
+# One group per branch, so a skipped run from another branch cannot replace a pending master run.
 concurrency:
-  group: sms-wiki
+  group: sms-wiki-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
