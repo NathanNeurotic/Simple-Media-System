@@ -61,6 +61,21 @@ First stable release since July. Shown in the app as Version 3.0 (Rev.2); the Ab
 Includes everything in rolling up to this point, notably accented / UTF-8 file names (n-tilde, a-acute, ...) drawing as
 one glyph everywhere instead of two wrong ones. `v3.0.0-rev1` stays as an archived release.
 
+Changes since the 2026-10-31 rolling section below:
+
+- Fixes from the open-issues triage ([#55](https://github.com/NathanNeurotic/Simple-Media-System/pull/55)): seeks past 2 GiB on BDM drives, MP4 sample-entry,
+  edit-list, B-frame and pulldown timing, Rewind and scrollbar seeks, shuffle hangs, the saved skin and display
+  mode on HDD and memory-card-fallback boots, artwork-view navigation, and the converter's MP4 and FLAC presets.
+  Every finding and its status is in `docs/investigations/2026-11-11-open-issues-triage.md`.
+- Confirmed-USB files are read ahead on a helper thread ([#49](https://github.com/NathanNeurotic/Simple-Media-System/pull/49)); the 720p Display width reaches its 1216
+  default again ([#50](https://github.com/NathanNeurotic/Simple-Media-System/pull/50)); playback workers stop before a scrollbar seek ([#51](https://github.com/NathanNeurotic/Simple-Media-System/pull/51)).
+- Video browser, by alekszverr-jpg: a video's same-name JPEG is hidden from the list ([#52](https://github.com/NathanNeurotic/Simple-Media-System/pull/52)), and R2 cycles
+  the list, grid and a selected-poster view ([#53](https://github.com/NathanNeurotic/Simple-Media-System/pull/53)).
+- Accented / UTF-8 file names draw in the font codepage outside the browser too ([#56](https://github.com/NathanNeurotic/Simple-Media-System/pull/56)); the About screen
+  ends with the build's commit id ([#57](https://github.com/NathanNeurotic/Simple-Media-System/pull/57)).
+
+**NOT TESTED on a PS2.**
+
 ---
 
 ## Rolling development — 2026-10-31

@@ -46,7 +46,7 @@ name helps you read the status line and understand which device you're on.</p>
 <tr><td><code>cdfs</code></td><td><b>CD/DVD data disc.</b> A burned or pressed data disc (including DVD-Video), read through the console's optical drive.</td></tr>
 <tr><td><code>cdda</code></td><td><b>Audio CD.</b> Red-book audio tracks from a music CD.</td></tr>
 <tr><td><code>smb:</code></td><td><b>SMB share.</b> A folder shared from a Windows PC or a Samba server, reached over the network adapter.</td></tr>
-<tr><td><code>udpfs:</code></td><td><b>UDPFS network drive.</b> A PC folder served by PS2-Servers UDPFSD and discovered automatically over Ethernet. This is file-level UDPFS, not an emulated disk or UDPBD image.</td></tr>
+<tr><td><code>udpfs:</code></td><td><b>UDPFS network drive.</b> A PC folder served by the UDPFS card in PS2-Servers and discovered automatically over Ethernet. This is file-level UDPFS, not an emulated disk or UDPBD image.</td></tr>
 <tr><td><code>host:</code></td><td><b>ps2link host.</b> Files served from a PC over ps2link — a developer/testing path, not something you use for everyday playback.</td></tr>
 </tbody>
 </table>
@@ -150,7 +150,7 @@ NIC until the next boot. Pick one of <b>Autostart HOST&nbsp;(ps2dev)</b>, <b>Aut
   <td>Network adapter (Ethernet)</td>
   <td>PC folder via UDPFS / UDPRDMA</td>
   <td><code>udpfs:</code></td>
-  <td>Automatic LAN discovery of a PS2-Servers UDPFSD folder. File-level service, not UDPBD. Excludes SMB/host for that boot.</td>
+  <td>Automatic LAN discovery of a folder served by PS2-Servers' UDPFS card. File-level service, not UDPBD. Excludes SMB/host for that boot.</td>
 </tr>
 <tr>
   <td><a href="cd-dvd.html"><b>CD / DVD</b></a></td>

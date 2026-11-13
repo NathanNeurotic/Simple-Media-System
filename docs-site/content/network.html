@@ -1,7 +1,7 @@
 <h1>Network Setup</h1>
 <p class="lead">SMS has two ways to browse media over wired Ethernet: the established <b>SMB1/CIFS share</b>
 client and this fork's <b>UDPFS network drive</b>. SMB connects to a configured Windows or Samba share.
-UDPFS discovers a PC folder served by PS2-Servers UDPFSD and mounts it as <code>udpfs:</code>. Both use settings
+UDPFS discovers a PC folder served by the UDPFS card in PS2-Servers and mounts it as <code>udpfs:</code>. Both use settings
 entered from the pad; no hand-edited network file is required.</p>
 
 <div class="callout amber"><div class="h">Choose SMB/host or UDPFS for each boot</div>
@@ -15,7 +15,7 @@ This does not conflict with MX4SIO or MMCE because those use SIO2, not Ethernet.
 <li>A wired Ethernet connection to the same LAN as the server PC. The PS2 has no built-in Wi-Fi.</li>
 <li>For SMB: a Windows, Samba or NAS host offering an <b>SMB1/CIFS</b> share.</li>
 <li>For UDPFS: <a href="https://github.com/NathanNeurotic/PS2-Servers"><b>PS2-Servers</b></a> running its
-<b>UDPFSD</b> folder server.</li>
+<b>UDPFS</b> card.</li>
 </ul>
 
 <h2 id="ip-config">Set the PS2's static IP on-screen</h2>
@@ -72,9 +72,10 @@ appear as <code>massN:</code>.</p>
 <div class="steps">
 <div class="step"><h3>Configure the PS2 IP</h3><p>Complete the static-IP steps above and save
 <code>IPCONFIG.DAT</code>.</p></div>
-<div class="step"><h3>Serve the folder</h3><p>Run the UDPFSD server from
-<a href="https://github.com/NathanNeurotic/PS2-Servers">PS2-Servers</a>, select the folder to expose, and keep
-<b>Modulo mode off</b>. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is
+<div class="step"><h3>Serve the folder</h3><p>On the <b>UDPFS</b> card in
+<a href="https://github.com/NathanNeurotic/PS2-Servers">PS2-Servers</a>, choose the folder to expose as the
+<b>Games folder</b>, leave <b>Enforce Modulo mode</b> unticked and <b>Protocol mode</b> on <b>Auto</b>, then start
+the card. Auto negotiates with each console. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is
 no server IP to enter in SMS.</p></div>
 <div class="step"><h3>Start the drive</h3><p>Choose <b>Start UDPFS network drive</b>, or enable
 <b>Autostart UDPFS</b> and save settings. When discovery succeeds, browse the <code>udpfs:</code> device like any
@@ -87,7 +88,7 @@ Earlier project documentation reports UDPFS boot, browsing, playback and clean e
 <ul class="checklist">
 <li><b>Check link and subnet.</b> Confirm Ethernet link lights and put the PS2 and server on the same subnet.</li>
 <li><b>UDPFS says NOIP.</b> Save the PS2's static IP through <b>Edit IPCONFIG.DAT</b> first.</li>
-<li><b>UDPFS discovery fails.</b> Start UDPFSD before retrying, keep Modulo mode off, and allow UDP port
+<li><b>UDPFS discovery fails.</b> On the UDPFS card, leave Enforce Modulo mode unticked and set Protocol mode to Auto, then stop and start the card so the change takes effect, and allow UDP port
 <code>0xF5F6</code> (62966) through the PC firewall on the trusted LAN.</li>
 <li><b>The other network option disappeared.</b> One network stack already owns the NIC. Reboot, then start only
 the path you intend to use.</li>

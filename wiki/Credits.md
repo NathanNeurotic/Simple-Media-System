@@ -97,7 +97,7 @@ SMS was created by Eugene Plotnikov (copyright 2001–2005, ps2dev) and is docum
 This site is one of a small family of PlayStation 2 homebrew documentation projects. If you are here for SMS you may also want:
 
 - [POPStarter docs ↗ PS1 / POPSTARTER reference](https://nathanneurotic.github.io/POPSLoader/)
-- [RiptOPL docs ↗ Open PS2 Loader fork reference](https://nathanneurotic.github.io/Open-PS2-Loader/)
+- [RiptOPL docs ↗ Open PS2 Loader fork reference](https://nathanneurotic.github.io/RiptOPL/)
 
 <details><summary>Why is this a fork, and where does the canonical SMS live?</summary>
 
@@ -108,12 +108,12 @@ The community-maintained SMS project lives with the [ps2homebrew](https://github
 ## October continuation and documentation
 
 - **[eggcatroll](https://github.com/eggcatroll)** — the parser, stream, skin, playlist and regression continuation incorporated before PR #30 merged, the artwork grid ([PR #34](https://github.com/NathanNeurotic/Simple-Media-System/pull/34)) and the converter, browser and AAC follow-ups through [PR #46](https://github.com/NathanNeurotic/Simple-Media-System/pull/46).
-- **[alekszverr-jpg](https://github.com/alekszverr-jpg)** — SMB direct share access and Cyrillic filenames from Windows servers ([PR #28](https://github.com/NathanNeurotic/Simple-Media-System/pull/28)).
+- **[alekszverr-jpg](https://github.com/alekszverr-jpg)** — SMB direct share access and Cyrillic filenames from Windows servers ([PR #28](https://github.com/NathanNeurotic/Simple-Media-System/pull/28)), and in November the hidden JPEG sidecars and the selected-poster view in the video browser ([PR #52](https://github.com/NathanNeurotic/Simple-Media-System/pull/52), [PR #53](https://github.com/NathanNeurotic/Simple-Media-System/pull/53)).
 - **[Nacheras](https://github.com/Nacheras)** — updated Spanish strings and skin/language feedback.
 - **[tktagmedia](https://github.com/tktagmedia)** — the reported high-resolution MPEG-2/MX4SIO conversion profile, retained with its settings and limits.
 - Issue reporters supplied videos, logs, hardware comparisons and reproductions that remain essential to acceptance.
 
-The documentation theme shares the black/cyan PS2 design of the [Launchstation](https://nathanneurotic.github.io/Launchstation/), [POPSLoader](https://nathanneurotic.github.io/POPSLoader/) and [RiptOPL](https://nathanneurotic.github.io/Open-PS2-Loader/) sites. Existing SMS artwork is reused; the original manual/XML, screenshots, historical downloads and original README/changelog sections are preserved.
+The documentation theme shares the black/cyan PS2 design of the [Launchstation](https://nathanneurotic.github.io/Launchstation/), [POPSLoader](https://nathanneurotic.github.io/POPSLoader/) and [RiptOPL](https://nathanneurotic.github.io/RiptOPL/) sites. Existing SMS artwork is reused; the original manual/XML, screenshots, historical downloads and original README/changelog sections are preserved.
 
 ## Source and evidence map
 

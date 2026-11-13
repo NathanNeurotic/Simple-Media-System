@@ -36,7 +36,7 @@ Each source mounts under a short device name, the same style of prefix PS2 homeb
 | `cdfs` | **CD/DVD data disc.** A burned or pressed data disc (including DVD-Video), read through the console's optical drive. |
 | `cdda` | **Audio CD.** Red-book audio tracks from a music CD. |
 | `smb:` | **SMB share.** A folder shared from a Windows PC or a Samba server, reached over the network adapter. |
-| `udpfs:` | **UDPFS network drive.** A PC folder served by PS2-Servers UDPFSD and discovered automatically over Ethernet. This is file-level UDPFS, not an emulated disk or UDPBD image. |
+| `udpfs:` | **UDPFS network drive.** A PC folder served by the UDPFS card in PS2-Servers and discovered automatically over Ethernet. This is file-level UDPFS, not an emulated disk or UDPBD image. |
 | `host:` | **ps2link host.** Files served from a PC over ps2link — a developer/testing path, not something you use for everyday playback. |
 
 The `massN:` number can move
@@ -96,7 +96,7 @@ Every storage backend SMS can read, side by side. Click a device to open its ful
 | [i.LINK](https://nathanneurotic.github.io/Simple-Media-System/ilink.html) | i.LINK / IEEE 1394 (BDM mass) | FAT32 / exFAT | `massN:` | A FireWire drive on models with an i.LINK port. Added in this fork. |
 | [MMCE](https://nathanneurotic.github.io/Simple-Media-System/mmce.html) | Memory-card slot / SIO2 (non-BDM) | Handled by the MMCE device | `mmce0:` / `mmce1:` | SD2PSX or MemCard PRO2. Its own device, not `massN:`. Excludes MX4SIO. |
 | [SMB network](https://nathanneurotic.github.io/Simple-Media-System/smb.html) | Network adapter (Ethernet) | SMB / CIFS share | `smb:` | A Windows or Samba shared folder, set up fully on-screen. Needs a network adapter. |
-| [UDPFS network drive](https://nathanneurotic.github.io/Simple-Media-System/network.html#udpfs) | Network adapter (Ethernet) | PC folder via UDPFS / UDPRDMA | `udpfs:` | Automatic LAN discovery of a PS2-Servers UDPFSD folder. File-level service, not UDPBD. Excludes SMB/host for that boot. |
+| [UDPFS network drive](https://nathanneurotic.github.io/Simple-Media-System/network.html#udpfs) | Network adapter (Ethernet) | PC folder via UDPFS / UDPRDMA | `udpfs:` | Automatic LAN discovery of a folder served by PS2-Servers' UDPFS card. File-level service, not UDPBD. Excludes SMB/host for that boot. |
 | [CD / DVD](https://nathanneurotic.github.io/Simple-Media-System/cd-dvd.html) | Optical drive | ISO 9660 (incl. DVD-Video) | `cdfs` | A burned or pressed data disc, read through the console's own drive. |
 | [Audio CD (CDDA)](https://nathanneurotic.github.io/Simple-Media-System/cd-dvd.html) | Optical drive | Red-book audio | `cdda` | Music CD tracks played directly. |
 

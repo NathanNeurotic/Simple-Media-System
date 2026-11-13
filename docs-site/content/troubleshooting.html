@@ -127,7 +127,7 @@ directly-attached device instead.</div>
 <h2 id="udpfs-wont-connect">The UDPFS network drive won't appear</h2>
 <ul class="checklist">
 <li>Save the PS2's own static IP through <b>Edit IPCONFIG.DAT</b>; a <code>NOIP</code> error means this step is missing.</li>
-<li>Run PS2-Servers UDPFSD on a PC on the same LAN, select the folder to serve, and keep <b>Modulo mode off</b>.</li>
+<li>On a PC on the same LAN, choose the folder to serve as the <b>Games folder</b> on the UDPFS card in PS2-Servers, leave <b>Enforce Modulo mode</b> unticked and <b>Protocol mode</b> on <b>Auto</b>, then start the card.</li>
 <li>Allow UDP port <code>0xF5F6</code> (62966) through the PC firewall on the trusted LAN.</li>
 <li>If SMB/host was already started, reboot before choosing <b>Start UDPFS network drive</b>. The two stacks cannot
 share the NIC in one boot.</li>
@@ -232,7 +232,7 @@ more.</p>
 <tr><td>MX4SIO and MMCE clash</td><td>Both use the SIO2 slot bus</td><td>Run only one at a time</td></tr>
 <tr><td>HDD APA and ATA/exFAT clash</td><td>Both own the internal ATA bus</td><td>Pick one; first to start owns the bus</td></tr>
 <tr><td>SMB share won't connect</td><td>SMB1 disabled on the server</td><td>Re-enable SMB1; then check IP / credentials / firewall</td></tr>
-<tr><td>UDPFS drive won't appear</td><td>No static PS2 IP, no server response, firewall, or SMB already owns the NIC</td><td>Save IPCONFIG; run UDPFSD with Modulo off; allow UDP 62966; reboot to switch stacks</td></tr>
+<tr><td>UDPFS drive won't appear</td><td>No static PS2 IP, no server response, firewall, or SMB already owns the NIC</td><td>Save IPCONFIG; start PS2-Servers' UDPFS card with Enforce Modulo mode unticked and Protocol mode on Auto; allow UDP 62966; reboot to switch stacks</td></tr>
 <tr><td>Settings reset each boot</td><td>Wrong active config, failed write/remount, or unsaved changes</td><td>Check <a href="configuration.html">the actual boot-folder/fallback path</a>, save and compare timestamps</td></tr>
 <tr><td>Nothing auto-starts</td><td>Clean-install default</td><td>Enable Autostart for the devices you use</td></tr>
 <tr><td>No wallpaper in 720p/1080i</td><td>Deliberate VRAM-saving gradient</td><td>Use an SD mode for skin checks; report actual corruption separately</td></tr>

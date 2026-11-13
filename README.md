@@ -140,7 +140,7 @@ Homebrew runs on hardware no single person owns, and a fault nobody can reproduc
 
 Additional October contributors include **[eggcatroll](https://github.com/eggcatroll)** (parser/stream/skin/playlist
 continuation, artwork grid and regressions), **[Nacheras](https://github.com/Nacheras)** (Spanish strings and feedback),
-**[alekszverr-jpg](https://github.com/alekszverr-jpg)** (SMB share access and Cyrillic names), and the
+**[alekszverr-jpg](https://github.com/alekszverr-jpg)** (SMB share access, Cyrillic names and the selected-poster browser view), and the
 reporters supplying exact-file, log and console comparisons. See the
 [complete credits](https://nathanneurotic.github.io/Simple-Media-System/credits.html).
 
