@@ -1,0 +1,65 @@
+name: Publish wiki
+
+# Copies the generated wiki/ pages to the GitHub wiki with docs-site/sync_wiki.py.
+# It only writes the pages it generates: other wiki pages are left alone, nothing is
+# deleted, and the push is a normal fast-forward. Nothing is committed when nothing changed.
+on:
+  push:
+    branches: [master]
+    paths: ['docs-site/**', 'wiki/**', '.github/workflows/wiki.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sms-wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the generated docs and wiki are current
+        run: python3 docs-site/build.py --check
+
+      - name: Clone the wiki
+        run: |
+          set -euo pipefail
+          # The token goes through GIT_ASKPASS so it is not in the remote URL, which
+          # sync_wiki.py checks, or in the log.
+          cat > "$RUNNER_TEMP/askpass.sh" <<'SH'
+          #!/bin/sh
+          case "$1" in
+            *Username*) printf '%s\n' x-access-token ;;
+            *Password*) printf '%s\n' "$GH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          SH
+          chmod 700 "$RUNNER_TEMP/askpass.sh"
+          echo "GIT_ASKPASS=$RUNNER_TEMP/askpass.sh" >> "$GITHUB_ENV"
+          echo "GIT_TERMINAL_PROMPT=0" >> "$GITHUB_ENV"
+          git clone --quiet "https://github.com/$GITHUB_REPOSITORY.wiki.git" "$RUNNER_TEMP/wiki"
+
+      - name: Copy the generated pages
+        run: python3 docs-site/sync_wiki.py --checkout "$RUNNER_TEMP/wiki" --apply
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/wiki"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki already up to date."
+            exit 0
+          fi
+          git diff --cached --stat | tail -n 1
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Sync wiki from master ${GITHUB_SHA::8}"
+          git push origin HEAD
