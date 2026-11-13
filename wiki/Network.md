@@ -1,6 +1,6 @@
 # Network Setup
 
-SMS has two ways to browse media over wired Ethernet: the established **SMB1/CIFS share** client and this fork's **UDPFS network drive**. SMB connects to a configured Windows or Samba share. UDPFS discovers a PC folder served by PS2-Servers UDPFSD and mounts it as `udpfs:`. Both use settings entered from the pad; no hand-edited network file is required.
+SMS has two ways to browse media over wired Ethernet: the established **SMB1/CIFS share** client and this fork's **UDPFS network drive**. SMB connects to a configured Windows or Samba share. UDPFS discovers a PC folder served by the UDPFS card in PS2-Servers and mounts it as `udpfs:`. Both use settings entered from the pad; no hand-edited network file is required.
 
 Choose SMB/host or UDPFS for each boot
 
@@ -11,7 +11,7 @@ Choose SMB/host or UDPFS for each boot
 - A fat PS2 with a **Network Adapter**, or a slim PS2 with built-in Ethernet.
 - A wired Ethernet connection to the same LAN as the server PC. The PS2 has no built-in Wi-Fi.
 - For SMB: a Windows, Samba or NAS host offering an **SMB1/CIFS** share.
-- For UDPFS: [PS2-Servers](https://github.com/NathanNeurotic/PS2-Servers) running its **UDPFSD** folder server.
+- For UDPFS: [PS2-Servers](https://github.com/NathanNeurotic/PS2-Servers) running its **UDPFS** card.
 
 ## Set the PS2's static IP on-screen
 
@@ -63,7 +63,7 @@ Complete the static-IP steps above and save `IPCONFIG.DAT`.
 
 ### Serve the folder
 
-Run the UDPFSD server from [PS2-Servers](https://github.com/NathanNeurotic/PS2-Servers), select the folder to expose, and keep **Modulo mode off**. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is no server IP to enter in SMS.
+Start the **UDPFS** card in [PS2-Servers](https://github.com/NathanNeurotic/PS2-Servers), select the folder to expose, and leave **Enforce Modulo mode** unticked; its default Protocol mode, **Auto**, negotiates with each console. The PC and PS2 must be on the same LAN; SMS discovers the server by broadcast, so there is no server IP to enter in SMS.
 
 ### Start the drive
 
@@ -77,7 +77,7 @@ Earlier project hardware report
 
 - **Check link and subnet.** Confirm Ethernet link lights and put the PS2 and server on the same subnet.
 - **UDPFS says NOIP.** Save the PS2's static IP through **Edit IPCONFIG.DAT** first.
-- **UDPFS discovery fails.** Start UDPFSD before retrying, keep Modulo mode off, and allow UDP port `0xF5F6` (62966) through the PC firewall on the trusted LAN.
+- **UDPFS discovery fails.** Start the UDPFS card before retrying, leave Enforce Modulo mode unticked, and allow UDP port `0xF5F6` (62966) through the PC firewall on the trusted LAN.
 - **The other network option disappeared.** One network stack already owns the NIC. Reboot, then start only the path you intend to use.
 - **SMB reaches the host but cannot list or open shares.** Check SMB1 availability and the configured credentials. Administrative shares ending in `$` are intentionally hidden.
 

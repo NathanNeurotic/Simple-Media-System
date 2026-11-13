@@ -91,7 +91,7 @@ SMB1 is a legacy protocol
 ## The UDPFS network drive won't appear
 
 - Save the PS2's own static IP through **Edit IPCONFIG.DAT**; a `NOIP` error means this step is missing.
-- Run PS2-Servers UDPFSD on a PC on the same LAN, select the folder to serve, and keep **Modulo mode off**.
+- Start the UDPFS card in PS2-Servers on a PC on the same LAN, select the folder to serve, and leave **Enforce Modulo mode** unticked.
 - Allow UDP port `0xF5F6` (62966) through the PC firewall on the trusted LAN.
 - If SMB/host was already started, reboot before choosing **Start UDPFS network drive**. The two stacks cannot share the NIC in one boot.
 
@@ -185,7 +185,7 @@ For a color fault, compare the same bytes and fixed display settings before appl
 | MX4SIO and MMCE clash | Both use the SIO2 slot bus | Run only one at a time |
 | HDD APA and ATA/exFAT clash | Both own the internal ATA bus | Pick one; first to start owns the bus |
 | SMB share won't connect | SMB1 disabled on the server | Re-enable SMB1; then check IP / credentials / firewall |
-| UDPFS drive won't appear | No static PS2 IP, no server response, firewall, or SMB already owns the NIC | Save IPCONFIG; run UDPFSD with Modulo off; allow UDP 62966; reboot to switch stacks |
+| UDPFS drive won't appear | No static PS2 IP, no server response, firewall, or SMB already owns the NIC | Save IPCONFIG; start PS2-Servers' UDPFS card with Enforce Modulo mode unticked; allow UDP 62966; reboot to switch stacks |
 | Settings reset each boot | Wrong active config, failed write/remount, or unsaved changes | Check [the actual boot-folder/fallback path](https://nathanneurotic.github.io/Simple-Media-System/configuration.html), save and compare timestamps |
 | Nothing auto-starts | Clean-install default | Enable Autostart for the devices you use |
 | No wallpaper in 720p/1080i | Deliberate VRAM-saving gradient | Use an SD mode for skin checks; report actual corruption separately |
