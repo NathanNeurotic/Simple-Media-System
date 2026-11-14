@@ -1,25 +1,25 @@
 /* SMS-specific additions to the shared PS2 documentation theme.
  * Base design: NathanNeurotic/Launchstation docs-site/static/assets/style.css. */
-:root { --ink3:#94a0ac; --sms-header-height:64px; }
+:root { --sms-header-height:64px; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
-.skip-link { position:fixed; left:12px; top:-100px; z-index:200; padding:12px 20px; background:#1c2f42; color:#cadae8; border:2px solid #53a4b5; }
+.skip-link { position:fixed; left:12px; top:-100px; z-index:200; padding:12px 20px; background:var(--panel2); color:var(--ink-bright); border:2px solid var(--accent2); }
 .skip-link:focus { top:8px; }
-:focus-visible { outline:2px solid #53a4b5; outline-offset:4px; }
+:focus-visible { outline:2px solid var(--accent2); outline-offset:4px; }
 .sms-brand { gap:10px; font-size:22px; letter-spacing:2px; }
-.sms-brand img { border:1px solid var(--line2); border-radius:0; object-fit:cover; box-shadow:0 0 16px rgba(83, 122, 181,.35); }
+.sms-brand img { border:1px solid var(--line2); border-radius:0; object-fit:cover; box-shadow:0 0 16px rgba(136, 136, 136,.35); }
 .sms-brand small { display:inline; font-size:10px; letter-spacing:2px; color:var(--ink2); }
 .sidebar-brand-sub { font-size:9px; }
 .sidebar a { min-height:38px; }
 .topbar-actions { flex-shrink:0; }
-.hero-sms { position:relative; overflow:hidden; border:1px solid var(--line2); background:linear-gradient(90deg,#162232 5%,rgba(22, 34, 50,.8) 60%,rgba(22, 34, 50,.35)), url("sms-wallpaper.png") center right/cover; padding:38px 32px; margin:0 0 30px; }
+.hero-sms { position:relative; overflow:hidden; border:1px solid var(--line2); background:linear-gradient(90deg,rgba(24, 24, 24,.96) 5%,rgba(24, 24, 24,.8) 60%,rgba(24, 24, 24,.35)), url("sms-wallpaper.png") center right/cover; padding:38px 32px; margin:0 0 30px; }
 .hero-sms h1 { max-width:12ch; font-size:clamp(36px,5vw,62px); line-height:1.02; margin:14px 0 24px; }
-.hero-sms .lead { max-width:52ch; color:#c4d5e6; }
+.hero-sms .lead { max-width:52ch; color:var(--ink); }
 .eyebrow { font-family:var(--mono); color:var(--ps-cyan); text-transform:uppercase; letter-spacing:2px; font-size:11px; }
 .hero-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:24px; }
 .hero-actions .btn { margin:0; }
 .hero-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:24px; }
-.hero-tags span { color:#b0cfdd; border:1px solid var(--line2); background:rgba(23, 35, 55,.8); padding:4px 9px; font:10px var(--mono); letter-spacing:1px; }
-.release-strip { border-left:3px solid #53a4b5; background:#182437; padding:16px 20px; margin:20px 0; }
+.hero-tags span { color:var(--ink2); border:1px solid var(--line2); background:var(--panel2); padding:4px 9px; font:10px var(--mono); letter-spacing:1px; }
+.release-strip { border-left:3px solid var(--accent2); background:var(--panel2); padding:16px 20px; margin:20px 0; }
 .content p,.content li { overflow-wrap:anywhere; }
 .content h2,.content h3 { scroll-margin-top:calc(var(--sms-header-height) + 20px); }
 .content pre { max-width:100%; overflow:auto; }
@@ -28,12 +28,12 @@
 .table-scroll table { margin:0; min-width:100%; }
 .content td,.content th { min-width:100px; }
 .content th { text-align:left; }
-.toc a { color:#9fabb8; }
-.toc a:hover,.toc a.active { color:#abccdb; }
+.toc a { color:var(--ink2); }
+.toc a:hover,.toc a.active { color:var(--ink-bright); }
 .callout .h,.note .h { color:var(--ink-bright); }
 .audit-source { color:var(--ink2); font-size:13px; border-top:1px solid var(--line); padding-top:16px; margin-top:28px; }
 .ps2-orbs-canvas { position:fixed; inset:0; z-index:100; pointer-events:none; }
-footer .prov-inline { color:#9da8b5; }
+footer .prov-inline { color:var(--ink2); }
 @media (max-width:980px) {
  .topbar { gap:10px; padding-inline:12px; }
  .topbar-btn { padding:8px; }
@@ -51,7 +51,7 @@ footer .prov-inline { color:#9da8b5; }
  .sidebar { position:static; display:block; width:auto; height:auto; max-height:none; padding:16px; border-bottom:1px solid var(--line2); }
  .menu-btn { display:none; }
  .js .menu-btn { display:block; }
- .js .sidebar { display:none; position:fixed; z-index:40; top:var(--sms-header-height); left:0; bottom:auto; width:min(320px,90vw); height:calc(100vh - var(--sms-header-height)); max-height:calc(100vh - var(--sms-header-height)); align-self:auto; overflow:auto; background:#162333; transform:none; }
+ .js .sidebar { display:none; position:fixed; z-index:40; top:var(--sms-header-height); left:0; bottom:auto; width:min(320px,90vw); height:calc(100vh - var(--sms-header-height)); max-height:calc(100vh - var(--sms-header-height)); align-self:auto; overflow:auto; background:var(--bg-deep); transform:none; }
  .js .sidebar.open { display:block; }
  .toc { display:none; }
  .hero-sms h1 { font-size:42px; }
