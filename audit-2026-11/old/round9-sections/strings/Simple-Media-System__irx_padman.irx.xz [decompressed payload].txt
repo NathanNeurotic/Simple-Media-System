@@ -1,0 +1,156 @@
+padman
+nB$%
+< nc$!
+loadcore
+intrman
+thbase
+thevent
+sifman
+sifcmd
+stdio
+sysclib
+vblank
+sio2man
+sysmem
+ d0`
+@d0N
+$!(C
+xB$l
+<pnc$!
+$%( 
+< x 
+$%( 
+<`$B$
+xB$!
+x1&%
+<0tB$
+<TtB$
+xc$!
+yB$!
+x1& 
+	$!P
+xc$!
+	$!P
+xB$!
+@	B$
+@	B$$
+@	B$$
+@	B$
+<p7B$
+7B$ 
+7B$$
+>B$(
+7B$\
+<0>B$
+8B$ 
+<$8B$$
+>B$(
+<,8B$\
+<X8B$
+<D>B$
+<h?B$
+8B$ 
+8B$$
+<(?B$(
+8B$\
+<X>B$
+>B$ 
+>B$$
+>B$(
+8B$\
+<l>B$
+>B$ 
+>B$$
+>B$(
+<(@B$\
+?B$ 
+<0?B$$
+<8?B$(
+9B$\
+?B$ 
+<@?B$$
+<H?B$(
+9B$\
+<$9B$
+<l9B$\
+9B$ 
+:B$$
+<`?B$(
+:B$\
+<P:B$
+?B$ 
+<P?B$$
+<X?B$(
+:B$0
+:B$4
+:B$8
+<,;B$<
+<d;B$@
+;B$D
+;B$H
+<B$L
+<<<B$P
+<p<B$\
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+B$% 
+ c4$
+$%( 
+'%( 
+$% `
+thpri=
+freepad: invalid priority %d
+freepad: high prio thread must be higher than low prio thread
+freepad: thread priority: high=%d, low=%d
+freepad: RegisterLibraryEntries failed.
+freepad: Failed to init RPC servers.
+Pad Driver for OSD
+padman
+freepad: Extend Service: This service is not supported.
+freepad: Sif not initialized.
+freepad: invalid function code (%03x)
+freepad: DMA Busy ID = %08x ret = %d
+freepad:         SB_STAT = %08x
+freepad: sceSifSetDma failed
+freepad: Refresh request from EE
+freepad: padInit: CreateEventFlag failed (%d).
+freepad: padInit: CreateThread TransferThread failed (%d)
+freepad: padInit: CreateThread MainThread failed (%d)
+freepad: Invalid port number: %d
+freepad: Invalid slot number: %d
+freepad: The slot will be refreshed: (%d, %d)
+freepad: Port open failed (CreateEventFlag).
+freepad: Port open failed (CreateThread UpdatePadThread).
+freepad: Port open failed (CreateThread QueryPadThread).
+freepad: Port open failed (CreateThread SetMainModeThread)
+freepad: Port open failed (CreateThread SetActAlignThread).
+freepad: Port open failed (CreateThread SetButtonInfoThread).
+freepad: Port open failed (CreateThread SetVrefParamThread).
+freepad: Port open failed, busy.
+freepad: padPortClose: Port %i Slot %i is not open.
+freepad: padPortClose: Port %i Slot %i request failed.
+freepad: Release VB_START failed.
+freepad: Release VB_END failed.
+freepad: Over Consumpt Max 600mA[%d][%d]
+.iopmod
+.text
+.rel.text
+.rodata
+.rel.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab

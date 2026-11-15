@@ -1,0 +1,41 @@
+<@BB$
+c$% `
+1.% 
+$!0F
+loadcore
+stdio
+sysclib
+sysmem
+thbase
+thevent
+e$+@
+'!X&
+H$+H
+EFI PART
+Block Device Manager (BDM) v%d.%d
+BDM: ERROR: Already registered!
+BDM: ERROR: BDM init failed!
+BDM: BDM event thread running
+BDM: %s%dp%d mounted to %s
+BDM: connecting device %s%dp%d size=%luMB id=0x%x
+BDM: disconnecting device %s%dp%d
+BDM: %s%dp%d unmounted from %s
+BDM: connecting fs %s
+BDM: disconnecting fs %s
+BDM: MBR disk valid_partitions=%d 
+BDM: Found MBR disk
+BDM: Found partition type 0x%02x
+BDM: Can't mount partition, no more free partition slots!
+BDM: Found GPT disk '%08x...'
+BDM: Found partition '%s' type=%08x unique=%08x start=0x%08x%08x end=0x%08x%08x attr=0x%08x%08x
+BDM: Can't mount partition, no more free partition slots!
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab
