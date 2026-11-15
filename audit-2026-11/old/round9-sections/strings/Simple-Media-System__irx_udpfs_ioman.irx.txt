@@ -1,0 +1,47 @@
+mstack
+smap
+thbase
+stdio
+sysclib
+ioman
+loadcore
+thevent
+thsemap
+"B$0
+$&%(
+4% @
+$R&$
+$&%(
+$%0@
+$% `
+'% `
+'% `
+$%( 
+D&%(
+&B$!
+&B$4
+< &"
+<(&"
+<0&"
+<8&"
+<@&"
+<H&"
+&B$!
+&B$4
+udpfs
+UDPFS
+UDPFS: send: timeout seq=%d, retry %d
+UDPFS: send: max retries exceeded, disconnecting
+UDPFS: send_ll: timeout seq=%d, retry %d
+UDPFS: send_ll: max retries exceeded, disconnecting
+UDPFS: recv: timeout, received=%d/%d
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab

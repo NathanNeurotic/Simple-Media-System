@@ -1,0 +1,86 @@
+usbd
+<4VB$ 
+<4Vc$
+<0	c$
+<HVB$ 
+<HVB$ 
+<\Vc$
+$%( 
+<hX"
+<`XB
+<`X"
+<hXB
+<hX0
+<lVB$
+<xVB$ 
+VB$ 
+<hXc
+<hX"
+VB$ 
+<0	B$
+<$ D
+<$ D
+<$ D
+<$ D
+<hX"
+$%0 
+<dX$
+Ws&&
+<%(@
+$%h@
+%!H8
+c$!@
+@B0Y
+@B0L
+1! d
+	$$H
+c$! 
+&&%(
+c$! 
+<pX6
+c$*(
+c$* C
+4B$ 
+B,+@
+c$%@`
+KB$,
+Qc$ 
+sysmem
+loadcore
+intrman
+stdio
+thbase
+thevent
+thsemap
+sysclib
+hub_control_transfer: busy - %s
+scan_change_bitmap
+clear_hub_feature
+set_port_power
+hub_attach
+get_hub_status
+set_configuration_done
+clear_port_feature
+hub_port_reset
+dev=
+gtd=
+itd=
+ioreq=
+conf=
+hub=
+port=
+thpri=
+reportd=
+USB_driver
+Version 1.6.0
+USB Driver (%s)
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab

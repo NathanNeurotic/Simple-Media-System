@@ -1,0 +1,19 @@
+IOX/File_Manager_Rpc
+'!  
+sysmem
+sysclib
+stdio
+thbase
+intrman
+iomanx
+sifman
+sifcmd
+IOX/File_Manager_Rpc
+fileXio: fileXio RPC Server v1.00
+Copyright (c) 2003 adresd
+.shstrtab
+.iopmod
+.rel.text
+.rel.rodata
+.rel.data
+.bss
