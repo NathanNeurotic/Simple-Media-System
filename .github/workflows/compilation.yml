@@ -118,6 +118,8 @@ jobs:
         python3 tools/test_ee_helpers.py
         python3 tools/test_skin_loading.py
         python3 tools/test_sas_package.py
+        python3 tools/test_update_core.py
+        python3 iop/smsnet/prepare_module.py --check
 
     - name: IRX ABI gate (dev9 v1.1 bindings)
       run: |
@@ -131,8 +133,15 @@ jobs:
     - name: Build (ps2dev v1.0 toolchain)
       run: |
         BID=$(echo "$GITHUB_SHA" | cut -c1-7)
+        # Check for updates compares this number ( the commit's time ) with the one published
+        # in SHA256SUMS.txt. A tagged release follows the latest release, everything else
+        # the rolling build.
+        UPD="SMS_BUILD_TIME=$(git log -1 --format=%ct HEAD)"
+        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then UPD="$UPD SMS_BUILD_STABLE=1"; fi
+        echo "UPD=$UPD" >> "$GITHUB_ENV"
+        echo "BUILD_TIME=$(git log -1 --format=%ct HEAD)" >> "$GITHUB_ENV"
         docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1 \
-          sh -c 'apk add --no-cache build-base git zip && make SMS_BUILD_ID='"$BID"' all pack && make -C tools/mpeg_motion_probe'
+          sh -c 'apk add --no-cache build-base git zip && make SMS_BUILD_ID='"$BID"' '"$UPD"' all pack && make -C tools/mpeg_motion_probe'
 
     - name: Package
       run: |
@@ -145,6 +154,7 @@ jobs:
         # recorded in the release notes, which is where it belongs.
         mkdir -p dist/smbman-licenses
         cp iop/smbman-sms/LICENSE-* iop/smbman-sms/NOTICE-DES.txt iop/smbman-sms/README.md dist/smbman-licenses/
+        tar -xzf third_party/mbedtls-3.6.7-src.tar.gz -O mbedtls/LICENSE > dist/smbman-licenses/LICENSE-mbedtls.txt
 
         # Language packs, shipped with the build they belong to. The .lng format is
         # EXACT-COUNT: a pack whose line count does not match this build's string table is
@@ -171,7 +181,7 @@ jobs:
     - name: Build diagnostic ELF (SMS_DIAG=1)
       run: |
         BID=$(echo "$GITHUB_SHA" | cut -c1-7)
-        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_BUILD_ID='"$BID"' SMS_DIAG=1 all'
+        docker run --rm -v "$PWD":/src -w /src ps2dev/ps2dev:v1.0@sha256:da02eb0870afcfdb7198195de40d04cd121bd893668c7342fb84b3c4d273e9d1           sh -c 'apk add --no-cache build-base git zip && rm -rf obj bin && make SMS_BUILD_ID='"$BID"' '"$UPD"' SMS_DIAG=1 all'
         cp bin/SMS.elf dist/Simple-Media-System-DIAG.elf
         ls -la dist
 
@@ -191,6 +201,11 @@ jobs:
                 "event": os.environ["BUILD_EVENT"], "run_url": os.environ["BUILD_RUN"],
                 "sha256": {name: hashlib.sha256((dist / name).read_bytes()).hexdigest() for name in names}}
         (dist / "build-info.json").write_text(json.dumps(info, indent=2) + "\n")
+        # What Check for updates reads: the build number and id on the first line, then one
+        # line per ELF. An ELF is installed only when its SHA-256 matches its line here.
+        (dist / "SHA256SUMS.txt").write_text(
+            "# build %s %s\n" % (os.environ["BUILD_TIME"], os.environ["SOURCE_SHA"][:7])
+            + "".join("%s  %s\n" % (info["sha256"][name], name) for name in names))
         PY
         ( cd dist && zip -9 -r "Simple-Media-System.zip" Simple-Media-System.elf Simple-Media-System-packed.elf Simple-Media-System-DIAG.elf build-info.json smbman-licenses )
 
@@ -287,6 +302,8 @@ jobs:
           dist/Simple-Media-System-packed.elf \
           dist/Simple-Media-System-DIAG.elf \
           dist/*.psu dist/*.zip --clobber
+        # Last, so the hashes never describe ELFs that are not uploaded yet.
+        gh release upload rolling dist/SHA256SUMS.txt --clobber
 
         # Advance the lightweight rolling tag explicitly, without allowing a
         # rewind or divergent update. Stable version tags are never touched.
@@ -304,5 +321,6 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release create "$GITHUB_REF_NAME" dist/Simple-Media-System.elf dist/Simple-Media-System-packed.elf dist/*.psu dist/*.zip \
+        gh release create "$GITHUB_REF_NAME" dist/Simple-Media-System.elf dist/Simple-Media-System-packed.elf \
+          dist/Simple-Media-System-DIAG.elf dist/SHA256SUMS.txt dist/*.psu dist/*.zip \
           --title "Simple-Media-System $GITHUB_REF_NAME" --generate-notes

@@ -97,7 +97,7 @@ restart also invalidates storage mounts. [Devices](https://nathanneurotic.github
 For folder shuffle, enable **Player settings → MP3 settings → Randomize playlist**,
 then use **Play all → Video** or Audio. The preference also affects video folders.
 
-Install language packs from the same build as the ELF. Current packs have 311
+Install language packs from the same build as the ELF. Current packs have 342
 strings; Spanish was updated in the October continuation. The UI uses single-byte
 code pages, while subtitles have separate UTF-8/MBCS handling.
 [Language guide](https://nathanneurotic.github.io/Simple-Media-System/languages.html).

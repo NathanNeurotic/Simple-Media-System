@@ -84,6 +84,7 @@ void     CDDA_Pause        ( void                     );
 void     CDDA_DiskReady    ( void                     );
 int      CDDA_SetMediaMode ( MediaMode                );
 int      CDDA_ReadClock    ( void*                    );
+int      CDDA_WriteClock   ( void*                    );
 
 #ifdef __cplusplus
 }

@@ -25,6 +25,7 @@
 #include "SMS_PgInd.h"
 #include "SMS_CDDA.h"
 #include "SMS_VIF.h"
+#include "SMS_Update.h"
 #include <kernel.h>
 #include <sys/ioctl.h>
 #include <fileio.h>
@@ -56,6 +57,10 @@ int main ( int argc, char** argv ) {
   SMS_ConfigSetCWD ( argv[ 0 ] );
 
  } else if ( argc > 0 ) SMS_ConfigSetCWD ( argv[ 0 ] );   /* non-mc boot -> settings in CWD ( next to the ELF ) */
+
+#ifdef BDM
+ if ( argc > 0 ) SMS_UpdateSetBootPath ( argv[ 0 ] );   /* the file Check for updates overwrites */
+#endif  /* BDM */
 
  SMS_IOPReset ( 0 );
  SMS_EEInit   ();

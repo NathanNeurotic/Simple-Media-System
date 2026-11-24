@@ -75,6 +75,9 @@ void SMS_ExitCrumb           ( int, const char*                       );
 void SMS_IOPInit             ( void                                   );
 void SMS_IOPSetSifCmdHandler (  void ( *apFunc ) ( void* ), int aCmd  );
 int  SMS_IOPStartNet         ( int                                    );
+#ifdef BDM
+int  SMS_IOPStartInet        ( void                                   );
+#endif
 int  SMS_IOPStartUSB         ( int                                    );
 int  SMS_IOPStartMX4SIO      ( int                                    );
 int  SMS_IOPStartATA         ( int                                    );

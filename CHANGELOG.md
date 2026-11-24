@@ -6,6 +6,31 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
+## Rolling development — 2026-11-24
+
+- New **Date, time and updates** menu in the SMS menu.
+  - **Year / Month / Day / Hour / Minute** and **Set the clock** set the console clock by hand, in your
+    own time zone.
+  - **Set the clock from the Internet** (standard build) reads the time from a web server. It works with a
+    clock that is wrong or was never set.
+  - **Check for updates** (standard build) compares this build with the one on GitHub and installs a newer
+    one over the file SMS was started from: memory card, USB, MX4SIO, i.LINK, BDM hard disk or MMCE. The
+    download goes to memory over a verified HTTPS connection and is checked against the SHA-256 published
+    with the release before anything is written. A rolling build follows the rolling build; a tagged
+    release follows the latest release.
+  - Both Internet rows start the network themselves from the saved IP settings.
+  - A time from the Internet outside the years 2025 to 2060 is not written, and the secure connection
+    refuses a console clock outside them. If UDPFS holds the
+    adapter they ask, then take it with an in-place IOP reset instead of asking for a restart.
+- Releases now publish `SHA256SUMS.txt`, which is what Check for updates reads.
+- Under the hood: a small socket module for the IOP (`iop/smsnet`, name lookup included) on the existing
+  SMSTCPIP stack, and mbedTLS 3.6.7 as a TLS 1.2 client with GitHub's four certificate roots. The standard
+  ELF grows by about 205 KB (about 78 KB packed). 31 new strings: language packs now have 342 lines, and
+  the new lines are in English in every pack until translated.
+- Not yet run on a console or in an emulator.
+
+---
+
 ## v3.0.0-rev3 (Version 3.0 Rev.3)
 
 Shown in the app as Version 3.0 (Rev.3); the About screen ends with `Build <commit>`. Includes everything in rolling

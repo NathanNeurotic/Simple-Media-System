@@ -1,8 +1,8 @@
 These are the original SMS 2.9 language packs (269 entries each), kept
 unchanged as their authors' work. They do NOT load in this build: its
-loader accepts only packs with exactly 311 entries and refuses these.
+loader accepts only packs with exactly 342 entries and refuses these.
 
-Use the 311-entry packs in docs/translation/ instead (also published with
+Use the 342-entry packs in docs/translation/ instead (also published with
 every build as Simple-Media-System-languages.zip). Installation is
 described in docs/translation/TRANSLATING.txt.
 
