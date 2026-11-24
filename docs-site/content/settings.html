@@ -9,7 +9,8 @@ The settings menu is the same <b>SMS menu</b> you use for saving and quitting. O
 of its top-level entries. Each entry opens a sub-menu of options. On a toggle, <b>Cross</b> flips it between
 <code>on</code> and <code>off</code>; on a value item, <b>Left/Right</b> cycles the value. <b>Triangle</b> goes back
 up a level. Nothing is committed to storage until you run <b>Save settings</b> (see <a href="#saving">Saving your
-settings</a>) — so you can experiment freely and just not save.</div>
+settings</a>) — so you can experiment freely and just not save. Two actions are the exception and take effect at
+once: setting the console clock and installing an update.</div>
 
 <h2 id="menu-map">The settings menu at a glance</h2>
 <p>The top level of the SMS menu has these entries. The first five open the option sub-menus documented on this page;
@@ -260,11 +261,16 @@ including the order of video folders played with <b>Play all → Video</b>.</p>
 </tbody>
 </table>
 <p><b>Check for updates</b> needs a correct clock, because the secure connection checks the dates on GitHub's certificates: run <b>Set the clock from the Internet</b> first if the clock is off. It updates SMS when it was started from a memory card, USB, MX4SIO, i.LINK, a BDM hard disk or MMCE. Started from anywhere else it says so and changes nothing. A rolling build follows the rolling build; a tagged release follows the latest release.</p>
+<p>The new file is written over the old one, so a write that fails part-way (a pulled drive, a power cut) can leave an ELF
+that no longer starts. SMS asks whether to try the write again while it still holds the download. Before updating, keep a
+copy of your working SMS ELF somewhere else and make sure you have another way to start a file manager; if SMS does not
+start afterwards, copy that ELF back over the damaged one.</p>
 <p>If UDPFS is running, both Internet rows ask before stopping it, because one adapter cannot serve both. SMS then restarts its device drivers in place and carries on; UDPFS starts again the next time SMS does, if its Autostart is on.</p>
 
 <h2 id="saving">Saving your settings — and where they go</h2>
 <p>Nothing you change in the menus is permanent until you run <b>Save settings</b> from the top level of the SMS menu.
-Until then you can change anything and simply not save. There is also a button shortcut on some builds
+Until then you can change anything and simply not save. The exceptions are in <a href="#date-time-updates">Date, time
+and updates</a>: setting the clock and installing an update happen immediately and are not undone by not saving. There is also a button shortcut on some builds
 (<kbd>Select</kbd>+<kbd>Square</kbd>) that saves settings from the browser.</p>
 
 <div class="steps">

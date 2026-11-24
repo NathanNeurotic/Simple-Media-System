@@ -36,7 +36,11 @@ automatically):
      Greek). CRLF or LF line endings are both fine; UTF-8 is NOT -- SMS renders
      single-byte encodings.
 
-NEW IN THIS BUILD: entries 269..310 (zero-based below) extend UI that used to be English-only
+NEW IN THIS BUILD: entries 311..341 (zero-based below) are the "Date, time and updates" menu
+(clock rows, Internet time, Check for updates and their messages). In the named variants
+they are still the English text and need translating.
+
+Entries 269..310 (zero-based below) extend UI that used to be English-only
 (device menu: MX4SIO / HDD BDM / i.LINK / MMCE / UDPFS start+autostart; the UDPFS
 and ATA start/error messages; the on-screen keyboard; the SMB server editor). In
 the shipped packs these entries are MACHINE TRANSLATIONS (see that section
@@ -420,3 +424,34 @@ refuses a file that does not have exactly 342 entries.
 308 | STR_AUTOSTA | Autostart HOST ( ps2dev )
 309 | STR_AUTOSTA | Autostart SMB
 310 | STR_NET_SWI | Network is already running. Restart it now to apply?
+311 | STR_DATE_TI | Date, time and updates
+312 | STR_CLK_YEA | Year
+313 | STR_CLK_MON | Month
+314 | STR_CLK_DAY | Day
+315 | STR_CLK_HOU | Hour
+316 | STR_CLK_MIN | Minute
+317 | STR_CLK_SET | Set the clock
+318 | STR_CLK_SET | Set the clock from the Internet
+319 | STR_UPD_CHE | Check for updates
+320 | STR_ASKING_ | Asking the Internet for the time...
+321 | STR_CLOCK_S | The clock is set
+322 | STR_CLOCK_R | The console refused the new time
+323 | STR_UPD_CHE | Checking for updates...
+324 | STR_UPD_NON | SMS is up to date
+325 | STR_UPD_ASK | [HAS-FORMAT] Build %s is available. Install it now?
+326 | STR_UPD_DOW | Downloading the update...
+327 | STR_UPD_WRI | Writing the update...
+328 | STR_UPD_DON | Update installed. Restart SMS to use it
+329 | STR_NET_NA  | Network not available: check cable and IP settings
+330 | STR_NET_UDP | UDPFS is using the network. Stop it and go on?
+331 | STR_NET_DNS | Name lookup failed: check the gateway address
+332 | STR_NET_CON | Could not connect to the server
+333 | STR_NET_TIM | The server did not answer in time
+334 | STR_UPD_CLO | Set the console clock first
+335 | STR_UPD_TLS | Secure connection failed: check the clock
+336 | STR_UPD_HTT | Unexpected answer from GitHub. Try again later
+337 | STR_UPD_BAD | Download failed its check. Nothing was changed
+338 | STR_UPD_MEM | Not enough memory
+339 | STR_UPD_MCF | Memory card is full. Nothing was changed
+340 | STR_UPD_WRI | [HAS-FORMAT] Writing failed (step %d, error %d). Try again?
+341 | STR_UPD_DEV | Cannot update SMS on this device

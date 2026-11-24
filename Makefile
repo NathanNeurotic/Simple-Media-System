@@ -152,10 +152,13 @@ $(EE_OBJ_DIR)SMS_Net.o : $(EE_SRC_DIR)SMS_Net.c
 	$(EE_CC) $(UPD_CFLAGS) $(EE_INCS) -Iiop/smsnet/include -c $< -o $@
 
 ifeq ($(BDM),1)
-$(EE_OBJ_DIR)SMS_Update.o : $(EE_SRC_DIR)SMS_Update.c $(MBEDTLS_DIR).unpacked
+# A changed TLS configuration rebuilds everything compiled against it.
+TLS_CONFIG = third_party/mbedtls-port/sms_mbedtls_config.h
+
+$(EE_OBJ_DIR)SMS_Update.o : $(EE_SRC_DIR)SMS_Update.c $(MBEDTLS_DIR).unpacked $(TLS_CONFIG)
 	$(EE_CC) $(UPD_CFLAGS) -std=gnu99 $(TLS_INCS) $(EE_INCS) -c $< -o $@
 
-$(EE_OBJ_DIR)SMS_TLS.o : $(EE_SRC_DIR)SMS_TLS.c $(MBEDTLS_DIR).unpacked
+$(EE_OBJ_DIR)SMS_TLS.o : $(EE_SRC_DIR)SMS_TLS.c $(MBEDTLS_DIR).unpacked $(TLS_CONFIG)
 	$(EE_CC) $(UPD_CFLAGS) -std=gnu99 $(TLS_INCS) $(EE_INCS) -c $< -o $@
 
 $(MBEDTLS_DIR).unpacked : $(MBEDTLS_TAR) | $(EE_OBJ_DIR)
@@ -165,7 +168,7 @@ $(MBEDTLS_DIR).unpacked : $(MBEDTLS_TAR) | $(EE_OBJ_DIR)
 
 $(MBEDTLS_SRCS:%=$(MBEDTLS_DIR)library/%.c) : $(MBEDTLS_DIR).unpacked
 
-$(EE_OBJ_DIR)tls_%.o : $(MBEDTLS_DIR)library/%.c
+$(EE_OBJ_DIR)tls_%.o : $(MBEDTLS_DIR)library/%.c $(TLS_CONFIG)
 	$(EE_CC) $(UPD_CFLAGS) -std=gnu99 -w $(TLS_INCS) -I$(MBEDTLS_DIR)library $(EE_INCS) -c $< -o $@
 
 # The four certificate roots GitHub's two hosts chain to ( third_party/ca-roots/README.md ).

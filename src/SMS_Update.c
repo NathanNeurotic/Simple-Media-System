@@ -123,6 +123,7 @@ int SMS_ClockSet ( const int* apT, int aSec ) {
 #define UPD_MAX_SUMS 4096
 #define UPD_IDLE_MS  15000               /* a connection that says nothing for this long     */
 #define UPD_MIN_YEAR 2025                /* an earlier clock was never set                   */
+#define UPD_MAX_YEAR 2060                /* a later one is wrong: the roots are long expired */
 
 /* What went wrong, beyond SMS_TLS.h's own codes. */
 #define UPD_ERR_DNS     ( -20 )
@@ -229,7 +230,7 @@ static long long _now_utc ( void ) {
 
  int lT[ 6 ];
 
- if (  !_rtc_read ( lT ) || lT[ 0 ] < UPD_MIN_YEAR  ) return -1;
+ if (  !_rtc_read ( lT ) || lT[ 0 ] < UPD_MIN_YEAR || lT[ 0 ] > UPD_MAX_YEAR  ) return -1;
 
  return raTlsRtcToUtc ( lT[ 0 ], lT[ 1 ], lT[ 2 ], lT[ 3 ], lT[ 4 ], lT[ 5 ] );
 
@@ -381,8 +382,9 @@ int SMS_ClockFromInternet ( void ) {
 
  if ( lRes ) { _report ( lRes ); return 0; }
 
-/* UTC to the Japan time the console keeps. */
- if (  !UPD_ClockShift ( lT, 540 ) || !_rtc_write ( lT )  ) {
+/* The answer is not authenticated: a year outside the window the secure connection accepts
+ * is not written. UTC to the Japan time the console keeps. */
+ if (  lT[ 0 ] < UPD_MIN_YEAR || lT[ 0 ] > UPD_MAX_YEAR || !UPD_ClockShift ( lT, 540 ) || !_rtc_write ( lT )  ) {
   GUI_Error (  _str ( &STR_CLOCK_REFUSED )  );
   return 0;
  }  /* end if */
@@ -606,7 +608,7 @@ void SMS_UpdateCheck ( void ) {
 
  if ( lBuild <= ( unsigned int )SMS_BUILD_TIME ) { GUI_Status (  _str ( &STR_UPD_NONE )  ); return; }
 
- sprintf (  lMsg, _str ( &STR_UPD_ASK ), lID  );
+ snprintf (  lMsg, sizeof ( lMsg ), _str ( &STR_UPD_ASK ), lID  );
 
  if (  !GUI_Question ( lMsg )  ) return;
 
@@ -645,7 +647,7 @@ void SMS_UpdateCheck ( void ) {
    }  /* end if */
 
 /* The file is incomplete now: offer to write it again from the copy still in memory. */
-   sprintf (  lMsg, _str ( &STR_UPD_WRITE_ERR ), lRes, lErr  );
+   snprintf (  lMsg, sizeof ( lMsg ), _str ( &STR_UPD_WRITE_ERR ), lRes, lErr  );
 
    if (  !GUI_Question ( lMsg )  ) break;
 

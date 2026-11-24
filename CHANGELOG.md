@@ -18,7 +18,9 @@ preserved in full below the marked boundary, unmodified.
     download goes to memory over a verified HTTPS connection and is checked against the SHA-256 published
     with the release before anything is written. A rolling build follows the rolling build; a tagged
     release follows the latest release.
-  - Both Internet rows start the network themselves from the saved IP settings. If UDPFS holds the
+  - Both Internet rows start the network themselves from the saved IP settings.
+  - A time from the Internet outside the years 2025 to 2060 is not written, and the secure connection
+    refuses a console clock outside them. If UDPFS holds the
     adapter they ask, then take it with an in-place IOP reset instead of asking for a restart.
 - Releases now publish `SHA256SUMS.txt`, which is what Check for updates reads.
 - Under the hood: a small socket module for the IOP (`iop/smsnet`, name lookup included) on the existing

@@ -4,7 +4,7 @@ This is the full reference for the SMS settings menu — every option, grouped e
 
 ℹ How to reach the settings menu
 
- The settings menu is the same **SMS menu** you use for saving and quitting. Open it from the browser, then pick one of its top-level entries. Each entry opens a sub-menu of options. On a toggle, **Cross** flips it between `on` and `off`; on a value item, **Left/Right** cycles the value. **Triangle** goes back up a level. Nothing is committed to storage until you run **Save settings** (see [Saving your settings](https://nathanneurotic.github.io/Simple-Media-System/settings.html#saving)) — so you can experiment freely and just not save.
+ The settings menu is the same **SMS menu** you use for saving and quitting. Open it from the browser, then pick one of its top-level entries. Each entry opens a sub-menu of options. On a toggle, **Cross** flips it between `on` and `off`; on a value item, **Left/Right** cycles the value. **Triangle** goes back up a level. Nothing is committed to storage until you run **Save settings** (see [Saving your settings](https://nathanneurotic.github.io/Simple-Media-System/settings.html#saving)) — so you can experiment freely and just not save. Two actions are the exception and take effect at once: setting the console clock and installing an update.
 
 ## The settings menu at a glance
 
@@ -236,11 +236,13 @@ This menu holds the console clock and the updater. The two Internet rows are in 
 
 **Check for updates** needs a correct clock, because the secure connection checks the dates on GitHub's certificates: run **Set the clock from the Internet** first if the clock is off. It updates SMS when it was started from a memory card, USB, MX4SIO, i.LINK, a BDM hard disk or MMCE. Started from anywhere else it says so and changes nothing. A rolling build follows the rolling build; a tagged release follows the latest release.
 
+The new file is written over the old one, so a write that fails part-way (a pulled drive, a power cut) can leave an ELF that no longer starts. SMS asks whether to try the write again while it still holds the download. Before updating, keep a copy of your working SMS ELF somewhere else and make sure you have another way to start a file manager; if SMS does not start afterwards, copy that ELF back over the damaged one.
+
 If UDPFS is running, both Internet rows ask before stopping it, because one adapter cannot serve both. SMS then restarts its device drivers in place and carries on; UDPFS starts again the next time SMS does, if its Autostart is on.
 
 ## Saving your settings — and where they go
 
-Nothing you change in the menus is permanent until you run **Save settings** from the top level of the SMS menu. Until then you can change anything and simply not save. There is also a button shortcut on some builds (`Select`+`Square`) that saves settings from the browser.
+Nothing you change in the menus is permanent until you run **Save settings** from the top level of the SMS menu. Until then you can change anything and simply not save. The exceptions are in [Date, time and updates](https://nathanneurotic.github.io/Simple-Media-System/settings.html#date-time-updates): setting the clock and installing an update happen immediately and are not undone by not saving. There is also a button shortcut on some builds (`Select`+`Square`) that saves settings from the browser.
 
 ### Make your changes
 

@@ -586,9 +586,7 @@ static int _start_tcpip ( int afStatus ) {
 
  if ( !s_fTcpIP ) {
 
-  SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2IP_OFFSET ], SMS_PS2IP_SIZE, 0, NULL, &i );
-
-  if ( i < 0 ) return 0;
+  if (  SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2IP_OFFSET ], SMS_PS2IP_SIZE, 0, NULL, &i ) < 0 || i < 0  ) return 0;
 
   s_fTcpIP = 1;
 
@@ -596,9 +594,7 @@ static int _start_tcpip ( int afStatus ) {
 
  if ( !s_fTcpEth ) {
 
-  SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2SMAP_OFFSET ], SMS_PS2SMAP_SIZE, lSMAPALen, &lSMAPArgs[ 0 ], &i );
-
-  if ( i < 0 ) return 0;
+  if (  SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2SMAP_OFFSET ], SMS_PS2SMAP_SIZE, lSMAPALen, &lSMAPArgs[ 0 ], &i ) < 0 || i < 0  ) return 0;
 
   s_fTcpEth = 1;
 
@@ -659,7 +655,8 @@ int SMS_IOPStartInet ( void ) {
 
  if ( !s_fInetSvc ) {
 
-  if (  SifExecDecompModuleBuffer ( &smsnet_irx, size_smsnet_irx, 0, NULL, &i ) < 0 || i < 0  ) return 0;
+/* smsnet answers 0 ( stays resident ) only when its service thread was created. */
+  if (  SifExecDecompModuleBuffer ( &smsnet_irx, size_smsnet_irx, 0, NULL, &i ) < 0 || i  ) return 0;
 
   s_fInetSvc = 1;
 
@@ -932,9 +929,12 @@ unsigned int SMS_IOPNetLiveMode ( void ) {
   if ( g_IOPFlags & SMS_IOPF_SMB ) return SMS_NETMODE_SMB;
   if ( g_IOPFlags & SMS_IOPF_NET ) return SMS_NETMODE_HOST;
 
-/* Owner claimed but neither module up: a half-failed start. Report the mode the config asked
- * for, so a retry is offered rather than the menu silently agreeing with a dead stack. */
-  return SMS_ConfigNetMode ();
+/* Owner claimed but neither module up: a half-failed start, or the stack was brought up for
+ * the clock / the updater only. Report the mode the config asked for, so a retry is offered
+ * rather than the menu silently agreeing with a dead stack -- except UDPFS, which is never
+ * what runs while TCP/IP holds the adapter: answering it would hide the restart question
+ * and UDPFS would then be refused. */
+  return SMS_ConfigNetMode () == SMS_NETMODE_UDPFS ? SMS_NETMODE_HOST : SMS_ConfigNetMode ();
 
  }  /* end if */
 

@@ -77,6 +77,8 @@ int main(void) {
  assert(!UPD_ParseSums("# build 12 abc\n0123456789abcdef  x.elf\n","x.elf",sha,&build,id,sizeof id));
  assert(UPD_ParseSums("# build 12 abc\r\n" A " *x.elf\r\n","x.elf",sha,&build,id,sizeof id) && build==12);
  assert(!UPD_ParseSums("<html>Not Found</html>","x.elf",sha,&build,id,sizeof id));
+ /* a later, overlong build line must not write over the accepted ID */
+ assert(UPD_ParseSums("# build 12 abc\n# build 13 0123456789012345678901234567890123456789012345678901234567890123456789\n" A "  x.elf\n","x.elf",sha,&build,id,sizeof id) && build==12 && !strcmp(id,"abc"));
 
  p=UPD_SplitURL("https://github.com/a/b",host,sizeof host); assert(p && !strcmp(p,"/a/b") && !strcmp(host,"github.com"));
  p=UPD_SplitURL("https://release-assets.githubusercontent.com/x?y=1&z=2",host,sizeof host); assert(p && !strcmp(p,"/x?y=1&z=2"));

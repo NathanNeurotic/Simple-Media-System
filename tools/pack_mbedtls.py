@@ -40,14 +40,16 @@ def wanted(name):
 def build(release):
     data = Path(release).read_bytes()
     digest = hashlib.sha256(data).hexdigest()
-    assert digest == RELEASE_SHA256, "not the official 3.6.7 release archive: " + digest
+    if digest != RELEASE_SHA256:
+        sys.exit("not the official 3.6.7 release archive: " + digest)
     files = {}
     with tarfile.open(fileobj=io.BytesIO(data)) as tar:
         for member in tar:
             name = member.name[len(PREFIX):] if member.name.startswith(PREFIX) else None
             if name and member.isfile() and wanted(name):
                 files[name] = tar.extractfile(member).read()
-    assert sum(1 for n in files if n.endswith(".c")) == len(SOURCES), "a listed source is missing"
+    if sum(1 for n in files if n.endswith(".c")) != len(SOURCES):
+        sys.exit("a listed source is missing")
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w", format=tarfile.USTAR_FORMAT) as out:
         for name in sorted(files):
@@ -57,16 +59,18 @@ def build(release):
     packed = io.BytesIO()
     with gzip.GzipFile(fileobj=packed, mode="wb", compresslevel=9, mtime=0, filename="") as gz:
         gz.write(raw.getvalue())
-    return packed.getvalue(), len(files)
+    return packed.getvalue(), raw.getvalue(), len(files)
 
 
 def main():
     args = [a for a in sys.argv[1:] if a != "--check"]
     if len(args) != 1:
         sys.exit(__doc__)
-    packed, count = build(args[0])
+    packed, tar_bytes, count = build(args[0])
     if "--check" in sys.argv:
-        assert TARGET.read_bytes() == packed, "committed archive differs from the release"
+        # The unpacked contents are compared: the compressed bytes depend on the zlib in use.
+        if gzip.decompress(TARGET.read_bytes()) != tar_bytes:
+            sys.exit("committed archive differs from the release")
         print("PASS: %s matches the official release ( %d files )" % (TARGET.name, count))
     else:
         TARGET.write_bytes(packed)

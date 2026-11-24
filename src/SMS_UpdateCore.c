@@ -157,7 +157,8 @@ int UPD_ParseSums ( const char* apText, const char* apName, unsigned char* apSHA
 
     lBuild = lBuild * 10 + ( unsigned int )( lpLine[ lPos++ ] - '0' );
 
-   if ( lPos > 8 && lPos < lLen && lpLine[ lPos ] == ' ' ) {
+/* The first complete build line counts: a later one must not write over its ID. */
+   if ( !lfBuild && lPos > 8 && lPos < lLen && lpLine[ lPos ] == ' ' ) {
 
     for ( ++lPos; lPos < lLen && lID < anIDSize - 1; ++lPos ) {
 
