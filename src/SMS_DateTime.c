@@ -343,35 +343,6 @@ void SMS_LocalTime ( void* apClock ) {
  _adjustTime (  apClock, SMS_ZoneOffset ()  );
 
 }  /* end SMS_LocalTime */
-__asm__(
- ".set noreorder\n\t"
- ".set nomacro\n\t"
- ".set noat\n\t"
- ".globl SMS_LocalTime\n\t"
- ".text\n\t"
- "SMS_LocalTime:\n\t"
- "addiu     $sp, $sp, -32\n\t"
- "sd        $s0,  0($sp)\n\t"
- "sd        $s1,  8($sp)\n\t"
- "sw        $ra, 16($sp)\n\t"
- "bgezal    $zero, _sms_time_zone\n\t"
- "or        $s0, $zero, $a0\n\t"
- "bgezal    $zero, _sms_summer_time\n\t"
- "or        $s1, $zero, $v0\n\t"
- "ori       $v1, $zero, 60\n\t"
- "or        $a0, $zero, $s0\n\t"
- "mult      $v0, $v0, $v1\n\t"
- "ld        $s0,  0($sp)\n\t"
- "lw        $ra, 16($sp)\n\t"
- "addiu     $v0, $v0, -540\n\t"
- "addu      $a1, $s1, $v0\n\t"
- "ld        $s1,  8($sp)\n\t"
- "beq       $zero, $zero, _adjustTime\n\t"
- "addiu     $sp, $sp, 32\n\t"
- ".set at\n\t"
- ".set macro\n\t"
- ".set reorder\n\t"
-);
 
 int SMS_TimeFormat ( void );
 __asm__(
