@@ -19,10 +19,10 @@ HOW SMS USES IT
 THE FIVE RULES (the fixed string count is checked by the loader; the other
 rules prevent bad rendering, paths or printf behavior and are not all checked
 automatically):
-  1. EXACTLY 311 lines. Do not add or remove a line. One English line in ->
+  1. EXACTLY 342 lines. Do not add or remove a line. One English line in ->
      one translated line out, same position.
   2. NEVER leave a line blank. An empty line makes the parser stop early, the
-     line count no longer equals 311, and the entire file is rejected. If a
+     line count no longer equals 342, and the entire file is rejected. If a
      string should stay untranslated, copy the English text verbatim -- do not
      blank it.
   3. Keep every  %s  %d  %.1f  %02d  etc. EXACTLY as-is (same specifiers, same
@@ -53,14 +53,14 @@ INSTALLING A FINISHED TRANSLATION (from the legacy pack's own readme)
   3. Select / enable it in the SMS menu
 
 The 19 named language variants (including an English variant) in docs/translation/ (BG CA CZ DE EN ES FR HU ID IT
-NL PL PT PT-BR RU SE SK TR UA) were extended to 311 lines to match THIS build, so
+NL PL PT PT-BR RU SE SK TR UA) were extended to 342 lines to match THIS build, so
 they load as-is (the lines they were missing are machine translations, listed
 below). They are the best reference for tone/length. (TR had a pre-existing
 duplicate line that was removed to realign it.)
 
 The original 269-entry SMS 2.9 packs (the lng/ folder of the source tree, and
 any SMS.lng from an older release) do NOT load in this build: the loader
-refuses a file that does not have exactly 311 entries.
+refuses a file that does not have exactly 342 entries.
 
 ==============================================================================
   MACHINE TRANSLATIONS  (added 2026-11-12)

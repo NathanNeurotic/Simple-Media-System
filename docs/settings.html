@@ -35,7 +35,7 @@ up a level. Nothing is committed to storage until you run <b>Save settings</b> (
 settings</a>) — so you can experiment freely and just not save.</div>
 
 <h2 id="menu-map">The settings menu at a glance</h2>
-<p>The top level of the SMS menu has these entries. The first four open the option sub-menus documented on this page;
+<p>The top level of the SMS menu has these entries. The first five open the option sub-menus documented on this page;
 the last four are actions.</p>
 <table>
 <thead><tr><th>Top-level entry</th><th>What it opens / does</th></tr></thead>
@@ -44,6 +44,7 @@ the last four are actions.</p>
 <tr><td><b>Device settings…</b></td><td>Every storage/network <b>Autostart</b> toggle, the <b>Start … support</b> on-demand items, CD/DVD options and controller options — see <a href="#device-settings">below</a>.</td></tr>
 <tr><td><b>Browser settings…</b></td><td>Appearance of the file browser: background image, sound FX, sorting/filtering, panel colours, the reset-button action and Exit-to target — see <a href="#browser-settings">below</a>.</td></tr>
 <tr><td><b>Player settings…</b></td><td>Everything about playback: subtitles, audio/SPDIF, volume, colour resolution, scroll bar, and an MP3 sub-menu — see <a href="#player-settings">below</a>.</td></tr>
+<tr><td><b>Date, time and updates</b></td><td>Set the console clock by hand or from the Internet, and check for a newer SMS build — see <a href="#date-time-updates">below</a>.</td></tr>
 <tr><td>Quick help</td><td>An on-screen list of the button shortcuts (browser and player).</td></tr>
 <tr><td>Save settings</td><td>Writes your configuration to storage — see <a href="#saving">Saving your settings</a>.</td></tr>
 <tr><td>Shutdown console</td><td>Powers the PS2 off.</td></tr>
@@ -269,6 +270,20 @@ including the order of video folders played with <b>Play all → Video</b>.</p>
 <tr><td><b>Autodetection parameter</b></td><td>A tuning value for MP3 format auto-detection.</td><td>value</td></tr>
 </tbody>
 </table>
+
+<h2 id="date-time-updates">Date, time and updates</h2>
+<p>This menu holds the console clock and the updater. The two Internet rows are in the standard (BDM) build only, and they start the network themselves: nothing has to be switched on in Device settings first. They use the address, mask and gateway from <b>Network settings… → Edit IP config</b>, and look names up through the gateway, then through two public name servers.</p>
+<table>
+<thead><tr><th>Option</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><b>Year</b>, <b>Month</b>, <b>Day</b>, <b>Hour</b>, <b>Minute</b></td><td>The clock in your own time zone (the zone and summer time set in the PS2's own system configuration). <b>Left/Right</b> changes a value. Nothing is written until <b>Set the clock</b>.</td></tr>
+<tr><td><b>Set the clock</b></td><td>Writes the five values above to the console clock.</td></tr>
+<tr><td><b>Set the clock from the Internet</b></td><td>Asks a web server for the time and sets the console clock from it. It works with a clock that is wrong or was never set.</td></tr>
+<tr><td><b>Check for updates</b></td><td>Compares this build with the one published on GitHub and offers to install a newer one. The download is verified before anything is written, and the new file replaces the one SMS was started from, in place. Restart SMS afterwards.</td></tr>
+</tbody>
+</table>
+<p><b>Check for updates</b> needs a correct clock, because the secure connection checks the dates on GitHub's certificates: run <b>Set the clock from the Internet</b> first if the clock is off. It updates SMS when it was started from a memory card, USB, MX4SIO, i.LINK, a BDM hard disk or MMCE. Started from anywhere else it says so and changes nothing. A rolling build follows the rolling build; a tagged release follows the latest release.</p>
+<p>If UDPFS is running, both Internet rows ask before stopping it, because one adapter cannot serve both. SMS then restarts its device drivers in place and carries on; UDPFS starts again the next time SMS does, if its Autostart is on.</p>
 
 <h2 id="saving">Saving your settings — and where they go</h2>
 <p>Nothing you change in the menus is permanent until you run <b>Save settings</b> from the top level of the SMS menu.

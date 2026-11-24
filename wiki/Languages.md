@@ -1,6 +1,6 @@
 # Languages & Fonts
 
-Install a language pack from the same build as your player. The current table has 311 strings; a pack from an older release can leave the Language row ineffective.
+Install a language pack from the same build as your player. The current table has 342 strings; a pack from an older release can leave the Language row ineffective.
 
 ## Install an external language
 
@@ -19,7 +19,7 @@ Subtitle encoding is different: the subtitle reader recognizes UTF-8 with a BOM 
 
 ## Translate safely
 
-- Start with the [current English template](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/SMS.lng). Keep all 311 entries in order and do not leave blank entries.
+- Start with the [current English template](https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/SMS.lng). Keep all 342 entries in order and do not leave blank entries.
 - Preserve every printf placeholder, including its type, order, width and precision. The loader does not validate all formatting mistakes for you.
 - Keep zero-based entries 166 and 167 as boot paths. Device/protocol names such as MX4SIO, MMCE and UDPFS should remain recognizable.
 - Keep labels short enough for the fixed menu boxes. Check real glyph rendering and clipping after import.

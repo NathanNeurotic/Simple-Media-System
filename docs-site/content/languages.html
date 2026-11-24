@@ -1,5 +1,5 @@
 <h1>Languages &amp; Fonts</h1>
-<p class="lead">Install a language pack from the same build as your player. The current table has 311 strings; a pack from an older release can leave the Language row ineffective.</p>
+<p class="lead">Install a language pack from the same build as your player. The current table has 342 strings; a pack from an older release can leave the Language row ineffective.</p>
 <h2 id="install">Install an external language</h2>
 <ol><li>Download the <a href="releases.html#whats-in-a-release">matching language ZIP</a>. It contains 19 named variants (including an English variant), the base English template and translator guide.</li>
 <li>Choose a variant such as <code>SMS.lng_ES</code> and rename it <code>SMS.lng</code>. Copy it beside the ELF, or to <code>mc?:/SMS/SMS.lng</code>. A boot-folder copy has priority.</li>
@@ -10,7 +10,7 @@
 <p>Menu language files use the player's single-byte code pages, not general UTF-8 text rendering. Use the relevant WinLatin1, WinLatin2, Cyrillic or Greek setting. An external <code>.mbf</code> font is a separate mechanism, particularly for multibyte subtitles.</p>
 <p>Subtitle encoding is different: the subtitle reader recognizes UTF-8 with a BOM and has its own MBCS/font selection. Do not apply menu-language encoding rules to every SRT. See <a href="subtitles.html">Subtitles</a>.</p>
 <h2 id="translate">Translate safely</h2>
-<ul><li>Start with the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/SMS.lng">current English template</a>. Keep all 311 entries in order and do not leave blank entries.</li>
+<ul><li>Start with the <a href="https://github.com/NathanNeurotic/Simple-Media-System/blob/master/docs/translation/SMS.lng">current English template</a>. Keep all 342 entries in order and do not leave blank entries.</li>
 <li>Preserve every printf placeholder, including its type, order, width and precision. The loader does not validate all formatting mistakes for you.</li>
 <li>Keep zero-based entries 166 and 167 as boot paths. Device/protocol names such as MX4SIO, MMCE and UDPFS should remain recognizable.</li>
 <li>Keep labels short enough for the fixed menu boxes. Check real glyph rendering and clipping after import.</li></ul>

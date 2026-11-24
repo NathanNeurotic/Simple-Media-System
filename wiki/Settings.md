@@ -8,7 +8,7 @@ This is the full reference for the SMS settings menu — every option, grouped e
 
 ## The settings menu at a glance
 
-The top level of the SMS menu has these entries. The first four open the option sub-menus documented on this page; the last four are actions.
+The top level of the SMS menu has these entries. The first five open the option sub-menus documented on this page; the last four are actions.
 
 | Top-level entry | What it opens / does |
 | --- | --- |
@@ -16,6 +16,7 @@ The top level of the SMS menu has these entries. The first four open the option 
 | **Device settings…** | Every storage/network **Autostart** toggle, the **Start … support** on-demand items, CD/DVD options and controller options — see [below](https://nathanneurotic.github.io/Simple-Media-System/settings.html#device-settings). |
 | **Browser settings…** | Appearance of the file browser: background image, sound FX, sorting/filtering, panel colours, the reset-button action and Exit-to target — see [below](https://nathanneurotic.github.io/Simple-Media-System/settings.html#browser-settings). |
 | **Player settings…** | Everything about playback: subtitles, audio/SPDIF, volume, colour resolution, scroll bar, and an MP3 sub-menu — see [below](https://nathanneurotic.github.io/Simple-Media-System/settings.html#player-settings). |
+| **Date, time and updates** | Set the console clock by hand or from the Internet, and check for a newer SMS build — see [below](https://nathanneurotic.github.io/Simple-Media-System/settings.html#date-time-updates). |
 | Quick help | An on-screen list of the button shortcuts (browser and player). |
 | Save settings | Writes your configuration to storage — see [Saving your settings](https://nathanneurotic.github.io/Simple-Media-System/settings.html#saving). |
 | Shutdown console | Powers the PS2 off. |
@@ -221,6 +222,21 @@ Opened from the Player settings menu via **MP3 settings…**, this covers audio 
 | **Repeat mode** | Repeat the current playlist/track. | on / off |
 | **Audio spectrum display** | Show a spectrum-analyser visual during audio playback. | on / off |
 | **Autodetection parameter** | A tuning value for MP3 format auto-detection. | value |
+
+## Date, time and updates
+
+This menu holds the console clock and the updater. The two Internet rows are in the standard (BDM) build only, and they start the network themselves: nothing has to be switched on in Device settings first. They use the address, mask and gateway from **Network settings… → Edit IP config**, and look names up through the gateway, then through two public name servers.
+
+| Option | What it does |
+| --- | --- |
+| **Year**, **Month**, **Day**, **Hour**, **Minute** | The clock in your own time zone (the zone and summer time set in the PS2's own system configuration). **Left/Right** changes a value. Nothing is written until **Set the clock**. |
+| **Set the clock** | Writes the five values above to the console clock. |
+| **Set the clock from the Internet** | Asks a web server for the time and sets the console clock from it. It works with a clock that is wrong or was never set. |
+| **Check for updates** | Compares this build with the one published on GitHub and offers to install a newer one. The download is verified before anything is written, and the new file replaces the one SMS was started from, in place. Restart SMS afterwards. |
+
+**Check for updates** needs a correct clock, because the secure connection checks the dates on GitHub's certificates: run **Set the clock from the Internet** first if the clock is off. It updates SMS when it was started from a memory card, USB, MX4SIO, i.LINK, a BDM hard disk or MMCE. Started from anywhere else it says so and changes nothing. A rolling build follows the rolling build; a tagged release follows the latest release.
+
+If UDPFS is running, both Internet rows ask before stopping it, because one adapter cannot serve both. SMS then restarts its device drivers in place and carries on; UDPFS starts again the next time SMS does, if its Autostart is on.
 
 ## Saving your settings — and where they go
 
