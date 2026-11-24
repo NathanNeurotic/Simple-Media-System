@@ -309,3 +309,34 @@ X:ввод  O:назад  []:пробел  /\:готово
 Автозапуск HOST ( ps2dev )
 Автозапуск SMB
 Сеть уже запущена. Перезапустить сейчас, чтобы применить?
+Date, time and updates
+Year
+Month
+Day
+Hour
+Minute
+Set the clock
+Set the clock from the Internet
+Check for updates
+Asking the Internet for the time...
+The clock is set
+The console refused the new time
+Checking for updates...
+SMS is up to date
+Build %s is available. Install it now?
+Downloading the update...
+Writing the update...
+Update installed. Restart SMS to use it
+Network not available: check cable and IP settings
+UDPFS is using the network. Stop it and go on?
+Name lookup failed: check the gateway address
+Could not connect to the server
+The server did not answer in time
+Set the console clock first
+Secure connection failed: check the clock
+Unexpected answer from GitHub. Try again later
+Download failed its check. Nothing was changed
+Not enough memory
+Memory card is full. Nothing was changed
+Writing failed (step %d, error %d). Try again?
+Cannot update SMS on this device

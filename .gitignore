@@ -44,3 +44,9 @@ sms-converter-crash.log
 
 # Host documentation tooling caches
 __pycache__/
+
+# PS2 build output ( generated C, the unpacked mbedTLS sources )
+/obj/
+/bin/
+iop/smsnet/obj/
+iop/smsnet/bin/

@@ -57,6 +57,13 @@ int          g_CfgLate;   /* 1 = SMS_IOPInit loaded a config the first GUI_Initi
  * non-BDM SMS_IOPStartNet reads it, and the SMS_IOPNetOwnedBy* accessors expose it to
  * the menu. Without BDM nothing ever SETS it, so it stays 0 ( "free" ) -- truthful. */
 static int s_NetOwner;
+/* SMSTCPIP and its SMAP driver, each loaded at most once per IOP boot. The clock sync and the
+ * updater bring the stack up without SMB or HOST, and a later Start SMB must not load it twice. */
+/* Kept out of the small-data window, which the release build has no room left in. */
+static int s_fTcpIP __attribute__(   (  section( ".bss" )  )   ), s_fTcpEth __attribute__(   (  section( ".bss" )  )   );
+#ifdef BDM
+static int s_fInetSvc __attribute__(   (  section( ".bss" )  )   );   /* the socket service ( iop/smsnet ) is loaded; BDM builds only */
+#endif  /* BDM */
 
 #ifdef BDM
 unsigned int g_Mx4sioMask;
@@ -93,6 +100,7 @@ extern unsigned char mcman_irx   [];
 extern unsigned char mcserv_irx  [];
 extern unsigned char padman_irx  [];
 extern unsigned char smbman_irx  [];
+extern unsigned char smsnet_irx  [];
 
 extern unsigned int size_bdm_irx;
 extern unsigned int size_bdmfs_fatfs_irx;
@@ -116,6 +124,7 @@ extern unsigned int size_mcman_irx;
 extern unsigned int size_mcserv_irx;
 extern unsigned int size_padman_irx;
 extern unsigned int size_smbman_irx;
+extern unsigned int size_smsnet_irx __attribute__(   (  section( ".data" )  )   );   /* not small data: see the Makefile */
 
 extern unsigned int g_MassFlags;
 /* Units ( 0..3 ) whose "connected" event has already been emitted into
@@ -516,7 +525,9 @@ void SMS_IOPReset ( int afExit ) {
 
 #undef CRUMB
 
-int SMS_IOPStartNet ( int afStatus ) {
+/* DEV9, SMSTCPIP and its SMAP driver: the part of the network start that SMB, HOST and the
+ * Internet features ( clock sync, updater ) share. Returns 1 when the stack is loaded. */
+static int _start_tcpip ( int afStatus ) {
 
  int  i, j;
  char lSMAPArgs[ 80 ];
@@ -573,44 +584,93 @@ int SMS_IOPStartNet ( int afStatus ) {
  sprintf (  &lSMAPArgs[ i ], "%d", j  );
  lSMAPALen += strlen ( &lSMAPArgs[ i ] ) + 1;
 
- SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2IP_OFFSET ], SMS_PS2IP_SIZE, 0, NULL, &i );
+ if ( !s_fTcpIP ) {
 
- if ( i >= 0 ) {
+  SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2IP_OFFSET ], SMS_PS2IP_SIZE, 0, NULL, &i );
+
+  if ( i < 0 ) return 0;
+
+  s_fTcpIP = 1;
+
+ }  /* end if */
+
+ if ( !s_fTcpEth ) {
 
   SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2SMAP_OFFSET ], SMS_PS2SMAP_SIZE, lSMAPALen, &lSMAPArgs[ 0 ], &i );
 
-  if ( i >= 0 ) {
+  if ( i < 0 ) return 0;
 
-   if ( g_Config.m_NetworkFlags & SMS_DF_SMB ) {
+  s_fTcpEth = 1;
 
-    /* Modern smbman: an iomanX device "smb" reached via fileXioDevctl. iomanx
-     * and filexio are already loaded in SMS_IOPReset, and smbman binds to the
-     * untouched SMSTCPIP ( SMS_PS2IP ) stack loaded just above. The smbman_irx
-     * blob + its size are only compiled/embedded in BDM builds ( see Makefile ),
-     * so guard the reference -- SMS_IOPStartNet itself is built in all configs. */
+ }  /* end if */
+
+ return 1;
+
+}  /* end _start_tcpip */
+
+int SMS_IOPStartNet ( int afStatus ) {
+
+ int i;
+
+ if (  _start_tcpip ( afStatus )  ) {
+
+  if ( g_Config.m_NetworkFlags & SMS_DF_SMB ) {
+
+   /* Modern smbman: an iomanX device "smb" reached via fileXioDevctl. iomanx
+    * and filexio are already loaded in SMS_IOPReset, and smbman binds to the
+    * untouched SMSTCPIP ( SMS_PS2IP ) stack loaded just above. The smbman_irx
+    * blob + its size are only compiled/embedded in BDM builds ( see Makefile ),
+    * so guard the reference -- SMS_IOPStartNet itself is built in all configs. */
 #ifdef BDM
-    SifExecDecompModuleBuffer ( &smbman_irx, size_smbman_irx, 0, NULL, &i );
+   SifExecDecompModuleBuffer ( &smbman_irx, size_smbman_irx, 0, NULL, &i );
 
-    if ( i >= 0 ) g_IOPFlags |= SMS_IOPF_SMB;
+   if ( i >= 0 ) g_IOPFlags |= SMS_IOPF_SMB;
 #else
-    i = -1;  /* SMB unavailable in non-BDM builds */
+   i = -1;  /* SMB unavailable in non-BDM builds */
 #endif
 
-   } else {
+  } else {
 
-    SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2HOST_OFFSET ], SMS_PS2HOST_SIZE, 0, NULL, &i );
+   SifExecModuleBuffer ( &g_DataBuffer[ SMS_PS2HOST_OFFSET ], SMS_PS2HOST_SIZE, 0, NULL, &i );
 
-    if ( i >= 0 ) g_IOPFlags |= SMS_IOPF_NET;
+   if ( i >= 0 ) g_IOPFlags |= SMS_IOPF_NET;
 
-   }  /* end else */
-
-  }  /* end if */
+  }  /* end else */
 
  }  /* end if */
 
  return g_IOPFlags & ( SMS_IOPF_NET | SMS_IOPF_SMB );
 
 }  /* end SMS_IOPStartNet */
+
+#ifdef BDM
+/* Network for the clock sync and the updater: the same stack SMB uses, plus the small socket
+ * service ( iop/smsnet ) the EE talks to. Neither SMB nor HOST is started, and both can still
+ * be started afterwards. Returns 1 when ready ( 2 the first time ), 0 when there is no adapter
+ * or a module failed, -1 when UDPFS holds the adapter: SMS_IOPNetSwitch ( SMS_NETMODE_OFF )
+ * frees it with an IOP reset, after which this can be called again. */
+int SMS_IOPStartInet ( void ) {
+
+ int i;
+
+ if ( s_NetOwner == 2 ) return -1;
+
+ if (  !_start_tcpip ( 1 )  ) return 0;
+
+ if ( !s_fInetSvc ) {
+
+  if (  SifExecDecompModuleBuffer ( &smsnet_irx, size_smsnet_irx, 0, NULL, &i ) < 0 || i < 0  ) return 0;
+
+  s_fInetSvc = 1;
+
+  return 2;   /* just loaded: the caller binds to it again */
+
+ }  /* end if */
+
+ return 1;
+
+}  /* end SMS_IOPStartInet */
+#endif  /* BDM */
 
 #ifdef BDM
 static int checkConnectedMassDev ( int afUnit ) {
@@ -1813,6 +1873,7 @@ int SMS_IOPNetSwitch ( unsigned int aMode ) {
  g_UdpfsFlags  = 0;
  g_MmceFlags   = 0;
  s_fSmap = s_fStack = s_fIoman = 0;
+ s_fTcpIP = s_fTcpEth = s_fInetSvc = 0;
 
 /* 6. Bring the requested stack up. Each starter re-loads dev9 itself as needed. */
  switch ( aMode ) {

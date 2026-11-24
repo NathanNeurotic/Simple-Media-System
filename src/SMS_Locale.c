@@ -394,6 +394,37 @@ static char s_pNLStartHOST  [] __attribute__(   (  section( ".data" ), aligned( 
 static char s_pNLAutoHost   [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Autostart HOST ( ps2dev )";
 static char s_pNLAutoSMB    [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Autostart SMB";
 static char s_pNLNetSwitch  [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Network is already running. Restart it now to apply?";
+static char s_pNLDateTimeUpd   [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Date, time and updates";
+static char s_pNLYear          [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Year";
+static char s_pNLMonth         [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Month";
+static char s_pNLDay           [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Day";
+static char s_pNLHour          [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Hour";
+static char s_pNLMinute        [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Minute";
+static char s_pNLSetClock      [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Set the clock";
+static char s_pNLSetClockInet  [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Set the clock from the Internet";
+static char s_pNLCheckUpd      [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Check for updates";
+static char s_pNLAskingTime    [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Asking the Internet for the time...";
+static char s_pNLClockSet      [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "The clock is set";
+static char s_pNLClockRefused  [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "The console refused the new time";
+static char s_pNLUpdChecking   [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Checking for updates...";
+static char s_pNLUpdNone       [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "SMS is up to date";
+static char s_pNLUpdAsk        [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Build %s is available. Install it now?";
+static char s_pNLUpdDownloading[] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Downloading the update...";
+static char s_pNLUpdWriting    [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Writing the update...";
+static char s_pNLUpdDone       [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Update installed. Restart SMS to use it";
+static char s_pNLNetNA         [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Network not available: check cable and IP settings";
+static char s_pNLNetUdpfsAsk   [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "UDPFS is using the network. Stop it and go on?";
+static char s_pNLNetDNS        [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Name lookup failed: check the gateway address";
+static char s_pNLNetConnect    [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Could not connect to the server";
+static char s_pNLNetTimeout    [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "The server did not answer in time";
+static char s_pNLUpdClock      [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Set the console clock first";
+static char s_pNLUpdTLS        [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Secure connection failed: check the clock";
+static char s_pNLUpdHTTP       [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Unexpected answer from GitHub. Try again later";
+static char s_pNLUpdBad        [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Download failed its check. Nothing was changed";
+static char s_pNLUpdMem        [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Not enough memory";
+static char s_pNLUpdMCFull     [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Memory card is full. Nothing was changed";
+static char s_pNLUpdWriteErr   [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Writing failed (step %d, error %d). Try again?";
+static char s_pNLUpdDevice     [] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = "Cannot update SMS on this device";
 
 static SMString s_SMStringDef[] __attribute__(   (  section( ".data" )  )   ) = {
  { sizeof ( s_pAvailableMedia  ) - 1, s_pAvailableMedia  },
@@ -707,7 +738,38 @@ static SMString s_SMStringDef[] __attribute__(   (  section( ".data" )  )   ) = 
  { sizeof ( s_pNLStartHOST     ) - 1, s_pNLStartHOST     },   /* 307 */
  { sizeof ( s_pNLAutoHost      ) - 1, s_pNLAutoHost      },   /* 308 */
  { sizeof ( s_pNLAutoSMB       ) - 1, s_pNLAutoSMB       },   /* 309 */
- { sizeof ( s_pNLNetSwitch     ) - 1, s_pNLNetSwitch     }    /* 310 */
+ { sizeof ( s_pNLNetSwitch     ) - 1, s_pNLNetSwitch     },   /* 310 */
+ { sizeof ( s_pNLDateTimeUpd    ) - 1, s_pNLDateTimeUpd    },   /* 311 */
+ { sizeof ( s_pNLYear           ) - 1, s_pNLYear           },   /* 312 */
+ { sizeof ( s_pNLMonth          ) - 1, s_pNLMonth          },   /* 313 */
+ { sizeof ( s_pNLDay            ) - 1, s_pNLDay            },   /* 314 */
+ { sizeof ( s_pNLHour           ) - 1, s_pNLHour           },   /* 315 */
+ { sizeof ( s_pNLMinute         ) - 1, s_pNLMinute         },   /* 316 */
+ { sizeof ( s_pNLSetClock       ) - 1, s_pNLSetClock       },   /* 317 */
+ { sizeof ( s_pNLSetClockInet   ) - 1, s_pNLSetClockInet   },   /* 318 */
+ { sizeof ( s_pNLCheckUpd       ) - 1, s_pNLCheckUpd       },   /* 319 */
+ { sizeof ( s_pNLAskingTime     ) - 1, s_pNLAskingTime     },   /* 320 */
+ { sizeof ( s_pNLClockSet       ) - 1, s_pNLClockSet       },   /* 321 */
+ { sizeof ( s_pNLClockRefused   ) - 1, s_pNLClockRefused   },   /* 322 */
+ { sizeof ( s_pNLUpdChecking    ) - 1, s_pNLUpdChecking    },   /* 323 */
+ { sizeof ( s_pNLUpdNone        ) - 1, s_pNLUpdNone        },   /* 324 */
+ { sizeof ( s_pNLUpdAsk         ) - 1, s_pNLUpdAsk         },   /* 325 */
+ { sizeof ( s_pNLUpdDownloading ) - 1, s_pNLUpdDownloading },   /* 326 */
+ { sizeof ( s_pNLUpdWriting     ) - 1, s_pNLUpdWriting     },   /* 327 */
+ { sizeof ( s_pNLUpdDone        ) - 1, s_pNLUpdDone        },   /* 328 */
+ { sizeof ( s_pNLNetNA          ) - 1, s_pNLNetNA          },   /* 329 */
+ { sizeof ( s_pNLNetUdpfsAsk    ) - 1, s_pNLNetUdpfsAsk    },   /* 330 */
+ { sizeof ( s_pNLNetDNS         ) - 1, s_pNLNetDNS         },   /* 331 */
+ { sizeof ( s_pNLNetConnect     ) - 1, s_pNLNetConnect     },   /* 332 */
+ { sizeof ( s_pNLNetTimeout     ) - 1, s_pNLNetTimeout     },   /* 333 */
+ { sizeof ( s_pNLUpdClock       ) - 1, s_pNLUpdClock       },   /* 334 */
+ { sizeof ( s_pNLUpdTLS         ) - 1, s_pNLUpdTLS         },   /* 335 */
+ { sizeof ( s_pNLUpdHTTP        ) - 1, s_pNLUpdHTTP        },   /* 336 */
+ { sizeof ( s_pNLUpdBad         ) - 1, s_pNLUpdBad         },   /* 337 */
+ { sizeof ( s_pNLUpdMem         ) - 1, s_pNLUpdMem         },   /* 338 */
+ { sizeof ( s_pNLUpdMCFull      ) - 1, s_pNLUpdMCFull      },   /* 339 */
+ { sizeof ( s_pNLUpdWriteErr    ) - 1, s_pNLUpdWriteErr    },   /* 340 */
+ { sizeof ( s_pNLUpdDevice      ) - 1, s_pNLUpdDevice      }    /* 341 */
 };
 
 static unsigned char s_XLTLatin1[ 256 ] __attribute__(   (  section( ".data" ), aligned( 1 )  )   ) = {

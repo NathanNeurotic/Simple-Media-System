@@ -342,3 +342,32 @@ int CDDA_ReadClock ( void* apClock ) {
  return retVal;
 
 }  /* end CDDA_ReadClock */
+
+/* Writes the 8 byte clock ( BCD, Japan time, the layout CDDA_ReadClock returns ).
+ * Returns 1 when the console accepted it. */
+int CDDA_WriteClock ( void* apClock ) {
+
+ static unsigned char s_Clock[ 64 ] __attribute__(   (  aligned( 64 ), section( ".bss" )  )   );
+
+ int retVal = 0;
+
+ WaitSema ( s_LockSema );
+
+ memcpy ( s_Clock, apClock, 8 );
+
+ if (  SifCallRpc (
+        &s_ClientSCmd, 2, 0, s_Clock, 8, s_SCmdRecvBuff, 16, NULL, NULL
+       ) >= 0
+ ) {
+
+  unsigned char* lpRes = ( unsigned char* )UNCACHED_SEG( s_SCmdRecvBuff );
+
+  retVal = *( int* )lpRes && !( lpRes[ 4 ] & 0x80 );
+
+ }  /* end if */
+
+ SignalSema ( s_LockSema );
+
+ return retVal;
+
+}  /* end CDDA_WriteClock */

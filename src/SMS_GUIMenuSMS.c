@@ -31,6 +31,8 @@ extern const int g_LngExpect;   /* SMS_Locale.c -- lines a valid pack must have 
 #include "SMS_RC.h"
 #include "SMS_CDVD.h"
 #include "SMS_GUIClock.h"
+#include "SMS_Update.h"
+#include "SMS_UpdateCore.h"
 #include "SMS_IOP.h"
 #include "SMS_ioctl.h"
 #include "libds34usb.h"   /* ds34usb_get_bdaddr / ds34usb_set_bdaddr -- BT pairing */
@@ -54,6 +56,7 @@ static int        s_fHDD;
 static GUIObject* s_pSample;
 
 static void _display_handler  ( GUIMenu*, int );
+static void _datetime_handler ( GUIMenu*, int );
 static void _device_handler   ( GUIMenu*, int );
 static void _browser_handler  ( GUIMenu*, int );
 static void _player_handler   ( GUIMenu*, int );
@@ -189,6 +192,7 @@ static GUIMenuItem s_SMSMenu[] __attribute__(   (  section( ".data" )  )   ) = {
  { 0, &STR_DEVICE_SETTINGS,      GUICON_NETWORK, 0, _device_handler,   0, 0 },
  { 0, &STR_BROWSER_SETTINGS,     GUICON_BROWSER, 0, _browser_handler,  0, 0 },
  { 0, &STR_PLAYER_SETTINGS,      GUICON_PLAYER,  0, _player_handler,   0, 0 },
+ { 0, &STR_DATE_TIME_UPD,        GUICON_NETWORK, 0, _datetime_handler, 0, 0 },
  { 0, &STR_HELP,                 GUICON_HELP,    0, _help_handler,     0, 0 },
  { 0, &STR_SAVE_SETTINGS,        GUICON_SAVE,    0, _save_handler,     0, 0 },
  { 0, &STR_SHUTDOWN_CONSOLE,     GUICON_EXIT,    0, _shutdown_handler, 0, 0 },
@@ -3050,3 +3054,108 @@ GUIObject* GUI_CreateMenuSMS ( void ) {
  return ( GUIObject* )retVal;
 
 }  /* end GUI_CreateMenuSMS */
+
+/* ---------------------------------------------------------------------------------------
+ * Date, time and updates. The five rows hold the clock in the user's own time zone; nothing
+ * is written until "Set the clock". The two Internet rows bring the network up themselves.
+ * ------------------------------------------------------------------------------------- */
+static int      s_Clk   [ 5 ]      __attribute__(   (  section( ".data" )  )   ) = { 2026, 1, 1, 0, 0 };
+static char     s_ClkTxt[ 5 ][ 8 ] __attribute__(   (  section( ".data" )  )   ) = { "" };
+static SMString s_StrClk[ 5 ]      __attribute__(   (  section( ".data" )  )   ) = {
+ { 0, s_ClkTxt[ 0 ] }, { 0, s_ClkTxt[ 1 ] }, { 0, s_ClkTxt[ 2 ] }, { 0, s_ClkTxt[ 3 ] }, { 0, s_ClkTxt[ 4 ] }
+};
+
+static void _clk_show ( GUIMenu* apMenu ) {
+
+ static char s_Fmt[] __attribute__(   (  section( ".data" )  )   ) = "%02d";
+
+ int i, lDays = UPD_DaysIn ( s_Clk[ 0 ], s_Clk[ 1 ] );
+
+ if ( s_Clk[ 2 ] > lDays ) s_Clk[ 2 ] = lDays;
+
+ for ( i = 0; i < 5; ++i ) s_StrClk[ i ].m_Len = sprintf ( s_ClkTxt[ i ], s_Fmt, s_Clk[ i ] );
+
+ if ( apMenu ) apMenu -> Redraw ( apMenu );
+
+}  /* end _clk_show */
+
+static void _clk_roll ( GUIMenu* apMenu, int anIdx, int aDir ) {
+
+ static short s_Lo[ 5 ] __attribute__(   (  section( ".data" )  )   ) = { 2000,  1,  1,  0,  0 };
+ static short s_Hi[ 5 ] __attribute__(   (  section( ".data" )  )   ) = { 2099, 12, 31, 23, 59 };
+
+ int lHi  = anIdx == 2 ? UPD_DaysIn ( s_Clk[ 0 ], s_Clk[ 1 ] ) : s_Hi[ anIdx ];
+ int lVal = s_Clk[ anIdx ] + aDir;
+
+ if ( lVal < s_Lo[ anIdx ] )
+  lVal = lHi;
+ else if ( lVal > lHi ) lVal = s_Lo[ anIdx ];
+
+ s_Clk[ anIdx ] = lVal;
+
+ _clk_show ( apMenu );
+
+}  /* end _clk_roll */
+
+static void _clk_year_handler  ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 0, aDir ); }
+static void _clk_month_handler ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 1, aDir ); }
+static void _clk_day_handler   ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 2, aDir ); }
+static void _clk_hour_handler  ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 3, aDir ); }
+static void _clk_min_handler   ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 4, aDir ); }
+
+static void _clk_set_handler ( GUIMenu* apMenu, int aDir ) {
+
+ if (  SMS_ClockSet ( s_Clk, 0 )  )
+  GUI_Status ( STR_CLOCK_SET.m_pStr );
+ else GUI_Error ( STR_CLOCK_REFUSED.m_pStr );
+
+}  /* end _clk_set_handler */
+
+#ifdef BDM
+static void _clk_inet_handler ( GUIMenu* apMenu, int aDir ) {
+
+ if (  SMS_ClockFromInternet () && SMS_ClockGet ( s_Clk )  ) _clk_show ( apMenu );
+
+}  /* end _clk_inet_handler */
+
+static void _upd_check_handler ( GUIMenu* apMenu, int aDir ) {
+
+ SMS_UpdateCheck ();
+
+}  /* end _upd_check_handler */
+#endif  /* BDM */
+
+static GUIMenuItem s_ClkMenu[] __attribute__(   (  section( ".data" )  )   ) = {
+ { MENU_ITEM_TYPE_TEXT, &STR_CLK_YEAR,     0, 0, _clk_year_handler,  0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_CLK_MONTH,    0, 0, _clk_month_handler, 0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_CLK_DAY,      0, 0, _clk_day_handler,   0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_CLK_HOUR,     0, 0, _clk_hour_handler,  0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &STR_CLK_MINUTE,   0, 0, _clk_min_handler,   0, 0 },
+ {                   0, &STR_CLK_SET,      0, 0, _clk_set_handler,   0, 0 }
+#ifdef BDM
+ ,
+ {                   0, &STR_CLK_SET_INET, 0, 0, _clk_inet_handler,  0, 0 },
+ {                   0, &STR_UPD_CHECK,    0, 0, _upd_check_handler, 0, 0 }
+#endif  /* BDM */
+};
+
+static void _datetime_handler ( GUIMenu* apMenu, int aDir ) {
+
+ GUIMenuState* lpState = GUI_MenuPushState ( apMenu );
+ int           i;
+
+ SMS_ClockGet ( s_Clk );   /* an unreadable clock leaves the last values to edit */
+ _clk_show ( NULL );
+
+ lpState -> m_pItems =
+ lpState -> m_pFirst =
+ lpState -> m_pCurr  = s_ClkMenu;
+ lpState -> m_pLast  = &s_ClkMenu[ sizeof ( s_ClkMenu ) / sizeof ( s_ClkMenu[ 0 ] ) - 1 ];
+ lpState -> m_pTitle = &STR_DATE_TIME_UPD;
+
+ for ( i = 0; i < 5; ++i ) s_ClkMenu[ i ].m_IconRight = ( unsigned int )&s_StrClk[ i ];
+
+ GUIMenuSMS_UpdateStatus ( apMenu );
+ apMenu -> Redraw ( apMenu );
+
+}  /* end _datetime_handler */
