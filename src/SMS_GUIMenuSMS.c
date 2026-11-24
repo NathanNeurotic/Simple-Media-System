@@ -3131,10 +3131,30 @@ static void _zone_show ( GUIMenu* apMenu ) {
  strcpy ( s_ZoneTxt[ 1 ], lpSum );
  s_StrZone[ 1 ].m_Len = strlen ( lpSum );
 
- SMS_ClockGet ( s_Clk );   /* the rows below show the clock in the new zone */
  _clk_show ( apMenu );
 
 }  /* end _zone_show */
+
+/* Takes a new zone setting only when the clock can be read in it: the rows below would
+ * otherwise still hold the time of the old zone and "Set the clock" would write that. */
+static void _zone_set ( GUIMenu* apMenu, int aNew ) {
+
+ static char s_Err[] __attribute__(   (  section( ".data" )  )   ) = "The clock could not be read";
+
+ unsigned char lOld = g_Config.m_ClockZone;
+
+ g_Config.m_ClockZone = aNew;
+
+ if (  !SMS_ClockGet ( s_Clk )  ) {
+
+  g_Config.m_ClockZone = lOld;
+  GUI_Error ( s_Err );
+
+ }  /* end if */
+
+ _zone_show ( apMenu );
+
+}  /* end _zone_set */
 
 static void _zone_handler ( GUIMenu* apMenu, int aDir ) {
 
@@ -3145,9 +3165,7 @@ static void _zone_handler ( GUIMenu* apMenu, int aDir ) {
 
  lIdx = ( lIdx + ( aDir < 0 ? lCount - 1 : 1 )  ) % lCount;
 
- g_Config.m_ClockZone = lIdx ? (  lIdx | ( g_Config.m_ClockZone & 0x80 )  ) : 0;
-
- _zone_show ( apMenu );
+ _zone_set (  apMenu, lIdx ? (  lIdx | ( g_Config.m_ClockZone & 0x80 )  ) : 0  );
 
 }  /* end _zone_handler */
 
@@ -3155,9 +3173,9 @@ static void _summer_handler ( GUIMenu* apMenu, int aDir ) {
 
  int lIdx = g_Config.m_ClockZone & 0x7F;
 
- if (  lIdx >= 1 && lIdx <= UPD_ZoneCount ()  ) g_Config.m_ClockZone ^= 0x80;   /* the console's own summer time otherwise */
+ if ( lIdx < 1 || lIdx > UPD_ZoneCount ()  ) return;   /* the console's own summer time: nothing to change */
 
- _zone_show ( apMenu );
+ _zone_set ( apMenu, g_Config.m_ClockZone ^ 0x80 );
 
 }  /* end _summer_handler */
 
