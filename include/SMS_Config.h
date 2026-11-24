@@ -128,7 +128,7 @@ typedef struct SMSConfig {
  unsigned int   m_PlayerBrightness;
  unsigned char  m_CDVDSpeed;
  unsigned char  m_ColorDepth;
- unsigned char  m_Reserved0;
+ unsigned char  m_ClockZone;   /* was m_Reserved0 ( always 0 ): see UPD_ZoneOffset */
  unsigned char  m_MP3AutoPar;
  char           m_SkinName[ 64 ];
  char           m_SMBIP[ 16 ];

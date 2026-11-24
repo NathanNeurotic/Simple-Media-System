@@ -37,8 +37,25 @@ static void shift(int y,int mo,int d,int h,int mi,int by,int ok,int ey,int emo,i
 }
 #define A "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 #define B "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+static void zones(void) {
+ int i;
+ /* 0: the console's own zone and summer time. */
+ assert(UPD_ZoneOffset(0,-300,0)==-840 && UPD_ZoneOffset(0,-300,1)==-780 && UPD_ZoneOffset(0,540,0)==0);
+ assert(UPD_ZoneOffset(0x80,-300,0)==-840);              /* summer bit without a zone: still the console */
+ assert(UPD_ZoneOffset(120,60,0)==-480);                 /* not on the list: the console */
+ assert(UPD_ZoneCount()>=1 && UPD_ZoneCount()<=126);
+ assert(UPD_ZoneMinutes(0)==0 && UPD_ZoneMinutes(UPD_ZoneCount()+1)==0);
+ for(i=1;i<=UPD_ZoneCount();i++) {
+  int m=UPD_ZoneMinutes(i);
+  assert(m>=-720 && m<=840 && m%15==0 && (i==1 || m>UPD_ZoneMinutes(i-1)));
+  /* A picked zone replaces the console's zone and its summer time. */
+  assert(UPD_ZoneOffset(i,540,1)==m-540 && UPD_ZoneOffset(i|0x80,540,0)==m-480);
+  /* A console left on Japan's zone, seen from UTC-5, is 14 hours ahead. */
+  if(m==-300) assert(UPD_ZoneOffset(0,540,0)-UPD_ZoneOffset(i,540,0)==14*60);
+ }
+}
 int main(void) {
- int t[6]; unsigned char sha[32]; unsigned int build=0; char id[16], host[64]; const char* p;
+ int t[6]; zones(); unsigned char sha[32]; unsigned int build=0; char id[16], host[64]; const char* p;
  unsigned char elf[64], q[64], ip[4]; int n, i;
 
  assert(UPD_DaysIn(2026,2)==28 && UPD_DaysIn(2028,2)==29 && UPD_DaysIn(2026,12)==31 && UPD_DaysIn(2026,4)==30);

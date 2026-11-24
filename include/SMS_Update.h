@@ -5,6 +5,9 @@
 
 /* argv[ 0 ]: the file Check for updates overwrites. */
 void SMS_UpdateSetBootPath ( const char* apPath );
+/* Minutes to add to the console clock ( Japan time ) to get local time: the zone picked in
+ * "Date, time and updates", or the console's own zone and summer time. */
+int  SMS_ZoneOffset        ( void );
 /* The console clock in the user's time zone: { year, month, day, hour, minute }.
  * 0 when the clock cannot be read. */
 int  SMS_ClockGet          ( int* apT );

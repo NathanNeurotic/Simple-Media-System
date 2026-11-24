@@ -334,7 +334,15 @@ __asm__(
  ".set reorder\n\t"
 );
 
-void SMS_LocalTime ( void* );
+/* The clock ( Japan time ) to local time, in the zone picked in "Date, time and updates"
+ * or the console's own. */
+int SMS_ZoneOffset ( void );
+
+void SMS_LocalTime ( void* apClock ) {
+
+ _adjustTime (  apClock, SMS_ZoneOffset ()  );
+
+}  /* end SMS_LocalTime */
 __asm__(
  ".set noreorder\n\t"
  ".set nomacro\n\t"
