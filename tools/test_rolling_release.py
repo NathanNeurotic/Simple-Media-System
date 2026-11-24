@@ -79,6 +79,7 @@ def run_case(name, expected, **overrides):
         (tmp / "dist").mkdir()
         for asset in ASSETS:
             (tmp / "dist" / asset).write_bytes(b"fixture")
+        (tmp / "dist" / "SHA256SUMS.txt").write_bytes(b"fixture")
         # Use fail-fast Bash behavior as on GitHub Actions.
         # A shell function also works with Python's Windows path under Git Bash.
         prefix = 'gh() { "$SMS_RELEASE_PYTHON" "$SMS_RELEASE_FAKE" "$@"; }\n'
@@ -97,7 +98,10 @@ def run_case(name, expected, **overrides):
             assert state["tag"] == SHA, (name, state)
             assert sum(a[:3] == ["release", "create", "rolling"] for a in calls) == (not overrides.get("exists", True))
             uploads = [a for a in calls if a[:3] == ["release", "upload", "rolling"]]
-            assert uploads and {"dist/" + n for n in ASSETS} <= set(uploads[-1]), calls  # every package, the new ones too
+            assert uploads and {"dist/" + n for n in ASSETS} <= set(uploads[0]), calls  # every package, the new ones too
+            # The hashes Check for updates reads go up last, after the ELFs they describe.
+            assert len(uploads) == 2 and "dist/SHA256SUMS.txt" in uploads[1], calls
+            assert "dist/SHA256SUMS.txt" not in uploads[0], calls
             assert calls[-1][1].endswith("/git/ref/tags/rolling"), calls
         if overrides.get("master_error") or name in ("invalid-master-identity", "empty-master-identity"):
             assert len(calls) == 1, calls
