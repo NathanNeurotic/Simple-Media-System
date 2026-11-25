@@ -6,7 +6,11 @@ preserved in full below the marked boundary, unmodified.
 
 ---
 
-## Rolling development — 2026-11-24
+## v3.0.0-rev4 (Version 3.0 Rev.4)
+
+Shown in the app as Version 3.0 (Rev.4); the About screen ends with `Build <commit>`. Includes everything in rolling
+up to this point, listed below. `v3.0.0-rev3` stays as an archived release. A Rev.4 build's Check for updates
+follows the latest stable release.
 
 - **Time zone** and **Summer time** rows in **Date, time and updates** (after FifthFox's report against
   RiptOPL of a time 14 hours ahead after an Internet sync). The clock was always shown in the zone set in
