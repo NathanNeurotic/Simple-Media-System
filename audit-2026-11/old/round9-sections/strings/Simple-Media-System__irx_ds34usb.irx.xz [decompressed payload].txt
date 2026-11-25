@@ -1,0 +1,34 @@
+ds34usb
+B1!0@
+$! @
+"c$!
+"1&!
+"1&!
+"c$!
+B4!  
+"c$!(C
+b,!`
+c0@ 
+< "c$
+$!0D
+'!( 
+"B$!
+"!$!
+"!$!
+B$!(
+"1&!
+"1&!
+"1&!
+&!(@
+c0#8
+sifcmd
+thsemap
+thbase
+usbd
+ds34usb
+.shstrtab
+.iopmod
+.rel.text
+.rel.rodata
+.rel.data
+.bss

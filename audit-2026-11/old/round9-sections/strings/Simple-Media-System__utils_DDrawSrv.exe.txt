@@ -1,0 +1,268 @@
+!This program cannot be run in DOS mode.
+Rich
+.text
+`.rdata
+@.data
+|$Th
+L$dQV
+|$\[
+SUVWj
+h8u@
+T$$RV
+|$4P
+T$8h
+t~j 
+T$(R
+_^][
+_^]3
+|$0j
+D$4|
+T$4h!
+T$(h
+Qx_^
+_^][
+T$ j
+_^][
+_^]3
+SUVW
+D$(+
+_^][
+D$d 
+D$lYV12
+wstN
+It2It!Iuy
+h(q@
+XSVW
+Yt4^
+hlq@
+hPq@
+eYt,F
+SVt'
+80t<
+VWt*
+Sj0W
+8-PS
+_^[]
+Vt6P
+_9=|
+YYh 
+<"u%
+F<"t
+t9UW
+?=t"U
+QQS3
+PSSW
+8"uD
+8"uF@
+8"u,
+@@f9
+@@f9
+SS@SSPVSS
+t#SSUP
+t$$VSS
+_^][YY
+DSUVWh
+_^][
+8MZu
+t>j,P
+Yt0@
+SVWUj
+]_^[
+t.;t$$t(
+VC20XC00U
+SVWU
+tEVU
+t3x<
+]_^[
+hpt@
+hlt@
+hDt@
+5`p@
+uiSj
+uY;]
+pD#U
+j #M
+j?^;
+SUVWu
+-Tp@
+_^][
+QQSV
+sN;E
+u%C@
+SVWu
+^}%95
+SVWj 
+t!CS
+SVWj 
+1_^[
+PPPP
+PPPP
+@PWV
+_^[]
+SVWf
+90tr
+0B=H
+%Dp@
+%Hp@
+Wj@Y3
+t7SW
+    
+@AA;
+<Xt	
+u,9E
+^_[3
+^[_3
+VWuBh
+5(p@
+tzVS
+GIt%
+t/Ku
+uFWWj
+"WWSh
+9} u
+E WW
+tMWWS
+t@9}
+VSh 
+\SVW
++ttHHtd
+	j	XO
+h0u@
+u.h(u@
+h u@
+tAVW
+%\p@
+GAIsProcessorFeaturePresent
+KERNEL32
+e+000
+__GLOBAL_HEAP_SELECTED
+__MSVCRT_HEAP_SELECT
+runtime error 
+TLOSS error
+SING error
+DOMAIN error
+R6028
+- unable to initialize heap
+R6027
+- not enough space for lowio initialization
+R6026
+- not enough space for stdio initialization
+R6025
+- pure virtual function call
+R6024
+- not enough space for _onexit/atexit table
+R6019
+- unable to open console device
+R6018
+- unexpected heap error
+R6017
+- unexpected multithread lock error
+R6016
+- not enough space for thread data
+abnormal program termination
+R6009
+- not enough space for environment
+R6008
+- not enough space for arguments
+R6002
+- floating point not loaded
+Microsoft Visual C++ Runtime Library
+Runtime Error!
+Program: 
+<program name unknown>
+GetLastActivePopup
+GetActiveWindow
+MessageBoxA
+user32.dll
+1#QNAN
+1#INF
+1#IND
+1#SNAN
+GetLastError
+CloseHandle
+MapViewOfFile
+CreateFileMappingA
+UnmapViewOfFile
+KERNEL32.dll
+UnregisterClassA
+DispatchMessageA
+TranslateMessage
+GetMessageA
+UpdateWindow
+ShowWindow
+CreateWindowExA
+GetDesktopWindow
+RegisterClassA
+LoadCursorA
+LoadIconA
+SetWindowLongA
+GetClientRect
+PostQuitMessage
+GetWindowLongA
+EndPaint
+BeginPaint
+SystemParametersInfoA
+InvalidateRect
+SetForegroundWindow
+MoveWindow
+GetSystemMetrics
+ClientToScreen
+DefWindowProcA
+USER32.dll
+GetStockObject
+GDI32.dll
+DirectDrawCreateEx
+DDRAW.dll
+GetModuleHandleA
+GetStartupInfoA
+GetCommandLineA
+GetVersion
+ExitProcess
+HeapAlloc
+GetProcAddress
+HeapFree
+TerminateProcess
+GetCurrentProcess
+UnhandledExceptionFilter
+GetModuleFileNameA
+FreeEnvironmentStringsA
+FreeEnvironmentStringsW
+WideCharToMultiByte
+GetEnvironmentStrings
+GetEnvironmentStringsW
+SetHandleCount
+GetStdHandle
+GetFileType
+GetEnvironmentVariableA
+GetVersionExA
+HeapDestroy
+HeapCreate
+VirtualFree
+RtlUnwind
+WriteFile
+VirtualAlloc
+HeapReAlloc
+GetCPInfo
+GetACP
+GetOEMCP
+LoadLibraryA
+MultiByteToWideChar
+GetStringTypeA
+GetStringTypeW
+LCMapStringA
+LCMapStringW
+DDrawSrv_Window
+DDrawSrv_Class
+DDrawSrv_Image
+kU'9
+HMXB
+?Zd;
+?/L[
+S;uD
+z?aUY
+D?$?
+U>c{
+zc%C1
+.:3q
+-64OS
+NKeb

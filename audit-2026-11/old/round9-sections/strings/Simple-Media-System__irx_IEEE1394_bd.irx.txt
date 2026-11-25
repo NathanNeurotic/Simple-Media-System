@@ -1,0 +1,44 @@
+iLinkman
+intrman
+stdio
+sysclib
+sysmem
+thbase
+thevent
+2!8g
+2!8g
+<@BB$
+'! C
+SBP2: result: 0x%08lx; status: 0x%02x; RESP: 0x%02x; Dead: %u; len: 0x%02x; sense: 0x%02x.
+SBP2: BUS RESET DETECTED. Nodes: %d
+SBP2: Local Node: 0x%08x.
+SBP2: Attempting to initialize unit %d...
+SBP2: Detected SBP-2 device.
+SBP2: Connected device as node 0x%08x.
+SBP2: Generation number: %d.
+SBP2: Current speed: %d.
+SBP2: IEEE1394 Driver v%d.%d
+SBP2: ERROR: initializing SCSI driver!
+IEEE1394_bd
+SBP2: ERROR: scsi_cmd_start_stop_unit %d
+ilink
+SBP2: ERROR: scsi_cmd_inquiry %d
+SBP2: Vendor: %.8s
+SBP2: Product: %.16s
+SBP2: Revision: %.4s
+SBP2: ERROR: scsi_cmd_test_unit_ready %d
+SBP2: ERROR: scsi_cmd_request_sense %d
+SBP2: Sense Data key: %02X code: %02X qual: %02X
+SBP2: ERROR: Additional initalization is required for this device!
+SBP2: ERROR: scsi_cmd_read_capacity %d
+SBP2: %lu %u-byte logical blocks: (%luMB / %luMiB)
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab

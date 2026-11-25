@@ -1,0 +1,17 @@
+sio2man
+sio2man1
+loadcore
+intrman
+dmacman
+thsemap
+sio2man
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab

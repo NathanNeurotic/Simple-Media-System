@@ -1,0 +1,70 @@
+iomanx
+ B4 
+'%(@
+'%(@
+'%(@
+$%(@
+'%8@
+'%(@
+'%(@
+'%(@
+'%(@
+'c$%
+<T(#
+<P(#
+<L(#
+<H(#
+<D(#
+<@(#
+<<(#
+<8(#
+<4(#
+<0(#
+<,(#
+<((#
+<$(#
+< (#
+<T(B
+<P(B
+<L(B
+<H(B
+<D(B
+<@(B
+<<(B
+<8(B
+<4(B
+<0(B
+<,(B
+<((B
+<$(B
+< (B
+intrman
+sysmem
+stdio
+loadcore
+sysclib
+thbase
+ioman
+Unknown device '%s'
+Known devices are 
+ %s:(%s) 
+[too many open]
+out of file descriptors
+ioabort exit:%s %s
+invalid lseek arg
+AddDrv()/DelDrv() recursive/mutithread call error !!
+tty:
+dummytty:
+dummytty
+CONSOLE
+IO/File_Manager
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab

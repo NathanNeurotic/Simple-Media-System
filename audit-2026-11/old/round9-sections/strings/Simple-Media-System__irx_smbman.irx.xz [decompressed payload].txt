@@ -1,0 +1,102 @@
+smbman
+$+ (
+&!(@
+<! @
+4!(`
+T0!(
+c$#(
+t0! @
+&!(@
+$!(@
+$!(@
+$!0 
+b$! C
+Ss6r
+&#8&
+!$!0&
+$! @
+$! @
+Sc4s
+C$!8@
+B$!(
+SB4&
+C$!8@
+)2MB
+.%0f
+SR62
+!$! $
+!$!0&
+'!  
+)2MB
+s2MB
+B0! 
+J%!PF
+SR6+
+2!  
+$!(@
+'! `
+$! @
+'!0@
+'!  
+'! @
+$!  
+f&! @
+1&!( 
+s&!0 
+c4$`C
+4$`D
+c4$`C
+B4$x
+B0BK
+1%@b
+'%xe
+4$0d
+4$0d
+4$0d
+4$0d
+c0&`E
+c0&`e
+%&PB
+UUc4$0C
+c4$0C
+33c4$0C
+c4$0C
+y!4!
+$! @
+$!  
+$! @
+4vTc4
+$!( 
+'!( 
+ioman
+ps2ip
+intrman
+sifman
+thbase
+thsemap
+sysclib
+stdio
+smbman
+%s version 0x%01x%02x start!
+PS2 KEEPALIVE ECHO
+\\%s\IPC$
+IPC$
+\\%s\%s
+ &   ! 
+ 0 	
+NT LM 0.12
+PlayStation 2
+SMBMAN
+?????
+\PIPE\LANMAN
+WrLeh
+B13BWz
+KGS!@#$%
+.shstrtab
+.iopmod
+.rel.text
+.rodata
+.rel.data
+.sbss
+.bss
+.rel.eh_frame

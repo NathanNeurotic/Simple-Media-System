@@ -1,0 +1,57 @@
+'%  
+B8%(
+USB$
+<USB$
+<USB$
+USB$	
+USB$
+<USB$
+	c$<
+'%(@
+<@BB$
+'! C
+stdio
+sysclib
+thbase
+thsemap
+usbd
+usbmass_bd: USB MASS Driver v%d.%d
+usbmass_bd: ERROR: initializing SCSI driver!
+usbmass_bd: ERROR: initializing USB driver!
+usbmass_bd
+usbmass_bd: disconnect: devId=%i
+usbmass_bd: ERROR: disconnect: no device storage!
+usbmass_bd: ERROR: sending set_configuration %d
+usbmass_bd: ERROR: sending set_interface %d
+usbmass_bd: connect: devId=%i
+usbmass_bd: ERROR: Unable to allocate space!
+usbmass_bd: ERROR: Only one mass storage device allowed!
+usbmass_bd: ERROR: connect failed: not enough bulk endpoints!
+usbmass_bd: ERROR: Failed to allocate I/O semaphore
+mass-stor
+usbmass_bd: ERROR: register driver failed! ret=%d
+usbmass_bd: ERROR: CreateThread failed! ret=%d
+usbmass_bd: ERROR: StartThread failed! ret=%d
+usbmass_bd: ERROR: unable to read sector after %d tries (sector=0x%08x%08x, count=%d)
+usbmass_bd: ERROR: unable to write sector after %d tries (sector=0x%08x%08x, count=%d)
+usbmass_bd: ERROR: scsi_cmd_start_stop_unit %d
+usbmass_bd: ERROR: scsi_cmd_inquiry %d
+usbmass_bd: Vendor: %.8s
+usbmass_bd: Product: %.16s
+usbmass_bd: Revision: %.4s
+usbmass_bd: ERROR: scsi_cmd_test_unit_ready %d
+usbmass_bd: ERROR: scsi_cmd_request_sense %d
+usbmass_bd: Sense Data key: %02X code: %02X qual: %02X
+usbmass_bd: ERROR: Additional initalization is required for this device!
+usbmass_bd: ERROR: scsi_cmd_read_capacity %d
+usbmass_bd: %lu %u-byte logical blocks: (%luMB / %luMiB)
+.iopmod
+.text
+.rel.text
+.rodata
+.data
+.rel.data
+.bss
+.shstrtab
+.symtab
+.strtab
