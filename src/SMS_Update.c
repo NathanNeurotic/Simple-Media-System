@@ -11,6 +11,7 @@
 #include "SMS_UpdateCore.h"
 #include "SMS_CDDA.h"
 #include "SMS_DateTime.h"
+#include "SMS_Config.h"
 
 #include <string.h>
 
@@ -18,11 +19,13 @@ static int _bcd ( int aVal ) { return (  ( aVal / 10 ) << 4  ) | ( aVal % 10 ); 
 static int _dec ( int aVal ) { return ( aVal >> 4 ) * 10 + ( aVal & 15 );       }
 
 /* Minutes to add to the console clock ( Japan time ) to get the user's local time. */
-static int _zone ( void ) {
+int SMS_ZoneOffset ( void ) {
 
- return SMS_TimeZone () - 540 + ( SMS_SummerTime () ? 60 : 0 );
+ return UPD_ZoneOffset (  g_Config.m_ClockZone, SMS_TimeZone (), SMS_SummerTime ()  );
 
-}  /* end _zone */
+}  /* end SMS_ZoneOffset */
+
+static int _zone ( void ) { return SMS_ZoneOffset (); }
 
 /* The clock as the console keeps it: { year, month, day, hour, minute, second }, Japan time. */
 static int _rtc_read ( int* apT ) {

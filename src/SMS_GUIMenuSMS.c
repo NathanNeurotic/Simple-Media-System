@@ -33,6 +33,7 @@ extern const int g_LngExpect;   /* SMS_Locale.c -- lines a valid pack must have 
 #include "SMS_GUIClock.h"
 #include "SMS_Update.h"
 #include "SMS_UpdateCore.h"
+#include "SMS_DateTime.h"
 #include "SMS_IOP.h"
 #include "SMS_ioctl.h"
 #include "libds34usb.h"   /* ds34usb_get_bdaddr / ds34usb_set_bdaddr -- BT pairing */
@@ -3103,6 +3104,81 @@ static void _clk_day_handler   ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMen
 static void _clk_hour_handler  ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 3, aDir ); }
 static void _clk_min_handler   ( GUIMenu* apMenu, int aDir ) { _clk_roll ( apMenu, 4, aDir ); }
 
+/* Time zone and Summer time: how the clock is shown and typed, never the clock itself.
+ * g_Config.m_ClockZone ( see UPD_ZoneOffset ) is kept by "Save settings" like the rest. */
+static char     s_ZoneTxt[ 2 ][ 24 ] __attribute__(   (  section( ".data" )  )   ) = { "" };
+static SMString s_StrZone[ 2 ]       __attribute__(   (  section( ".data" )  )   ) = { { 0, s_ZoneTxt[ 0 ] }, { 0, s_ZoneTxt[ 1 ] } };
+static char     s_ZoneLbl[]          __attribute__(   (  section( ".data" )  )   ) = "Time zone";
+static char     s_SummerLbl[]        __attribute__(   (  section( ".data" )  )   ) = "Summer time";
+static SMString s_StrZoneLbl         __attribute__(   (  section( ".data" )  )   ) = { sizeof ( s_ZoneLbl   ) - 1, s_ZoneLbl   };
+static SMString s_StrSummerLbl       __attribute__(   (  section( ".data" )  )   ) = { sizeof ( s_SummerLbl ) - 1, s_SummerLbl };
+
+static void _zone_show ( GUIMenu* apMenu ) {
+
+ static char s_FmtList[] __attribute__(   (  section( ".data" )  )   ) = "UTC%c%02d:%02d";
+ static char s_FmtCons[] __attribute__(   (  section( ".data" )  )   ) = "Console (UTC%c%02d:%02d)";
+ static char s_Cons   [] __attribute__(   (  section( ".data" )  )   ) = "Console";
+ static char s_On     [] __attribute__(   (  section( ".data" )  )   ) = "On";
+ static char s_Off    [] __attribute__(   (  section( ".data" )  )   ) = "Off";
+
+ int         lIdx   = g_Config.m_ClockZone & 0x7F;
+ int         lfList = lIdx >= 1 && lIdx <= UPD_ZoneCount ();
+ int         lMin   = lfList ? UPD_ZoneMinutes ( lIdx ) : SMS_TimeZone ();
+ int         lAbs   = lMin < 0 ? -lMin : lMin;
+ const char* lpSum  = !lfList ? s_Cons : ( g_Config.m_ClockZone & 0x80 ) ? s_On : s_Off;
+
+ s_StrZone[ 0 ].m_Len = sprintf ( s_ZoneTxt[ 0 ], lfList ? s_FmtList : s_FmtCons, lMin < 0 ? '-' : '+', lAbs / 60, lAbs % 60 );
+ strcpy ( s_ZoneTxt[ 1 ], lpSum );
+ s_StrZone[ 1 ].m_Len = strlen ( lpSum );
+
+ _clk_show ( apMenu );
+
+}  /* end _zone_show */
+
+/* Takes a new zone setting only when the clock can be read in it: the rows below would
+ * otherwise still hold the time of the old zone and "Set the clock" would write that. */
+static void _zone_set ( GUIMenu* apMenu, int aNew ) {
+
+ static char s_Err[] __attribute__(   (  section( ".data" )  )   ) = "The clock could not be read";
+
+ unsigned char lOld = g_Config.m_ClockZone;
+
+ g_Config.m_ClockZone = aNew;
+
+ if (  !SMS_ClockGet ( s_Clk )  ) {
+
+  g_Config.m_ClockZone = lOld;
+  GUI_Error ( s_Err );
+
+ }  /* end if */
+
+ _zone_show ( apMenu );
+
+}  /* end _zone_set */
+
+static void _zone_handler ( GUIMenu* apMenu, int aDir ) {
+
+ int lCount = UPD_ZoneCount () + 1;   /* 0 is the console's own zone */
+ int lIdx   = g_Config.m_ClockZone & 0x7F;
+
+ if ( lIdx >= lCount ) lIdx = 0;
+
+ lIdx = ( lIdx + ( aDir < 0 ? lCount - 1 : 1 )  ) % lCount;
+
+ _zone_set (  apMenu, lIdx ? (  lIdx | ( g_Config.m_ClockZone & 0x80 )  ) : 0  );
+
+}  /* end _zone_handler */
+
+static void _summer_handler ( GUIMenu* apMenu, int aDir ) {
+
+ int lIdx = g_Config.m_ClockZone & 0x7F;
+
+ if ( lIdx < 1 || lIdx > UPD_ZoneCount ()  ) return;   /* the console's own summer time: nothing to change */
+
+ _zone_set ( apMenu, g_Config.m_ClockZone ^ 0x80 );
+
+}  /* end _summer_handler */
+
 static void _clk_set_handler ( GUIMenu* apMenu, int aDir ) {
 
  if (  SMS_ClockSet ( s_Clk, 0 )  )
@@ -3125,7 +3201,10 @@ static void _upd_check_handler ( GUIMenu* apMenu, int aDir ) {
 }  /* end _upd_check_handler */
 #endif  /* BDM */
 
+#define CLK_ZONE_ROWS 2
 static GUIMenuItem s_ClkMenu[] __attribute__(   (  section( ".data" )  )   ) = {
+ { MENU_ITEM_TYPE_TEXT, &s_StrZoneLbl,     0, 0, _zone_handler,      0, 0 },
+ { MENU_ITEM_TYPE_TEXT, &s_StrSummerLbl,   0, 0, _summer_handler,    0, 0 },
  { MENU_ITEM_TYPE_TEXT, &STR_CLK_YEAR,     0, 0, _clk_year_handler,  0, 0 },
  { MENU_ITEM_TYPE_TEXT, &STR_CLK_MONTH,    0, 0, _clk_month_handler, 0, 0 },
  { MENU_ITEM_TYPE_TEXT, &STR_CLK_DAY,      0, 0, _clk_day_handler,   0, 0 },
@@ -3145,7 +3224,7 @@ static void _datetime_handler ( GUIMenu* apMenu, int aDir ) {
  int           i;
 
  SMS_ClockGet ( s_Clk );   /* an unreadable clock leaves the last values to edit */
- _clk_show ( NULL );
+ _zone_show ( NULL );
 
  lpState -> m_pItems =
  lpState -> m_pFirst =
@@ -3153,7 +3232,8 @@ static void _datetime_handler ( GUIMenu* apMenu, int aDir ) {
  lpState -> m_pLast  = &s_ClkMenu[ sizeof ( s_ClkMenu ) / sizeof ( s_ClkMenu[ 0 ] ) - 1 ];
  lpState -> m_pTitle = &STR_DATE_TIME_UPD;
 
- for ( i = 0; i < 5; ++i ) s_ClkMenu[ i ].m_IconRight = ( unsigned int )&s_StrClk[ i ];
+ for ( i = 0; i < CLK_ZONE_ROWS; ++i ) s_ClkMenu[ i ].m_IconRight = ( unsigned int )&s_StrZone[ i ];
+ for ( i = 0; i < 5; ++i ) s_ClkMenu[ CLK_ZONE_ROWS + i ].m_IconRight = ( unsigned int )&s_StrClk[ i ];
 
  GUIMenuSMS_UpdateStatus ( apMenu );
  apMenu -> Redraw ( apMenu );

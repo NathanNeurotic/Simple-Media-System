@@ -8,6 +8,14 @@ preserved in full below the marked boundary, unmodified.
 
 ## Rolling development — 2026-11-24
 
+- **Time zone** and **Summer time** rows in **Date, time and updates** (after FifthFox's report against
+  RiptOPL of a time 14 hours ahead after an Internet sync). The clock was always shown in the zone set in
+  the console's own system configuration, with nothing in SMS to see or change it; a console whose zone
+  does not match where it is shows a correctly synced clock hours off. **Console**, the default, behaves
+  as before and shows the console's zone; any of 38 other zones can be picked instead, and it also
+  applies to the clock on the main screen. Kept by **Save settings** in a spare byte of the settings
+  file, so older settings files load unchanged. The two row names are English only. Host-tested; not
+  tested on a PS2.
 - New **Date, time and updates** menu in the SMS menu.
   - **Year / Month / Day / Hour / Minute** and **Set the clock** set the console clock by hand, in your
     own time zone.

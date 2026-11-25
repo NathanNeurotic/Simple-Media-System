@@ -229,7 +229,9 @@ This menu holds the console clock and the updater. The two Internet rows are in 
 
 | Option | What it does |
 | --- | --- |
-| **Year**, **Month**, **Day**, **Hour**, **Minute** | The clock in your own time zone (the zone and summer time set in the PS2's own system configuration). **Left/Right** changes a value. Nothing is written until **Set the clock**. |
+| **Time zone** | The zone the clock is shown and typed in. **Console**, the default, follows the zone and summer time set in the PS2's own system configuration and shows which zone that is, for example `Console (UTC-05:00)`. **Left/Right** picks another zone. If the time is hours off right after **Set the clock from the Internet**, the zone is wrong, not the clock. Kept by **Save settings**. English only for now. |
+| **Summer time** | Adds one hour to a picked time zone. With **Console** it follows the console. |
+| **Year**, **Month**, **Day**, **Hour**, **Minute** | The clock in the time zone above. **Left/Right** changes a value. Nothing is written until **Set the clock**. |
 | **Set the clock** | Writes the five values above to the console clock. |
 | **Set the clock from the Internet** | Asks a web server for the time and sets the console clock from it. It works with a clock that is wrong or was never set. |
 | **Check for updates** | Compares this build with the one published on GitHub and offers to install a newer one. The download is verified before anything is written, and the new file replaces the one SMS was started from, in place. Restart SMS afterwards. |

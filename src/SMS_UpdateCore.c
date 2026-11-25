@@ -74,6 +74,34 @@ static const char* _digits ( const char* apStr, int aCount, int* apVal ) {
 
 }  /* end _digits */
 
+static const short s_Zones[] = {
+ -720, -660, -600, -570, -540, -480, -420, -360, -300, -240, -210, -180, -120, -60, 0,
+ 60, 120, 180, 210, 240, 270, 300, 330, 345, 360, 390, 420, 480, 525, 540, 570, 600,
+ 630, 660, 720, 765, 780, 840
+};
+
+int UPD_ZoneCount ( void ) {
+
+ return ( int )(  sizeof ( s_Zones ) / sizeof ( s_Zones[ 0 ] )  );
+
+}  /* end UPD_ZoneCount */
+
+int UPD_ZoneMinutes ( int anIdx ) {
+
+ return anIdx >= 1 && anIdx <= UPD_ZoneCount () ? s_Zones[ anIdx - 1 ] : 0;
+
+}  /* end UPD_ZoneMinutes */
+
+int UPD_ZoneOffset ( int aSetting, int aConsoleZone, int aConsoleSummer ) {
+
+ int lIdx = aSetting & 0x7F;
+
+ if (  lIdx >= 1 && lIdx <= UPD_ZoneCount ()  ) return s_Zones[ lIdx - 1 ] - 540 + (  ( aSetting & 0x80 ) ? 60 : 0  );
+
+ return aConsoleZone - 540 + ( aConsoleSummer ? 60 : 0 );
+
+}  /* end UPD_ZoneOffset */
+
 int UPD_ParseDate ( const char* apHeaders, int* apT ) {
 
  static const char s_Months[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
