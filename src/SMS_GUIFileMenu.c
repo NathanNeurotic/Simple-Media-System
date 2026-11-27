@@ -28,6 +28,7 @@
 #include "SMS_IOP.h"
 #include "SMS_ioctl.h"
 #include "SMS_SMB.h"
+#include "SMS_Watched.h"
 #include "SMS_GUIClock.h"
 #include "SMS_Artwork.h"
 #include "SMS_JPEG.h"
@@ -84,6 +85,7 @@ typedef struct _FileMenuItem {
 
  u64            m_IconPack[ 32 ];
  u64*           m_pTxtPack;
+ u64*           m_pBadgePack;   /* watched check mark, NULL when not watched */
 
 } _FileMenuItem;
 
@@ -301,6 +303,68 @@ static int _filter_item ( SMS_ListNode* apNode ) {
 
 }  /* end _filter_item */
 
+static int _make_path ( char*, unsigned int, char**, const char* );
+
+/* WATCHED MARKER: a small green check drawn over the bottom-right corner of a video's icon
+ * ( or thumbnail ) once SMS_Watched.c has it on record. Plain untextured triangle strips, so it
+ * neither needs a new icon in the packed icon sets nor touches the transient texture scratch
+ * the row icons and artwork share. Two passes of the same check: a wider translucent dark one
+ * for contrast on any palette / thumbnail, then the green stroke. Coordinates are logical
+ * pixels inside a 16x16 box; GS_XYZ applies the PAR and hi-res X shift exactly as it does for
+ * the icons, so the mark stays put in every video mode. */
+static const signed char s_WatchedShadow[ 12 ] = {
+ -1,  9,   3,  5,    6, 16,   6,  8,   17,  4,  12,  0
+};
+static const signed char s_WatchedCheck [ 12 ] = {
+  1,  9,   3,  7,    6, 14,   6, 10,   15,  4,  13,  2
+};
+
+static void _watched_strip ( u64* apDMA, const signed char* apXY, int aX, int aY, u64 aRGBAQ, int afLast ) {
+
+ int i;
+
+ apDMA[ 0 ] = GIF_TAG( 1, afLast, 0, 0, GIFTAG_FLG_REGLIST, 8 );
+ apDMA[ 1 ] = GIFTAG_REGS_PRIM            | ( GIFTAG_REGS_RGBAQ <<  4 ) |
+              ( GIFTAG_REGS_XYZ2  <<  8 ) | ( GIFTAG_REGS_XYZ2  << 12 ) |
+              ( GIFTAG_REGS_XYZ2  << 16 ) | ( GIFTAG_REGS_XYZ2  << 20 ) |
+              ( GIFTAG_REGS_XYZ2  << 24 ) | ( GIFTAG_REGS_XYZ2  << 28 );
+ apDMA[ 2 ] = GS_SET_PRIM( GS_PRIM_PRIM_TRISTRIP, 0, 0, 0, 1, 0, 0, 0, 0 );
+ apDMA[ 3 ] = aRGBAQ;
+
+ for ( i = 0; i < 6; ++i ) apDMA[ 4 + i ] = GS_XYZ( aX + apXY[ i << 1 ], aY + apXY[ ( i << 1 ) + 1 ], 0 );
+
+}  /* end _watched_strip */
+
+/* aX, aY, aSize: the square the icon / thumbnail occupies. Returns NULL for anything that is
+ * not a watched video file. */
+static u64* _watched_badge ( SMS_ListNode* apNode, int aX, int aY, int aSize ) {
+
+ static char s_Path[ 1024 ];
+
+ char* lpPathEnd;
+ char* lpPath = s_Path;
+ u64*  retVal;
+ int   lType  = ( int )apNode -> m_Param;
+
+ if ( lType != GUICON_AVI && lType != GUICON_AVIS ) return NULL;
+ if (  !_make_path ( s_Path, sizeof ( s_Path ), &lpPathEnd, _STR( apNode ) )  ) return NULL;
+
+ if ( g_CMedia == 1 && g_pCDDACtx ) lpPath += 7;   /* same path the player's FileContext got */
+
+ if (  !SMS_WatchedLook ( lpPath )  ) return NULL;
+
+ if (   !(  retVal = GSContext_NewList ( 20 )  )   ) return NULL;
+
+ aX += aSize - 14;
+ aY += aSize - 14;
+
+ _watched_strip ( retVal,      s_WatchedShadow, aX, aY, GS_SET_RGBAQ( 0x00, 0x00, 0x00, 0x60, 0x00 ), 0 );
+ _watched_strip ( retVal + 10, s_WatchedCheck,  aX, aY, GS_SET_RGBAQ( 0x30, 0xD0, 0x40, 0x80, 0x00 ), 1 );
+
+ return retVal;
+
+}  /* end _watched_badge */
+
 /* Names are drawn through DisplayUTF8 ( SMS_InverseCodePages.c ): USB names arrive as UTF-8,
  * and drawn raw each accented letter costs two glyphs, which made the fit loop below chop
  * the tail of the name. Display only -- the node keeps the real name for fioOpen. */
@@ -343,6 +407,7 @@ static _FileMenuItem* GUIFileMenu_RenderItem ( SMS_ListNode* apNode, int anY, in
    ( int )apNode -> m_Param + afDim, 8, lYd, GUIcon_Browser,
    UNCACHED_SEG( retVal -> m_IconPack )
   );
+  retVal -> m_pBadgePack = _watched_badge ( apNode, 8, lYd, 32 );
   retVal -> m_pTxtPack = GSContext_NewList (  GS_TXT_PACKET_SIZE( lLen )  );
   GSFont_RenderEx (  ( char* )lpName, lLen, 46, lYd, retVal -> m_pTxtPack, -2, 0  );
  }
@@ -448,6 +513,7 @@ static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
    if ( !lpPack ) break;
    if ( lIconY < 0 ) lIconY = 0;
    GUI_DrawIcon ( ( int )lpNode -> m_Param, 8, lY + lIconY, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
+   lpPack -> m_pBadgePack = _watched_badge ( lpNode, 8, lY + lIconY, 32 );
    _poster_names ( lpNode, lLines, lSplit - 54, lFontW );
    lTextY = lY + _poster_text_offset ( lRowH, lTextH, lLines[ 1 ][ 0 ] != 0 );
    lpPack -> m_pTxtPack = GSContext_NewList ( GS_TXT_PACKET_SIZE( strlen ( lLines[ 0 ] ) ) );
@@ -483,6 +549,7 @@ static void _poster_render ( GUIFileMenu* apMenu, int aCtx ) {
  for ( lpNode = apMenu -> m_pFileList -> m_pHead; lpNode; lpNode = lpNode -> m_pNext ) {
   lpPack = ( _FileMenuItem* )( unsigned int )lpNode -> m_Param;
   GSContext_CallList2 ( aCtx, lpPack -> m_IconPack );
+  if ( lpPack -> m_pBadgePack ) GSContext_CallList ( aCtx, lpPack -> m_pBadgePack );
   GSContext_CallList ( aCtx, lpPack -> m_pTxtPack );
  }
  for ( i = 0; i < SMS_ARTWORK_SLOTS + 2; ++i )
@@ -538,6 +605,9 @@ static void _artwork_render ( GUIFileMenu* apMenu, int aCtx ) {
     lX + ( lCellW - lSide ) / 2, lY + 5, lSide );
    else GUI_DrawIcon ( ( int )lpNode -> m_Param, lX + ( lCellW - 32 ) / 2,
     lY + 5 + ( lSide - 32 ) / 2, GUIcon_Browser, UNCACHED_SEG( lpPack -> m_IconPack ) );
+   lpPack -> m_pBadgePack = lpPixels
+    ? _watched_badge ( lpNode, lX + ( lCellW - lSide ) / 2, lY + 5, lSide )
+    : _watched_badge ( lpNode, lX + ( lCellW - 32 ) / 2, lY + 5 + ( lSide - 32 ) / 2, 32 );
 
    lpName = DisplayUTF8 ( lpName, lName, sizeof ( lName ) );
    lLen = strlen ( lpName );
@@ -565,6 +635,7 @@ static void _artwork_render ( GUIFileMenu* apMenu, int aCtx ) {
  for ( lpNode = apMenu -> m_pFileList -> m_pHead; lpNode; lpNode = lpNode -> m_pNext ) {
   lpPack = ( _FileMenuItem* )( unsigned int )lpNode -> m_Param;
   GSContext_CallList2 ( aCtx, lpPack -> m_IconPack );
+  if ( lpPack -> m_pBadgePack ) GSContext_CallList ( aCtx, lpPack -> m_pBadgePack );
   GSContext_CallList ( aCtx, lpPack -> m_pTxtPack );
  }
 }
@@ -675,6 +746,7 @@ static void GUIFileMenu_Render ( GUIObject* apObj, int aCtx ) {
   lpPack = ( _FileMenuItem* )( unsigned int )lpNode -> m_Param;
 
   GSContext_CallList2 ( aCtx, lpPack -> m_IconPack );
+  if ( lpPack -> m_pBadgePack ) GSContext_CallList ( aCtx, lpPack -> m_pBadgePack );
   GSContext_CallList  ( aCtx, lpPack -> m_pTxtPack );
 
   lpNode = lpNode -> m_pNext;
@@ -705,6 +777,7 @@ void GUIFileMenu_CleanupPackets ( GUIObject* apObj ) {
   lpPack = ( _FileMenuItem* )( unsigned int )lpNode -> m_Param;
 
   GSContext_DeleteList ( lpPack -> m_pTxtPack );
+  GSContext_DeleteList ( lpPack -> m_pBadgePack );
   free ( lpPack );
 
   lpNode = lpNode -> m_pNext;

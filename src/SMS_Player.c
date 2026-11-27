@@ -37,6 +37,7 @@
 #include "SMS_DXSB.h"
 #include "SMS_FileDir.h"
 #include "SMS_History.h"
+#include "SMS_Watched.h"
 #include "SMS_PgInd.h"
 #include "SMS_GUIClock.h"
 
@@ -1496,9 +1497,33 @@ playback_end:
 static unsigned char* s_pVPBuff;
 static unsigned char* s_pAPBuff;
 
+/* WATCHED MARKER: decided here, while the container ( duration ) and the last displayed PTS
+ * are still alive. With a known duration the position decides, so stopping during the end
+ * credits counts and a read error or unplugged drive halfway through does not. With no usable
+ * duration ( some streams report none ) only a natural end -- no user stop -- counts. Video
+ * files only; music and pictures never get a marker. */
+static int _is_watched ( void ) {
+
+ SMS_Container* lpCont = s_Player.m_pCont;
+ int64_t        lTotal;
+ int64_t        lPass;
+
+ if ( s_Player.m_VideoIdx < 0 ) return 0;
+
+ lTotal = lpCont -> m_Duration  - lpCont -> m_StartTime;
+ lPass  = s_Player.m_VideoTime  - lpCont -> m_StartTime;
+
+ if ( lpCont -> m_Duration > 0 && lpCont -> m_Duration != 0x7FFFFFFFFFFFFFFFLL && lTotal > 0 )
+  return lPass > 0 && lPass * 100 >= lTotal * SMS_WATCHED_PERCENT;
+
+ return !( s_Player.m_Flags & SMS_FLAGS_USER_STOP ) && lPass > 0;
+
+}  /* end _is_watched */
+
 static void _Destroy ( void* apPlayer ) {
 
  int  lfSeekable = s_Player.m_pCont -> m_Flags & SMS_CONT_FLAGS_SEEKABLE;
+ int  lfWatched  = _is_watched ();
  char lPath[ 512 ];
 
  strcpy ( lPath, s_Player.m_pCont -> m_pFileCtx -> m_pPath );
@@ -1559,6 +1584,11 @@ static void _Destroy ( void* apPlayer ) {
    SMS_HistorySave ();
   } else if (  SMS_HistoryRemove ( lPath )  ) SMS_HistorySave ();
 
+ }  /* end if */
+
+ if ( lfWatched ) {
+  SMS_WatchedAdd  ( lPath );
+  SMS_WatchedSave ();
  }  /* end if */
 
  if (  g_Config.m_PowerOff < 0 && !( s_Player.m_Flags & SMS_FLAGS_USER_STOP )  ) SMS_IOPowerOff ();
