@@ -37,6 +37,7 @@
 #include "SMS_DXSB.h"
 #include "SMS_FileDir.h"
 #include "SMS_History.h"
+#include "SMS_Watched.h"
 #include "SMS_PgInd.h"
 #include "SMS_GUIClock.h"
 
@@ -1496,9 +1497,46 @@ playback_end:
 static unsigned char* s_pVPBuff;
 static unsigned char* s_pAPBuff;
 
+/* WATCHED MARKER: decided here, while the container ( duration ), the video codec and the last
+ * displayed PTS are still alive. Video files only; music and pictures never get a marker.
+ *  - A decoder failure ( codec m_HardwareError, the hardware_error path ) never counts.
+ *    m_pErrorMsg cannot be used for this: SMS_InitPlayer presets it to STR_UNSUPPORTED_FILE
+ *    and nothing clears it after a successful start, so it is non-NULL for every playback.
+ *  - A clean end ( no user stop ) counts by itself, whatever the duration says: an AVI whose
+ *    audio runs well past its last video frame reports a duration the video PTS never gets
+ *    close to.
+ *  - A user stop counts only at or past SMS_WATCHED_PERCENT of a known duration ( end credits ).
+ */
+static int _is_watched ( void ) {
+
+ SMS_Container* lpCont = s_Player.m_pCont;
+ SMS_Stream*    lpStm;
+ int64_t        lTotal;
+ int64_t        lPass;
+
+ if ( s_Player.m_VideoIdx < 0 ) return 0;
+
+ lpStm = lpCont -> m_pStm[ s_Player.m_VideoIdx ];
+
+ if ( !lpStm || !lpStm -> m_pCodec || lpStm -> m_pCodec -> m_HardwareError ) return 0;
+
+ lPass = s_Player.m_VideoTime - lpCont -> m_StartTime;
+
+ if ( lPass <= 0 ) return 0;
+
+ if (  !( s_Player.m_Flags & SMS_FLAGS_USER_STOP )  ) return 1;
+
+ lTotal = lpCont -> m_Duration - lpCont -> m_StartTime;
+
+ return lpCont -> m_Duration > 0 && lpCont -> m_Duration != 0x7FFFFFFFFFFFFFFFLL && lTotal > 0 &&
+        lPass * 100 >= lTotal * SMS_WATCHED_PERCENT;
+
+}  /* end _is_watched */
+
 static void _Destroy ( void* apPlayer ) {
 
  int  lfSeekable = s_Player.m_pCont -> m_Flags & SMS_CONT_FLAGS_SEEKABLE;
+ int  lfWatched  = _is_watched ();
  char lPath[ 512 ];
 
  strcpy ( lPath, s_Player.m_pCont -> m_pFileCtx -> m_pPath );
@@ -1559,6 +1597,11 @@ static void _Destroy ( void* apPlayer ) {
    SMS_HistorySave ();
   } else if (  SMS_HistoryRemove ( lPath )  ) SMS_HistorySave ();
 
+ }  /* end if */
+
+ if ( lfWatched ) {
+  SMS_WatchedAdd  ( lPath );
+  SMS_WatchedSave ();
  }  /* end if */
 
  if (  g_Config.m_PowerOff < 0 && !( s_Player.m_Flags & SMS_FLAGS_USER_STOP )  ) SMS_IOPowerOff ();

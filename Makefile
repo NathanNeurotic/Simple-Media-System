@@ -39,7 +39,7 @@ EE_OBJS  = main.o SMS_OS.o SMS_GS_0.o SMS_GS_1.o SMS_GS_2.o SMS_Timer.o         
            SMS_GUIMenuSMS.o SMS_GUISMBrowser.o SMS_WMA.o mbstring.o SMS_PCM.o     \
            SMS_ContainerASF.o SMS_GUInfoPanel.o SMS_ContainerMOV.o                \
            SMS_ContainerAAC.o SMS_ContainerFLAC.o SMS_FLAC.o SMS_ContainerAC3.o   \
-           SMS_History.o SMS_PgInd.o SMS_VSync.o SMS_GUIClock.o SMS_DateTime.o    \
+           SMS_History.o SMS_Watched.o SMS_PgInd.o SMS_VSync.o SMS_GUIClock.o SMS_DateTime.o    \
            SMS_PlayerBallSim.o SMS_SIF.o SMS_ContainerJPG.o SMS_FileMapping.o     \
            SMS_JPEGData.o SMS_JPEG.o SMS_Rescale.o SMS_MPEGInit.o                 \
            lzma2.o xz_crc32.o xz_dec_lzma2.o xz_dec_stream.o jellyfish_jpg.o     \
@@ -146,6 +146,10 @@ UPD_CFLAGS = $(filter-out -G8192 -G4096,$(EE_CFLAGS)) -G0 -fno-common $(UPD_DEFS
 TLS_INCS   = -Ithird_party/mbedtls-port -I$(MBEDTLS_DIR)include -DMBEDTLS_CONFIG_FILE=\"sms_mbedtls_config.h\"
 
 $(EE_OBJ_DIR)SMS_UpdateCore.o : $(EE_SRC_DIR)SMS_UpdateCore.c
+	$(EE_CC) $(UPD_CFLAGS) $(EE_INCS) -c $< -o $@
+
+# Watched markers: same -G0 treatment, the small-data window has no room left for them.
+$(EE_OBJ_DIR)SMS_Watched.o : $(EE_SRC_DIR)SMS_Watched.c
 	$(EE_CC) $(UPD_CFLAGS) $(EE_INCS) -c $< -o $@
 
 $(EE_OBJ_DIR)SMS_Net.o : $(EE_SRC_DIR)SMS_Net.c

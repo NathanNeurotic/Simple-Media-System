@@ -20,6 +20,7 @@
 #include "SMS_Locale.h"
 #include "SMS_Config.h"
 #include "SMS_History.h"
+#include "SMS_Watched.h"
 #include "SMS_OS.h"
 #include "SMS_GS.h"
 #include "SMS_PgInd.h"
@@ -90,6 +91,7 @@ int main ( int argc, char** argv ) {
  SMS_EEScanDir ( g_pMC0SMS, g_pExtMBF, g_Config.m_pMBFList );
  if ( g_pBootDir[ 0 ] ) SMS_EEScanDir ( g_pBootDir, g_pExtMBF, g_Config.m_pMBFList );   /* CWD .mbf too ( dedups ) */
  SMS_HistoryLoad ();
+ SMS_WatchedLoad ();
  GUI_DeleteObject ( g_pVerStr );
  SMS_PgIndStop ();
 

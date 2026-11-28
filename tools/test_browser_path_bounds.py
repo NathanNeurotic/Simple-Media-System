@@ -6,7 +6,7 @@ import tempfile
 
 root = Path(__file__).resolve().parents[1]
 source = (root / 'src/SMS_GUIFileMenu.c').read_text()
-start = source.index('static int _make_path (')
+start = source.index('static int _make_path ( char* apBuff')
 end = source.index('}  /* end _make_path */', start) + len('}  /* end _make_path */')
 context = source.index('static void _context_action_file (')
 context_start = source.index('  char  lPath[ 1024 ];', context)

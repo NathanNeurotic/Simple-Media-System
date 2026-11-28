@@ -318,6 +318,7 @@ with tempfile.TemporaryDirectory() as temporary:
               + function(src['SMS_GS_2.c'], 'GSFont_WidthEx')
               + function(src['SMS_GUIDesktop.c'], 'GUI_Status')
               + function(src['SMS_PlayerControl.c'], 'PlayerControl_GSPLen') + osd
+              + 'static u64* _watched_badge ( SMS_ListNode* p, int x, int y, int s ) { return 0; }\n'
               + function(src['SMS_GUIFileMenu.c'], 'GUIFileMenu_RenderItem')
               + function(src['SMS_GUIFileMenu.c'], '_poster_names')
               + function(src['SMS_JPEG.c'], '_display_text') + post)
