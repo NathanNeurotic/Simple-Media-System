@@ -14,12 +14,19 @@
  * can evict the other: SMS.wtc next to the ELF on a CWD boot, otherwise mc?:/SMS/SMS.wtc. Each
  * record is a 2-byte length followed by the full media path ( the FileContext m_pPath the player
  * saw, i.e. what _make_path in SMS_GUIFileMenu.c produces ). Oldest entries drop off past
- * WTC_SIZE; re-watching a file moves it to the newest end. */
+ * WTC_SIZE; re-watching a file moves it to the newest end.
+ *
+ * HDD: every PFS partition is mounted on the same g_pPFS prefix, so a bare path cannot tell
+ * "Episode01.avi" on one partition from the same relative path on another. Paths under g_pPFS
+ * are therefore keyed as "<partition>|<path>" ( g_Config.m_Partition, set by _action_partition
+ * when the partition is mounted ). The player records and the browser looks up through the same
+ * _key, so both sides always agree. */
 #include "SMS.h"
 #include "SMS_Watched.h"
 #include "SMS_List.h"
 #include "SMS_MC.h"
 #include "SMS_Config.h"
+#include "SMS_Locale.h"
 
 #include <fileio.h>
 #include <string.h>
@@ -112,9 +119,28 @@ void SMS_WatchedLoad ( void ) {
 
 }  /* end SMS_WatchedLoad */
 
+static const char* _key ( const char* apPath ) {
+
+ static char s_Key[ 1024 + sizeof ( g_Config.m_Partition ) + 2 ];
+
+ unsigned int lPFS = strlen ( g_pPFS );
+
+ if (  !apPath || !g_Config.m_Partition[ 0 ] || strncmp ( apPath, g_pPFS, lPFS )  ) return apPath;
+ if (  strlen ( g_Config.m_Partition ) + strlen ( apPath ) + 2 > sizeof ( s_Key )  ) return apPath;
+
+ strcpy ( s_Key, g_Config.m_Partition );
+ strcat ( s_Key, "|"                  );
+ strcat ( s_Key, apPath               );
+
+ return s_Key;
+
+}  /* end _key */
+
 static SMS_ListNode* _find ( const char* apPath ) {
 
  SMS_ListNode* lpNode;
+
+ apPath = _key ( apPath );
 
  if ( !s_pWtc || !apPath ) return NULL;
 
@@ -135,12 +161,16 @@ void SMS_WatchedAdd ( const char* apPath ) {
 
  SMS_ListNode* lpNode;
 
- if ( !s_pWtc || !apPath || !apPath[ 0 ] || strlen ( apPath ) > 0xFFFF ) return;
+ if ( !s_pWtc || !apPath || !apPath[ 0 ] ) return;
 
  if (  ( lpNode = _find ( apPath ) )  ) {
   if ( lpNode == s_pWtc -> m_pTail ) return;   /* already the newest entry */
   SMS_ListRemove ( s_pWtc, lpNode );
  }  /* end if */
+
+ apPath = _key ( apPath );
+
+ if (  strlen ( apPath ) > 0xFFFF  ) return;
 
  SMS_ListPushBack ( s_pWtc, apPath );
 

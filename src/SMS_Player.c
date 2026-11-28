@@ -1497,26 +1497,39 @@ playback_end:
 static unsigned char* s_pVPBuff;
 static unsigned char* s_pAPBuff;
 
-/* WATCHED MARKER: decided here, while the container ( duration ) and the last displayed PTS
- * are still alive. With a known duration the position decides, so stopping during the end
- * credits counts and a read error or unplugged drive halfway through does not. With no usable
- * duration ( some streams report none ) only a natural end -- no user stop -- counts. Video
- * files only; music and pictures never get a marker. */
+/* WATCHED MARKER: decided here, while the container ( duration ), the video codec and the last
+ * displayed PTS are still alive. Video files only; music and pictures never get a marker.
+ *  - A decoder failure ( codec m_HardwareError, the hardware_error path ) never counts.
+ *    m_pErrorMsg cannot be used for this: SMS_InitPlayer presets it to STR_UNSUPPORTED_FILE
+ *    and nothing clears it after a successful start, so it is non-NULL for every playback.
+ *  - A clean end ( no user stop ) counts by itself, whatever the duration says: an AVI whose
+ *    audio runs well past its last video frame reports a duration the video PTS never gets
+ *    close to.
+ *  - A user stop counts only at or past SMS_WATCHED_PERCENT of a known duration ( end credits ).
+ */
 static int _is_watched ( void ) {
 
  SMS_Container* lpCont = s_Player.m_pCont;
+ SMS_Stream*    lpStm;
  int64_t        lTotal;
  int64_t        lPass;
 
  if ( s_Player.m_VideoIdx < 0 ) return 0;
 
- lTotal = lpCont -> m_Duration  - lpCont -> m_StartTime;
- lPass  = s_Player.m_VideoTime  - lpCont -> m_StartTime;
+ lpStm = lpCont -> m_pStm[ s_Player.m_VideoIdx ];
 
- if ( lpCont -> m_Duration > 0 && lpCont -> m_Duration != 0x7FFFFFFFFFFFFFFFLL && lTotal > 0 )
-  return lPass > 0 && lPass * 100 >= lTotal * SMS_WATCHED_PERCENT;
+ if ( !lpStm || !lpStm -> m_pCodec || lpStm -> m_pCodec -> m_HardwareError ) return 0;
 
- return !( s_Player.m_Flags & SMS_FLAGS_USER_STOP ) && lPass > 0;
+ lPass = s_Player.m_VideoTime - lpCont -> m_StartTime;
+
+ if ( lPass <= 0 ) return 0;
+
+ if (  !( s_Player.m_Flags & SMS_FLAGS_USER_STOP )  ) return 1;
+
+ lTotal = lpCont -> m_Duration - lpCont -> m_StartTime;
+
+ return lpCont -> m_Duration > 0 && lpCont -> m_Duration != 0x7FFFFFFFFFFFFFFFLL && lTotal > 0 &&
+        lPass * 100 >= lTotal * SMS_WATCHED_PERCENT;
 
 }  /* end _is_watched */
 
