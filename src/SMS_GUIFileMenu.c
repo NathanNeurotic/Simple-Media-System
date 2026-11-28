@@ -312,10 +312,10 @@ static int _make_path ( char*, unsigned int, char**, const char* );
  * for contrast on any palette / thumbnail, then the green stroke. Coordinates are logical
  * pixels inside a 16x16 box; GS_XYZ applies the PAR and hi-res X shift exactly as it does for
  * the icons, so the mark stays put in every video mode. */
-static const signed char s_WatchedShadow[ 12 ] = {
+static const signed char s_WatchedShadow[ 12 ] __attribute__(   (  section( ".rodata" )  )   ) = {
  -1,  9,   3,  5,    6, 16,   6,  8,   17,  4,  12,  0
 };
-static const signed char s_WatchedCheck [ 12 ] = {
+static const signed char s_WatchedCheck [ 12 ] __attribute__(   (  section( ".rodata" )  )   ) = {
   1,  9,   3,  7,    6, 14,   6, 10,   15,  4,  13,  2
 };
 
@@ -339,7 +339,7 @@ static void _watched_strip ( u64* apDMA, const signed char* apXY, int aX, int aY
  * not a watched video file. */
 static u64* _watched_badge ( SMS_ListNode* apNode, int aX, int aY, int aSize ) {
 
- static char s_Path[ 1024 ];
+ static char s_Path[ 1024 ] __attribute__(   (  section( ".bss" )  )   );
 
  char* lpPathEnd;
  char* lpPath = s_Path;

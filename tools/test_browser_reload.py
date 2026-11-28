@@ -113,6 +113,7 @@ static void SMS_InitBitBlt(void *p,int count,int y,int h) { (void)p;(void)count;
 static void SMS_PgIndStart(void) { assert(!progress);progress=1; }
 static void SMS_PgIndStop(void) { assert(progress);progress=0; }
 static int _filter_item(SMS_ListNode *p) { (void)p;return 0; }
+static u64 *_watched_badge(SMS_ListNode *p,int x,int y,int s) { (void)p;(void)x;(void)y;(void)s;return 0; }
 static void SMS_FileDirInit(char *path) {
  assert(progress && (!*path || !strcmp(path,".")));++reads;
  SMS_ListDestroy(&listing,0);

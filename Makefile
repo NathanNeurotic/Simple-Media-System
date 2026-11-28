@@ -148,6 +148,10 @@ TLS_INCS   = -Ithird_party/mbedtls-port -I$(MBEDTLS_DIR)include -DMBEDTLS_CONFIG
 $(EE_OBJ_DIR)SMS_UpdateCore.o : $(EE_SRC_DIR)SMS_UpdateCore.c
 	$(EE_CC) $(UPD_CFLAGS) $(EE_INCS) -c $< -o $@
 
+# Watched markers: same -G0 treatment, the small-data window has no room left for them.
+$(EE_OBJ_DIR)SMS_Watched.o : $(EE_SRC_DIR)SMS_Watched.c
+	$(EE_CC) $(UPD_CFLAGS) $(EE_INCS) -c $< -o $@
+
 $(EE_OBJ_DIR)SMS_Net.o : $(EE_SRC_DIR)SMS_Net.c
 	$(EE_CC) $(UPD_CFLAGS) $(EE_INCS) -Iiop/smsnet/include -c $< -o $@
 
